@@ -13,7 +13,6 @@ s3 = S3FileSystem()
 class DataConfig:
     dataset_name: str
     dataset_uri: str
-    prompt_template: str
     model_input_jmespaths: List[str]
     model_output_jmespaths: List[str]
     target_output_jmespath: Optional[str]
