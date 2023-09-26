@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+set -euo pipefail
+set -x
+
+
+lint() {
+    echo ""
+    echo "Lint checks"
+    echo -e "===========\n"
+    if [ -d .git ]
+    then
+        echo "1. pre-commit hooks"
+        echo "==================="
+        pre-commit run -v -a
+        echo ""
+    else
+        echo "1. pre-commit hooks (Skipped)"
+        echo "==================="
+        echo ""
+    fi
+    echo "2. Flake8"
+    echo "========="
+    flake8 . --config=setup.cfg
+    echo ""
+
+    echo "3. Mypy"
+    echo "======="
+    echo y | mypy --install-types --junit-xml tmp/typecheck.xml --html-report tmp --config-file setup.cfg src/ || \
+        mypy --junit-xml tmp/typecheck.xml --html-report tmp --config-file setup.cfg --show-traceback src/
+    echo ""
+
+    echo "4. Poetry lock check"
+    echo "===================="
+    echo "Note: This only syncs poetry.lock with pyproject.toml.  If you wish to update all downstream dependencies, run 'poetry update'"
+    install_poetry_version 1.2.0
+    poetry lock --check || (poetry lock --no-update && poetry lock --check)
+    echo ""
+
+    echo "Lint: SUCCESS"
+}
+
+running_in_codebuild() {
+    if [[ -n ${CODEBUILD_BUILD_ID:-} ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+env_setup() {
+    echo "OS Type: ${OSTYPE}"
+    echo -n "Python version: "
+    python --version
+    echo ""
+    if [[ $OSTYPE == 'darwin'* ]]; then
+        echo "Detected darwin OS Type, setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY in env"
+        export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+    fi
+}
+
+is_cn_region() {
+  if [ "$(echo "${AWS_DEFAULT_REGION:-us-west-2}" |cut -c -3)" = "cn-" ]
+    then
+      return 0
+    else
+      return 1
+  fi
+}
+
+# Pass in poetry version as argument
+install_poetry_version() {
+    # Poetry will be installed to this path in codebuild
+    # Explicitly export the path so all shells have the updated path
+    if running_in_codebuild && [[ -z $(command -v poetry) ]]
+      then
+         echo "Exporting path to poetry for codebuild"
+         export PATH="/root/.local/bin:$PATH"
+    fi
+
+    # Installs poetry safely and system-wide using the recommended installer
+    # Also update poetry to the latest --preview to support features such as dependency groups and plugins which
+    # are not yet officially released.x
+    if [[ -z $(command -v poetry) ]]
+      then
+        # If running in codebuild, we can just install.  No need for the fancy parsing
+        if running_in_codebuild
+          then
+            if is_cn_region
+              then
+                # Use pipx to install poetry as the installer times out in CN region
+                python3 -m pip install pipx
+                pipx install poetry==$1
+              else
+                curl -sSL https://install.python-poetry.org | python3 - --version $1
+            fi
+          else
+            # Note: If the script fails at this time, it may have timed out.  Separate the curl and python3 commands and
+            # run them directly instead of storing into a variable to check logs.
+            POETRY_SCRIPT=`curl -sSL https://install.python-poetry.org`
+            echo "Installed poetry installer, running the script"
+            POETRY_INSTALL_OUTPUT=`python3 -c "$POETRY_SCRIPT" --version $1`
+            LIGHT_PURPLE='\033[1;35m'
+            ORANGE='\033[0;33m'
+            LIGHT_RED='\033[1;31m'
+            NC='\033[0m'
+
+            # Automatically append to PATH using output of poetry installation
+            # Note: If this stops working, poetry probably changed the output of their installation command
+            echo -e "${LIGHT_PURPLE}$POETRY_INSTALL_OUTPUT${NC}"
+            if [[ $POETRY_INSTALL_OUTPUT == *"Add \`export PATH="*"to your shell configuration file."* ]]
+              then
+                EXPORT_POETRY=$(echo tr -d '\n' $POETRY_INSTALL_OUTPUT | sed -z 's/.*Add `export PATH=\"\(.*\):$PATH"` to your shell configuration file.*/\1/')
+                if [[ $(echo $PATH) != *"${EXPORT_POETRY}"* ]]
+                  then
+                    echo -e "${LIGHT_RED}PATH is missing poetry root at ${ORANGE}${EXPORT_POETRY}${NC}"
+                    echo -e "${LIGHT_RED}Please add the above export PATH to your shell configuration file.${NC}"
+                    exit 1
+                fi
+            elif [[ $POETRY_INSTALL_OUTPUT == *"The latest version"*"is already installed"* ]]
+              then
+                echo -e "${LIGHT_RED}Poetry is already installed, but not on the PATH.  Did you forget to add it?${NC}"
+                exit 1
+            fi
+        fi
+      else
+        echo "poetry is already installed: "
+        poetry --version
+    fi
+
+    poetry config virtualenvs.prefer-active-python true
+    # Don't create virtual environments by default.  This is needed because our deep canaries don't use virtual envs
+    poetry config virtualenvs.create false
+    # too much parallelism when installing packages can run into throttling and timeouts, especially in CN regions
+    poetry config installer.max-workers 2
+}
+
+unit_test_with_coverage() {
+     echo "Test with coverage"
+     echo "=================="
+     coverage run -m pytest -x --pspec test/unit
+     coverage report -m --fail-under=100
+ }
+
+build_package() {
+    install_poetry_version 1.2.0
+    poetry install
+    poetry build
+}
+
+all() {
+    env_setup
+    build_package
+    lint
+    unit_test_with_coverage
+    echo "All build and tests passed. 😊"
+}
+
+##############################################################
+# MAIN
+#
+# Run function passed as argument
+set +x
+if [ $# -gt 0 ]
+then
+    SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+    echo "CD -> $SCRIPTPATH"
+    cd $SCRIPTPATH
+    echo ==================
+    echo $@
+    echo ==================
+    $@
+else
+    cat<<EOF
+
+**Developer tool**
+==================
+
+$0: Execute a function by passing it as an argument to the script:
+
+Possible commands:
+==================
+
+EOF
+    declare -F | cut -d' ' -f3
+    echo
+fi

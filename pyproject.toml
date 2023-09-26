@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "amazon_fmeval"
+version = "0.1.0"
+description = "Amazon Foundation Model Evaluation"
+license = "Proprietary"
+authors = ["Clarify Team <aws-thundera-dev@amazon.com>"]
+packages = [
+    { include = "*.py", from = "src" },
+    { include = "data_loaders", from = "src" },
+    { include = "eval_algorithms", from = "src" },
+    { include = "infra", from = "src" },
+    { include = "model_runners", from = "src" },
+    { include = "orchestrator", from = "src" },
+    { include = "reporting", from = "src" }
+]
+readme = "README.md"
+classifiers=[
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+]
+
+
+[tool.poetry.scripts]
+'evaluate.py' = { reference = "bin/evaluate.py", type = "file" }
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+sagemaker = "2.182.0"
+urllib3 = "1.26.16"
+semantic-version = "2.10.0"
+ray = "2.6.3"
+pydantic = "2.1.1"
+s3fs = ">=2023.4.0"
+pyarrow = "*"
+pyfunctional = "1.4.3"
+transformers = "4.33.2"
+torch = ">=2.0.0, !=2.0.1"
+matplotlib = "^3.8.0"
+
+
+[tool.poetry.dev-dependencies]
+fire = "*"
+black = "23.7.0"
+pre-commit = "3.3.3"
+pytest = "*"
+pytest-pspec = "*"
+flake8 = "*"
+mypy = "*"
+lxml = "*"
+coverage = "*"
+commitizen = "*"
+conventional-pre-commit = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
