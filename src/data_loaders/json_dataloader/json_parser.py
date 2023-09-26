@@ -2,15 +2,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import jmespath
 from jmespath.parser import ParsedResult
 from dataclasses import dataclass
-from orchestrator.utils import util
-from infra.utils.sm_exceptions import AlgorithmError
 from data_loaders.utils.constants import JmespathQueryType
 from data_loaders.utils.jmespath_util import search_jmespath
 
 
 @dataclass(frozen=True)
 class JsonParserConfig:
-    """Config used by JsonParser. Attributes are a strict subset of those from DatasetReaderConfig.
+    """Config used by JsonParser. Attributes are a strict subset of those from DataLoaderConfig.
 
     Attributes:
         features_jmespath: JMESPath query for feature values. These features are used
@@ -54,7 +52,7 @@ class JsonColumnParseConfig:
 class DatasetColumns:
     """This class represents the four lists that are returned by parse_dataset_columns.
 
-    These lists are used downstream by the JsonDatasetReader to create a ray.data.Dataset.
+    These lists are used downstream by the JsonDataLoaderto create a ray.data.Dataset.
 
     Attributes:
         features: A 2D array, in which the kth entry of the array is a list containing
@@ -64,7 +62,7 @@ class DatasetColumns:
         categories: Same as above but for categories.
             Note that we currently support only a single category column.
             However, we still make this a 2D array to simplify downstream code
-            in JsonDatasetReader.
+            in JsonDataLoader.
     """
 
     features: List[List[Any]]

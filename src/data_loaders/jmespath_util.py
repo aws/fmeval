@@ -3,7 +3,6 @@ from typing import Any, List, Dict, Union
 import jmespath
 from jmespath.exceptions import JMESPathError
 from jmespath.parser import ParsedResult
-from infra.utils.sm_exceptions import CustomerError
 from data_loaders.utils.constants import JmespathQueryType
 
 
@@ -25,13 +24,13 @@ def search_jmespath(
     try:
         result = jmespath_parser.search(dataset)
         if not result:
-            raise CustomerError(
+            raise UserError(
                 f"Failed to find {jmespath_query_type.value} columns in {dataset_name} using JMESPath "
                 f"query '{jmespath_parser.expression}'"
             )
         return result
     except ValueError as e:
-        raise CustomerError(
+        raise UserError(
             f"Failed to find {jmespath_query_type.value} columns in {dataset_name} using JMESPath query "
             f"'{jmespath_parser.expression}'"
         ) from e
@@ -44,4 +43,4 @@ def compile_jmespath(jmespath_expression: str):
     try:
         return jmespath.compile(jmespath_expression)
     except (TypeError, JMESPathError) as e:
-        raise CustomerError(f"Unable to compile JMESPath {jmespath_expression}") from e
+        raise UserError(f"Unable to compile JMESPath {jmespath_expression}") from e

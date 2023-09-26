@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass
 from data_loaders.json_dataloader.json_parser import JsonParser
 from data_loaders.data_resources.data_resources import DataFile
-from data_loaders.headers.header_factory import HeaderFactory, HeaderGeneratorConfig
 
 from ray.data.datasource.file_based_datasource import (
     FileBasedDatasource,
@@ -17,8 +16,8 @@ from ray.data.block import BlockAccessor
 
 
 @dataclass(frozen=True)
-class JsonDatasetReaderConfig:
-    """Configures the JsonLinesDatasetReader.
+class JsonDataLoaderConfig:
+    """Configures the JsonLinesDataLoader.
 
     Attributes:
         json_parser: JsonParser object created with customer provided JMESPaths, used to parse the dataset.
@@ -33,14 +32,14 @@ class JsonDatasetReaderConfig:
     headers: List[str]
 
 
-class JsonDatasetReader:
+class JsonDataLoader:
     """Reads a JSON dataset and returns a Ray Dataset that includes headers."""
 
     @staticmethod
-    def read_dataset(config: JsonDatasetReaderConfig) -> ray.data.Dataset:
+    def read_dataset(config: JsonDataLoaderConfig) -> ray.data.Dataset:
         """Reads a JSON dataset and returns a Ray Dataset that includes headers.
 
-        :param config: see JsonDatasetReaderConfig docstring.
+        :param config: see JsonDataLoaderConfig docstring.
         :return: a Ray Dataset object that includes headers.
         """
         return ray.data.read_datasource(datasource=CustomJSONDatasource(config=config), paths=config.data_file.uri)
@@ -84,7 +83,7 @@ class JsonDatasetReader:
 
         columns = json_parser.parse_dataset_columns(dataset, dataset_name)
         header_generator_config = HeaderGeneratorConfig.create_from_dataset_columns(columns)
-        headers = HeaderFactory.get_headers(feature_headers, header_generator_config)
+        headers = get_headers(feature_headers, header_generator_config)
 
         columns_list = [columns.features]
         columns_list += [columns.target_outputs] if columns.target_outputs else []
@@ -116,30 +115,30 @@ class CustomJSONDatasource(FileBasedDatasource):
     }
 
     Attributes:
-          config: The JSONDatasetReaderConfig used by _read_file when calling
-            JsonDatasetReader._parse_dataset. Optional, because a config
+          config: The JSONDataLoaderConfig used by _read_file when calling
+            JsonDataLoader._parse_dataset. Optional, because a config
             is not required for _write_block.
     """
 
     _FILE_EXTENSION = "json"  # configures the extension for files written by _write_block
 
-    def __init__(self, config: Optional[JsonDatasetReaderConfig] = None):
+    def __init__(self, config: Optional[JsonDataLoaderConfig] = None):
         super().__init__()
         if config:
             self.config = config
 
-    def _read_file(self, f: "pyarrow.NativeFile", path: str, **reader_args) -> pyarrow.Table:  # pragma: no cover
+    def _read_file(self, f: "pyarrow.NativeFile", path: str, **loader_args) -> pyarrow.Table:  # pragma: no cover
         """
         Reads the JSON dataset file given by `path`, parses the JSON, then returns
         a pyarrow.Table representing the dataset.
 
         :param f: Unused. Required so that this class conforms to FileBasedDatasource.
         :param path: The path to the dataset JSON file
-        :param reader_args: Unused. Required so that this class conforms to FileBasedDatasource.
+        :param loader_args: Unused. Required so that this class conforms to FileBasedDatasource.
         """
         with open(path) as file_handle:
             dataset = json.load(file_handle)
-            pydict = JsonDatasetReader._parse_dataset(
+            pydict = JsonDataLoader._parse_dataset(
                 dataset=dataset,
                 json_parser=self.config.json_parser,
                 feature_headers=self.config.headers,

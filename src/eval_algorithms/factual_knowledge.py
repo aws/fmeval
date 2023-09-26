@@ -2,42 +2,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from statistics import mean
 from typing import Optional, Dict
-
-from eval_algorithms.eval_algorithm_registry import (
-    EvalAlgorithmInterface,
-    EvalOutput,
-    AggregationOutput,
-    ModelOutput,
-    ModelInput,
-    TargetOutput,
-    EvalAlgorithmConfig,
-    AggregationInput,
-    CategoryScore,
-)
-from eval_algorithms.exceptions import EvalAlgorithmClientError
-
-
-@dataclass(frozen=True)
-class FactualKnowledgeModelInput(ModelInput):
-    """
-    Dataclass for ModelInputs, for Factual Knowledge eval algorithm
-
-    :param prompt: Input prompt sent to LLM
-    """
-
-    prompt: str
-
-
-@dataclass(frozen=True)
-class FactualKnowledgeModelOutput(ModelOutput):
-    """
-    Dataclass for ModelOutputs, for Factual Knowledge eval algorithm
-
-    :param prompt_response: LLM response for an input prompt
-    """
-
-    prompt_response: str
-
+from ..exceptions import UserError
+from eval_algorithm import EvalOutput, EvalAlgorithmConfig, EvalAlgorithmInterface
 
 @dataclass(frozen=True)
 class FactualKnowledgeConfig(EvalAlgorithmConfig):
@@ -66,11 +32,11 @@ class FactualKnowledge(EvalAlgorithmInterface):
         """
         self.eval_algorithm_config = eval_algorithm_config
 
-    def evaluate(
+    def evaluate_sample(
         self,
-        model_output: FactualKnowledgeModelOutput,
-        model_input: Optional[FactualKnowledgeModelInput],
-        target_output: Optional[TargetOutput] = None,
+        prompt: str,
+        prompt_response: Optional[str],
+        expected_response: Optional[str] = None,
     ) -> EvalOutput:
         """
         Factual knowledge evaluation.
@@ -88,19 +54,19 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param target_output: The expected responses for the prompts in model_input
         :return: an instance of EvalOutput that contains the score computed for prompts and responses.
         """
-        if target_output is None or target_output.expected_response is None:
-            raise EvalAlgorithmClientError("Missing required input: target_output, for FactualKnowledge eval algorithm")
-        if model_input is None or model_input.prompt is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: prompt in model_input, for FactualKnowledge eval algorithm"
+        if expected_response is None:
+            raise UserError("Missing required input: expected_response, for FactualKnowledge algorithm")
+        if prompt is None:
+            raise UserError(
+                "Missing required input: prompt in model input, for FactualKnowledge algorithm"
             )
-        if model_output.prompt_response is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: prompt_response in model_output, for FactualKnowledge eval algorithm"
+        if prompt_response is None:
+            raise UserError(
+                "Missing required input: prompt_response in model output, for FactualKnowledge algorithm"
             )
 
-        possible_targets = target_output.expected_response.split(self.eval_algorithm_config.target_output_delimiter)
-        prompt_response_lower_case = model_output.prompt_response.lower()
+        possible_targets = expected_response.split(self.eval_algorithm_config.target_output_delimiter)
+        prompt_response_lower_case = prompt_response.lower()
         return EvalOutput(
             eval_type=self.EVAL_NAME,
             eval_score=int(any([t.lower() in prompt_response_lower_case for t in possible_targets])),

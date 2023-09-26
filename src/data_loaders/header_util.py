@@ -1,7 +1,6 @@
 from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
-from orchestrator.utils import util
 from data_loaders.json_dataloader.json_parser import DatasetColumns
 from data_loaders.jsonlines_dataloader.jsonlines_parser import DatasetSample
 
@@ -93,6 +92,23 @@ class HeaderGenerator:
     """
     This class generates artificial headers for the target_output, inference_output or category columns of a dataset
     """
+
+    def get_headers(
+        headers: List[str],
+        header_generator_config: Optional[HeaderGeneratorConfig] = None,
+    ) -> List[str]:
+        """
+        :param headers: list of customer provided headers for features
+        :param header_generator_config: header generator config for target_output, inference_output and category
+        :return: list of dataset headers, including customer provided features headers and artificial headers for
+                 target_output, inference_output and category columns
+        """
+        util.assert_condition(headers, "headers cannot be None or an empty list.")
+        dataset_headers = headers[:]
+        if header_generator_config:  # pragma: no branch
+            generated_headers = HeaderGenerator().generate_headers(header_generator_config)
+            dataset_headers.extend(generated_headers)
+        return dataset_headers
 
     def generate_headers(self, config: HeaderGeneratorConfig) -> List[str]:
         """
