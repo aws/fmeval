@@ -13,7 +13,8 @@ from sagemaker.jumpstart.model import JumpStartModel as SDKJumpStartModel
 from sagemaker.predictor import retrieve_default
 from typing import Optional
 from dataclasses import dataclass
-from model_runners.util import SagemakerModelInvocationParameters
+from util import SageMakerModelDeploymentConfig
+from model_runner import ModelRunner
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,19 @@ class SageMakerModelRunner(ModelRunner):
 
     def __init__(
         self,
-        model_deployment_config: ModelDeploymentConfig,
-        composer: ContentComposer,
-        extractor: Extractor,
+        model_deployment_config: SageMakerModelDeploymentConfig,
         sagemaker_session: sagemaker.session.Session,
+        endpoint_name: str,
+        model_id: str,
+        model_name: str,
+        content_template: str,
+        output: str,
+        probability: str,
+        content_type: str = "application/json",
+        accept_type: str = "application/json"
     ):
         """
-        :param model_deployment_config: ModelDeploymentConfig that defines how the model is deployed
+        :param model_deployment_config: SageMakerModelDeploymentConfig that defines how the model is deployed
         :param sagemaker_session: SageMaker session to be reused.
         """
         super().__init__()
@@ -43,8 +50,8 @@ class SageMakerModelRunner(ModelRunner):
         self._model_deployment_config = model_deployment_config
         self._endpoint_name: Optional[str] = None
         self._endpoint_name = self._model_deployment_config.endpoint_name
-        self._composer = composer
-        self._extractor = extractor
+        self._composer = create_content_composer(content_template, content_type)
+        self._extractor = create_extractor(output, probability, accept_type)
 
         # Register cleanup functions to delete shadow endpoint on termination
         # by exception or sys.exit (https://docs.python.org/library/atexit.html)

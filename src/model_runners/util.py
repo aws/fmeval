@@ -17,6 +17,23 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+# Model
+DEFAULT_ENDPOINT_NAME_PREFIX = "amazon-fm-eval"
+ENDPOINT_NAME_PREFIX_PATTERN = "^[a-zA-Z0-9](-*[a-zA-Z0-9])"
+BEDROCK_MODEL_ID_PATTERN = (
+    "^(arn:aws(-[^:]+)?:bedrock:[a-z0-9-]{1,20}:(([0-9]{12}:custom-model/[a-z0-9-]{1,63}[.]{1}"
+    "[a-z0-9-]{1,63}/[a-z0-9]{12})|(:foundation-model/[a-z0-9-]{1,63}[.]{1}[a-z0-9-]{1,63})))|"
+    "(([0-9a-zA-Z][_-]?)+)|([a-z0-9-]{1,63}[.]{1}[a-z0-9-]{1,63})$"
+)
+MODEL_PACKAGE_ARN_PATTERN = "arn:aws[a-z\-]*:sagemaker:[a-z0-9\-]*:[0-9]{12}:model-package/.*"
+
+# https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateEndpoint.html
+ENDPOINT_NAME_MAX_LEN = 63
+
+# Predictor constants
+OUTPUT = "output"
+INPUT_LOG_PROB = "input_log_probability"
+
 @dataclass
 class SagemakerEndpointUsageState:
     """Endpoint usage state config use by MangedEndpoint.
@@ -30,14 +47,62 @@ class SagemakerEndpointUsageState:
     num_calls: int
     in_service: bool
 
-class SagemakerModelInvocationParameters(ABC):
+class SageMakerModelDeploymentConfig:
     """
-    Parameter(s) to be used for model invocation.
+    Config class that is used to defines how the model is deployed or should be deployed for different model types.
+
+    :param model_type: The ModelType enum that specifies how the model is deployed or should be deployed
+    :param model_identifier: The name or ID of the model. The value in this field depends on the `model_type`. For
+                             SageMaker Model, it would be the model name. For SageMaker Jumpstart, this would be the
+                             model ID, for SageMaker Registry Models, it would be the model package name. For AWS
+                             Bedrock models, it would be the Bedrock model ID.
+    :param model_version: Version of the SageMaker JumpStart model. If not provided, we automatically use the latest version of the model.
+    :param  endpoint_name: The name of the deployed endpoint. This would be provided for model types SageMaker Endpoint,
+                           and SageMaker Jumpstart. For SageMaker Jumpstart, this should also be accompanied by
+                           Jumpstart model ID used to deploy this endpoint.
+    :param endpoint_name_prefix: The prefix to be used for the endpoint name while creating a SageMaker Endpoint. This
+                                 would be applicable to all model types where an endpoint needs to be deployed
+                                 (Sagemaker Model, Sagemaker Registry Model, Sagemaker Jumpstart (without an endpoint))
+    :param instance_count: The number of instances to be used to deploy an endpoint.  This would be applicable to all
+                           model types where an endpoint needs to be deployed (Sagemaker Model, Sagemaker Registry
+                           Model, Sagemaker Jumpstart (without an endpoint))
+    :param instance_type: The instance type to be used to deploy an endpoint.  This would be applicable to all model
+                          types where an endpoint needs to be deployed (Sagemaker Model, Sagemaker Registry Model,
+                          Sagemaker Jumpstart (without an endpoint))
+    :param accelerator_type: SageMaker Elastic Inference accelerator type to deploy to the model endpoint instance for
+                             making inferences to the model.  This would be applicable to all model types where an
+                             endpoint needs to be deployed (Sagemaker Model, Sagemaker Registry Model, Sagemaker
+                             Jumpstart (without an endpoint))
+    :param custom_attributes: Provides additional information about a request for an inference submitted to a model
+                              hosted at an Amazon SageMaker endpoint. Not applicable for AWS Bedrock Models. The
+                              information is an opaque value that is forwarded verbatim. You could use this value, for
+                              example, to provide an ID that you can use to track a request or to provide other metadata
+                              that a service endpoint was programmed to process. The value must consist of no more than
+                              1024 visible US-ASCII characters as specified in Section 3.3.6. Field Value Components of
+                              the Hypertext Transfer Protocol (HTTP/1.1).
+    :param  tags: List of tags to be added to be added to resources created by Margaret container (For instance, if we
+                  create a SageMaker Endpoint, we pass on these tags to it as well). This is not a field in the analysis
+                  config, but will be populated from the JobConfig
+    :param kms_key_id: The AWS Key Management Service (AWS KMS) key that Amazon SageMaker uses to encrypt data on the
+                       the storage volume attached to the ML compute instance(s) that run the processing job. This is
+                       not a field in the analysis config, but will be populated from the JobConfig
     """
-    endpoint_name: str
-    model_id: str
-    model_name: str
-    predictor: PredictorBase
+
+    model_type: ModelType
+    model_identifier: Optional[str] = None
+    model_version: Optional[str] = "*"
+    endpoint_name: Optional[str] = None
+    endpoint_name_prefix: Annotated[
+        str, AfterValidator(check_endpoint_name_prefix_matches_regex)
+    ] = DEFAULT_ENDPOINT_NAME_PREFIX
+    instance_count: Optional[int] = None
+    instance_type: Optional[str] = None
+    accelerator_type: Optional[str] = None
+    custom_attributes: Optional[str] = None
+    # These two fields should not be read from analysis config. Instead, they will be read from the job config.
+    # Pydantic ignores fields starting with an underscore
+    _tags: Optional[List[Tag]] = None
+    _kms_key_id: Optional[str] = None
 
 def wait_for_sagemaker_endpoint(
     sagemaker_session: sagemaker.session.Session,

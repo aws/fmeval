@@ -13,7 +13,8 @@ from sagemaker.jumpstart.model import JumpStartModel as SDKJumpStartModel
 from sagemaker.predictor import retrieve_default
 from typing import Optional
 from dataclasses import dataclass
-from model_runners.util import SagemakerModelInvocationParameters
+from util import SageMakerModelDeploymentConfig, SagemakerEndpointUsageState, OUTPUT, INPUT_LOG_PROB
+from model_runner import ModelRunner
 
 logger = logging.getLogger(__name__)
 
@@ -25,23 +26,29 @@ class JumpStartModelRunner(ModelRunner):
 
     def __init__(
         self,
-        model_invocation_params: SagemakerModelInvocationParameters,
-        composer: ContentComposer,
-        extractor: Extractor,
-        model_deployment_config: ModelDeploymentConfig,
+        self,
+        model_deployment_config: SageMakerModelDeploymentConfig,
         sagemaker_session: sagemaker.session.Session,
+        endpoint_name: str,
+        model_id: str,
+        model_name: str,
+        content_template: str,
+        output: str,
+        probability: str,
+        content_type: str = "application/json",
+        accept_type: str = "application/json"
     ):
         """
         :param sagemaker_session: SageMaker session to be reused.
-        :param model_deployment_config: ModelDeploymentConfig that defines how the model is deployed
+        :param model_deployment_config: SageMakerModelDeploymentConfig that defines how the model is deployed
         """
         super().__init__()
         self._sagemaker_session: sagemaker.session.Session = sagemaker_session
         self._model_deployment_config = model_deployment_config
         self._predictor = None
         self._endpoint_name = self._model_deployment_config.endpoint_name
-        self._composer = composer
-        self._extractor = extractor
+        self._composer = create_content_composer(content_template, content_type)
+        self._extractor = create_extractor(output, probability, accept_type)
 
         # to pass mypy check
         assert (
@@ -57,7 +64,7 @@ class JumpStartModelRunner(ModelRunner):
         self.endpoint_usage_state = SagemakerEndpointUsageState(start_time=time.time(), num_calls=0, in_service=False)
 
         self._sm_predictor = sagemaker.predictor.Predictor(
-            endpoint_name=model_invocation_params.endpoint_name,
+            endpoint_name=endpoint_name,
             sagemaker_session=self._sagemaker_session,
             # we only support JSON format model input/output now
             serializer=sagemaker.serializers.JSONSerializer(),
@@ -68,7 +75,7 @@ class JumpStartModelRunner(ModelRunner):
         # by exception or sys.exit (https://docs.python.org/library/atexit.html)
         atexit.register(self.clean_up)
 
-    def create_from_model(self) -> SagemakerModelInvocationParameters:
+    def create_from_model(self):
         """
         Create JumpStart model
         :return SagemakerModelInvocationParameters: parameters related to JumpStart model invocation
@@ -92,10 +99,8 @@ class JumpStartModelRunner(ModelRunner):
             tags=self._model_deployment_config.tags,
         )
         self._endpoint_name = endpoint_name
-        model_invocation_parameters = SagemakerModelInvocationParameters(predictor=self._predictor)
-        return model_invocation_parameters
 
-    def create_from_endpoint(self) -> SagemakerModelInvocationParameters:
+    def create_from_endpoint(self):
         """
         Create SageMaker predictor with JumpStart endpoint
         :return SagemakerModelInvocationParameters: parameters related to JumpStart model invocation
@@ -111,8 +116,6 @@ class JumpStartModelRunner(ModelRunner):
             sagemaker_session=self._sagemaker_session,
         )
         self.endpoint_usage_state.in_service = True
-        model_invocation_parameters = SagemakerModelInvocationParameters(predictor=self._predictor)
-        return model_invocation_parameters
 
     def predict(self, data: Union[str, List[str]]) -> Dict:
         """

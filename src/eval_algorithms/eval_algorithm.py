@@ -38,9 +38,8 @@ class EvalOutput:
 
     eval_name: str
     dataset_score: float
-    sample_scores: List[float]
-    categories: Optional[List[str]] = None
     category_scores: Optional[List[CategoryScore]] = None
+    output_path: str = None
 
 class EvalAlgorithmInterface(ABC):
     """
@@ -51,14 +50,13 @@ class EvalAlgorithmInterface(ABC):
 
     eval_name: str
 
-    def __init__(self, model: Optional[ModelRunner], eval_algorithm_config: EvalAlgorithmConfig):
+    def __init__(self, eval_algorithm_config: EvalAlgorithmConfig):
         """Initialize an instance of a subclass of EvalAlgorithmConfig
 
         :param eval_algorithm_config: An instance of the subclass of EvalAlgorithmConfig specific to the
                                             current evaluation.
         """
         self.eval_algorithm_config = eval_algorithm_config
-        self.model = model
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -74,7 +72,7 @@ class EvalAlgorithmInterface(ABC):
             )
 
     def evaluate(self, model: Optional[ModelRunner], dataset_name: Optional[str] = None,
-             custom_dataset_config: Optional[DataConfig] = None) -> EvalOutput:
+             custom_dataset_config: Optional[DataConfig] = None, promtp_template: str = None, save: bool = False) -> EvalOutput:
         dataset_name = custom_dataset_config.dataset_name
         if dataset_name:
             if dataset_name and dataset_name not in EVAL_DATASETS[self.eval_name]:
@@ -82,6 +80,11 @@ class EvalAlgorithmInterface(ABC):
             dataset = DATASET_CONFIGS[dataset_name]
         dataset = DataLoader.get_dataset(dataset_name)
         dataset_score = dataset.map(self.evaluate_sample).avg()
+
+        if save:
+            ## TODO: Write model input, model output, sample scores to local file
+            pass
+
         return EvalOutput(
             eval_name=self.EVAL_NAME,
             dataset_score=dataset_score,
