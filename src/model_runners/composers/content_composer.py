@@ -4,7 +4,6 @@ import json
 from typing import List, Dict, Union
 
 from model_runners.composers.template import VanillaTemplate
-from infra.utils.sm_exceptions import CustomerError
 
 
 class ContentComposer(abc.ABC):
@@ -24,7 +23,7 @@ class ContentComposer(abc.ABC):
         try:
             return json.loads(substituted_content)
         except Exception as e:
-            raise CustomerError(
+            raise UserError(
                 f"Unable to load a JSON object with content_template '{self.vanilla_template.template}'. ", e
             )
 

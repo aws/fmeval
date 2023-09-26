@@ -1,16 +1,15 @@
 from typing import IO
 from abc import ABC, abstractmethod
 from s3fs import S3FileSystem
-from infra.utils.sm_exceptions import CustomerError
 
 
-class DataResource(ABC):
+class DataSource(ABC):
     """
     Managed data resource
     """
-
     def __init__(self, uri: str):
         self._uri = uri
+        s3 = S3FileSystem()
 
     @property
     def uri(self) -> str:
@@ -20,7 +19,8 @@ class DataResource(ABC):
         return self._uri
 
 
-class DataFile(DataResource):
+
+class DataFile(DataSource):
     """
     Managed data file resource
     """
@@ -35,7 +35,6 @@ class DataFile(DataResource):
         :return: File object
         """
 
-
 class LocalDataFile(DataFile):
     """
     Datafile class for local files
@@ -48,7 +47,7 @@ class LocalDataFile(DataFile):
         try:
             return open(self.uri, mode)
         except Exception as e:
-            raise CustomerError(f"Unable to open '{self.uri}'. Please make sure the local file path is valid.") from e
+            raise UserError(f"Unable to open '{self.uri}'. Please make sure the local file path is valid.") from e
 
 
 class S3DataFile(DataFile):
@@ -64,4 +63,4 @@ class S3DataFile(DataFile):
         try:
             return self._s3.open(self.uri, mode=mode)
         except Exception as e:
-            raise CustomerError(f"Unable to open '{self.uri}'. Please make sure the s3 file path is valid.") from e
+            raise UserError(f"Unable to open '{self.uri}'. Please make sure the s3 file path is valid.") from e

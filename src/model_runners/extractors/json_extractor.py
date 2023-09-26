@@ -2,9 +2,7 @@ import logging
 import numpy as np
 
 from typing import List, Union, Dict, Any, Optional
-from orchestrator.utils.util import (
-    require,
-)
+
 from data_loaders.utils.util import (
     get_nested_list_levels,
     has_only_valid_types_in_nested_list,
@@ -13,71 +11,15 @@ from data_loaders.utils.util import (
     has_only_valid_types,
 )
 from data_loaders.utils.jmespath_util import compile_jmespath
-from infra.utils.sm_exceptions import CustomerError
-from model_runners.extractors.extractor_base import Extractor, ExtractorFacade
+from model_runners.extractors.extractor_base import Extractor
 
 
 logger = logging.getLogger(__name__)
 
 
-class JsonExtractorFacade(ExtractorFacade):
+class JsonExtractor(Extractor):
     """
-    Facade class for JSON model response extractor.
-    """
-
-    def __init__(
-        self,
-        output_jmespath_expression: Optional[str] = None,
-        probability_jmespath_expression: Optional[str] = None,
-        label_headers_jmespath_expression: Optional[str] = None,
-    ):
-        """
-        :param output_jmespath_expression: JMESPath expression of output
-        :param probability_jmespath_expression: JMESPath expression of probability
-        :param label_headers_jmespath_expression: JMESPath expression of label headers
-        """
-        self.output_extractor = (
-            JsonOutputExtractor(output_jmespath_expression, label_headers_jmespath_expression)
-            if output_jmespath_expression
-            else None
-        )
-        self.probability_extractor = (
-            JsonProbabilityExtractor(probability_jmespath_expression) if probability_jmespath_expression else None
-        )
-
-    def extract_probability(self, data: Union[List, Dict], num_records: int) -> Optional[List]:
-        """
-        Extract probabilities from JSON model output
-
-        :param data: Model response. The probability_jmespath_expression is used to
-          extract the predicted softmax probabilities. Each record in the extracted probabilities
-          will be a list of list of floats. Examples for the extracted probabilities:
-          - data: [[0.6],[0.3],[0.1]], num_records: 1
-          - data: [ [[0.6],[0.3],[0.1]] ], num_records: 1
-          - data: [ [[0.6]], [[0.1]] ], num_records: 2
-        :param num_records: number of inference records in the model output
-        :return: list of a list, each element is a list of probabilities.
-        """
-        return self.probability_extractor.extract(data, num_records) if self.probability_extractor else None
-
-    def extract_output(self, data: Union[List, Dict], num_records: int) -> Optional[Union[List, str, float]]:
-        """
-        Extract output from JSON model output
-
-        :param data: Model response. The output_jmespath_expression is used to
-          extract the predicted output. The predicted output can be one of these,
-          - str - for tasks like Summarization, Q&A etc Union[str, List[str]]  and (len(List[str]) == 1)
-          - float for regression. Union[float, List[float]] and (len(List[float]) == 1)
-          - List[float] - for Classification. In this use case, we have to infer the label based on the highest probability. List[float] and len(List[float]) > 1
-        :param num_records: number of inference records in the model output
-        :return: model output
-        """
-        return self.output_extractor.extract(data, num_records) if self.output_extractor else None
-
-
-class JsonProbabilityExtractor(Extractor):
-    """
-    JSON model response probability extractor
+    JSON model response extractor
     """
 
     def __init__(self, probability_jmespath_expression: str):
@@ -86,8 +28,12 @@ class JsonProbabilityExtractor(Extractor):
         """
         self.probability_jmespath_expression = probability_jmespath_expression
         self.probability_jmespath = compile_jmespath(probability_jmespath_expression)
+        self.output_jmespath_expression = output_jmespath_expression
+        self.output_jmespath = compile_jmespath(output_jmespath_expression)
+        self.label_headers_jmespath_expression = label_headers_jmespath_expression
+        self.label_headers_jmespath = compile_jmespath(label_headers_jmespath_expression)
 
-    def extract(self, data: Union[List, Dict], num_records: int) -> List:
+    def extract_probability(self, data: Union[List, Dict], num_records: int) -> List:
         """
         Extract probabilities from JSON model output
 
@@ -101,11 +47,11 @@ class JsonProbabilityExtractor(Extractor):
         :return: list of a list, each element is a list of probabilities.
         """
         probabilities = self.probability_jmespath.search(data)
-        self._validate(data, probabilities, num_records)
+        self._validate_probability(data, probabilities, num_records)
 
         return probabilities
 
-    def _validate(self, data: Union[List, Dict], extracted: Any, num_records: int) -> None:
+    def _validate_probability(self, data: Union[List, Dict], extracted: Any, num_records: int) -> None:
         """
         Validate whether the extracted probability follows the expected probability format
 
@@ -130,7 +76,7 @@ class JsonProbabilityExtractor(Extractor):
                     "Invalid probability value types in '{}' in model prediction '{}'".format(probs, data),
                 )
         else:
-            raise CustomerError(
+            raise UserError(
                 "Invalid format of probability '{}' extracted by '{}' in model prediction '{}'".format(
                     extracted, self.probability_jmespath_expression, data
                 )
@@ -146,24 +92,7 @@ class JsonProbabilityExtractor(Extractor):
             ),
         )
 
-
-class JsonOutputExtractor(Extractor):
-    """
-    JSON model response output extractor
-    """
-
-    def __init__(self, output_jmespath_expression: str, label_headers_jmespath_expression: Optional[str] = None):
-        """
-        :param output_jmespath_expression: JMESPath expression of output
-        :param label_headers_jmespath_expression: Optional JMESPath expression of output
-        """
-        self.output_jmespath_expression = output_jmespath_expression
-        self.output_jmespath = compile_jmespath(output_jmespath_expression)
-        self.label_headers_extractor = (
-            JsonLabelHeadersExtractor(label_headers_jmespath_expression) if label_headers_jmespath_expression else None
-        )
-
-    def extract(self, data: Union[List, Dict], num_records: int) -> Union[List, str, float]:
+    def extract_output(self, data: Union[List, Dict], num_records: int) -> Union[List, str, float]:
         """
         Extract output from JSON model output
 
@@ -176,7 +105,7 @@ class JsonOutputExtractor(Extractor):
         :return: model output
         """
         output = self.output_jmespath.search(data)
-        self._validate(data, output, num_records)
+        self._validate_output(data, output, num_records)
 
         if self.label_headers_extractor:
             # case: classification
@@ -184,7 +113,7 @@ class JsonOutputExtractor(Extractor):
 
         return output
 
-    def _validate(self, data: Union[List, Dict], extracted: Any, num_records: int):
+    def _validate_output(self, data: Union[List, Dict], extracted: Any, num_records: int):
         """
         Validate extracted output
 
@@ -316,7 +245,7 @@ class JsonOutputExtractor(Extractor):
             result = [label_headers[row][max_index] for row, max_index in enumerate(max_indices)]  # type: ignore
 
         if not result:
-            raise CustomerError(
+            raise UserError(
                 "Failed to get classification result: output '{}' is not complied with label headers '{}'".format(
                     output, label_headers
                 )
@@ -324,23 +253,7 @@ class JsonOutputExtractor(Extractor):
 
         return result
 
-
-class JsonLabelHeadersExtractor(Extractor):
-    """
-    JSON model response classification label headers extractor
-    """
-
-    def __init__(
-        self,
-        label_headers_jmespath_expression: str,
-    ):
-        """
-        :param label_headers_jmespath_expression: JMESPath expression of label headers
-        """
-        self.label_headers_jmespath_expression = label_headers_jmespath_expression
-        self.label_headers_jmespath = compile_jmespath(label_headers_jmespath_expression)
-
-    def extract(self, data: Union[List, Dict], num_records: int) -> List[str]:
+    def extract_label_headers(self, data: Union[List, Dict], num_records: int) -> List[str]:
         """
         Extract output from JSON model output
 
@@ -350,10 +263,10 @@ class JsonLabelHeadersExtractor(Extractor):
         :return: list of labels
         """
         label_headers = self.label_headers_jmespath.search(data)
-        self._validate(data, label_headers, num_records)
+        self._validate_label_headers(data, label_headers, num_records)
         return label_headers
 
-    def _validate(self, data: Union[List, Dict], extracted: Any, num_records: int):
+    def _validate_label_headers(self, data: Union[List, Dict], extracted: Any, num_records: int):
         """
         Validate if the extracted label headers
 

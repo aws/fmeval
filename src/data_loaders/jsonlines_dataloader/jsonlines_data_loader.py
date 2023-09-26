@@ -1,8 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass
 
-from orchestrator.utils import util
-from data_loaders.headers.header_factory import HeaderFactory
 from data_loaders.data_resources.data_resources import DataFile
 from data_loaders.jsonlines_dataloader.jsonlines_parser import JsonLinesParser
 from data_loaders.headers.header_generator import HeaderGeneratorConfig
@@ -18,9 +16,9 @@ import json
 
 
 @dataclass(frozen=True)
-class JsonLinesDatasetReaderConfig:
+class JsonLinesDataLoaderConfig:
     """
-    This class is used to configure the JsonLinesDatasetReader. Other parameters are inherited from DatasetReaderConfig.
+    This class is used to configure the JsonLinesDataLoader. Other parameters are inherited from DataLoaderConfig.
 
     Attributes:
         jsonlines_parser: JsonLinesParser object created with customer provided JMESPaths, used to parse dataset lines.
@@ -35,15 +33,15 @@ class JsonLinesDatasetReaderConfig:
     headers: List[str]
 
 
-class JsonLinesDatasetReader:
+class JsonLinesDataLoader:
     """
     This class reads a JSON Lines dataset and returns a Ray Dataset.
     """
 
     @staticmethod
-    def read_dataset(config: JsonLinesDatasetReaderConfig) -> ray.data.Dataset:
+    def read_dataset(config: JsonLinesDataLoaderConfig) -> ray.data.Dataset:
         """
-        :param config: see JsonLinesDatasetReaderConfig docstring.
+        :param config: see JsonLinesDataLoaderConfig docstring.
         :return: a Ray Dataset object of the parsed customer dataset with headers.
         """
         return ray.data.read_datasource(datasource=CustomJSONLinesDatasource(config), paths=config.data_file.uri)
@@ -68,18 +66,18 @@ class JsonLinesDatasetReader:
         dataset.write_datasource(datasource=CustomJSONLinesDatasource(), path=path, dataset_uuid=dataset_uuid)
 
     @staticmethod
-    def _get_headers(config: JsonLinesDatasetReaderConfig, dataset_line: Dict) -> List[str]:  # pragma: no cover
+    def _get_headers(config: JsonLinesDataLoaderConfig, dataset_line: Dict) -> List[str]:  # pragma: no cover
         """
-        This method is used to get headers from the HeaderFactory.
+        This method is used to get headers.
 
-        :param config: see JsonLinesDatasetReaderConfig docstring.
+        :param config: see JsonLinesDataLoaderConfig docstring.
         :param dataset_line: dataset line used to deduce the number of dataset columns of each type.
         :return: list of dataset headers, including customer provided feature header and artificially generated headers
                  for target_output, inference_output and category if these columns exist.
         """
         line = config.jsonlines_parser.parse_dataset_line(dataset_line, config.dataset_name)
         header_config = HeaderGeneratorConfig.create_from_jsonlines(line, config.headers)
-        output_headers = HeaderFactory.get_headers(config.headers, header_config)
+        output_headers = get_headers(config.headers, header_config)
         return output_headers
 
     @staticmethod
@@ -131,31 +129,31 @@ class CustomJSONLinesDatasource(FileBasedDatasource):
     {"key": [20, "hello"]}
 
     Attributes:
-          config: The JSONLinesDatasetReaderConfig used by _read_file when calling
-            JsonLinesDatasetReader._parse_dataset_line. Optional, because a config
+          config: The JSONLinesDataLoaderConfig used by _read_file when calling
+            JsonLinesDataLoader._parse_dataset_line. Optional, because a config
             is not required for _write_block.
     """
 
     _FILE_EXTENSION = "jsonl"  # configures the extension for files written by _write_block
 
-    def __init__(self, config: Optional[JsonLinesDatasetReaderConfig] = None):
+    def __init__(self, config: Optional[JsonLinesDataLoaderConfig] = None):
         if config:
             self.config = config
 
-    def _read_file(self, f: "pyarrow.NativeFile", path: str, **reader_args) -> pyarrow.Table:  # pragma: no cover
+    def _read_file(self, f: "pyarrow.NativeFile", path: str, **loader_args) -> pyarrow.Table:  # pragma: no cover
         """
         Reads the JSON Lines dataset file given by `path` using the standard json library
         and returns a pyarrow.Table representing the dataset.
 
         :param f: Unused. Required so that this class conforms to FileBasedDatasource.
         :param path: The path to the dataset JSON Lines file
-        :param reader_args: Unused. Required so that this class conforms to FileBasedDatasource.
+        :param loader_args: Unused. Required so that this class conforms to FileBasedDatasource.
         """
         with open(path) as file_handle:
             json_lines = [json.loads(line) for line in file_handle]
-            dataset_headers = JsonLinesDatasetReader._get_headers(self.config, json_lines[0])
+            dataset_headers = JsonLinesDataLoader._get_headers(self.config, json_lines[0])
             parsed_json_lines = [
-                JsonLinesDatasetReader._parse_dataset_line(
+                JsonLinesDataLoader._parse_dataset_line(
                     line, self.config.jsonlines_parser, dataset_headers, self.config.dataset_name
                 )
                 for line in json_lines

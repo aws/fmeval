@@ -4,7 +4,6 @@ from jmespath.parser import ParsedResult
 from dataclasses import dataclass
 from data_loaders.utils.constants import JmespathQueryType
 from data_loaders.utils.jmespath_util import search_jmespath
-from orchestrator.utils import util
 
 
 @dataclass(frozen=True)

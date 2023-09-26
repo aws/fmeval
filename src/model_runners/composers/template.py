@@ -3,8 +3,6 @@ from string import Template
 from typing import List
 import re
 
-from orchestrator.utils import util
-
 logger = logging.getLogger(__name__)
 
 

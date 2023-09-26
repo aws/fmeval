@@ -1,40 +1,32 @@
 import ray.data
 from typing import Union, Type
-from orchestrator.configs.analysis_config import DatasetConfig, DatasetMimeType
-from data_loaders.data_resources.data_resource_factory import (
-    DataResourceFactory,
-)
-from data_loaders.data_resources.data_resources import DataFile, DataResource
-from data_loaders.json_dataloader.json_dataset_reader import (
-    JsonDatasetReader,
-    JsonDatasetReaderConfig,
-)
-from data_loaders.json_dataloader.json_parser import (
-    JsonParser,
-    JsonParserConfig,
-)
-from data_loaders.jsonlines_dataloader.jsonlines_dataset_reader import (
-    JsonLinesDatasetReader,
-    JsonLinesDatasetReaderConfig,
-)
-from data_loaders.jsonlines_dataloader.jsonlines_parser import (
-    JsonLinesParser,
-    JsonLinesParserConfig,
-)
-from infra.utils.sm_exceptions import AlgorithmError
+from ..data_loaders.data_sources import DataFile, DataSource
+from ..data_loaders.util import DataConfig, get_data_source
 
+from ..data_loaders.json_dataloader.json_data_loader import (
+    JsonDataLoader,
+    JsonDataLoaderConfig,
+)
+from ..data_loaders.json_dataloader.json_parser import JsonParser, JsonParserConfig
+
+from ..data_loaders.jsonlines_dataloader.jsonlines_data_loader import (
+    JsonLinesDataLoader,
+    JsonLinesDataLoaderConfig,
+)
+from ..data_loaders.jsonlines_dataloader.jsonlines_parser import JsonLinesParser, JsonLinesParserConfig
+from ..exceptions import AlgorithmError
 
 class DataLoader:
     @staticmethod
-    def get_dataset(config: DatasetConfig) -> ray.data.Dataset:
+    def get_dataset(config: DataConfig) -> ray.data.Dataset:
         parser = DataLoader._get_parser(config)
-        data_resource = DataResourceFactory.get_data_resource(config.dataset_uri)
-        dataset_reader_config = DataLoader._get_dataset_reader_config(parser, data_resource, config)
-        dataset_reader = DataLoader._get_dataset_reader(config)
-        return dataset_reader.read_dataset(dataset_reader_config)  # type: ignore
+        data_source = get_data_source(config.dataset_uri)
+        data_loader_config = DataLoader._get_data_loader_config(parser, data_source, config)
+        data_loader = DataLoader._get_data_loader(config)
+        return data_loader.read_dataset(data_loader_config)  # type: ignore
 
     @staticmethod
-    def _get_parser(config: DatasetConfig) -> Union[JsonParser, JsonLinesParser]:
+    def _get_parser(config: DataConfig) -> Union[JsonParser, JsonLinesParser]:
         if config.mime_type == DatasetMimeType.JSON:
             return JsonParser(
                 JsonParserConfig(
@@ -60,34 +52,34 @@ class DataLoader:
             )
 
     @staticmethod
-    def _get_dataset_reader_config(
-        parser: Union[JsonParser, JsonLinesParser], data_resource: DataResource, config: DatasetConfig
-    ) -> Union[JsonDatasetReaderConfig, JsonLinesDatasetReaderConfig]:
+    def _get_data_loader_config(
+        parser: Union[JsonParser, JsonLinesParser], data_ource: DataSource, config: DataConfig
+    ) -> Union[JsonDataLoaderConfig, JsonLinesDataLoaderConfig]:
         if config.mime_type == DatasetMimeType.JSON:
             if not isinstance(parser, JsonParser):
                 raise AlgorithmError(f"parser should be a JsonParser but is {type(parser)}.")
-            if not isinstance(data_resource, DataFile):
+            if not isinstance(data_ource, DataFile):
                 raise AlgorithmError(
                     f"JSON datasets must be stored in a single file. "
-                    f"Provided dataset has type {type(data_resource)}."
+                    f"Provided dataset has type {type(data_source)}."
                 )
-            return JsonDatasetReaderConfig(
+            return JsonDataLoaderConfig(
                 json_parser=parser,
-                data_file=data_resource,
+                data_file=data_source,
                 dataset_name=config.dataset_name,
                 headers=config.headers,
             )
         elif config.mime_type == DatasetMimeType.JSONLINES:
             if not isinstance(parser, JsonLinesParser):
                 raise AlgorithmError(f"parser should be a JsonLinesParser but is {type(parser)}.")
-            if not isinstance(data_resource, DataFile):
+            if not isinstance(data_source, DataFile):
                 raise AlgorithmError(
                     f"JSONLines datasets must be stored in a single file. "
-                    f"Provided dataset has type {type(data_resource)}."
+                    f"Provided dataset has type {type(data_source)}."
                 )
-            return JsonLinesDatasetReaderConfig(
+            return JsonLinesDataLoaderConfig(
                 jsonlines_parser=parser,
-                data_file=data_resource,
+                data_file=data_source,
                 dataset_name=config.dataset_name,
                 headers=config.headers,
             )
@@ -98,11 +90,11 @@ class DataLoader:
             )
 
     @staticmethod
-    def _get_dataset_reader(config: DatasetConfig) -> Type[JsonDatasetReader | JsonLinesDatasetReader]:
+    def _get_data_loader(config: DatasetConfig) -> Type[JsonDataLoader | JsonLinesDataLoader]:
         if config.mime_type == DatasetMimeType.JSON:
-            return JsonDatasetReader
+            return JsonDataLoader
         elif config.mime_type == DatasetMimeType.JSONLINES:
-            return JsonLinesDatasetReader
+            return JsonLinesDataLoader
         else:  # pragma: no cover
             raise AlgorithmError(
                 "Dataset MIME types other than JSON and JSON Lines are not supported. "

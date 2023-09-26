@@ -3,14 +3,12 @@ name = "amazon_fmeval"
 version = "0.1.0"
 description = "Amazon Foundation Model Evaluation"
 license = "Proprietary"
-authors = ["Clarify Team <aws-thundera-dev@amazon.com>"]
+authors = ["Amazon"]
 packages = [
     { include = "*.py", from = "src" },
     { include = "data_loaders", from = "src" },
     { include = "eval_algorithms", from = "src" },
-    { include = "infra", from = "src" },
     { include = "model_runners", from = "src" },
-    { include = "orchestrator", from = "src" },
     { include = "reporting", from = "src" }
 ]
 readme = "README.md"
