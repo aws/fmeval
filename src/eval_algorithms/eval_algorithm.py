@@ -29,7 +29,7 @@ class EvalOutput:
     """
     The class that contains evaluation scores from `EvalAlgorithmInterface`.
 
-    :param eval_type: The name of the evaluation
+    :param eval_name: The name of the evaluation
     :param dataset_score: The aggregated score computed across the whole dataset.
     :param sample_scores: The score(s) for each individual sample (row) in the dataset.
     :param categories: The category for each individual sample (row) in the dataset.
@@ -44,8 +44,6 @@ class EvalOutput:
 class EvalAlgorithmInterface(ABC):
     """
     Interface class for eval algorithms.
-
-    All the eval algorithm classes inheriting this interface will be registered in the registry.
     """
 
     eval_name: str
@@ -60,7 +58,7 @@ class EvalAlgorithmInterface(ABC):
 
     def __init_subclass__(cls, **kwargs):
         """
-        Method to register algorithms in the EvalAlgorithmRegistry.
+        Method to register algorithms.
 
         :raises DuplicateEvalNameError if the name of the evaluation being initialized already exists.
         """
@@ -71,31 +69,27 @@ class EvalAlgorithmInterface(ABC):
                 f"Eval algorithm with name {cls.eval_name} already exists. " f"Please rename the class {cls.__name__}"
             )
 
-    def evaluate(self, model: Optional[ModelRunner], dataset_name: Optional[str] = None,
-             custom_dataset_config: Optional[DataConfig] = None, promtp_template: str = None, save: bool = False) -> EvalOutput:
-        dataset_name = custom_dataset_config.dataset_name
-        if dataset_name:
-            if dataset_name and dataset_name not in EVAL_DATASETS[self.eval_name]:
-                raise UserError()
-            dataset = DATASET_CONFIGS[dataset_name]
-        dataset = DataLoader.get_dataset(dataset_name)
-        dataset_score = dataset.map(self.evaluate_sample).avg()
+    @abstractmethod
+    def evaluate(self, model: Optional[ModelRunner], custom_dataset_config: Optional[DataConfig] = None,
+                 prompt_template: str = None, save: bool = False) -> EvalOutput:
+        """
+        Computes the evaluation score for dataset(s).
 
-        if save:
-            ## TODO: Write model input, model output, sample scores to local file
-            pass
-
-        return EvalOutput(
-            eval_name=self.EVAL_NAME,
-            dataset_score=dataset_score,
-        )
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param custom_dataset_config: Custom dataset for evaluation. If not provided, evaluation will use
+                                      the built-in datasets.
+        :param prompt_template: A template which can be used to generate prompts which is optional for
+                                      the built-in datasets.
+        :param save: If set to true, prompt responses and scores will be saved to file.
+        :return: evaluation scores for the dataset.
+        """
 
     @abstractmethod
     def evaluate_sample(
         self, model_input: Optional[str] = None, target_output: Optional[str] = None, model_output: Optional[str] = None
     ) -> float:
         """
-        Computes the evaluation score for each instance.
+        Computes the evaluation score for one instance.
 
         :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
                              evaluation

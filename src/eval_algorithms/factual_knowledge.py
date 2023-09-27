@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from statistics import mean
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from ..exceptions import UserError
 from eval_algorithm import EvalOutput, EvalAlgorithmConfig, EvalAlgorithmInterface
 
@@ -36,23 +36,16 @@ class FactualKnowledge(EvalAlgorithmInterface):
         self,
         prompt: str,
         prompt_response: Optional[str],
-        expected_response: Optional[str] = None,
-    ) -> EvalOutput:
+        expected_response: Optional[str],
+    ) -> List[int]:
         """
-        Factual knowledge evaluation.
+        Factual knowledge evaluation for one sample.
 
         Given an input prompt e.g., "London is the capital of" and expected answers(target_output) like
         ["United Kingdom", "England"], if the model is able to arrive at the correct completion(model_output).
         Generating any of the expected answers is considered a correct completion.
         Since models might generate long outputs, this evaluation does not look for an exact match.
         It considers the completion to be correct if the answer is contained within the model output generated.
-
-        :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
-                             evaluation
-        :param model_input: An instance of ModelInput which contains the prompts on which the model needs to be
-                            evaluated on
-        :param target_output: The expected responses for the prompts in model_input
-        :return: an instance of EvalOutput that contains the score computed for prompts and responses.
         """
         if expected_response is None:
             raise UserError("Missing required input: expected_response, for FactualKnowledge algorithm")
@@ -67,30 +60,43 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         possible_targets = expected_response.split(self.eval_algorithm_config.target_output_delimiter)
         prompt_response_lower_case = prompt_response.lower()
+        eval_score = int(any([t.lower() in prompt_response_lower_case for t in possible_targets]))
+        return eval_score
+
+    def evaluate(self, model: Optional[ModelRunner], custom_dataset_config: Optional[DataConfig] = None,
+                 prompt_template: str = None, save: bool = False) -> EvalOutput:
+        """
+        Factual knowledge eval algo for one dataset.
+        """
+        if custom_dataset_config:
+            dataset_config = custom_dataset_config
+            dataset_name = custom_dataset_config.dataset_name
+        else:
+            dataset_name = EVAL_DATASETS[self.eval_name]
+            dataset_config = DATASET_CONFIGS[dataset_name]
+
+        dataset = DataLoader.get_dataset(dataset_config)
+        if 'prompt_response' not in dataset.colnames():
+            dataset['prompt_response'] = model.predict(dataset['prompt'])
+        sample_scores = dataset.map(lambda x: self.evaluate_sample(x['prompt'], x['prompt_response'], x['expected_output']))
+        dataset_score = sample_scores.mean()
+
+        category_scores_mapping: Dict = defaultdict(lambda: {"sum_score": 0, "count": 0})
+        for eval_output, category in zip(sample_scores, dataset.categories):
+            category_scores_mapping[category]["sum_score"] += eval_output.eval_score
+            category_scores_mapping[category]["count"] += 1
+
+        category_scores = [
+            CategoryScore(category, category_score_data["sum_score"] / category_score_data["count"])
+            for category, category_score_data in category_scores_mapping.items()
+        ]
+
+        if save:
+            ## TODO: Write model input, model output, sample scores to local file
+            pass
+
         return EvalOutput(
-            eval_type=self.EVAL_NAME,
-            eval_score=int(any([t.lower() in prompt_response_lower_case for t in possible_targets])),
+            eval_name=self.EVAL_NAME,
+            dataset_score=dataset_score,
+            category_scores=category_scores
         )
-
-    def aggregate(self, aggregation_input: AggregationInput) -> AggregationOutput:
-        """
-        Factual knowledge eval algo aggregation method.
-
-        :param aggregation_input: An instance of AggregationInput containing list of EvalOutputs and categories
-        :returns: an instance of AggregationOutput that contains the aggregation result
-        """
-        AggregationInput.validate_aggregation_input(aggregation_input)
-        dataset_score = mean([eval_output.eval_score for eval_output in aggregation_input.eval_outputs])
-        category_scores = None
-        if aggregation_input.categories:
-            category_scores_mapping: Dict = defaultdict(lambda: {"sum_score": 0, "count": 0})
-            for eval_output, category in zip(aggregation_input.eval_outputs, aggregation_input.categories):
-                category_scores_mapping[category]["sum_score"] += eval_output.eval_score
-                category_scores_mapping[category]["count"] += 1
-
-            category_scores = [
-                CategoryScore(category, category_score_data["sum_score"] / category_score_data["count"])
-                for category, category_score_data in category_scores_mapping.items()
-            ]
-
-        return AggregationOutput(eval_type=self.EVAL_NAME, dataset_score=dataset_score, category_scores=category_scores)
