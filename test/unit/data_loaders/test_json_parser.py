@@ -1,10 +1,10 @@
 from unittest.mock import patch, call, Mock
 import pytest
 from typing import Any, List, NamedTuple, Union, Dict
-from data_loaders.json_parser import JsonParser, ColumnParseArguments
-from exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
-from src.data_loaders.util import DataConfig
-from src.constants import (
+from amazon_fmeval.data_loaders.json_parser import JsonParser, ColumnParseArguments
+from amazon_fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
+from amazon_fmeval.data_loaders.data_config import DataConfig
+from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,

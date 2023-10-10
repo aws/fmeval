@@ -7,16 +7,16 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from constants import (
+from amazon_fmeval.constants import (
     MIME_TYPE_JSON,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from data_loaders.data_config import DataConfig
-from eval_algorithms import CategoryScore, EvalOutput, EvalScore
-from eval_algorithms.summarization_accuracy import (
+from amazon_fmeval.data_loaders.data_config import DataConfig
+from amazon_fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
+from amazon_fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
     SummarizationAccuracy,
     METEOR_SCORE,
@@ -27,7 +27,7 @@ from eval_algorithms.summarization_accuracy import (
     PROMPT_COLUMN_NAME,
     BERT_SCORE,
 )
-from exceptions import EvalAlgorithmClientError
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET = ray.data.from_items(
     [
@@ -381,10 +381,10 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
     def test_summarization_accuracy_evaluate(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
     ):
@@ -439,9 +439,9 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
     def test_summarization_accuracy_evaluate_without_model(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
     ):
@@ -545,8 +545,8 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     def test_summarization_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs

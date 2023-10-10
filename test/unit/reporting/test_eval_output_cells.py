@@ -1,8 +1,8 @@
 from unittest.mock import patch, Mock, call
 
-from eval_algorithms import EvalOutput, EvalScore, CategoryScore
-from reporting.cells import BarPlotCell, TableCell
-from reporting.eval_output_cells import (
+from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
+from amazon_fmeval.reporting.cells import BarPlotCell, TableCell
+from amazon_fmeval.reporting.eval_output_cells import (
     CategoryBarPlotCell,
     RayDatasetTableCell,
     CategoryScoreCell,
@@ -10,7 +10,7 @@ from reporting.eval_output_cells import (
     ScoreCell,
     EvalOutputCell,
 )
-from reporting.constants import (
+from amazon_fmeval.reporting.constants import (
     CATEGORY_BAR_COLOR,
     OVERALL_BAR_COLOR,
     NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
@@ -161,7 +161,7 @@ class TestEvalOutputCells:
         categories = ["nationality", "religion", "age"]
         scores = [0.314, 0.271, 0.888]
         dataset_score = 0.5
-        with patch("reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"):
+        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"):
 
             cell = CategoryScoreCell(categories, scores, "prompt stereotyping", dataset_score)
             assert (
@@ -170,7 +170,7 @@ class TestEvalOutputCells:
                 "The model scores lowest in this category: **religion**. "
             )
 
-    @patch("reporting.eval_output_cells.RayDatasetTableCell", return_value="RayTable")
+    @patch("amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell", return_value="RayTable")
     def test_score_table_cell(self, mock_ray_table):
         """
         GIVEN a valid dataset and score column name
@@ -215,8 +215,8 @@ class TestEvalOutputCells:
         WHEN a ScoreCell is created
         THEN the string representation of the ScoreCell matches what is expected
         """
-        with patch("reporting.eval_output_cells.CategoryScoreCell", return_value="category_score"), patch(
-            "reporting.eval_output_cells.ScoreTableCell", return_value="table"
+        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryScoreCell", return_value="category_score"), patch(
+            "amazon_fmeval.reporting.eval_output_cells.ScoreTableCell", return_value="table"
         ):
             # GIVEN
 
@@ -331,7 +331,7 @@ class TestEvalOutputCells:
         }
         # Patching `CategoryBarPlotCell` due to validation bug with `BarPlotCell`, see
         # `TestCell.test_bar_plot_cell_init_success` for details.
-        with patch("reporting.eval_output_cells.CategoryBarPlotCell", return_value="CategoryBarPlot"):
+        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="CategoryBarPlot"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset, score_column_names=score_column_names)
             expected_cell = "## Summarization accuracy  \n\n**Dataset: Dataset 1**  \n\n### Rouge  \n\n**Overall Score: 0.33**  \n\nScore breakdown per rouge evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n</table>  \n\n### Bert score  \n\n**Overall Score: 0.5**  \n\nScore breakdown per bert score evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n</table>  \n\n### Meteor  \n\n**Overall Score: 0.9**  \n\nScore breakdown per meteor evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n</table>"
             assert str(cell) == expected_cell

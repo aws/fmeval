@@ -7,17 +7,17 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from constants import (
+from amazon_fmeval.constants import (
     MIME_TYPE_JSON,
     CATEGORY_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from eval_algorithms.eval_algorithm import DataConfig
-from eval_algorithms import EvalOutput, CategoryScore, EvalScore
-from eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig, PROMPT_COLUMN_NAME
-from exceptions import EvalAlgorithmClientError
+from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
+from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig, PROMPT_COLUMN_NAME
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 
 class TestFactualKnowledge:
@@ -338,10 +338,10 @@ class TestFactualKnowledge:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.factual_knowledge.get_dataset")
-    @patch("eval_algorithms.factual_knowledge.save_dataset")
-    @patch("eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
     def test_factual_knowledge_evaluate(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
     ):
@@ -419,9 +419,9 @@ class TestFactualKnowledge:
             )
         ],
     )
-    @patch("eval_algorithms.factual_knowledge.get_dataset")
-    @patch("eval_algorithms.factual_knowledge.save_dataset")
-    @patch("eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
     def test_factual_knowledge_evaluate_without_model(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
     ):
@@ -601,8 +601,8 @@ class TestFactualKnowledge:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.factual_knowledge.get_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.factual_knowledge.get_dataset")
     def test_factual_knowledge_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs

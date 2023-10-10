@@ -5,11 +5,7 @@ description = "Amazon Foundation Model Evaluations"
 license = "Proprietary"
 authors = ["Amazon FMEval Team <amazon-fmeval-team@amazon.com>"]
 packages = [
-    { include = "*.py", from = "src" },
-    { include = "data_loaders", from = "src" },
-    { include = "eval_algorithms", from = "src" },
-    { include = "model_runners", from = "src" },
-    { include = "reporting", from = "src" },
+    { include = "amazon_fmeval", from = "src" },
 ]
 readme = "README.md"
 classifiers=[

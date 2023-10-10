@@ -1,9 +1,10 @@
 import pytest
 from unittest.mock import patch
-from data_loaders.jmespath_util import compile_jmespath, search_jmespath
-from exceptions import EvalAlgorithmClientError
 from typing import NamedTuple, Any
-from constants import MODEL_INPUT_COLUMN_NAME
+
+from amazon_fmeval.data_loaders.jmespath_util import compile_jmespath, search_jmespath
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME
 
 
 class TestJmespathUtil:

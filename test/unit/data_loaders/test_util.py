@@ -1,12 +1,12 @@
 import pytest
 from typing import NamedTuple
 from unittest.mock import Mock, patch
-from constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
-from data_loaders.data_sources import LocalDataFile, S3DataFile, DataSource
-from data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
-from data_loaders.util import _get_data_loader, _get_data_loader_config, get_data_source, get_dataset
-from data_loaders.data_config import DataConfig
-from exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
+from amazon_fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, DataSource
+from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
+from amazon_fmeval.data_loaders.util import _get_data_loader, _get_data_loader_config, get_data_source, get_dataset
+from amazon_fmeval.data_loaders.data_config import DataConfig
+from amazon_fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 
 S3_PREFIX = "s3://"
 LOCAL_PREFIX = "file://"
@@ -17,9 +17,9 @@ DIRECTORY_URI = "dir1/dir2/"
 
 
 class TestDataLoaderUtil:
-    @patch("data_loaders.util._get_data_loader", return_value=Mock())
-    @patch("data_loaders.util._get_data_loader_config", return_value=Mock())
-    @patch("data_loaders.util.get_data_source", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader_config", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util.get_data_source", return_value=Mock())
     def test_get_dataset(self, mock_get_data_source, mock_get_data_loader_config, mock_get_data_loader):
         """
         GIVEN a DataConfig
@@ -59,7 +59,7 @@ class TestDataLoaderUtil:
         WHEN _get_data_loader_config is validating the type of its `data_source` argument
         THEN an EvalAlgorithmInternalError is raised
         """
-        with patch("data_loaders.util.isinstance", return_value=False):
+        with patch("amazon_fmeval.data_loaders.util.isinstance", return_value=False):
             config = Mock(spec=DataConfig)
             config.dataset_mime_type = dataset_mime_type
             config.dataset_name = "dataset"
@@ -81,7 +81,7 @@ class TestDataLoaderUtil:
             ),
         ],
     )
-    @patch("data_loaders.util.isinstance", return_value=True)
+    @patch("amazon_fmeval.data_loaders.util.isinstance", return_value=True)
     def test_get_data_loader_config_success(self, mock_isinstance, test_case):
         """
         GIVEN argument validations pass
@@ -124,7 +124,7 @@ class TestDataLoaderUtil:
             assert data_source.uri == dataset_uri
 
     def test_get_data_source_provides_s3_data_source(self):
-        with patch("data_loaders.util.s3") as mock_s3fs:
+        with patch("amazon_fmeval.data_loaders.util.s3") as mock_s3fs:
             mock_s3fs.info = Mock(return_value={"type": "file"})
             mock_s3fs.exists = Mock(return_value=True)
             dataset_uri = S3_PREFIX + DATASET_URI
@@ -145,7 +145,7 @@ class TestDataLoaderUtil:
                 get_data_source(dataset_uri)
 
     def test_get_data_sources_s3_directory_exception(self):
-        with patch("data_loaders.util.s3") as mock_s3fs:
+        with patch("amazon_fmeval.data_loaders.util.s3") as mock_s3fs:
             mock_s3fs.info = Mock(return_value={"type": "directory"})
             mock_s3fs.exists = Mock(return_value=True)
             dataset_uri = S3_PREFIX + DIRECTORY_URI
@@ -164,7 +164,7 @@ class TestDataLoaderUtil:
 
     def test_get_data_source_invalid_s3_path(self):
         dataset_uri = S3_PREFIX + INVALID_DATASET_URI
-        with patch("data_loaders.util.s3") as mock_s3fs:
+        with patch("amazon_fmeval.data_loaders.util.s3") as mock_s3fs:
             mock_s3fs.info = Mock(return_value={"type": "Other"})
             mock_s3fs.exists = Mock(return_value=True)
             with pytest.raises(EvalAlgorithmClientError, match="Invalid s3 path"):

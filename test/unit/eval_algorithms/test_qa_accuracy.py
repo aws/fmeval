@@ -7,10 +7,10 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from constants import MIME_TYPE_JSON
-from eval_algorithms.eval_algorithm import DataConfig
-from eval_algorithms import EvalOutput, CategoryScore, EvalScore
-from eval_algorithms.qa_accuracy import (
+from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
+from amazon_fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
     QAAccuracyConfig,
     F1_SCORE,
@@ -19,7 +19,7 @@ from eval_algorithms.qa_accuracy import (
     _f1_score,
     _exact_match_score,
 )
-from exceptions import EvalAlgorithmClientError
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 QA_DATASET = ray.data.from_items(
     [
@@ -313,10 +313,10 @@ class TestQAAccuracy:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.qa_accuracy.get_dataset")
-    @patch("eval_algorithms.qa_accuracy.save_dataset")
-    @patch("eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
     def test_qa_accuracy_evaluate(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
     ):
@@ -364,9 +364,9 @@ class TestQAAccuracy:
             )
         ],
     )
-    @patch("eval_algorithms.qa_accuracy.get_dataset")
-    @patch("eval_algorithms.qa_accuracy.save_dataset")
-    @patch("eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.get_dataset")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
     def test_qa_accuracy_evaluate_without_model(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
     ):
@@ -448,8 +448,8 @@ class TestQAAccuracy:
             ),
         ],
     )
-    @patch("model_runners.model_runner.ModelRunner")
-    @patch("eval_algorithms.qa_accuracy.get_dataset")
+    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy.get_dataset")
     def test_qa_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs

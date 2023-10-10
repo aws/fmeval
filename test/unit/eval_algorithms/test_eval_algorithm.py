@@ -5,13 +5,13 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from eval_algorithms.eval_algorithm import (
+from amazon_fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
     DataConfig,
 )
-from eval_algorithms import EvalOutput, CategoryScore, EvalScore
-from model_runners.model_runner import ModelRunner
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
+from amazon_fmeval.model_runners.model_runner import ModelRunner
 
 
 class TestEvalAlgorithmInterface:

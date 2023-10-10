@@ -9,9 +9,9 @@ import pandas as pd
 import pytest
 import ray
 
-from constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE
-from eval_algorithms.eval_algorithm import EvalScore
-from eval_algorithms.util import (
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE
+from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
+from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
     aggregate_evaluation_scores,
@@ -21,8 +21,8 @@ from eval_algorithms.util import (
     EvalOutputRecord,
     generate_output_dataset_path,
 )
-from exceptions import EvalAlgorithmInternalError
-from util import camel_to_snake
+from amazon_fmeval.exceptions import EvalAlgorithmInternalError
+from amazon_fmeval.util import camel_to_snake
 
 MODEL_INPUT_COLUMN_NAME = "model_input"
 MODEL_OUTPUT_COLUMN_NAME = "model_output"
