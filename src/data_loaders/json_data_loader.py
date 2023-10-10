@@ -94,8 +94,8 @@ class CustomJSONDatasource(FileBasedDatasource):
             )
             return pyarrow.Table.from_pydict(pydict)
         elif self.config.dataset_mime_type == MIME_TYPE_JSONLINES:
-            json_lines_strings = f.readall().decode().split("\n")
-            json_lines = (json.loads(line) for line in json_lines_strings)
+            json_lines_strings = f.readall().decode().strip().split("\n")
+            json_lines = [json.loads(line) for line in json_lines_strings]
             parsed_json_lines = [
                 parser.parse_dataset_columns(
                     dataset=line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name=self.config.dataset_name

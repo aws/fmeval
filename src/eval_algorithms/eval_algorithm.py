@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-
 from data_loaders.util import DataConfig
 from eval_algorithms import EvalScore, EvalOutput
 from model_runners.model_runner import ModelRunner

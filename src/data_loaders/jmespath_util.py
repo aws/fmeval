@@ -35,7 +35,7 @@ def search_jmespath(
     """
     try:
         result = jmespath_parser.search(dataset)
-        if not result:
+        if result is None:
             raise EvalAlgorithmClientError(
                 f"Failed to find {jmespath_query_type} columns in dataset `{dataset_name}` using JMESPath "
                 f"query '{jmespath_parser.expression}'."
