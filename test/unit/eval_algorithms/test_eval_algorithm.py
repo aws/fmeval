@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import Optional, NamedTuple, List
+from typing import List, NamedTuple, Optional
 from contextlib import nullcontext as does_not_raise
 
 import pytest

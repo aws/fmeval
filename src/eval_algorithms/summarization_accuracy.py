@@ -83,7 +83,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
     of quality metrics based on overlapping between words (ROUGE and METEOR) and similarity scores (bert scores)
     """
 
-    def __init__(self, eval_algorithm_config: SummarizationAccuracyConfig):
+    def __init__(self, eval_algorithm_config: SummarizationAccuracyConfig = SummarizationAccuracyConfig()):
         """Default constructor
 
         :param eval_algorithm_config: Summarization Accuracy eval algorithm config.
