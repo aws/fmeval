@@ -1,0 +1,89 @@
+from unittest.mock import Mock, patch
+
+from constants import MIME_TYPE_JSON
+from model_runners.sm_model_runner import SageMakerModelRunner
+
+ENDPOINT_NAME = "valid_endpoint_name"
+CUSTOM_ATTRIBUTES = "CustomAttributes"
+
+CONTENT_TEMPLATE = '{"data":"$prompt"}'
+PROMPT = "This is the model input"
+MODEL_INPUT = '{"data": "' + PROMPT + '"}'
+
+OUTPUT = "This is the model output"
+LOG_PROBABILITY = 0.9
+OUTPUT_JMES_PATH = "predictions.output"
+LOG_PROBABILITY_JMES_PATH = "predictions.log_prob"
+MODEL_OUTPUT = {"predictions": {"output": OUTPUT, "log_prob": LOG_PROBABILITY}}
+
+# NOTE: Here the original class name can be used to mock the class, because sm_model_runner.py uses "import sagemaker"
+# and then refers to Predictor class by its full path. If the module uses "from sagemaker.predictor import Predictor"
+# then class name below should be changed to "model_runners.Predictor". see [1] for the reasons.
+# [1] https://docs.python.org/3/library/unittest.mock.html#where-to-patch
+
+
+class TestSageMakerModelRunner:
+    @patch("sagemaker.session.Session")
+    @patch("sagemaker.deserializers.JSONDeserializer")
+    @patch("sagemaker.serializers.JSONSerializer")
+    @patch("sagemaker.predictor.Predictor")
+    def test_sm_model_runner_init(
+        self, sagemaker_predictor_class, json_serializer_class, json_deserializer_class, sagemaker_session_class
+    ):
+        """
+        GIVEN valid SageMaker model runner parameters
+        WHEN try to create SageMakerModelRunner
+        THEN SageMaker Predictor class is created once with expected parameters
+        """
+        mock_sagemaker_session = sagemaker_session_class()
+        mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+
+        sm_model_runner = SageMakerModelRunner(
+            endpoint_name=ENDPOINT_NAME,
+            content_template=CONTENT_TEMPLATE,
+            custom_attributes=CUSTOM_ATTRIBUTES,
+            output=OUTPUT_JMES_PATH,
+            log_probability=LOG_PROBABILITY_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        sagemaker_predictor_class.assert_called_once_with(
+            endpoint_name=ENDPOINT_NAME,
+            sagemaker_session=sagemaker_session_class.return_value,
+            serializer=json_serializer_class.return_value,
+            deserializer=json_deserializer_class.return_value,
+        )
+
+    @patch("sagemaker.session.Session")
+    def test_sm_model_runner_predict(self, sagemaker_session_class):
+        """
+        GIVEN valid SageMakerModelRunner
+        WHEN predict() called
+        THEN SageMaker Predictor predict method is called once with expected parameters,
+            and extract output and log probability as expected
+        """
+        mock_sagemaker_session = sagemaker_session_class()
+        mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+
+        sm_model_runner = SageMakerModelRunner(
+            endpoint_name=ENDPOINT_NAME,
+            content_template=CONTENT_TEMPLATE,
+            custom_attributes=CUSTOM_ATTRIBUTES,
+            output=OUTPUT_JMES_PATH,
+            log_probability=LOG_PROBABILITY_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        # Mocking sagemaker.predictor serializing byte into JSON
+        sm_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+        result = sm_model_runner.predict(PROMPT)
+        assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
+        call_args, kwargs = mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.call_args
+        assert kwargs == {
+            "Accept": MIME_TYPE_JSON,
+            "Body": MODEL_INPUT,
+            "ContentType": MIME_TYPE_JSON,
+            "CustomAttributes": CUSTOM_ATTRIBUTES,
+            "EndpointName": ENDPOINT_NAME,
+        }
+        assert result == (OUTPUT, LOG_PROBABILITY)

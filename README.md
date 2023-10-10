@@ -1,4 +1,4 @@
-## My Project
+## AWS Foundation Model Evaluations Library
 
 TODO: Fill this README out!
 
@@ -14,4 +14,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This project is licensed under the Apache-2.0 License.
-
