@@ -30,11 +30,8 @@ from eval_algorithms.util import (
 from eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
-    EVAL_DATASETS,
-    DATASET_CONFIGS,
-    EVAL_PROMPT_TEMPLATES,
 )
-from eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
+from eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
 from exceptions import EvalAlgorithmClientError
 from model_runners.model_runner import ModelRunner
 

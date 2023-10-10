@@ -15,12 +15,9 @@ from constants import (
 from data_loaders.util import DataConfig, get_dataset
 from eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
-    DATASET_CONFIGS,
-    EVAL_DATASETS,
     EvalAlgorithmConfig,
-    EVAL_PROMPT_TEMPLATES,
 )
-from eval_algorithms import EvalOutput, EvalScore
+from eval_algorithms import EvalOutput, EvalScore, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
 from eval_algorithms.util import (
     aggregate_evaluation_scores,
     validate_dataset,
