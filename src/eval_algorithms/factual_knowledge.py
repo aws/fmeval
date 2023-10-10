@@ -17,11 +17,8 @@ from eval_algorithms.util import save_dataset, generate_output_dataset_path
 from eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
-    EVAL_DATASETS,
-    DATASET_CONFIGS,
-    EVAL_PROMPT_TEMPLATES,
 )
-from eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
+from eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
 from eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,

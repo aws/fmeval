@@ -16,13 +16,10 @@ from constants import (
     MEAN,
 )
 from data_loaders.util import DataConfig, get_dataset
-from eval_algorithms import EvalAlgorithm, EvalScore, EvalOutput
+from eval_algorithms import EvalAlgorithm, EvalScore, EvalOutput, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
 from eval_algorithms.eval_algorithm import (
     EvalAlgorithmConfig,
     EvalAlgorithmInterface,
-    DATASET_CONFIGS,
-    EVAL_DATASETS,
-    EVAL_PROMPT_TEMPLATES,
 )
 from eval_algorithms.util import (
     generate_prompt_column_for_dataset,

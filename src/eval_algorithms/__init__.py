@@ -1,9 +1,12 @@
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Dict, Tuple
 
 from functional import seq
+
+from constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
+from data_loaders.data_config import DataConfig
 
 
 @dataclass(frozen=True)
@@ -124,3 +127,134 @@ class EvalOutput:
             return True
         except AssertionError:
             return False
+
+
+class ModelTask(Enum):
+    """The different types of tasks that are supported by the evaluations.
+
+    The model tasks are used to determine the evaluation metrics for the
+    model.
+    """
+
+    NO_TASK = "no_task"
+    CLASSIFICATION = "classification"
+    QUESTION_ANSWERING = "question_answering"
+    SUMMARIZATION = "summarization"
+
+
+# These mappings are not to be consumed for any use cases and is for representational purposes.
+# NO_TASK should have all keys from EvalAlgorithm
+MODEL_TASK_EVALUATION_MAP = {
+    ModelTask.NO_TASK: [
+        EvalAlgorithm.PROMPT_STEREOTYPING,
+        EvalAlgorithm.FACTUAL_KNOWLEDGE,
+        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+    ],
+    ModelTask.CLASSIFICATION: [
+        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+    ],
+    ModelTask.QUESTION_ANSWERING: [
+        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+    ],
+    ModelTask.SUMMARIZATION: [
+        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+    ],
+}
+
+# Constants for Built-in dataset names
+TREX = "trex"
+BOOLQ = "boolq"
+TRIVIA_QA = "trivia_qa"
+NATURAL_QUESTIONS = "natural_questions"
+CROW_PAIRS = "crow-pairs"
+CNN_DAILY_MAIL = "cnn_daily_mail"
+XSUM = "xsum"
+
+# Mapping of Eval algorithms and corresponding Built-in datasets
+EVAL_DATASETS: Dict[str, List[str]] = {
+    EvalAlgorithm.FACTUAL_KNOWLEDGE.value: [TREX],
+    EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+    EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
+}
+
+# Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
+# TODO: To be correctly populated
+EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
+    (EvalAlgorithm.FACTUAL_KNOWLEDGE.value, TREX): "Answer: $feature",
+    (EvalAlgorithm.QA_ACCURACY.value, BOOLQ): "$feature",
+    (EvalAlgorithm.QA_ACCURACY.value, TRIVIA_QA): "$feature",
+    (EvalAlgorithm.QA_ACCURACY.value, NATURAL_QUESTIONS): "$feature",
+    (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
+    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
+    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
+}
+
+# Mapping of Built-in dataset names and their DataConfigs
+# TODO: To be updated once datasets are uploaded in S3, update Configs accordingly
+DATASET_CONFIGS: Dict[str, DataConfig] = {
+    TREX: DataConfig(
+        dataset_name=TREX,
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+    BOOLQ: DataConfig(
+        dataset_name="boolq",
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+    TRIVIA_QA: DataConfig(
+        dataset_name="trivia_qa",
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+    NATURAL_QUESTIONS: DataConfig(
+        dataset_name="natural_questions",
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+    CROW_PAIRS: DataConfig(
+        dataset_name=CROW_PAIRS,
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        sent_more_input_location="sent_more",
+        sent_less_input_location="sent_less",
+    ),
+    CNN_DAILY_MAIL: DataConfig(
+        dataset_name="cnn_daily_mail",
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+    XSUM: DataConfig(
+        dataset_name="xsum",
+        dataset_uri="tba",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location=None,
+        category_location="tba",
+    ),
+}
