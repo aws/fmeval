@@ -12,7 +12,7 @@ EVAL_ALGORITHMS: Dict[str, Type["EvalAlgorithmInterface"]] = {
     EvalAlgorithm.FACTUAL_KNOWLEDGE.value: FactualKnowledge,
     EvalAlgorithm.QA_ACCURACY.value: QAAccuracy,
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: SummarizationAccuracy,
-    EvalAlgorithm.PROMPT_STEREOTYPING.value: PromptStereotyping
+    EvalAlgorithm.PROMPT_STEREOTYPING.value: PromptStereotyping,
 }
 
 
