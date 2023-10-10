@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from eval_algorithms.helper_models.helper_model import ToxigenHelperModel, BertscoreHelperModel
-from util import project_root
+from amazon_fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, BertscoreHelperModel
+from amazon_fmeval.util import project_root
 
 
 class TestHelperModel:

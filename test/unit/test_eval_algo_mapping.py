@@ -1,8 +1,8 @@
 import pytest
 
-from eval_algo_mapping import get_eval_algorithm
-from eval_algorithms.factual_knowledge import FactualKnowledge
-from exceptions import EvalAlgorithmClientError
+from amazon_fmeval.eval_algo_mapping import get_eval_algorithm
+from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 
 def test_get_eval_algorithm():

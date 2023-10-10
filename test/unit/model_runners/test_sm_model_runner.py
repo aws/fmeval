@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
-from constants import MIME_TYPE_JSON
-from model_runners.sm_model_runner import SageMakerModelRunner
+from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"

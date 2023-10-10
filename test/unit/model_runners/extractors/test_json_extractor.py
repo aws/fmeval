@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from exceptions import EvalAlgorithmClientError
-from model_runners.extractors.json_extractor import JsonExtractor
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from amazon_fmeval.model_runners.extractors.json_extractor import JsonExtractor
 
 
 class TestJsonExtractor:

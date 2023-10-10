@@ -2,8 +2,8 @@ from typing import NamedTuple, List
 
 import pytest
 
-from exceptions import EvalAlgorithmClientError
-from model_runners.composers.template import VanillaTemplate
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from amazon_fmeval.model_runners.composers.template import VanillaTemplate
 
 
 class TestVanillaTemplate:

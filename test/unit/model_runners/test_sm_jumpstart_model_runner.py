@@ -2,8 +2,8 @@ from unittest.mock import Mock, patch
 
 import sagemaker
 
-from constants import MIME_TYPE_JSON
-from model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
+from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"

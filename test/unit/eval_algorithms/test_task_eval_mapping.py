@@ -1,4 +1,4 @@
-from eval_algorithms import EvalAlgorithm
+from amazon_fmeval.eval_algorithms import EvalAlgorithm
 
 
 def test_eval_mapping():

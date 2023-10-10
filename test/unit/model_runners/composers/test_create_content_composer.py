@@ -2,8 +2,8 @@ import pytest
 
 from typing import NamedTuple
 
-from exceptions import EvalAlgorithmClientError
-from model_runners.composers import create_content_composer, Composer, ContentComposer
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from amazon_fmeval.model_runners.composers import create_content_composer, Composer, ContentComposer
 
 
 class TestCreateContentComposer:

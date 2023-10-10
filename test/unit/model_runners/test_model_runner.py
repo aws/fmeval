@@ -1,8 +1,8 @@
 from typing import Tuple, List
 
-from model_runners.composers import Composer
-from model_runners.extractors import JsonExtractor
-from model_runners.model_runner import ModelRunner
+from amazon_fmeval.model_runners.composers import Composer
+from amazon_fmeval.model_runners.extractors import JsonExtractor
+from amazon_fmeval.model_runners.model_runner import ModelRunner
 
 
 class TestModelRunner:

@@ -2,8 +2,8 @@ from unittest.mock import patch, Mock, mock_open
 import pytest
 from s3fs import S3FileSystem
 
-from data_loaders.data_sources import LocalDataFile, S3DataFile
-from exceptions import EvalAlgorithmClientError
+from amazon_fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 S3_PREFIX = "s3://"
 LOCAL_PREFIX = "file://"

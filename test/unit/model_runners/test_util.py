@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from model_runners.util import get_sagemaker_session, is_endpoint_in_service
+from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
 
 ENDPOINT_NAME = "valid_endpoint_name"
 
