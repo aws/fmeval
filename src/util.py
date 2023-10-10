@@ -55,3 +55,17 @@ def get_eval_results_path():
     else:
         os.makedirs(DEFAULT_EVAL_RESULTS_PATH, exist_ok=True)
         return DEFAULT_EVAL_RESULTS_PATH
+
+
+def singleton(cls):
+    """
+    Decorator to make a class Singleton
+    """
+    instances = {}
+
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance

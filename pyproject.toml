@@ -39,6 +39,7 @@ IPython = "*"
 evaluate = "^0.4.0"
 rouge-score = "^0.1.2"
 sagemaker = "^2.191.0"
+bert-score = "^0.3.13"
 
 [tool.poetry.dev-dependencies]
 fire = "*"

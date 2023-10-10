@@ -25,6 +25,7 @@ from eval_algorithms.summarization_accuracy import (
     ROUGE_1,
     ROUGE_L,
     PROMPT_COLUMN_NAME,
+    BERT_SCORE,
 )
 from exceptions import EvalAlgorithmClientError
 
@@ -123,6 +124,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=1.0),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -132,6 +134,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.0),
+                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -141,6 +144,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=1.0),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -150,6 +154,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
+                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -159,6 +164,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=1.0),
                 ],
                 rouge_type=ROUGE_L,
             ),
@@ -168,6 +174,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
+                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
                 ],
                 rouge_type=ROUGE_L,
             ),
@@ -211,13 +218,27 @@ class TestSummarizationAccuracy:
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
 
-    def test_summarization_accuracy_invalid_config(self):
-        expected_error_message = (
-            "Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig, please choose "
-            "from acceptable values: ['rouge1', 'rouge2', 'rougeL']"
-        )
+    @pytest.mark.parametrize(
+        "rouge_type, bertscore_model_type, expected_error_message",
+        [
+            (
+                "rouge3",
+                None,
+                "Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig, please choose "
+                "from acceptable values: ['rouge1', 'rouge2', 'rougeL']",
+            ),
+            (
+                "rouge1",
+                "distilbert-base-uncased",
+                "Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
+                "SummarizationAccuracyConfig, please choose from acceptable values: ["
+                "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli']",
+            ),
+        ],
+    )
+    def test_summarization_accuracy_invalid_config(self, rouge_type, bertscore_model_type, expected_error_message):
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
-            SummarizationAccuracyConfig(rouge_type="rouge3")
+            SummarizationAccuracyConfig(rouge_type=rouge_type, model_type_for_bertscore=bertscore_model_type)
 
     class TestCaseSummarizationAccuracyEvaluate(NamedTuple):
         input_dataset: Dataset
@@ -243,6 +264,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -254,6 +276,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=None,
                         output_path=EVAL_RESULTS_PATH,
@@ -274,6 +297,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=[
                             CategoryScore(
@@ -281,6 +305,7 @@ class TestSummarizationAccuracy:
                                 scores=[
                                     EvalScore(name="meteor", value=0.7465897817460319),
                                     EvalScore(name="rouge", value=0.5),
+                                    EvalScore(name="bertscore", value=0.885668933391571),
                                 ],
                             ),
                             CategoryScore(
@@ -288,6 +313,7 @@ class TestSummarizationAccuracy:
                                 scores=[
                                     EvalScore(name="meteor", value=0.5009920634920636),
                                     EvalScore(name="rouge", value=0.0),
+                                    EvalScore(name="bertscore", value=0.7713378667831421),
                                 ],
                             ),
                         ],
@@ -300,6 +326,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=[
                             CategoryScore(
@@ -307,6 +334,7 @@ class TestSummarizationAccuracy:
                                 scores=[
                                     EvalScore(name="meteor", value=0.7465897817460319),
                                     EvalScore(name="rouge", value=0.5),
+                                    EvalScore(name="bertscore", value=0.885668933391571),
                                 ],
                             ),
                             CategoryScore(
@@ -314,6 +342,7 @@ class TestSummarizationAccuracy:
                                 scores=[
                                     EvalScore(name="meteor", value=0.5009920634920636),
                                     EvalScore(name="rouge", value=0.0),
+                                    EvalScore(name="bertscore", value=0.7713378667831421),
                                 ],
                             ),
                         ],
@@ -343,6 +372,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -400,6 +430,7 @@ class TestSummarizationAccuracy:
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.6647238756613758),
                             EvalScore(name="rouge", value=0.3333333333333333),
+                            EvalScore(name="bertscore", value=0.8475585778554281),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
