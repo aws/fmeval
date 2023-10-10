@@ -21,6 +21,7 @@ from eval_algorithms.eval_algorithm import (
     EvalAlgorithmConfig,
     EvalAlgorithmInterface,
 )
+from eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from eval_algorithms.util import (
     generate_prompt_column_for_dataset,
     generate_model_predict_response_for_dataset,
@@ -68,10 +69,11 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        # if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
-        #     raise EvalAlgorithmClientError(
-        #         f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-        #         f"SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}")
+        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+            raise EvalAlgorithmClientError(
+                f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
+            )
 
 
 class SummarizationAccuracy(EvalAlgorithmInterface):
@@ -92,10 +94,13 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY.value
         self._eval_algorithm_config = eval_algorithm_config
         self._load_eval_helpers()
-        self._score_eval_func_mapping = {METEOR_SCORE: self._get_meteor_score, ROUGE_SCORE: self._get_rouge_score}
+        self._score_eval_func_mapping = {
+            METEOR_SCORE: self._get_meteor_score,
+            ROUGE_SCORE: self._get_rouge_score,
+            BERT_SCORE: self._get_bert_score,
+        }
 
-    @staticmethod
-    def _load_eval_helpers():
+    def _load_eval_helpers(self):
         """
         Method to download required helpers for eval_algo in constructor call
         """
@@ -103,6 +108,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         nltk.download("wordnet")
         nltk.download("punkt")
         nltk.download("omw-1.4")
+
+        # load HelperMode for bertscore
+        BertscoreHelperModel(model_type=self._eval_algorithm_config.model_type_for_bertscore)
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """
@@ -184,7 +192,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                 dataset = dataset.materialize()
 
             dataset_scores, category_scores = aggregate_evaluation_scores(
-                dataset, [METEOR_SCORE, ROUGE_SCORE], agg_method=MEAN
+                dataset, [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE], agg_method=MEAN
             )
             eval_outputs.append(
                 EvalOutput(
@@ -199,7 +207,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[METEOR_SCORE, ROUGE_SCORE],  # TODO add BERT_SCORE when implemented
+                    score_names=[METEOR_SCORE, ROUGE_SCORE, BERT_SCORE],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -273,13 +281,15 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             rouge_types=[self._eval_algorithm_config.rouge_type],
         )[self._eval_algorithm_config.rouge_type]
 
-    # def _get_bert_score(self, target_output: str, model_output: str) -> float:
-    #     # TODO: I tried initialising bertscore and making a dummy call in _load_eval_helpers(), to pre download the
-    #     #  model in constructor. But facing an issue as ray workers are not able to find dependency modules.
-    #     #  Will deep dive into a solution for this later.
-    #     bertscore = hf_evaluate.load("bertscore")
-    #     return bertscore.compute(
-    #         predictions=[model_output],
-    #         references=[target_output],
-    #         model_type=self._eval_algorithm_config.model_type_for_bertscore,
-    #     )["f1"][0]
+    def _get_bert_score(self, target_output: str, model_output: str) -> float:
+        """
+        BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
+        under a (learned) model, typically, from the BERT family.
+        This score may lead to increased flexibility compared to rouge and METEOR in terms of rephrasing since
+        semantically similar sentences are (typically) embedded similarly.
+
+        https://huggingface.co/spaces/evaluate-metric/bertscore
+        """
+        assert self._eval_algorithm_config.model_type_for_bertscore  # For mypy
+        bertscore = BertscoreHelperModel(model_type=self._eval_algorithm_config.model_type_for_bertscore)
+        return bertscore.get_helper_score(target_output, model_output)

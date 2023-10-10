@@ -3,7 +3,7 @@ import os
 import pytest
 
 from exceptions import EvalAlgorithmClientError
-from util import require, project_root
+from util import require, project_root, singleton
 
 
 def test_require():
@@ -26,3 +26,16 @@ def test_project_root():
     assert os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_util.py") == os.path.abspath(
         os.path.join(project_root(__name__), "test", "unit", "test_util.py")
     )
+
+
+@singleton
+class TestSingletonClass:
+    def __init__(self):
+        pass
+
+
+def test_singleton_instance():
+    singleton1 = TestSingletonClass()
+    singleton2 = TestSingletonClass()
+
+    assert singleton1 is singleton2

@@ -2,20 +2,31 @@ import os
 
 import pytest
 
-from eval_algorithms.helper_models.helper_model import ToxigenHelperModel
+from eval_algorithms.helper_models.helper_model import ToxigenHelperModel, BertscoreHelperModel
 from util import project_root
 
 
 class TestHelperModel:
     def test_toxigen_helper_model(self):
         """
-        Test invoke_detector method for ToxigenEvaluationDetectorInvoker
+        Test helper model for Toxigen
         Using test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta downloaded at
         local path: "" for this.
         """
-        test_invoker = ToxigenHelperModel(
+        test_helper = ToxigenHelperModel(
             os.path.join(project_root(__file__), "test", "resources", "test_roberta_model")
         )
         test_text_input = "My simple text"
         expected_response = [{"label": "LABEL_1", "score": pytest.approx(0.5005736947059631)}]
-        assert test_invoker.invoke(test_text_input) == expected_response
+        assert test_helper.get_helper_score(test_text_input) == expected_response
+
+    def test_bertscore_helper_model_roberta(self):
+        """
+        Test bertscore helper model
+        """
+        test_bertscore_1 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
+        test_bertscore_2 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
+        assert test_bertscore_1 == test_bertscore_2
+        assert (
+            test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == 0.8239905834197998
+        )

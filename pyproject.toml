@@ -23,7 +23,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.10"
-urllib3 = "1.26.16"
+urllib3 = "1.26.17"
 semantic-version = "2.10.0"
 ray = "2.6.3"
 s3fs = ">=2023.4.0"
@@ -39,6 +39,7 @@ IPython = "*"
 evaluate = "^0.4.0"
 rouge-score = "^0.1.2"
 sagemaker = "^2.191.0"
+bert-score = "^0.3.13"
 
 [tool.poetry.dev-dependencies]
 fire = "*"
