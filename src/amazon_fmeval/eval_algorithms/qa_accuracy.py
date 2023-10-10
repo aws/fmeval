@@ -31,7 +31,14 @@ from amazon_fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
 )
-from amazon_fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
+from amazon_fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    EvalOutput,
+    EvalScore,
+    EVAL_DATASETS,
+    EVAL_PROMPT_TEMPLATES,
+    DATASET_CONFIGS,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 

@@ -16,7 +16,14 @@ from amazon_fmeval.constants import (
     MEAN,
 )
 from amazon_fmeval.data_loaders.util import DataConfig, get_dataset
-from amazon_fmeval.eval_algorithms import EvalAlgorithm, EvalScore, EvalOutput, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
+from amazon_fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    EvalScore,
+    EvalOutput,
+    EVAL_DATASETS,
+    EVAL_PROMPT_TEMPLATES,
+    DATASET_CONFIGS,
+)
 from amazon_fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmConfig,
     EvalAlgorithmInterface,

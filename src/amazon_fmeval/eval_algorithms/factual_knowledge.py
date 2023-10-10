@@ -18,7 +18,14 @@ from amazon_fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
 )
-from amazon_fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore, EVAL_DATASETS, EVAL_PROMPT_TEMPLATES, DATASET_CONFIGS
+from amazon_fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    EvalOutput,
+    EvalScore,
+    EVAL_DATASETS,
+    EVAL_PROMPT_TEMPLATES,
+    DATASET_CONFIGS,
+)
 from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
