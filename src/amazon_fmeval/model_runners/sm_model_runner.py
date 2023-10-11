@@ -36,7 +36,7 @@ class SageMakerModelRunner(ModelRunner):
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
         :param content_type: The content type of the request sent to the model for inference
-        :param accept_type: Name of the SageMaker endpoint to be used for model predictions
+        :param accept_type: The accept type of the request sent to the model for inference
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
         self._sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
