@@ -4,9 +4,9 @@ from typing import Optional, List, Callable
 import evaluate as hf_evaluate
 import nltk
 import pandas as pd
+from datasets import Dataset
 from nltk import word_tokenize
 from nltk.translate import meteor_score
-from ray.data import Dataset
 
 import amazon_fmeval.util as util
 from amazon_fmeval.constants import (
@@ -102,9 +102,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         self._eval_algorithm_config = eval_algorithm_config
         self._load_eval_helpers()
         self._score_eval_func_mapping = {
-            METEOR_SCORE: self._get_meteor_score,
-            ROUGE_SCORE: self._get_rouge_score,
-            BERT_SCORE: self._get_bert_score,
+            METEOR_SCORE: get_meteor_score,
+            ROUGE_SCORE: get_rouge_score,
+            BERT_SCORE: get_bert_score,
         }
 
     def _load_eval_helpers(self):
@@ -139,7 +139,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         return [
             EvalScore(
                 name=eval_score,
-                value=eval_fn(target_output=target_output, model_output=model_output),
+                value=eval_fn(
+                    target_output=target_output, model_output=model_output, config=self._eval_algorithm_config
+                ),
             )
             for eval_score, eval_fn in self._score_eval_func_mapping.items()
         ]
@@ -195,8 +197,12 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     model, dataset, PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME
                 )
             for eval_score, eval_func in self._score_eval_func_mapping.items():
-                dataset = self._add_score_to_dataset(dataset=dataset, eval_func=eval_func, score_column_name=eval_score)
-                dataset = dataset.materialize()
+                dataset = add_score_to_dataset(
+                    dataset=dataset,
+                    eval_func=eval_func,
+                    score_column_name=eval_score,
+                    config=self._eval_algorithm_config,
+                )
 
             dataset_scores, category_scores = aggregate_evaluation_scores(
                 dataset, [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE], agg_method=MEAN
@@ -224,79 +230,98 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
         return eval_outputs
 
-    @staticmethod
-    def _add_score_to_dataset(dataset: Dataset, eval_func: Callable, score_column_name: str):
-        def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-            """
-            Map function generating the scores for every input record in input dataset
-            """
-            return pd.Series(
-                data=[
-                    eval_func(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME])
-                    for index, row in df.iterrows()
-                ]
-            )
 
-        return dataset.add_column(score_column_name, _generate_eval_scores)
+def get_meteor_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+    """
+    METEOR, an automatic metric for machine translation evaluation
+    that is based on a generalized concept of unigram matching between the
+    machine-produced translation and human-produced reference translations.
+    Unigrams can be matched based on their surface forms, stemmed forms,
+    and meanings; furthermore, METEOR can be easily extended to include more
+    advanced matching strategies. Once all generalized unigram matches
+    between the two strings have been found, METEOR computes a score for
+    this matching using a combination of unigram-precision, unigram-recall, and
+    a measure of fragmentation that is designed to directly capture how
+    well-ordered the matched words in the machine translation are in relation
+    to the reference.
 
-    @staticmethod
-    def _get_meteor_score(target_output: str, model_output: str) -> float:
+    METEOR gets an R correlation value of 0.347 with human evaluation on the Arabic
+    data and 0.331 on the Chinese data. This is shown to be an improvement on
+    using simply unigram-precision, unigram-recall and their harmonic F1
+    combination.
+
+    :param target_output: The expected responses from the model
+    :param model_output: The output of a model that we want to evaluate.
+    :returns: meteor score
+    """
+    return meteor_score.single_meteor_score(
+        reference=word_tokenize(target_output), hypothesis=word_tokenize(model_output)
+    )
+
+
+def get_rouge_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+    """
+    The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
+    It computes the word overlap between the reference and model summary. Given that this metric is based on simple
+    word overlap statistics, it works best for extractive summaries.
+    Note that if we rephrase the summary without changing its meaning the ROUGE-N score will drop.
+
+    Reference: https://huggingface.co/spaces/evaluate-metric/rouge
+
+    :param target_output: The expected responses from the model
+    :param model_output: The output of a model that we want to evaluate.
+    :param config: Eval algo config
+    :returns: rouge score: boolean indicating using stemmer for rouge
+    """
+    rouge = hf_evaluate.load("rouge")
+    return rouge.compute(
+        predictions=[model_output],
+        references=[target_output],
+        use_stemmer=config.use_stemmer_for_rouge,
+        rouge_types=[config.rouge_type],
+    )[config.rouge_type]
+
+
+def get_bert_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+    """
+    BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
+    under a (learned) model, typically, from the BERT family.
+    This score may lead to increased flexibility compared to rouge and METEOR in terms of rephrasing since
+    semantically similar sentences are (typically) embedded similarly.
+
+    https://huggingface.co/spaces/evaluate-metric/bertscore
+
+    :param target_output: The expected responses from the model
+    :param model_output: The output of a model that we want to evaluate.
+    :param config: Eval algo config
+    :returns: rouge score: boolean indicating using stemmer for rouge
+    """
+    bertscore = BertscoreHelperModel(model_type=config.model_type_for_bertscore)
+    return bertscore.get_helper_score(target_output, model_output)
+
+
+def add_score_to_dataset(
+    dataset: Dataset, eval_func: Callable, score_column_name: str, config: SummarizationAccuracyConfig
+):
+    """
+    Util method to add a score column to a ray dataset.
+
+    :param dataset: ray Dataset to be used for eval score generation
+    :param eval_func: eval function callable method
+    :param score_column_name: column name for score to be added
+    :param config: Eval algo config
+    :returns: ray Dataset with score column
+    """
+
+    def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
         """
-        METEOR, an automatic metric for machine translation evaluation
-        that is based on a generalized concept of unigram matching between the
-        machine-produced translation and human-produced reference translations.
-        Unigrams can be matched based on their surface forms, stemmed forms,
-        and meanings; furthermore, METEOR can be easily extended to include more
-        advanced matching strategies. Once all generalized unigram matches
-        between the two strings have been found, METEOR computes a score for
-        this matching using a combination of unigram-precision, unigram-recall, and
-        a measure of fragmentation that is designed to directly capture how
-        well-ordered the matched words in the machine translation are in relation
-        to the reference.
-
-        METEOR gets an R correlation value of 0.347 with human evaluation on the Arabic
-        data and 0.331 on the Chinese data. This is shown to be an improvement on
-        using simply unigram-precision, unigram-recall and their harmonic F1
-        combination.
-
-        :param target_output: The expected responses from the model
-        :param model_output: The output of a model that we want to evaluate.
-        :returns: meteor score
+        Map function generating the scores for every input record in input dataset
         """
-        return meteor_score.single_meteor_score(
-            reference=word_tokenize(target_output), hypothesis=word_tokenize(model_output)
+        return pd.Series(
+            data=[
+                eval_func(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config)
+                for index, row in df.iterrows()
+            ]
         )
 
-    def _get_rouge_score(self, target_output: str, model_output: str) -> float:
-        """
-        The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
-        It computes the word overlap between the reference and model summary. Given that this metric is based on simple
-        word overlap statistics, it works best for extractive summaries.
-        Note that if we rephrase the summary without changing its meaning the ROUGE-N score will drop.
-
-        Reference: https://huggingface.co/spaces/evaluate-metric/rouge
-
-        :param target_output: The expected responses from the model
-        :param model_output: The output of a model that we want to evaluate.
-        :returns: rouge score
-        """
-        rouge = hf_evaluate.load("rouge")
-        return rouge.compute(
-            predictions=[model_output],
-            references=[target_output],
-            use_stemmer=self._eval_algorithm_config.use_stemmer_for_rouge,
-            rouge_types=[self._eval_algorithm_config.rouge_type],
-        )[self._eval_algorithm_config.rouge_type]
-
-    def _get_bert_score(self, target_output: str, model_output: str) -> float:
-        """
-        BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
-        under a (learned) model, typically, from the BERT family.
-        This score may lead to increased flexibility compared to rouge and METEOR in terms of rephrasing since
-        semantically similar sentences are (typically) embedded similarly.
-
-        https://huggingface.co/spaces/evaluate-metric/bertscore
-        """
-        assert self._eval_algorithm_config.model_type_for_bertscore  # For mypy
-        bertscore = BertscoreHelperModel(model_type=self._eval_algorithm_config.model_type_for_bertscore)
-        return bertscore.get_helper_score(target_output, model_output)
+    return dataset.add_column(score_column_name, _generate_eval_scores).materialize()

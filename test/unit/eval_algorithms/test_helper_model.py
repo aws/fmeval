@@ -24,9 +24,7 @@ class TestHelperModel:
         """
         Test bertscore helper model
         """
-        test_bertscore_1 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
-        test_bertscore_2 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
+        test_bertscore_1 = BertscoreHelperModel("distilbert-base-uncased")
+        test_bertscore_2 = BertscoreHelperModel("distilbert-base-uncased")
         assert test_bertscore_1 == test_bertscore_2
-        assert (
-            test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == 0.8239905834197998
-        )
+        assert test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == 0.902793288230896
