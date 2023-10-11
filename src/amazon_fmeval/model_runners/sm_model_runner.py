@@ -39,16 +39,16 @@ class SageMakerModelRunner(ModelRunner):
         :param accept_type: The accept type of the request sent to the model for inference
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
-        self._sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
-        self._custom_attributes: Optional[str] = custom_attributes
+        self.sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
+        self.custom_attributes: Optional[str] = custom_attributes
 
         util.require(
-            is_endpoint_in_service(self._sagemaker_session, endpoint_name),
+            is_endpoint_in_service(self.sagemaker_session, endpoint_name),
             "Endpoint is not in service",
         )
-        self._predictor = sagemaker.predictor.Predictor(
+        self.predictor = sagemaker.predictor.Predictor(
             endpoint_name=endpoint_name,
-            sagemaker_session=self._sagemaker_session,
+            sagemaker_session=self.sagemaker_session,
             # we only support JSON format model input/output currently
             serializer=sagemaker.serializers.JSONSerializer(),
             deserializer=sagemaker.deserializers.JSONDeserializer(),
@@ -60,7 +60,7 @@ class SageMakerModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
+        model_output = self.predictor.predict(data=composed_data, custom_attributes=self.custom_attributes)
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
