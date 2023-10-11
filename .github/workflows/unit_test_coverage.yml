@@ -26,7 +26,6 @@ jobs:
 
       - name: Install dependencies with poetry
         run: |
-          ./devtool install_poetry
           ./devtool install_deps
 
       - name: Test with code coverage

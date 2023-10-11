@@ -23,8 +23,6 @@ jobs:
 
       - name: Install dev dependencies with poetry
         run: |
-          ./devtool install_poetry
-          poetry config experimental.new-installer false
           ./devtool install_deps_dev
 
       - name: Run pre-commit checks and lint
