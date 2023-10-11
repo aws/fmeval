@@ -1,7 +1,8 @@
 import re
 from typing import NamedTuple, List, Optional
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
+import nltk
 import pytest
 import ray
 from _pytest.fixtures import fixture
@@ -26,10 +27,14 @@ from amazon_fmeval.eval_algorithms.summarization_accuracy import (
     ROUGE_L,
     PROMPT_COLUMN_NAME,
     BERT_SCORE,
+    get_meteor_score,
+    get_rouge_score,
+    get_bert_score,
+    add_score_to_dataset,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
-DATASET = ray.data.from_items(
+DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
@@ -38,6 +43,9 @@ DATASET = ray.data.from_items(
             "grow up.",
             MODEL_OUTPUT_COLUMN_NAME: "I like cake.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
+            METEOR_SCORE: 0.1,
+            ROUGE_SCORE: 0.1,
+            BERT_SCORE: 0.1,
         },
         {
             MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
@@ -51,6 +59,9 @@ DATASET = ray.data.from_items(
             "You will find a selection of current and upcoming exhibitions here.",
             MODEL_OUTPUT_COLUMN_NAME: "Berlin: Art, Heritage, Exhibitions Hub.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
+            METEOR_SCORE: 0.2,
+            ROUGE_SCORE: 0.2,
+            BERT_SCORE: 0.2,
         },
         {
             MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
@@ -64,9 +75,14 @@ DATASET = ray.data.from_items(
             "You will find a selection of current and upcoming exhibitions here.",
             MODEL_OUTPUT_COLUMN_NAME: "Berlin: Art, Heritage, Exhibitions Hub.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
+            METEOR_SCORE: 0.3,
+            ROUGE_SCORE: 0.3,
+            BERT_SCORE: 0.3,
         },
     ]
 )
+
+DATASET = DATASET_WITH_SCORES.drop_columns(cols=[BERT_SCORE, METEOR_SCORE, ROUGE_SCORE])
 
 DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
 
@@ -104,6 +120,12 @@ class TestSummarizationAccuracy:
     def config(self) -> SummarizationAccuracyConfig:
         return SummarizationAccuracyConfig()
 
+    @fixture(scope="module")
+    def load_meteor_helpers(self):
+        nltk.download("wordnet")
+        nltk.download("punkt")
+        nltk.download("omw-1.4")
+
     class TestCaseSummarizationAccuracyEvaluateSample(NamedTuple):
         model_output: str
         target_output: str
@@ -124,7 +146,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -134,7 +156,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.0),
-                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -144,7 +166,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -154,7 +176,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -164,7 +186,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_L,
             ),
@@ -174,18 +196,23 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=0.7713378667831421),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                 ],
                 rouge_type=ROUGE_L,
             ),
         ],
     )
-    def test_summarization_accuracy_evaluate_sample(self, test_case):
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    def test_summarization_accuracy_evaluate_sample(self, bertscore_helper_model, test_case):
         """
         GIVEN valid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -210,12 +237,17 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    def test_summarization_accuracy_evaluate_sample_invalid_input(self, test_case, config):
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    def test_summarization_accuracy_evaluate_sample_invalid_input(self, bertscore_helper_model, test_case, config):
         """
         GIVEN invalid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         eval_algorithm = SummarizationAccuracy(config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -264,9 +296,9 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="cnn_daily_mail",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -276,9 +308,9 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="xsum",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
                         output_path=EVAL_RESULTS_PATH,
@@ -297,25 +329,25 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="cnn_daily_mail",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
                                 scores=[
-                                    EvalScore(name="meteor", value=0.7465897817460319),
-                                    EvalScore(name="rouge", value=0.5),
-                                    EvalScore(name="bertscore", value=0.885668933391571),
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
                                 ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
                                 scores=[
-                                    EvalScore(name="meteor", value=0.5009920634920636),
-                                    EvalScore(name="rouge", value=0.0),
-                                    EvalScore(name="bertscore", value=0.7713378667831421),
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
                                 ],
                             ),
                         ],
@@ -326,25 +358,25 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="xsum",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
                                 scores=[
-                                    EvalScore(name="meteor", value=0.7465897817460319),
-                                    EvalScore(name="rouge", value=0.5),
-                                    EvalScore(name="bertscore", value=0.885668933391571),
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
                                 ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
                                 scores=[
-                                    EvalScore(name="meteor", value=0.5009920634920636),
-                                    EvalScore(name="rouge", value=0.0),
-                                    EvalScore(name="bertscore", value=0.7713378667831421),
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
                                 ],
                             ),
                         ],
@@ -372,9 +404,9 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -387,8 +419,18 @@ class TestSummarizationAccuracy:
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
     def test_summarization_accuracy_evaluate(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
+        self,
+        add_score_to_dataset,
+        bertscore_helper_model,
+        generate_model_predict_response_for_dataset,
+        save_dataset,
+        get_dataset,
+        model,
+        test_case,
+        config,
     ):
         """
         GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
@@ -396,6 +438,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         eval_algorithm = SummarizationAccuracy(config)
@@ -430,9 +476,9 @@ class TestSummarizationAccuracy:
                         prompt_template="Summarise: $feature",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
-                            EvalScore(name="meteor", value=0.6647238756613758),
-                            EvalScore(name="rouge", value=0.3333333333333333),
-                            EvalScore(name="bertscore", value=0.8475585778554281),
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -444,8 +490,17 @@ class TestSummarizationAccuracy:
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
     def test_summarization_accuracy_evaluate_without_model(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
+        self,
+        add_score_to_dataset,
+        bertscore_helper_model,
+        generate_model_predict_response_for_dataset,
+        save_dataset,
+        get_dataset,
+        test_case,
+        config,
     ):
         """
         GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
@@ -453,6 +508,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate(
@@ -549,12 +608,18 @@ class TestSummarizationAccuracy:
     )
     @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    def test_summarization_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    def test_summarization_accuracy_evaluate_invalid_input(
+        self, bertscore_helper_model, get_dataset, model, test_case, config
+    ):
         """
         GIVEN invalid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
         eval_algorithm = SummarizationAccuracy(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
@@ -563,3 +628,101 @@ class TestSummarizationAccuracy:
             eval_algorithm.evaluate(
                 model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
             )
+
+    class TestCaseSummarizationAccuracyScores(NamedTuple):
+        model_output: str
+        target_output: str
+        rouge_type: Optional[str]
+        expected_score: float
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseSummarizationAccuracyScores(
+                model_output="I like cake.", target_output="I like cake.", expected_score=0.9921875, rouge_type=None
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+                target_output="Berlin: an art metropolis.",
+                expected_score=0.5009920634920636,
+                rouge_type=None,
+            ),
+        ],
+    )
+    def test_get_meteor_score(self, test_case, load_meteor_helpers, config):
+        assert pytest.approx(test_case.expected_score, rel=1e-5) == get_meteor_score(
+            test_case.target_output, test_case.model_output, config
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseSummarizationAccuracyScores(
+                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge1"
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+                target_output="Berlin: an art metropolis.",
+                expected_score=0.0,
+                rouge_type="rouge1",
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge2"
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+                target_output="Berlin: an art metropolis.",
+                expected_score=0.0,
+                rouge_type="rouge2",
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rougeL"
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+                target_output="Berlin: an art metropolis.",
+                expected_score=0.0,
+                rouge_type="rougeL",
+            ),
+        ],
+    )
+    def test_get_rouge_score(self, test_case, load_meteor_helpers, config):
+        assert pytest.approx(test_case.expected_score, rel=1e-5) == get_rouge_score(
+            test_case.target_output, test_case.model_output, config
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseSummarizationAccuracyScores(
+                model_output="I like cake.", target_output="I like cake.", expected_score=0.500000, rouge_type=None
+            ),
+            TestCaseSummarizationAccuracyScores(
+                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+                target_output="Berlin: an art metropolis.",
+                expected_score=0.500000,
+                rouge_type=None,
+            ),
+        ],
+    )
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    def test_get_bert_score(self, bertscore_helper_model, test_case, config):
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model_instance.get_helper_score.return_value = 0.500000
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        assert test_case.expected_score == get_bert_score(test_case.target_output, test_case.model_output, config)
+
+    @pytest.mark.parametrize(
+        "input_dataset",
+        [DATASET],
+    )
+    def test_add_score_to_dataset(self, input_dataset, config):
+        response_dataset = add_score_to_dataset(
+            dataset=input_dataset, eval_func=get_rouge_score, score_column_name=ROUGE_SCORE, config=config
+        )
+        assert response_dataset.count() == input_dataset.count()
+        response_dataset_df = response_dataset.to_pandas()
+        response_dataset_df = response_dataset_df.sort_values(by=["rouge"])
+        assert response_dataset_df.iloc[0]["rouge"] == 0.0
+        assert response_dataset_df.iloc[1]["rouge"] == 0.0
+        assert response_dataset_df.iloc[2]["rouge"] == 1.0
