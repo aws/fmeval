@@ -116,7 +116,7 @@ class TestJumpStartModelRunner:
                 log_probability=test_case.log_probability_jmespath,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
-            js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+            js_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
 
             result = js_model_runner.predict(PROMPT)
             assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
@@ -160,7 +160,7 @@ class TestJumpStartModelRunner:
                 log_probability=LOG_PROBABILITY_JMES_PATH,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
-            js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+            js_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
 
             result = js_model_runner.predict(PROMPT)
             assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
