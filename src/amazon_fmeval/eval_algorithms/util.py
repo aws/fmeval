@@ -4,6 +4,7 @@ import pandas as pd
 import sagemaker
 import ray.data
 import amazon_fmeval.util as util
+import multiprocessing as mp
 
 from ray.data import Dataset
 from collections import OrderedDict
@@ -73,8 +74,7 @@ def generate_model_predict_response_for_dataset(
                 row[model_log_probability_column_name] = predict_output[1]
             return row
 
-    # TODO update size parameter for ActorPoolStrategy
-    return data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=8))  # type: ignore [arg-type]
+    return data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1))  # type: ignore [arg-type]
 
 
 def generate_prompt_column_for_dataset(
