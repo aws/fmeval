@@ -3,7 +3,9 @@
 
 name: Unit Test coverage
 
-on: [push, pull_request]
+on:
+  pull_request:
+    types: [opened, reopened]
 
 env:
   AWS_DEFAULT_REGION: us-west-2
@@ -26,7 +28,6 @@ jobs:
 
       - name: Install dependencies with poetry
         run: |
-          ./devtool install_poetry
           ./devtool install_deps
 
       - name: Test with code coverage
