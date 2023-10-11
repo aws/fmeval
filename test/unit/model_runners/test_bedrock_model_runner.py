@@ -2,9 +2,12 @@ import json
 from unittest.mock import MagicMock, patch
 
 import io
+
+import pytest
 from botocore.response import StreamingBody
 
 from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 
 MODEL_ID = "AwesomeModel"
@@ -66,3 +69,60 @@ class TestBedrockModelRunner:
         # Mocking Bedrock invoke model serializing byte into JSON
         result = bedrock_model_runner.predict(PROMPT)
         assert result == (OUTPUT, LOG_PROBABILITY)
+
+    @patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True)
+    def test_bedrock_model_runner_predict_without_log_probability(self, boto3_client):
+        """
+        GIVEN valid BedrockModelRunner
+        WHEN predict() called
+        THEN Bedrock invoke method is called once with expected parameters,
+            and extract output and log probability as expected
+        """
+        bedrock_model_runner = BedrockModelRunner(
+            model_id=MODEL_ID,
+            content_template=CONTENT_TEMPLATE,
+            output=OUTPUT_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        # Mocking Bedrock invoke model serializing byte into JSON
+        result = bedrock_model_runner.predict(PROMPT)
+        assert result == (OUTPUT, None)
+
+    @patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True)
+    def test_bedrock_model_runner_predict_output(self, boto3_client):
+        """
+        GIVEN valid BedrockModelRunner
+        WHEN predict() called
+        THEN Bedrock invoke method is called once with expected parameters,
+            and extract output and log probability as expected
+        """
+        bedrock_model_runner = BedrockModelRunner(
+            model_id=MODEL_ID,
+            content_template=CONTENT_TEMPLATE,
+            log_probability=LOG_PROBABILITY_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        # Mocking Bedrock invoke model serializing byte into JSON
+        result = bedrock_model_runner.predict(PROMPT)
+        assert result == (None, LOG_PROBABILITY)
+
+    @patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True)
+    def test_bedrock_model_runner_predict_without_any_jmespath_expresssion(self, boto3_client):
+        """
+        GIVEN valid BedrockModelRunner
+        WHEN predict() called
+        THEN Bedrock invoke method is called once with expected parameters,
+            and extract output and log probability as expected
+        """
+        with pytest.raises(
+            EvalAlgorithmClientError,
+            match="One of output jmespath expression or log probability jmespath expression must be provided",
+        ):
+            bedrock_model_runner = BedrockModelRunner(
+                model_id=MODEL_ID,
+                content_template=CONTENT_TEMPLATE,
+                content_type=MIME_TYPE_JSON,
+                accept_type=MIME_TYPE_JSON,
+            )

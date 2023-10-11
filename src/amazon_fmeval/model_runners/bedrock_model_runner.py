@@ -41,6 +41,10 @@ class BedrockModelRunner(ModelRunner):
         self._content_type = content_type
         self._accept_type = accept_type
 
+        require(
+            output is not None or log_probability is not None,
+            "One of output jmespath expression or log probability jmespath expression must be provided",
+        )
         require(self._accept_type == MIME_TYPE_JSON, f"Model accept type `{self._accept_type}` is not supported.")
         require(
             self._content_type == MIME_TYPE_JSON,
@@ -57,6 +61,14 @@ class BedrockModelRunner(ModelRunner):
             body=composed_data, modelId=self._model_id, accept=self._accept_type, contentType=self._content_type
         )
         model_output = json.loads(response.get("body").read())
-        output = self._extractor.extract_output(data=model_output, num_records=1)
-        log_probability = self._extractor.extract_log_probability(data=model_output, num_records=1)
+        output = (
+            self._extractor.extract_output(data=model_output, num_records=1)
+            if self._extractor.output_jmespath_expression
+            else None
+        )
+        log_probability = (
+            self._extractor.extract_log_probability(data=model_output, num_records=1)
+            if self._extractor.log_probability_jmespath_expression
+            else None
+        )
         return output, log_probability
