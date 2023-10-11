@@ -266,16 +266,13 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         return max([eval_fn(model_output, target, **fn_kwargs) for target in possible_targets])
 
-    def evaluate_sample(  # type: ignore[override]
-        self, target_output: Optional[str] = None, model_output: Optional[str] = None
-    ) -> List[EvalScore]:
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """
         Evaluate a single QA record.
 
-        :param row: An individual row in the ray dataframe.
+        :param target_output: The expected responses from the model.
         :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
                              evaluation.
-        :param target_output: The expected responses from the model.
         :returns: A List of EvalScores computed for prompts and responses.
         """
         if target_output is None:

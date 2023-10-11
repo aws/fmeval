@@ -7,7 +7,13 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.constants import (
+    MIME_TYPE_JSON,
+    MODEL_INPUT_COLUMN_NAME,
+    MODEL_OUTPUT_COLUMN_NAME,
+    TARGET_OUTPUT_COLUMN_NAME,
+    CATEGORY_COLUMN_NAME,
+)
 from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
 from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
 from amazon_fmeval.eval_algorithms.qa_accuracy import (
@@ -25,51 +31,51 @@ QA_DATASET = ray.data.from_items(
     [
         # Exact match so all scores should have perfect values.
         {
-            "model_input": "What is the capital of England?",
-            "target_output": "London",
-            "model_output": "London",
-            "category": "capitals",
+            MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
+            TARGET_OUTPUT_COLUMN_NAME: "London",
+            MODEL_OUTPUT_COLUMN_NAME: "London",
+            CATEGORY_COLUMN_NAME: "capitals",
         },
         # Partial match.
         {
-            "model_input": "Who directed Pulp Fiction?",
-            "target_output": "Quentin Tarantino",
-            "model_output": "tarantino!",
-            "category": "movies",
+            MODEL_INPUT_COLUMN_NAME: "Who directed Pulp Fiction?",
+            TARGET_OUTPUT_COLUMN_NAME: "Quentin Tarantino",
+            MODEL_OUTPUT_COLUMN_NAME: "tarantino!",
+            CATEGORY_COLUMN_NAME: "movies",
         },
         # Wrong answer. All scores should be zero.
         {
-            "model_input": "What is the capital of France?",
-            "target_output": "Paris",
-            "model_output": "London",
-            "category": "capitals",
+            MODEL_INPUT_COLUMN_NAME: "What is the capital of France?",
+            TARGET_OUTPUT_COLUMN_NAME: "Paris",
+            MODEL_OUTPUT_COLUMN_NAME: "London",
+            CATEGORY_COLUMN_NAME: "capitals",
         },
         # Correct answer but with punctuation added.
         {
-            "model_input": "What is the capital of Italy?",
-            "target_output": "Rome",
-            "model_output": "rome!",
-            "category": "capitals",
+            MODEL_INPUT_COLUMN_NAME: "What is the capital of Italy?",
+            TARGET_OUTPUT_COLUMN_NAME: "Rome",
+            MODEL_OUTPUT_COLUMN_NAME: "rome!",
+            CATEGORY_COLUMN_NAME: "capitals",
         },
         # Many correct answers.
         {
-            "model_input": "When did Argentina win the FIFA World Cup?",
-            "target_output": "1978<OR>1986<OR>2022",
-            "model_output": "2022",
-            "category": "sports",
+            MODEL_INPUT_COLUMN_NAME: "When did Argentina win the FIFA World Cup?",
+            TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022",
+            MODEL_OUTPUT_COLUMN_NAME: "2022",
+            CATEGORY_COLUMN_NAME: "sports",
         },
     ]
 )
 
-QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns("model_output")
+QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(MODEL_OUTPUT_COLUMN_NAME)
 
-QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns("model_input")
+QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(MODEL_INPUT_COLUMN_NAME)
 
-QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns("target_output")
+QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(TARGET_OUTPUT_COLUMN_NAME)
 
-QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns("category")
+QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(CATEGORY_COLUMN_NAME)
 
-QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns("model_output")
+QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns(MODEL_OUTPUT_COLUMN_NAME)
 
 CATEGORY_SCORES = [
     CategoryScore(
@@ -453,7 +459,7 @@ class TestQAAccuracy:
     def test_qa_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs
-        WHEN QAAccuracy.evaluate_sample is called
+        WHEN QAAccuracy.evaluate is called
         THEN correct exception with proper message is raised
         """
         eval_algorithm = QAAccuracy(config)

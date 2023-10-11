@@ -44,6 +44,7 @@ class EvalAlgorithm(Enum):
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
+    CLASSIFICATION_ACCURACY = "classification_accuracy"
 
     def __str__(self):
         """
@@ -173,6 +174,7 @@ CROW_PAIRS = "crow-pairs"
 CNN_DAILY_MAIL = "cnn_daily_mail"
 XSUM = "xsum"
 IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
+WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
@@ -180,6 +182,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS, WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -192,6 +195,8 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
@@ -254,5 +259,15 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="text",
         target_output_location="sentiment",
+    ),
+    # TODO replace dummy link
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
+        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSON,
+        model_input_location="Review Text",
+        target_output_location="Recommended IND",
+        model_output_location=None,
+        category_location="Class Name",
     ),
 }

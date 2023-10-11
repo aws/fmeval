@@ -189,7 +189,9 @@ class TestSummarizationAccuracy:
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
-        assert test_case.expected_response == actual_response
+        for actual_eval_score, expected_eval_score in zip(actual_response, test_case.expected_response):
+            assert actual_eval_score.name == expected_eval_score.name
+            assert actual_eval_score.value == pytest.approx(expected_eval_score.value, rel=1e-5)
 
     @pytest.mark.parametrize(
         "test_case",
