@@ -181,6 +181,9 @@ class EvalOutputRecord:
     sent_less_input_prob: Optional[str] = None
     sent_more_output: Optional[str] = None
     sent_less_output: Optional[str] = None
+    prompt: Optional[str] = None
+    sent_more_prompt: Optional[str] = None
+    sent_less_prompt: Optional[str] = None
 
     def __str__(self):
         return json.dumps(self._to_dict())
@@ -243,7 +246,7 @@ class EvalOutputRecord:
                 )
                 non_score_columns[column_name] = value
             else:
-                assert isinstance(value, float)  # to satisfy Mypy
+                assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy
                 scores.append(EvalScore(name=column_name, value=value))
 
         return EvalOutputRecord(

@@ -5,7 +5,7 @@ from typing import List, Optional, Type, Dict, Tuple
 
 from functional import seq
 
-from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
+from amazon_fmeval.constants import MIME_TYPE_JSONLINES
 from amazon_fmeval.data_loaders.data_config import DataConfig
 
 
@@ -264,7 +264,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
         dataset_uri="dummy link",
-        dataset_mime_type=MIME_TYPE_JSON,
+        dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="Review Text",
         target_output_location="Recommended IND",
         model_output_location=None,

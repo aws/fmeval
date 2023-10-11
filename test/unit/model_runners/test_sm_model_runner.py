@@ -1,4 +1,7 @@
+from typing import NamedTuple, Optional
 from unittest.mock import Mock, patch
+
+import pytest
 
 from amazon_fmeval.constants import MIME_TYPE_JSON
 from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
@@ -54,8 +57,34 @@ class TestSageMakerModelRunner:
             deserializer=json_deserializer_class.return_value,
         )
 
+    class TestCasePredict(NamedTuple):
+        output_jmespath: Optional[str]
+        log_probability_jmespath: Optional[str]
+        output: Optional[str]
+        log_probability: Optional[float]
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCasePredict(
+                output_jmespath=OUTPUT_JMES_PATH,
+                log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
+                output=OUTPUT,
+                log_probability=LOG_PROBABILITY,
+            ),
+            TestCasePredict(
+                output_jmespath=None,
+                log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
+                output=None,
+                log_probability=LOG_PROBABILITY,
+            ),
+            TestCasePredict(
+                output_jmespath=OUTPUT_JMES_PATH, log_probability_jmespath=None, output=OUTPUT, log_probability=None
+            ),
+        ],
+    )
     @patch("sagemaker.session.Session")
-    def test_sm_model_runner_predict(self, sagemaker_session_class):
+    def test_sm_model_runner_predict(self, sagemaker_session_class, test_case):
         """
         GIVEN valid SageMakerModelRunner
         WHEN predict() called
@@ -69,8 +98,8 @@ class TestSageMakerModelRunner:
             endpoint_name=ENDPOINT_NAME,
             content_template=CONTENT_TEMPLATE,
             custom_attributes=CUSTOM_ATTRIBUTES,
-            output=OUTPUT_JMES_PATH,
-            log_probability=LOG_PROBABILITY_JMES_PATH,
+            output=test_case.output_jmespath,
+            log_probability=test_case.log_probability_jmespath,
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
         )
@@ -86,4 +115,4 @@ class TestSageMakerModelRunner:
             "CustomAttributes": CUSTOM_ATTRIBUTES,
             "EndpointName": ENDPOINT_NAME,
         }
-        assert result == (OUTPUT, LOG_PROBABILITY)
+        assert result == (test_case.output, test_case.log_probability)
