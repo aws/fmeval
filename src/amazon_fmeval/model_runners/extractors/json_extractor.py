@@ -81,7 +81,7 @@ class JsonExtractor(Extractor):
 
     @staticmethod
     def _validate_types(values: Any, type: Type, num_records: int, jmespath_expression: str):
-        util.require(values, f"JMESpath {jmespath_expression} could not find any data")
+        util.require(values is not None, f"JMESpath {jmespath_expression} could not find any data")
         if num_records == 1:
             util.require(
                 isinstance(values, type), f"Extractor found: {values} which does not match expected type {type}"

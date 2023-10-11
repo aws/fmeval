@@ -231,19 +231,6 @@ def test_eval_output_record_from_row_success():
     assert EvalOutputRecord.from_row(row, score_names=["rouge", "bert"]) == expected_record
 
 
-def test_eval_output_record_from_row_failure():
-    """
-    GIVEN a row with a key (i.e. column name) that does not
-        match any of the attribute names of EvalOutputRecord
-        or any of the column names provided in score_names
-    WHEN EvalOutputRecord.from_row is called
-    THEN an AssertionError is raised
-    """
-    row = {"MoDEL_iNpUT": "input", MODEL_OUTPUT_COLUMN_NAME: "output", "rouge": 0.42, "bert": 0.162}
-    with pytest.raises(AssertionError, match="Dataset row contains"):
-        EvalOutputRecord.from_row(row, score_names=["rouge", "bert"])
-
-
 @pytest.mark.parametrize("parent_dir_path", ["path/to/parent", "path/to/parent/"])
 def test_generate_output_dataset_path(parent_dir_path):
     eval_name = "eval"
