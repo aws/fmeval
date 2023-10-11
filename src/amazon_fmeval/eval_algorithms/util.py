@@ -39,6 +39,8 @@ def generate_model_predict_response_for_dataset(
     :return: the dataset with the model output added.
     """
     if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
+        predictor_back_up = model.predictor
+        sagemaker_session_back_up = model.sagemaker_session
         model.predictor = None
         model.sagemaker_session = None
 
@@ -74,7 +76,11 @@ def generate_model_predict_response_for_dataset(
                 row[model_log_probability_column_name] = predict_output[1]
             return row
 
-    return data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1))  # type: ignore [arg-type]
+    result_data = data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1)).materialize()  # type: ignore [arg-type]
+    if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
+        model.predictor = predictor_back_up
+        model.sagemaker_session = sagemaker_session_back_up
+    return result_data
 
 
 def generate_prompt_column_for_dataset(
