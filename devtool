@@ -34,7 +34,6 @@ lint() {
     echo "Note: This only syncs poetry.lock with pyproject.toml.  If you wish to update all downstream dependencies, run 'poetry update'"
 
     install_poetry_version 1.2.0
-    poetry config experimental.new-installer false
     poetry lock --check || (poetry lock --no-update && poetry lock --check)
     echo ""
 
@@ -139,8 +138,7 @@ install_poetry_version() {
 unit_test_with_coverage() {
      echo "Test with coverage"
      echo "=================="
-     coverage run -m pytest -x --pspec test/unit --ignore=test/unit/eval_algorithms/test_summarization_accuracy.py \
-       --ignore=test/unit/eval_algorithms/test_helper_model.py
+     coverage run -m pytest -x --pspec test/unit
      coverage report -m --fail-under=100
  }
 

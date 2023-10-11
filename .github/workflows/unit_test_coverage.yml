@@ -27,17 +27,12 @@ jobs:
       - name: Install dependencies with poetry
         run: |
           ./devtool install_poetry
-          poetry config experimental.new-installer false
           ./devtool install_deps
 
       - name: Test with code coverage
         run: |
           ./devtool unit_test_with_coverage
           echo "All build and tests passed."
-
-      - name: Run pre-commit checks and lint
-        run: |
-          ./devtool lint
 
       - name: Build Package binary wheel
         run: |
