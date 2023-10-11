@@ -6,6 +6,7 @@ name: Unit Test coverage
 on:
   pull_request:
     types: [opened, reopened]
+  push:
 
 env:
   AWS_DEFAULT_REGION: us-west-2

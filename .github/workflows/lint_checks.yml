@@ -3,7 +3,13 @@
 
 name: Lint Checks Test
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches:
+      - 'aws/**'
+  push:
+    branches:
+      '**/gh_actions_test'
 
 jobs:
   lint-checks-test:
