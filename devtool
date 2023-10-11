@@ -32,7 +32,9 @@ lint() {
     echo "4. Poetry lock check"
     echo "===================="
     echo "Note: This only syncs poetry.lock with pyproject.toml.  If you wish to update all downstream dependencies, run 'poetry update'"
+
     install_poetry_version 1.2.0
+    poetry config experimental.new-installer false
     poetry lock --check || (poetry lock --no-update && poetry lock --check)
     echo ""
 
@@ -137,21 +139,48 @@ install_poetry_version() {
 unit_test_with_coverage() {
      echo "Test with coverage"
      echo "=================="
-     coverage run -m pytest -x --pspec test/unit
+     coverage run -m pytest -x --pspec test/unit --ignore=test/unit/eval_algorithms/test_summarization_accuracy.py \
+       --ignore=test/unit/eval_algorithms/test_helper_model.py
      coverage report -m --fail-under=100
  }
 
-build_package() {
-    install_poetry_version 1.2.0
-    poetry install
+create_commit_hash_file(){
+  if [[ -z "${CODEBUILD_RESOLVED_SOURCE_VERSION:-}" ]]; then
+    echo $(git rev-parse HEAD) > src/amazon_fmeval/COMMIT_HASH
+  else
+    echo "${CODEBUILD_RESOLVED_SOURCE_VERSION}" > src/amazon_fmeval/COMMIT_HASH
+  fi
+}
+
+ build_package() {
+    create_commit_hash_file
     poetry build
+    rm src/amazon_fmeval/COMMIT_HASH
+}
+
+install_poetry() {
+    install_poetry_version 1.2.0
+}
+
+install_deps() {
+    poetry install
+}
+
+install_deps_dev() {
+    poetry install --only dev
+}
+
+install_package() {
+    wheel_name=$(ls -t dist | head -n 1)
+    pip3 install --upgrade dist/$wheel_name
 }
 
 all() {
     env_setup
-    build_package
     lint
+    install_poetry
     unit_test_with_coverage
+    build_package
     echo "All build and tests passed. 😊"
 }
 

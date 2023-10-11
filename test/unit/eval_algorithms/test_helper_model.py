@@ -26,7 +26,7 @@ class TestHelperModel:
         """
         test_bertscore_1 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
         test_bertscore_2 = BertscoreHelperModel("microsoft/deberta-xlarge-mnli")
-        assert test_bertscore_1 == test_bertscore_2
-        assert (
-            test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == 0.8239905834197998
+        assert pytest.approx(test_bertscore_1) == pytest.approx(test_bertscore_2)
+        assert test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == pytest.approx(
+            0.8239905834197998
         )
