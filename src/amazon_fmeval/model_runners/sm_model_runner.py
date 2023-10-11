@@ -61,6 +61,14 @@ class SageMakerModelRunner(ModelRunner):
         """
         composed_data = self._composer.compose(prompt)
         model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
-        output = self._extractor.extract_output(data=model_output, num_records=1)
-        log_probability = self._extractor.extract_log_probability(data=model_output, num_records=1)
+        output = (
+            self._extractor.extract_output(data=model_output, num_records=1)
+            if self._extractor.output_jmespath_expression
+            else None
+        )
+        log_probability = (
+            self._extractor.extract_log_probability(data=model_output, num_records=1)
+            if self._extractor.log_probability_jmespath_expression
+            else None
+        )
         return output, log_probability
