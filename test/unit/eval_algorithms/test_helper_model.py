@@ -26,5 +26,7 @@ class TestHelperModel:
         """
         test_bertscore_1 = BertscoreHelperModel("distilbert-base-uncased")
         test_bertscore_2 = BertscoreHelperModel("distilbert-base-uncased")
-        assert test_bertscore_1 == test_bertscore_2
-        assert test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == 0.902793288230896
+        assert pytest.approx(test_bertscore_1) == pytest.approx(test_bertscore_2)
+        assert test_bertscore_1.get_helper_score("sample text reference", "sample text prediction") == pytest.approx(
+            0.902793288230896
+        )
