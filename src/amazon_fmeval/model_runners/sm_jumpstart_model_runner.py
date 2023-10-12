@@ -58,9 +58,6 @@ class JumpStartModelRunner(ModelRunner):
             sagemaker_session=self.sagemaker_session,
         )
         util.require(
-            self.predictor.accept == MIME_TYPE_JSON, f"Model accept type `{self.predictor.accept}` is not supported."
-        )
-        util.require(
             self.predictor.content_type == MIME_TYPE_JSON,
             f"Model content type `{self.predictor.content_type}` is not supported.",
         )
