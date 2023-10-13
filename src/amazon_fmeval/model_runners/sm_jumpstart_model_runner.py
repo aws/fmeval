@@ -40,28 +40,29 @@ class JumpStartModelRunner(ModelRunner):
         :param log_probability: JMESPath expression of log probability in the model output
         """
         super().__init__(content_template, output, log_probability, MIME_TYPE_JSON, MIME_TYPE_JSON)
-        self._sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
-        self._model_id: str = model_id
-        self._model_version: Optional[str] = model_version
-        self._custom_attributes: Optional[str] = custom_attributes
+        self.sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
+        self.endpoint_name = endpoint_name
+        self.model_id: str = model_id
+        self.model_version: Optional[str] = model_version
+        self.custom_attributes: Optional[str] = custom_attributes
 
         util.require(
-            is_endpoint_in_service(self._sagemaker_session, endpoint_name),
+            is_endpoint_in_service(self.sagemaker_session, endpoint_name),
             "Endpoint is not in service",
         )
 
-        self._predictor = sagemaker.predictor.retrieve_default(
+        self.predictor = sagemaker.predictor.retrieve_default(
             endpoint_name=endpoint_name,
-            model_id=self._model_id,
-            model_version=self._model_version,
-            sagemaker_session=self._sagemaker_session,
+            model_id=self.model_id,
+            model_version=self.model_version,
+            sagemaker_session=self.sagemaker_session,
         )
         util.require(
-            self._predictor.accept == MIME_TYPE_JSON, f"Model accept type `{self._predictor.accept}` is not supported."
+            self.predictor.accept == MIME_TYPE_JSON, f"Model accept type `{self.predictor.accept}` is not supported."
         )
         util.require(
-            self._predictor.content_type == MIME_TYPE_JSON,
-            f"Model content type `{self._predictor.content_type}` is not supported.",
+            self.predictor.content_type == MIME_TYPE_JSON,
+            f"Model content type `{self.predictor.content_type}` is not supported.",
         )
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
@@ -70,7 +71,7 @@ class JumpStartModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
+        model_output = self.predictor.predict(data=composed_data, custom_attributes=self.custom_attributes)
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression

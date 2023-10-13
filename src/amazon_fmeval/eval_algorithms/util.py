@@ -1,18 +1,23 @@
 import json
 import os
+import pandas as pd
+import sagemaker
+import ray.data
+import amazon_fmeval.util as util
+import multiprocessing as mp
+
+from ray.data import Dataset
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
-
-import pandas as pd
-from ray.data import Dataset
-
-import amazon_fmeval.util as util
-from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, MIME_TYPE_JSON
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
+from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
+from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
 
 
 def generate_model_predict_response_for_dataset(
@@ -33,19 +38,49 @@ def generate_model_predict_response_for_dataset(
     :param model_log_probability_column_name: the name of the column to write the model log probability to.
     :return: the dataset with the model output added.
     """
+    if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
+        predictor_back_up = model.predictor
+        sagemaker_session_back_up = model.sagemaker_session
+        model.predictor = None
+        model.sagemaker_session = None
 
-    def _generate_model_predict_response_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-        """
-        Map callable function generating the model output and log probability column values
-        """
-        predict_output = model.predict(row[model_input_column_name])
-        if model_output_column_name:
-            row[model_output_column_name] = predict_output[0]
-        if model_log_probability_column_name:
-            row[model_log_probability_column_name] = predict_output[1]
-        return row
+    class ModelRunnerWrapper:  # pragma: no cover
+        def __init__(self):
+            self.model_runner = model
+            self.sagemaker_session = get_sagemaker_session()
+            if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):
+                self.model_runner.predictor = sagemaker.predictor.retrieve_default(
+                    endpoint_name=model.endpoint_name,
+                    model_id=model.model_id,
+                    model_version=model.model_version,
+                    sagemaker_session=self.sagemaker_session,
+                )
+                util.require(
+                    self.model_runner.predictor.accept == MIME_TYPE_JSON,
+                    f"Model accept type `{self.model_runner.predictor.accept}` is not supported.",
+                )
+                util.require(
+                    self.model_runner.predictor.content_type == MIME_TYPE_JSON,
+                    f"Model content type `{self.model_runner.predictor.content_type}` is not supported.",
+                )
+                util.require(
+                    is_endpoint_in_service(self.sagemaker_session, self.model_runner.endpoint_name),
+                    "Endpoint is not in service",
+                )
 
-    return data.map(_generate_model_predict_response_columns)
+        def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
+            predict_output = self.model_runner.predict(row[model_input_column_name])
+            if model_output_column_name:
+                row[model_output_column_name] = predict_output[0]
+            if model_log_probability_column_name:
+                row[model_log_probability_column_name] = predict_output[1]
+            return row
+
+    result_data = data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1)).materialize()  # type: ignore [arg-type]
+    if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
+        model.predictor = predictor_back_up
+        model.sagemaker_session = sagemaker_session_back_up
+    return result_data
 
 
 def generate_prompt_column_for_dataset(
@@ -239,12 +274,9 @@ class EvalOutputRecord:
         non_score_columns = {}
         scores = []
         for column_name, value in row.items():
-            if column_name not in score_names:
-                assert column_name in eval_output_record_attribute_names, (
-                    f"Dataset row contains a column name `{column_name}` that does "
-                    "not match any of the attributes of the EvalOutputRecord class."
-                )
-                non_score_columns[column_name] = value
+            if column_name not in score_names:  # pragma: no branch
+                if column_name in eval_output_record_attribute_names:  # pragma: no branch
+                    non_score_columns[column_name] = value
             else:
                 assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy
                 scores.append(EvalScore(name=column_name, value=value))

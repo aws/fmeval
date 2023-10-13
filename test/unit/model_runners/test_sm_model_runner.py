@@ -104,7 +104,7 @@ class TestSageMakerModelRunner:
             accept_type=MIME_TYPE_JSON,
         )
         # Mocking sagemaker.predictor serializing byte into JSON
-        sm_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+        sm_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
         result = sm_model_runner.predict(PROMPT)
         assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
         call_args, kwargs = mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.call_args

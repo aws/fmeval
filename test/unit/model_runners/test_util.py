@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
+from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service, get_bedrock_runtime_client
 
 ENDPOINT_NAME = "valid_endpoint_name"
 
@@ -27,6 +27,24 @@ def test_get_sagemaker_session():
         assert mock_sagemaker_client.service_name == "sagemaker"
         assert sagemaker_session.sagemaker_runtime_client == mock_sagemaker_runtime_client
         assert mock_sagemaker_runtime_client.service_name == "sagemaker-runtime"
+
+
+def test_get_bedrock_runtime_client():
+    mock_bedrock_runtime_client = MagicMock()
+    mock_other_client = MagicMock()
+
+    def mock_boto3_session_client(*_, **kwargs):
+        if kwargs.get("service_name") == "bedrock-runtime":
+            client = mock_bedrock_runtime_client
+            assert kwargs["config"].retries == {"mode": "standard", "max_attempts": 0}
+        else:
+            client = mock_other_client  # we don't care which it is
+        client.service_name = kwargs.get("service_name")
+        return client  # like bedrock-runtime
+
+    with patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True) as boto3_client:
+        bedrock_runtime_client = get_bedrock_runtime_client()
+        assert bedrock_runtime_client.service_name == "bedrock-runtime"
 
 
 def test_is_endpoint_in_service_true():

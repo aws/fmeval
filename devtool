@@ -161,10 +161,12 @@ install_poetry() {
 }
 
 install_deps() {
+    install_poetry
     poetry install
 }
 
 install_deps_dev() {
+    install_poetry
     poetry install --only dev
 }
 
