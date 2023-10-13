@@ -115,6 +115,7 @@ class TestGeneralSemanticRobustness:
         model = MagicMock()
         model.predict.side_effect = [
             (test_case.original_model_output,),
+            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -148,6 +149,39 @@ class TestGeneralSemanticRobustness:
         eval_algorithm = GeneralSemanticRobustness(config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.model)
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseGeneralSemanticRobustnessEvaluateSample(
+                model_input="What is the capital of England?",
+                original_model_output="Some model output.",
+                perturbed_model_output_1="Some model output.",
+                perturbed_model_output_2="Some model output.",
+                expected_response=None,
+            )
+        ],
+    )
+    def test_semantic_robustness_evaluate_sample_invalid_model(self, test_case, config):
+        """
+        GIVEN a non-deterministic model
+        WHEN GeneralSemanticRobustness.evaluate_sample is called
+        THEN correct exception with proper message is raised
+        """
+        model = MagicMock()
+        model.predict.side_effect = [
+            (test_case.original_model_output,),
+            (test_case.original_model_output + "1",),
+            (test_case.perturbed_model_output_1,),
+            (test_case.perturbed_model_output_2,),
+        ]
+
+        eval_algorithm = GeneralSemanticRobustness(config)
+        eval_algorithm = GeneralSemanticRobustness(config)
+        with pytest.raises(
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
+        ):
+            eval_algorithm.evaluate_sample(test_case.model_input, model)
 
     @pytest.mark.parametrize(
         "perturbation_type, expected_error_message",
@@ -200,7 +234,7 @@ class TestGeneralSemanticRobustness:
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
-                        dataset_name="wikitext",
+                        dataset_name="wikitext2",
                         dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
                         prompt_template="$feature",
                         category_scores=None,
@@ -251,7 +285,7 @@ class TestGeneralSemanticRobustness:
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
-                        dataset_name="wikitext",
+                        dataset_name="wikitext2",
                         dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
                         prompt_template="$feature",
                         category_scores=[

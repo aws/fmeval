@@ -176,7 +176,7 @@ XSUM = "xsum"
 IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
-WIKITEXT = "wikitext"
+WIKITEXT2 = "wikitext2"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
@@ -184,7 +184,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
-    EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT],
+    EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
 }
 
@@ -202,7 +202,7 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT): "$feature",
+    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
@@ -287,8 +287,8 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         category_location="tba",
     ),
     # TODO to be populated
-    WIKITEXT: DataConfig(
-        dataset_name=WIKITEXT,
+    WIKITEXT2: DataConfig(
+        dataset_name=WIKITEXT2,
         dataset_uri="dummy link",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="tba",

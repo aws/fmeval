@@ -66,23 +66,23 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     :param perturbation_type: perturbation type for generating perturbed inputs
     :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
     :param seed: Seed to be configured for generating perturbations
-    :param perturbation_prob: The probability that a given character will be perturbed. Used for butter_finger
-        perturbation_type
-    :param corrupt_proportion: Fraction of characters to be changed to uppercase. Used for random_upper_case
-        perturbation_type
-    :param remove_prob: Given a whitespace, remove it with this much probability. Used for whitespace_add_remove
-        perturbation_type
-    :param add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
+    :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
+        butter_finger perturbation_type
+    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
+        random_upper_case perturbation_type
+    :param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
+        whitespace_add_remove perturbation_type
+    :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
         whitespace_add_remove perturbation_type
     """
 
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
     seed: int = 5
-    perturbation_prob: Optional[float] = 0.1
-    corrupt_proportion: Optional[float] = 0.1
-    remove_prob: Optional[float] = 0.1
-    add_prob: Optional[float] = 0.05
+    butter_finger_perturbation_prob: Optional[float] = 0.1
+    random_uppercase_corrupt_proportion: Optional[float] = 0.1
+    whitespace_remove_prob: Optional[float] = 0.1
+    whitespace_add_prob: Optional[float] = 0.05
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
@@ -114,12 +114,14 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         self._eval_algorithm_config = eval_algorithm_config
 
         if self._eval_algorithm_config.perturbation_type is BUTTER_FINGER:
-            self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.perturbation_prob)
+            self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
         elif self._eval_algorithm_config.perturbation_type is RANDOM_UPPER_CASE:
-            self._perturbation_config = RandomUpperCaseConfig(self._eval_algorithm_config.corrupt_proportion)
+            self._perturbation_config = RandomUpperCaseConfig(
+                self._eval_algorithm_config.random_uppercase_corrupt_proportion
+            )
         else:
             self._perturbation_config = WhitespaceAddRemoveConfig(
-                self._eval_algorithm_config.remove_prob, self._eval_algorithm_config.add_prob
+                self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
             )
 
     def evaluate_sample(
@@ -141,6 +143,11 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
         original_model_output = model.predict(original_prompt)[0]
+
+        # Check if predictor is deterministic
+        if model.predict(original_prompt)[0] != original_model_output:
+            raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
             seed=self._eval_algorithm_config.seed
         )
