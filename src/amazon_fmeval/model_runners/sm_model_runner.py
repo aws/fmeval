@@ -39,16 +39,22 @@ class SageMakerModelRunner(ModelRunner):
         :param accept_type: The accept type of the request sent to the model for inference
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
-        self.sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
-        self.custom_attributes: Optional[str] = custom_attributes
+        self._endpoint_name = endpoint_name
+        self._content_template = content_template
+        self._custom_attributes = custom_attributes
+        self._output = output
+        self._log_probability = log_probability
+        self._content_type = content_type
+        self._accept_type = accept_type
 
+        sagemaker_session = get_sagemaker_session()
         util.require(
-            is_endpoint_in_service(self.sagemaker_session, endpoint_name),
-            "Endpoint is not in service",
+            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
+            "Endpoint {endpoint_name} is not in service",
         )
-        self.predictor = sagemaker.predictor.Predictor(
-            endpoint_name=endpoint_name,
-            sagemaker_session=self.sagemaker_session,
+        self._predictor = sagemaker.predictor.Predictor(
+            endpoint_name=self._endpoint_name,
+            sagemaker_session=sagemaker_session,
             # we only support JSON format model input/output currently
             serializer=sagemaker.serializers.JSONSerializer(),
             deserializer=sagemaker.deserializers.JSONDeserializer(),
@@ -60,7 +66,7 @@ class SageMakerModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self.predictor.predict(data=composed_data, custom_attributes=self.custom_attributes)
+        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
@@ -72,3 +78,19 @@ class SageMakerModelRunner(ModelRunner):
             else None
         )
         return output, log_probability
+
+    def __reduce__(self):
+        """
+        Custom serializer method used by Ray when it serializes instances of this
+        class in eval_algorithms.util.generate_model_predict_response_for_dataset.
+        """
+        serialized_data = (
+            self._endpoint_name,
+            self._content_template,
+            self._custom_attributes,
+            self._output,
+            self._log_probability,
+            self._content_type,
+            self._accept_type,
+        )
+        return SageMakerModelRunner, serialized_data

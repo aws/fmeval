@@ -1,7 +1,9 @@
+import pickle
 from typing import NamedTuple, Optional
 from unittest.mock import Mock, patch
 
 import pytest
+import sagemaker
 
 from amazon_fmeval.constants import MIME_TYPE_JSON
 from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
@@ -104,7 +106,7 @@ class TestSageMakerModelRunner:
             accept_type=MIME_TYPE_JSON,
         )
         # Mocking sagemaker.predictor serializing byte into JSON
-        sm_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+        sm_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
         result = sm_model_runner.predict(PROMPT)
         assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
         call_args, kwargs = mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.call_args
@@ -116,3 +118,33 @@ class TestSageMakerModelRunner:
             "EndpointName": ENDPOINT_NAME,
         }
         assert result == (test_case.output, test_case.log_probability)
+
+    @patch("sagemaker.session.Session")
+    def test_sm_model_runner_serializer(self, sagemaker_session_class):
+        """
+        GIVEN a valid SageMakerModelRunner
+        WHEN it is serialized (via pickle.dumps)
+        THEN its __reduce__ method produces the correct output, which is verified by
+            pickle.loads returning a correct SageMakerModelRunner instance
+        """
+        mock_sagemaker_session = sagemaker_session_class()
+        mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+
+        sm_model_runner = SageMakerModelRunner(
+            endpoint_name=ENDPOINT_NAME,
+            content_template=CONTENT_TEMPLATE,
+            custom_attributes=CUSTOM_ATTRIBUTES,
+            output=OUTPUT_JMES_PATH,
+            log_probability=LOG_PROBABILITY_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        deserialized: SageMakerModelRunner = pickle.loads(pickle.dumps(sm_model_runner))
+        assert deserialized._endpoint_name == sm_model_runner._endpoint_name
+        assert deserialized._content_template == sm_model_runner._content_template
+        assert deserialized._custom_attributes == sm_model_runner._custom_attributes
+        assert deserialized._output == sm_model_runner._output
+        assert deserialized._log_probability == sm_model_runner._log_probability
+        assert deserialized._content_type == sm_model_runner._content_type
+        assert deserialized._accept_type == sm_model_runner._accept_type
+        assert isinstance(deserialized._predictor, sagemaker.predictor.Predictor)

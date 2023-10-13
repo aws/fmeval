@@ -1,23 +1,21 @@
 import json
 import os
 import pandas as pd
-import sagemaker
 import ray.data
-import amazon_fmeval.util as util
 import multiprocessing as mp
+
+
+import amazon_fmeval.util as util
 
 from ray.data import Dataset
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
-from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, MIME_TYPE_JSON
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
-from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
-from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
-from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
 
 
 def generate_model_predict_response_for_dataset(
@@ -28,45 +26,34 @@ def generate_model_predict_response_for_dataset(
     model_log_probability_column_name: Optional[str] = None,
 ) -> Dataset:
     """
-    Runs the model on the given data. Output will be written
-    to the `model_output_column_name` column, and log_probability will be written to the
-    `model_log_probability_column_name`
-    :param model: ModelRunner
-    :param data: the dataset where each instance is a row in the dataset.
-    :param model_input_column_name: the name of the column containing the model input.
-    :param model_output_column_name: the name of the column to write the model output to.
-    :param model_log_probability_column_name: the name of the column to write the model log probability to.
-    :return: the dataset with the model output added.
+    Runs the model on the given data. Output will be written to the
+    `model_output_column_name` column, and log_probability will be
+    written to the `model_log_probability_column_name` column.
+
+    :param model: ModelRunner to get predictions from.
+    :param data: The dataset containing model inputs to feed to `model`.
+    :param model_input_column_name: The name of the column containing the model input.
+    :param model_output_column_name: The name of the column to write the model output to.
+    :param model_log_probability_column_name: The name of the column to write the model log probability to.
+    :return: The dataset with a model output column and model log probability column added.
+        Note that both columns are optional, i.e. it is possible that a model output
+        column is added, but a log probability column is not added (and vice versa).
     """
-    if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
-        predictor_back_up = model.predictor
-        sagemaker_session_back_up = model.sagemaker_session
-        model.predictor = None
-        model.sagemaker_session = None
 
     class ModelRunnerWrapper:  # pragma: no cover
+        """
+        This class represents the Ray Actor that gets model predictions
+        by feeding model inputs from the dataset to the model runner.
+
+        We use Ray Actors instead of Tasks because the Actor approach minimizes
+        the number of times that the ModelRunner `model` gets deserialized.
+        With Tasks, Ray will serialize and deserialize `model` for every single
+        prediction. With Actors, `model` gets deserialized once per Actor when
+        the Actor gets initialized.
+        """
+
         def __init__(self):
             self.model_runner = model
-            self.sagemaker_session = get_sagemaker_session()
-            if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):
-                self.model_runner.predictor = sagemaker.predictor.retrieve_default(
-                    endpoint_name=model.endpoint_name,
-                    model_id=model.model_id,
-                    model_version=model.model_version,
-                    sagemaker_session=self.sagemaker_session,
-                )
-                util.require(
-                    self.model_runner.predictor.accept == MIME_TYPE_JSON,
-                    f"Model accept type `{self.model_runner.predictor.accept}` is not supported.",
-                )
-                util.require(
-                    self.model_runner.predictor.content_type == MIME_TYPE_JSON,
-                    f"Model content type `{self.model_runner.predictor.content_type}` is not supported.",
-                )
-                util.require(
-                    is_endpoint_in_service(self.sagemaker_session, self.model_runner.endpoint_name),
-                    "Endpoint is not in service",
-                )
 
         def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
             predict_output = self.model_runner.predict(row[model_input_column_name])
@@ -76,11 +63,7 @@ def generate_model_predict_response_for_dataset(
                 row[model_log_probability_column_name] = predict_output[1]
             return row
 
-    result_data = data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1)).materialize()  # type: ignore [arg-type]
-    if isinstance(model, JumpStartModelRunner) or isinstance(model, SageMakerModelRunner):  # pragma: no cover
-        model.predictor = predictor_back_up
-        model.sagemaker_session = sagemaker_session_back_up
-    return result_data
+    return data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1))  # type: ignore [arg-type]
 
 
 def generate_prompt_column_for_dataset(
