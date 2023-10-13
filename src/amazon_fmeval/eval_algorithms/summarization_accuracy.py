@@ -125,7 +125,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
         :param target_output: The expected responses from the model
         :param model_output: The output of a model that we want to evaluate.
-        :return: an instance of EvalOutput that contains the score computed for prompts and responses.
+        :return: list of EvalScore objects
         """
         if target_output is None:
             raise EvalAlgorithmClientError(
@@ -162,7 +162,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :return: List of EvalOutput objects. Current implementation returns only one score.
+        :return: List of EvalOutput objects.
         """
         is_custom_dataset_evaluation = False
         if dataset_config:

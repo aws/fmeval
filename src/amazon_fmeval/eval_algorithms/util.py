@@ -315,3 +315,43 @@ def generate_output_dataset_path(path_to_parent_dir: str, eval_name: str, datase
     :returns: A path that is unique to an evaluation/dataset pair for a given job.
     """
     return os.path.join(path_to_parent_dir, f"{eval_name}_{dataset_name}.jsonl")
+
+
+ADDITIONAL_MODEL_OUTPUT_COLUMN_NAME = "additional_model_output"
+
+
+def is_predictor_deterministic(
+    dataset: Dataset,
+    model: ModelRunner,
+    prompt_column_name: str,
+    model_output_column_name: str,
+    num_additional_predictions: int = 1,
+) -> bool:
+    """
+    Util to determine if a model is deterministic. Method invokes model with inputs in a dataset multiple times
+    and compares predictions.
+    :param dataset: Ray dataset which contains input prompts and original output
+    :param model: ModelRunner
+    :param prompt_column_name: name of input prompt column in input dataset
+    :param model_output_column_name: name of input model output column in input dataset
+    :param num_additional_predictions: Number of additional inference requests to make
+    :returns: True is model response is deterministic else False.
+
+    Note: Currently we are comparing only model outputs in this utility. We can compare input log probabilities too
+    if we get a use case for that in eval algos.
+    """
+    for idx in range(num_additional_predictions):
+        dataset = generate_model_predict_response_for_dataset(
+            model, dataset, prompt_column_name, f"{ADDITIONAL_MODEL_OUTPUT_COLUMN_NAME}_{idx}"
+        )
+
+    for row in dataset.iter_rows():
+        is_prediction_same = all(
+            [
+                row[model_output_column_name] == row[f"{ADDITIONAL_MODEL_OUTPUT_COLUMN_NAME}_{idx}"]
+                for idx in range(num_additional_predictions)
+            ]
+        )
+        if not is_prediction_same:
+            return False
+    return True
