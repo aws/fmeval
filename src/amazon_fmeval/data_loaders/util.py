@@ -1,3 +1,4 @@
+import logging
 import os
 import ray.data
 import urllib.parse
@@ -9,8 +10,10 @@ from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, Js
 from amazon_fmeval.data_loaders.json_parser import JsonParser
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
+from amazon_fmeval.perf_util import timed_block
 
 s3 = S3FileSystem()
+logger = logging.getLogger(__name__)
 
 
 def get_dataset(config: DataConfig) -> ray.data.Dataset:
@@ -19,10 +22,12 @@ def get_dataset(config: DataConfig) -> ray.data.Dataset:
 
     :param config: Input DataConfig
     """
-    data_source = get_data_source(config.dataset_uri)
-    data_loader_config = _get_data_loader_config(data_source, config)
-    data_loader = _get_data_loader(config.dataset_mime_type)
-    return data_loader.load_dataset(data_loader_config)
+    with timed_block(f"Loading dataset {config.dataset_name}", logger):
+        data_source = get_data_source(config.dataset_uri)
+        data_loader_config = _get_data_loader_config(data_source, config)
+        data_loader = _get_data_loader(config.dataset_mime_type)
+        data = data_loader.load_dataset(data_loader_config)
+    return data
 
 
 def _get_data_loader_config(data_source: DataSource, config: DataConfig) -> JsonDataLoaderConfig:

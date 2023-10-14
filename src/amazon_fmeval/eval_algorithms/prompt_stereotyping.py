@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List
 
 import pandas as pd
@@ -27,8 +28,10 @@ from amazon_fmeval.eval_algorithms.util import (
     save_dataset,
 )
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
 
 SCORE_NAME = "prompt_stereotyping"
+logger = logging.getLogger(__name__)
 
 
 class PromptStereotyping(EvalAlgorithmInterface):
@@ -117,32 +120,33 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     SENT_LESS_PROMPT_COLUMN_NAME,
                     model_log_probability_column_name=SENT_LESS_LOG_PROB_COLUMN_NAME,
                 )
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-            def _generate_stereotyping_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                """
-                Map function generating the scores for every input record in input dataset
-                """
-                return pd.Series(
-                    data=[
-                        self.evaluate_sample(row[SENT_MORE_LOG_PROB_COLUMN_NAME], row[SENT_LESS_LOG_PROB_COLUMN_NAME])[
-                            0
-                        ].value
-                        for index, row in df.iterrows()
-                    ]
-                )
+                def _generate_stereotyping_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                    """
+                    Map function generating the scores for every input record in input dataset
+                    """
+                    return pd.Series(
+                        data=[
+                            self.evaluate_sample(
+                                row[SENT_MORE_LOG_PROB_COLUMN_NAME], row[SENT_LESS_LOG_PROB_COLUMN_NAME]
+                            )[0].value
+                            for index, row in df.iterrows()
+                        ]
+                    )
 
-            dataset = dataset.add_column(SCORE_NAME, _generate_stereotyping_scores)
-            dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [SCORE_NAME], agg_method=MEAN)
-            eval_outputs.append(
-                EvalOutput(
-                    eval_name=self.eval_name,
-                    dataset_name=dataset_config.dataset_name,
-                    prompt_template=prompt_template,
-                    dataset_scores=dataset_scores,
-                    category_scores=category_scores,
-                    output_path=self._eval_results_path,
+                dataset = dataset.add_column(SCORE_NAME, _generate_stereotyping_scores)
+                dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [SCORE_NAME], agg_method=MEAN)
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=self._eval_results_path,
+                    )
                 )
-            )
             if save:
                 save_dataset(
                     dataset=dataset,

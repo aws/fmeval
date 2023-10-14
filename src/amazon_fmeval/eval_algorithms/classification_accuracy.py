@@ -1,3 +1,4 @@
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
@@ -39,7 +40,7 @@ from amazon_fmeval.eval_algorithms.util import (
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
-
+from amazon_fmeval.perf_util import timed_block
 
 CLASSIFICATION_ACCURACY_SCORE = "classification_accuracy_score"
 BALANCED_ACCURACY_SCORE = "balanced_accuracy_score"
@@ -58,6 +59,7 @@ CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     PRECISION_SCORE: precision_score,
     RECALL_SCORE: recall_score,
 }
+logger = logging.getLogger(__name__)
 
 
 def convert_model_output_to_label(model_output: str, valid_labels: List[str]) -> str:
@@ -161,86 +163,92 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
                 )
 
-            def _generate_classified_model_output_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                return pd.Series(
-                    data=[
-                        self._eval_algorithm_config.converter_fn(
-                            row[MODEL_OUTPUT_COLUMN_NAME], self._eval_algorithm_config.valid_labels
-                        )
-                        for index, row in df.iterrows()
-                    ]
-                )
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-            dataset = dataset.add_column(CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME, _generate_classified_model_output_column)
-            dataset = dataset.materialize()
-
-            def _generate_classification_accuracy_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                return pd.Series(
-                    data=[
-                        int(row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME]))
-                        for index, row in df.iterrows()
-                    ]
-                )
-
-            dataset = dataset.add_column(CLASSIFICATION_ACCURACY_SCORE, _generate_classification_accuracy_column)
-            dataset = dataset.materialize()
-
-            df = dataset.to_pandas()
-            dataset_scores = [
-                EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=dataset.mean(CLASSIFICATION_ACCURACY_SCORE))
-            ]
-
-            for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
-                dataset_scores.append(
-                    EvalScore(
-                        name=eval_score,
-                        value=self._get_score(
-                            # TODO dataloader should ensure target output is string
-                            y_true=df[TARGET_OUTPUT_COLUMN_NAME],
-                            y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
-                            eval_fn=eval_fn,
-                        ),
+                def _generate_classified_model_output_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                    return pd.Series(
+                        data=[
+                            self._eval_algorithm_config.converter_fn(
+                                row[MODEL_OUTPUT_COLUMN_NAME], self._eval_algorithm_config.valid_labels
+                            )
+                            for index, row in df.iterrows()
+                        ]
                     )
-                )
 
-            category_scores: Optional[Dict[str, CategoryScore]] = None
-            if CATEGORY_COLUMN_NAME in dataset.columns():
-                category_scores = {
-                    name: CategoryScore(name=name, scores=[]) for name in dataset.unique(CATEGORY_COLUMN_NAME)
-                }
-                category_aggregate: Dataset = category_wise_aggregation(dataset, CLASSIFICATION_ACCURACY_SCORE, MEAN)
-                for row in category_aggregate.iter_rows():
-                    category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
+                dataset = dataset.add_column(
+                    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME, _generate_classified_model_output_column
+                )
+                dataset = dataset.materialize()
+
+                def _generate_classification_accuracy_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                    return pd.Series(
+                        data=[
+                            int(row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME]))
+                            for index, row in df.iterrows()
+                        ]
+                    )
+
+                dataset = dataset.add_column(CLASSIFICATION_ACCURACY_SCORE, _generate_classification_accuracy_column)
+                dataset = dataset.materialize()
+
+                df = dataset.to_pandas()
+                dataset_scores = [
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=dataset.mean(CLASSIFICATION_ACCURACY_SCORE))
+                ]
+
+                for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
+                    dataset_scores.append(
                         EvalScore(
-                            name=CLASSIFICATION_ACCURACY_SCORE, value=row[f"mean({CLASSIFICATION_ACCURACY_SCORE})"]
+                            name=eval_score,
+                            value=self._get_score(
+                                # TODO dataloader should ensure target output is string
+                                y_true=df[TARGET_OUTPUT_COLUMN_NAME],
+                                y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
+                                eval_fn=eval_fn,
+                            ),
                         )
                     )
-                    categorical_y_true = df.loc[
-                        df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], TARGET_OUTPUT_COLUMN_NAME
-                    ]
-                    categorical_y_pred = df.loc[
-                        df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME
-                    ]
-                    for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
+
+                category_scores: Optional[Dict[str, CategoryScore]] = None
+                if CATEGORY_COLUMN_NAME in dataset.columns():
+                    category_scores = {
+                        name: CategoryScore(name=name, scores=[]) for name in dataset.unique(CATEGORY_COLUMN_NAME)
+                    }
+                    category_aggregate: Dataset = category_wise_aggregation(
+                        dataset, CLASSIFICATION_ACCURACY_SCORE, MEAN
+                    )
+                    for row in category_aggregate.iter_rows():
                         category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
                             EvalScore(
-                                name=eval_score,
-                                value=self._get_score(
-                                    y_true=categorical_y_true, y_pred=categorical_y_pred, eval_fn=eval_fn
-                                ),
+                                name=CLASSIFICATION_ACCURACY_SCORE, value=row[f"mean({CLASSIFICATION_ACCURACY_SCORE})"]
                             )
                         )
+                        categorical_y_true = df.loc[
+                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], TARGET_OUTPUT_COLUMN_NAME
+                        ]
+                        categorical_y_pred = df.loc[
+                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME
+                        ]
+                        for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
+                            category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
+                                EvalScore(
+                                    name=eval_score,
+                                    value=self._get_score(
+                                        y_true=categorical_y_true, y_pred=categorical_y_pred, eval_fn=eval_fn
+                                    ),
+                                )
+                            )
 
-            eval_outputs.append(
-                EvalOutput(
-                    eval_name=self.eval_name,
-                    dataset_name=dataset_config.dataset_name,
-                    prompt_template=prompt_template,
-                    dataset_scores=dataset_scores,
-                    category_scores=list(category_scores.values()) if category_scores else None,
-                    output_path=self._eval_results_path,
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=list(category_scores.values()) if category_scores else None,
+                        output_path=self._eval_results_path,
+                    )
                 )
-            )
             if save:
                 save_dataset(
                     dataset=dataset,
