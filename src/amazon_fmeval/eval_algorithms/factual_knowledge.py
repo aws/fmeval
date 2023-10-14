@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional, List
 
@@ -34,8 +35,11 @@ from amazon_fmeval.eval_algorithms.util import (
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
 
 PROMPT_COLUMN_NAME = "prompt"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -157,30 +161,31 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     model_input_column_name=PROMPT_COLUMN_NAME,
                     model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
                 )
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-            def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                """
-                Map function generating the scores for every input record in input dataset
-                """
-                return pd.Series(
-                    data=[
-                        self._get_score(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME])
-                        for index, row in df.iterrows()
-                    ]
-                )
+                def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                    """
+                    Map function generating the scores for every input record in input dataset
+                    """
+                    return pd.Series(
+                        data=[
+                            self._get_score(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME])
+                            for index, row in df.iterrows()
+                        ]
+                    )
 
-            dataset = dataset.add_column(SCORE_NAME, _generate_eval_scores)
-            dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [SCORE_NAME], agg_method=MEAN)
-            eval_outputs.append(
-                EvalOutput(
-                    eval_name=self.eval_name,
-                    dataset_name=dataset_config.dataset_name,
-                    prompt_template=prompt_template,
-                    dataset_scores=dataset_scores,
-                    category_scores=category_scores,
-                    output_path=self._eval_results_path,
+                dataset = dataset.add_column(SCORE_NAME, _generate_eval_scores)
+                dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [SCORE_NAME], agg_method=MEAN)
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=self._eval_results_path,
+                    )
                 )
-            )
             if save:
                 save_dataset(
                     dataset=dataset,

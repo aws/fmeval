@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pandas as pd
 import ray.data
@@ -16,6 +17,10 @@ from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
+
+
+logger = logging.getLogger(__name__)
 
 
 def generate_model_predict_response_for_dataset(
@@ -39,31 +44,36 @@ def generate_model_predict_response_for_dataset(
         Note that both columns are optional, i.e. it is possible that a model output
         column is added, but a log probability column is not added (and vice versa).
     """
+    with timed_block(f"Performing inference on dataset on {model}", logger):
 
-    class ModelRunnerWrapper:  # pragma: no cover
-        """
-        This class represents the Ray Actor that gets model predictions
-        by feeding model inputs from the dataset to the model runner.
+        class ModelRunnerWrapper:  # pragma: no cover
+            """
+            This class represents the Ray Actor that gets model predictions
+            by feeding model inputs from the dataset to the model runner.
 
-        We use Ray Actors instead of Tasks because the Actor approach minimizes
-        the number of times that the ModelRunner `model` gets deserialized.
-        With Tasks, Ray will serialize and deserialize `model` for every single
-        prediction. With Actors, `model` gets deserialized once per Actor when
-        the Actor gets initialized.
-        """
+            We use Ray Actors instead of Tasks because the Actor approach minimizes
+            the number of times that the ModelRunner `model` gets deserialized.
+            With Tasks, Ray will serialize and deserialize `model` for every single
+            prediction. With Actors, `model` gets deserialized once per Actor when
+            the Actor gets initialized.
+            """
 
-        def __init__(self):
-            self.model_runner = model
+            def __init__(self):
+                self.model_runner = model
+                logger.setLevel(logging.DEBUG)
 
-        def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
-            predict_output = self.model_runner.predict(row[model_input_column_name])
-            if model_output_column_name:
-                row[model_output_column_name] = predict_output[0]
-            if model_log_probability_column_name:
-                row[model_log_probability_column_name] = predict_output[1]
-            return row
+            def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
+                predict_output = self.model_runner.predict(row[model_input_column_name])
+                if model_output_column_name:
+                    row[model_output_column_name] = predict_output[0]
+                if model_log_probability_column_name:
+                    row[model_log_probability_column_name] = predict_output[1]
+                return row
 
-    return data.map(ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1))  # type: ignore [arg-type]
+        data = data.map(
+            ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1)  # type: ignore[arg-type]
+        ).materialize()
+    return data
 
 
 def generate_prompt_column_for_dataset(
@@ -77,15 +87,19 @@ def generate_prompt_column_for_dataset(
     :param prompt_column_name: Output column name to which composed prompts are added
     :return: the dataset with the composed prompts added.
     """
-    prompt_composer = PromptComposer(prompt_template)
+    with timed_block(f"Generating prompt column", logger):
+        prompt_composer = PromptComposer(prompt_template)
 
-    def _generate_prompt_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-        """
-        Map function generating the prompt column values given a batch of records in pandas format.
-        """
-        return pd.Series(data=[prompt_composer.compose(row[model_input_column_name]) for index, row in df.iterrows()])
+        def _generate_prompt_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+            """
+            Map function generating the prompt column values given a batch of records in pandas format.
+            """
+            return pd.Series(
+                data=[prompt_composer.compose(row[model_input_column_name]) for index, row in df.iterrows()]
+            )
 
-    return data.add_column(prompt_column_name, _generate_prompt_column)
+        data = data.add_column(prompt_column_name, _generate_prompt_column).materialize()
+    return data
 
 
 def validate_dataset(dataset: Dataset, column_names: List[str]):
@@ -297,27 +311,28 @@ def save_dataset(dataset: Dataset, score_names: List[str], path: str) -> None:  
         {"model_input" : "hello", "scores" : [{"name": "rouge", "value": 0.5}, {"name": "bert_score", "value": 0.42}]}
         {"model_input" : "world", "scores" : [{"name": "rouge", "value": 0.314}, {"name": "bert_score", "value": 0.271}]}
     """
-    # We need the outer dict that wraps the EvalOutputRecord because map() requires
-    # whatever is returned from the lambda function to be a dict
-    dataset = dataset.map(lambda row: {"record": EvalOutputRecord.from_row(row, score_names)})
-    # Without this line, dataset.iter_rows() below is not guaranteed to return the rows
-    # in the same order that they appear in `dataset`.
-    dataset.materialize()
+    with timed_block(f"Saving dataset to file", logger):
+        # We need the outer dict that wraps the EvalOutputRecord because map() requires
+        # whatever is returned from the lambda function to be a dict
+        dataset = dataset.map(lambda row: {"record": EvalOutputRecord.from_row(row, score_names)})
+        # Without this line, dataset.iter_rows() below is not guaranteed to return the rows
+        # in the same order that they appear in `dataset`.
+        dataset.materialize()
 
-    path_to_parent_dir = os.path.dirname(path)
-    file_name = os.path.basename(path)
-    file_name_without_extension = os.path.splitext(file_name)[0]
-    full_path = f"{path_to_parent_dir}/{file_name_without_extension}.jsonl"
-    with open(full_path, "w") as fh:
-        records = []
-        for dataset_row in dataset.iter_rows():
-            record = dataset_row["record"]
-            records.append(str(record))
-            if len(records) == EVAL_OUTPUT_RECORDS_BATCH_SIZE:
-                fh.write("\n".join(records) + "\n")
-                records = []
-        if records:  # pragma: no branch
-            fh.write("\n".join(records))  # handle the last batch
+        path_to_parent_dir = os.path.dirname(path)
+        file_name = os.path.basename(path)
+        file_name_without_extension = os.path.splitext(file_name)[0]
+        full_path = f"{path_to_parent_dir}/{file_name_without_extension}.jsonl"
+        with open(full_path, "w") as fh:
+            records = []
+            for dataset_row in dataset.iter_rows():
+                record = dataset_row["record"]
+                records.append(str(record))
+                if len(records) == EVAL_OUTPUT_RECORDS_BATCH_SIZE:
+                    fh.write("\n".join(records) + "\n")
+                    records = []
+            if records:  # pragma: no branch
+                fh.write("\n".join(records))  # handle the last batch
 
 
 def generate_output_dataset_path(path_to_parent_dir: str, eval_name: str, dataset_name) -> str:
