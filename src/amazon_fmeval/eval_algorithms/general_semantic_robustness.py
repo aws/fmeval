@@ -1,4 +1,5 @@
 import itertools
+import logging
 
 import evaluate as hf_evaluate
 from dataclasses import dataclass
@@ -37,6 +38,9 @@ from amazon_fmeval.eval_algorithms.util import (
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
+
+logger = logging.getLogger(__name__)
 
 # All the perturbation types supported by this eval algo
 BUTTER_FINGER = "butter_finger"
@@ -222,31 +226,33 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset = generate_prompt_column_for_dataset(
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-            def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                """
-                Map function generating the scores for every input record in input dataset
-                """
-                return pd.Series(
-                    data=[
-                        self.evaluate_sample(row[MODEL_INPUT_COLUMN_NAME], model, prompt_template)[0].value
-                        for index, row in df.iterrows()
-                    ]
+                def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                    """
+                    Map function generating the scores for every input record in input dataset
+                    """
+                    return pd.Series(
+                        data=[
+                            self.evaluate_sample(row[MODEL_INPUT_COLUMN_NAME], model, prompt_template)[0].value
+                            for index, row in df.iterrows()
+                        ]
+                    )
+
+                dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score)
+
+                dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=self._eval_results_path,
+                    )
                 )
 
-            dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score)
-
-            dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
-            eval_outputs.append(
-                EvalOutput(
-                    eval_name=self.eval_name,
-                    dataset_name=dataset_config.dataset_name,
-                    prompt_template=prompt_template,
-                    dataset_scores=dataset_scores,
-                    category_scores=category_scores,
-                    output_path=self._eval_results_path,
-                )
-            )
             if save:
                 save_dataset(
                     dataset=dataset,
