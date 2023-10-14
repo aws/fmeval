@@ -1,3 +1,4 @@
+import pickle
 from typing import NamedTuple, Optional
 from unittest.mock import Mock, patch
 
@@ -116,7 +117,7 @@ class TestJumpStartModelRunner:
                 log_probability=test_case.log_probability_jmespath,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
-            js_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+            js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
 
             result = js_model_runner.predict(PROMPT)
             assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
@@ -160,7 +161,7 @@ class TestJumpStartModelRunner:
                 log_probability=LOG_PROBABILITY_JMES_PATH,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
-            js_model_runner.predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
+            js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
 
             result = js_model_runner.predict(PROMPT)
             assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
@@ -173,3 +174,42 @@ class TestJumpStartModelRunner:
                 "EndpointName": ENDPOINT_NAME,
             }
             assert result == (OUTPUT, LOG_PROBABILITY)
+
+    @patch("sagemaker.session.Session")
+    def test_jumpstart_model_runner_serializer(self, sagemaker_session_class):
+        """
+        GIVEN a valid JumpStartModelRunner
+        WHEN it is serialized (via pickle.dumps)
+        THEN its __reduce__ method produces the correct output, which is verified by
+            pickle.loads returning a correct JumpStartModelRunner instance
+        """
+        mock_sagemaker_session = sagemaker_session_class()
+        mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+
+        with patch.object(
+            sagemaker.serializers, "retrieve_default", return_value=sagemaker.serializers.JSONSerializer()
+        ) as default_serializer, patch.object(
+            sagemaker.deserializers, "retrieve_default", return_value=sagemaker.deserializers.JSONDeserializer()
+        ) as default_deserializer, patch.object(
+            sagemaker.accept_types, "retrieve_default", return_value=MIME_TYPE_JSON
+        ) as default_accept_type, patch.object(
+            sagemaker.content_types, "retrieve_default", return_value=MIME_TYPE_JSON
+        ):
+            js_model_runner = JumpStartModelRunner(
+                endpoint_name=ENDPOINT_NAME,
+                model_id=MODEL_ID,
+                model_version=MODEL_VERSION,
+                content_template=CONTENT_TEMPLATE,
+                custom_attributes=CUSTOM_ATTRIBUTES,
+                output=OUTPUT_JMES_PATH,
+                log_probability=LOG_PROBABILITY_JMES_PATH,
+            )
+            deserialized: JumpStartModelRunner = pickle.loads(pickle.dumps(js_model_runner))
+            assert deserialized._endpoint_name == js_model_runner._endpoint_name
+            assert deserialized._model_id == js_model_runner._model_id
+            assert deserialized._model_version == js_model_runner._model_version
+            assert deserialized._content_template == js_model_runner._content_template
+            assert deserialized._custom_attributes == js_model_runner._custom_attributes
+            assert deserialized._output == js_model_runner._output
+            assert deserialized._log_probability == js_model_runner._log_probability
+            assert isinstance(deserialized._predictor, sagemaker.predictor.Predictor)

@@ -2,6 +2,7 @@
 Module to manage model runners for SageMaker Jumpstart endpoints.
 """
 import logging
+
 import sagemaker
 from typing import Optional, Tuple
 
@@ -40,30 +41,30 @@ class JumpStartModelRunner(ModelRunner):
         :param log_probability: JMESPath expression of log probability in the model output
         """
         super().__init__(content_template, output, log_probability, MIME_TYPE_JSON, MIME_TYPE_JSON)
-        self.sagemaker_session: sagemaker.session.Session = get_sagemaker_session()
-        self.endpoint_name = endpoint_name
-        self.model_id: str = model_id
-        self.model_version: Optional[str] = model_version
-        self.custom_attributes: Optional[str] = custom_attributes
-
+        self._endpoint_name = endpoint_name
+        self._model_id = model_id
+        self._content_template = content_template
+        self._model_version = model_version
+        self._custom_attributes = custom_attributes
+        self._output = output
+        self._log_probability = log_probability
+        sagemaker_session = get_sagemaker_session()
         util.require(
-            is_endpoint_in_service(self.sagemaker_session, endpoint_name),
-            "Endpoint is not in service",
+            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
+            f"Endpoint {self._endpoint_name} is not in service",
         )
-
-        self.predictor = sagemaker.predictor.retrieve_default(
-            endpoint_name=endpoint_name,
-            model_id=self.model_id,
-            model_version=self.model_version,
-            sagemaker_session=self.sagemaker_session,
+        predictor = sagemaker.predictor.retrieve_default(
+            endpoint_name=self._endpoint_name,
+            model_id=self._model_id,
+            model_version=self._model_version,
+            sagemaker_session=sagemaker_session,
         )
+        util.require(predictor.accept == MIME_TYPE_JSON, f"Model accept type `{predictor.accept}` is not supported.")
         util.require(
-            self.predictor.accept == MIME_TYPE_JSON, f"Model accept type `{self.predictor.accept}` is not supported."
+            predictor.content_type == MIME_TYPE_JSON,
+            f"Model content type `{predictor.content_type}` is not supported.",
         )
-        util.require(
-            self.predictor.content_type == MIME_TYPE_JSON,
-            f"Model content type `{self.predictor.content_type}` is not supported.",
-        )
+        self._predictor = predictor
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
         """
@@ -71,7 +72,7 @@ class JumpStartModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self.predictor.predict(data=composed_data, custom_attributes=self.custom_attributes)
+        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
@@ -83,3 +84,19 @@ class JumpStartModelRunner(ModelRunner):
             else None
         )
         return output, log_probability
+
+    def __reduce__(self):
+        """
+        Custom serializer method used by Ray when it serializes instances of this
+        class in eval_algorithms.util.generate_model_predict_response_for_dataset.
+        """
+        serialized_data = (
+            self._endpoint_name,
+            self._model_id,
+            self._content_template,
+            self._model_version,
+            self._custom_attributes,
+            self._output,
+            self._log_probability,
+        )
+        return JumpStartModelRunner, serialized_data

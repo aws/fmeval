@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional, List, Callable
 
@@ -39,6 +40,7 @@ from amazon_fmeval.eval_algorithms.util import (
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
 
 PROMPT_COLUMN_NAME = "prompt"
 METEOR_SCORE = "meteor"
@@ -57,6 +59,8 @@ MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
 ROBERTA_MODEL = "roberta-large-mnli"
 DEFAULT_MODEL_TYPE = MICROSOFT_DEBERTA_MODEL
 MODEL_TYPES_SUPPORTED = [MICROSOFT_DEBERTA_MODEL, ROBERTA_MODEL]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -196,27 +200,28 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                 dataset = generate_model_predict_response_for_dataset(
                     model, dataset, PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME
                 )
-            for eval_score, eval_func in self._score_eval_func_mapping.items():
-                dataset = add_score_to_dataset(
-                    dataset=dataset,
-                    eval_func=eval_func,
-                    score_column_name=eval_score,
-                    config=self._eval_algorithm_config,
-                )
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
+                for eval_score, eval_func in self._score_eval_func_mapping.items():
+                    dataset = add_score_to_dataset(
+                        dataset=dataset,
+                        eval_func=eval_func,
+                        score_column_name=eval_score,
+                        config=self._eval_algorithm_config,
+                    )
 
-            dataset_scores, category_scores = aggregate_evaluation_scores(
-                dataset, [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE], agg_method=MEAN
-            )
-            eval_outputs.append(
-                EvalOutput(
-                    eval_name=self.eval_name,
-                    dataset_name=dataset_config.dataset_name,
-                    prompt_template=prompt_template,
-                    dataset_scores=dataset_scores,
-                    category_scores=category_scores,
-                    output_path=self._eval_results_path,
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE], agg_method=MEAN
                 )
-            )
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=self._eval_results_path,
+                    )
+                )
             if save:
                 save_dataset(
                     dataset=dataset,

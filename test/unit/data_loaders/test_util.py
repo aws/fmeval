@@ -27,6 +27,7 @@ class TestDataLoaderUtil:
         THEN all of get_dataset's helper methods get called with expected arguments
         """
         config = Mock(spec=DataConfig)
+        config.dataset_name = "dataset1"
         config.dataset_uri = "unused"
         config.dataset_mime_type = "unused"
         get_dataset(config)
