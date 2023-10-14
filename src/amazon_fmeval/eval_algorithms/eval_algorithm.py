@@ -4,7 +4,7 @@ from amazon_fmeval.data_loaders.util import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
-from amazon_fmeval.util import get_eval_results_path, camel_to_snake
+from amazon_fmeval.util import get_eval_results_path
 
 
 class EvalAlgorithmConfig:
@@ -25,15 +25,6 @@ class EvalAlgorithmInterface(ABC):
                                             current evaluation.
         """
         self._eval_results_path = get_eval_results_path()
-
-    def __init_subclass__(cls, **kwargs):
-        """
-        Method to register algorithms.
-
-        :raises DuplicateEvalNameError if the name of the evaluation being initialized already exists.
-        """
-        super().__init_subclass__(**kwargs)
-        cls.eval_name = camel_to_snake(cls.__name__)
 
     @abstractmethod
     def evaluate(

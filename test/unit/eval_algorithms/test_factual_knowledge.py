@@ -15,7 +15,7 @@ from amazon_fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig, PROMPT_COLUMN_NAME
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
@@ -44,25 +44,25 @@ class TestFactualKnowledge:
                 model_input="London is the capital of",
                 model_output="England",
                 target_output="England<OR>UK",
-                expected_response=[EvalScore(name=FactualKnowledge.eval_name, value=1)],
+                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="London is the capital of",
                 model_output="England or wait Scotland",
                 target_output="England<OR>UK",
-                expected_response=[EvalScore(name=FactualKnowledge.eval_name, value=1)],
+                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="London is the capital of",
                 model_output="India or maybe Pakistan",
                 target_output="England<OR>UK",
-                expected_response=[EvalScore(name=FactualKnowledge.eval_name, value=0)],
+                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=0)],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="Pulp Fiction was directed by",
                 model_output="Quentin Tarantino",
                 target_output="QUENTIN TARANTINO",
-                expected_response=[EvalScore(name=FactualKnowledge.eval_name, value=1)],
+                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
             ),
         ],
     )
