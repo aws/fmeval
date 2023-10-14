@@ -48,7 +48,7 @@ class TestSemanticPreservingPerturbation:
     )
     def test_butter_finger(self, test_case):
         assert (
-            ButterFinger(seed=test_case.seed).compute(
+            ButterFinger(seed=test_case.seed).perturb(
                 test_case.input_text, test_case.config, test_case.num_perturbations
             )
             == test_case.expected_outputs
@@ -82,7 +82,7 @@ class TestSemanticPreservingPerturbation:
     )
     def test_random_upper_case(self, test_case):
         assert (
-            RandomUpperCase(seed=test_case.seed).compute(
+            RandomUpperCase(seed=test_case.seed).perturb(
                 test_case.input_text, test_case.config, test_case.num_perturbations
             )
             == test_case.expected_outputs
@@ -116,7 +116,7 @@ class TestSemanticPreservingPerturbation:
     )
     def test_whitespace_add_remove(self, test_case):
         assert (
-            WhitespaceAddRemove(seed=test_case.seed).compute(
+            WhitespaceAddRemove(seed=test_case.seed).perturb(
                 test_case.input_text, test_case.config, test_case.num_perturbations
             )
             == test_case.expected_outputs

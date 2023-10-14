@@ -64,7 +64,7 @@ class SemanticPreservingPerturbation(ABC):
         self.set_seed(seed)
 
     @abstractmethod
-    def compute(
+    def perturb(
         self,
         text: str,
         config: Union[ButterFingerConfig, RandomUpperCaseConfig, WhitespaceAddRemoveConfig],
@@ -131,7 +131,7 @@ class ButterFinger(SemanticPreservingPerturbation):
     QUERTY_KEY_APPROX["m"] = "mnkjloik"
     QUERTY_KEY_APPROX[" "] = " "
 
-    def compute(
+    def perturb(
         self, text: str, config: ButterFingerConfig, num_perturbations: int = 5  # type: ignore[override]
     ) -> List[str]:
         prob_of_typo = int(config.perturbation_prob * 100)
@@ -165,7 +165,7 @@ class RandomUpperCase(SemanticPreservingPerturbation):
     Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/random_upper_transformation/transformation.py#L1
     """
 
-    def compute(
+    def perturb(
         self, text: str, config: RandomUpperCaseConfig, num_perturbations: int = 5  # type: ignore[override]
     ) -> List[str]:
         return list(map(functools.partial(self.random_upper, config=config), itertools.repeat(text, num_perturbations)))
@@ -192,7 +192,7 @@ class WhitespaceAddRemove(SemanticPreservingPerturbation):
     Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/whitespace_perturbation/transformation.py
     """
 
-    def compute(
+    def perturb(
         self, text: str, config: WhitespaceAddRemoveConfig, num_perturbations: int = 5  # type: ignore[override]
     ) -> List[str]:
         perturbed_texts = []

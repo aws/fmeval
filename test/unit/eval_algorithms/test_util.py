@@ -2,26 +2,23 @@ import json
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List, NamedTuple, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
 import pytest
 import ray
-from ray.data import Dataset
 
 from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
 from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
-    aggregate_evaluation_scores,
     category_wise_aggregation,
     dataset_aggregation,
     save_dataset,
     EvalOutputRecord,
     generate_output_dataset_path,
-    is_predictor_deterministic,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.util import camel_to_snake
@@ -306,86 +303,3 @@ def test_save_dataset_many_rows(tmp_path):
             assert list(json_obj.keys()) == [MODEL_INPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, "scores"]
             assert json_obj[MODEL_INPUT_COLUMN_NAME] == f"input_{i}"
             assert json_obj[CATEGORY_COLUMN_NAME] == f"category_{i}"
-
-
-class TestCaseIsPredictorDeterministic(NamedTuple):
-    input_dataset: Dataset
-    dataset_with_additional_predictions: Dataset
-    expected_response: bool
-
-
-@pytest.mark.parametrize(
-    "test_case",
-    [
-        TestCaseIsPredictorDeterministic(
-            input_dataset=ray.data.from_items(
-                [
-                    {
-                        "prompt": "sample prompt 1",
-                        "model_output": "sample response 1",
-                    },
-                    {
-                        "prompt": "sample prompt 2",
-                        "model_output": "sample response 2",
-                    },
-                ]
-            ),
-            dataset_with_additional_predictions=ray.data.from_items(
-                [
-                    {
-                        "prompt": "sample prompt 1",
-                        "model_output": "sample response 1",
-                        "additional_model_output_0": "sample response 1",
-                        "additional_model_output_1": "sample response 1",
-                    },
-                    {
-                        "prompt": "sample prompt 2",
-                        "model_output": "sample response 2",
-                        "additional_model_output_0": "sample response 2",
-                        "additional_model_output_1": "sample response 2",
-                    },
-                ]
-            ),
-            expected_response=True,
-        ),
-        TestCaseIsPredictorDeterministic(
-            input_dataset=ray.data.from_items(
-                [
-                    {
-                        "prompt": "sample prompt 1",
-                        "model_output": "sample response 1",
-                    },
-                    {
-                        "prompt": "sample prompt 2",
-                        "model_output": "sample response 2",
-                    },
-                ]
-            ),
-            dataset_with_additional_predictions=ray.data.from_items(
-                [
-                    {
-                        "prompt": "sample prompt 1",
-                        "model_output": "sample response 1",
-                        "additional_model_output_0": "sample response 1",
-                        "additional_model_output_1": "sample response 1",
-                    },
-                    {
-                        "prompt": "sample prompt 2",
-                        "model_output": "sample response 2",
-                        "additional_model_output_0": "sample response 2",
-                        "additional_model_output_1": "sample response 3",
-                    },
-                ]
-            ),
-            expected_response=False,
-        ),
-    ],
-)
-@patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-@patch("amazon_fmeval.eval_algorithms.util.generate_model_predict_response_for_dataset")
-def test_is_predictor_deterministic(generate_model_predict_response_for_dataset, model, test_case):
-    generate_model_predict_response_for_dataset.return_value = test_case.dataset_with_additional_predictions
-    assert (
-        is_predictor_deterministic(test_case.input_dataset, model, "prompt", "model_output", 2)
-        == test_case.expected_response
-    )

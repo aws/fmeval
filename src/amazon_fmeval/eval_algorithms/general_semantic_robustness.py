@@ -1,12 +1,13 @@
-import functools
 import itertools
 
 import evaluate as hf_evaluate
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Union
+from typing import Optional, List
+
+import pandas as pd
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MEAN
+from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.eval_algorithms import (
@@ -28,12 +29,10 @@ from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbatio
 )
 from amazon_fmeval.eval_algorithms.util import (
     validate_dataset,
-    generate_prompt_column_for_dataset,
-    generate_model_predict_response_for_dataset,
     save_dataset,
     aggregate_evaluation_scores,
     generate_output_dataset_path,
-    is_predictor_deterministic,
+    generate_prompt_column_for_dataset,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -101,7 +100,8 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
     whitespace perturbation that changes the input text to "A q uick bro wn fox ju mps overthe lazy
     dog". The evaluation then measures how much the model output changes when prompted with the
-    original vs. perturbed input. The output difference is measures using Word Error Rate (WER).
+    original vs. perturbed input. The output difference is measured using Word Error Rate (WER).
+    https://huggingface.co/spaces/evaluate-metric/wer
     """
 
     def __init__(self, eval_algorithm_config: GeneralSemanticRobustnessConfig):
@@ -151,7 +151,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
             seed=self._eval_algorithm_config.seed
         )
-        perturbed_inputs = perturbation.compute(
+        perturbed_inputs = perturbation.perturb(
             text=model_input,
             config=self._perturbation_config,
             num_perturbations=self._eval_algorithm_config.num_perturbations,
@@ -222,44 +222,20 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset = generate_prompt_column_for_dataset(
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
-            dataset = generate_model_predict_response_for_dataset(
-                model=model,
-                data=dataset,
-                model_input_column_name=PROMPT_COLUMN_NAME,
-                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
-            )
 
-            if not is_predictor_deterministic(dataset, model, PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME):
-                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
-
-            dataset = dataset.map(
-                functools.partial(
-                    add_perturbed_prompts,
-                    model_input_column=MODEL_INPUT_COLUMN_NAME,
-                    perturbation_type=self._eval_algorithm_config.perturbation_type,
-                    seed=self._eval_algorithm_config.seed,
-                    num_perturbations=self._eval_algorithm_config.num_perturbations,
-                    perturbation_config=self._perturbation_config,
-                    prompt_composer=PromptComposer(prompt_template),
-                )
-            )
-
-            for idx in range(self._eval_algorithm_config.num_perturbations):
-                dataset = generate_model_predict_response_for_dataset(
-                    model=model,
-                    data=dataset,
-                    model_input_column_name=f"{PERTURBED_INPUT_PROMPT_COLUMN_NAME}_{idx}",
-                    model_output_column_name=f"{PERTURBED_INPUT_MODEL_OUTPUT_COLUMN_NAME}_{idx}",
+            def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                """
+                Map function generating the scores for every input record in input dataset
+                """
+                return pd.Series(
+                    data=[
+                        self.evaluate_sample(row[MODEL_INPUT_COLUMN_NAME], model, prompt_template)[0].value
+                        for index, row in df.iterrows()
+                    ]
                 )
 
-            dataset = dataset.map(
-                functools.partial(
-                    compute_wer,
-                    original_output_column=MODEL_OUTPUT_COLUMN_NAME,
-                    num_perturbations=self._eval_algorithm_config.num_perturbations,
-                    perturbed_input_output_column=PERTURBED_INPUT_MODEL_OUTPUT_COLUMN_NAME,
-                )
-            )
+            dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score)
+
             dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
             eval_outputs.append(
                 EvalOutput(
@@ -283,59 +259,3 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 )
 
         return eval_outputs
-
-
-def add_perturbed_prompts(
-    row: Dict,
-    model_input_column: str,
-    perturbation_type: str,
-    seed: int,
-    num_perturbations: int,
-    perturbation_config: Union[ButterFingerConfig, RandomUpperCaseConfig, WhitespaceAddRemoveConfig],
-    prompt_composer: PromptComposer,
-) -> Dict:
-    """
-    Util method to add perturbed prompts in a single row of ray dataset. This method generates perturbed inputs over
-    model_input and the composes prompts for the perturbed inputs using input prompt_composer.
-    :param row: single row of ray dataset as a Dict
-    :param model_input_column: column name for model_input in ray dataset
-    :param perturbation_type: type of perturbation requested
-    :param seed: seed for perturbation generation
-    :param num_perturbations: number of perturbations requested
-    :param perturbation_config: config for perturbation serving logic, as per perturbation type requested
-    :param prompt_composer: PromptComposer to be used for composing prompts over perturbed inputs generated
-    :returns: single row of ray dataset as a Dict containing prompts composed using perturbed inputs
-    """
-    perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[perturbation_type](seed=seed)  # type: ignore
-    for idx, text in enumerate(
-        perturbation.compute(
-            text=row[model_input_column],
-            config=perturbation_config,
-            num_perturbations=num_perturbations,
-        ),
-    ):
-        prompt_for_perturbed_text = prompt_composer.compose(text)
-        row[f"{PERTURBED_INPUT_PROMPT_COLUMN_NAME}_{idx}"] = prompt_for_perturbed_text
-    return row
-
-
-def compute_wer(
-    row: Dict, original_output_column: str, num_perturbations: int, perturbed_input_output_column: str
-) -> Dict:
-    """
-    Util method to compute WER score for every row of a ray dataset. Method uses Hugging Face WER evaluate.
-    https://huggingface.co/spaces/evaluate-metric/wer
-
-    :param row: single row of ray dataset as a Dict
-    :param original_output_column: column name for original model output in ray dataset
-    :param num_perturbations: number of perturbations for which inference was made
-    :param perturbed_input_output_column: prefix for column names of inference outputs collected on perturbed inputs
-    :returns: single row of ray dataset as a Dict containing WER score
-    """
-    wer = hf_evaluate.load("wer")
-    original_output = row[original_output_column]
-    perturbed_outputs = [row[f"{perturbed_input_output_column}_{idx}"] for idx in range(num_perturbations)]
-    row[WER_SCORE] = wer.compute(
-        predictions=perturbed_outputs, references=list(itertools.repeat(original_output, num_perturbations))
-    )
-    return row

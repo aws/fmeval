@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, List, Optional
+from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -9,61 +9,46 @@ from ray.data import Dataset
 
 from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
-    PROMPT_COLUMN_NAME,
     WER_SCORE,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
-    add_perturbed_prompts,
     BUTTER_FINGER,
-    compute_wer,
 )
-from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbations import ButterFingerConfig
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
-PERTURBED_INPUT_MODEL_OUTPUT_0 = "perturbed_input_model_output_0"
-PERTURBED_INPUT_MODEL_OUTPUT_1 = "perturbed_input_model_output_1"
-
-DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS = ray.data.from_items(
+DATASET = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
-            PROMPT_COLUMN_NAME: "What is the capital of England?",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
-            WER_SCORE: (1 / 3 + 0) / 2,
-            PERTURBED_INPUT_MODEL_OUTPUT_1: "Some model output.",
-            PERTURBED_INPUT_MODEL_OUTPUT_0: "Some model output.",
         },
         {
             MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
-            PROMPT_COLUMN_NAME: "What is the capital of England?",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
-            WER_SCORE: (1 / 3 + 0) / 2,
-            PERTURBED_INPUT_MODEL_OUTPUT_1: "Another model output.",
-            PERTURBED_INPUT_MODEL_OUTPUT_0: "Some model output.",
         },
     ]
-)
-
-DATASET = DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-    cols=[PERTURBED_INPUT_MODEL_OUTPUT_1, PERTURBED_INPUT_MODEL_OUTPUT_0, WER_SCORE, MODEL_OUTPUT_COLUMN_NAME]
 )
 
 DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
 
 EVAL_RESULTS_PATH = "/tmp/eval_results/"
+
+
+class MockModelRunner(ModelRunner):
+    def __init__(self):
+        super().__init__('{"data": $prompt}')
+
+    def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
+        return "Some model output.", None
 
 
 class TestGeneralSemanticRobustness:
@@ -77,11 +62,13 @@ class TestGeneralSemanticRobustness:
         perturbed_model_output_1: str
         perturbed_model_output_2: str
         expected_response: List[EvalScore]
+        config: GeneralSemanticRobustnessConfig
 
     class TestCaseGeneralSemanticRobustnessEvaluateSampleInvalid(NamedTuple):
         model_input: str
         model: ModelRunner
         expected_error_message: str
+        config: GeneralSemanticRobustnessConfig
 
     @pytest.mark.parametrize(
         "test_case",
@@ -94,6 +81,7 @@ class TestGeneralSemanticRobustness:
                 expected_response=[
                     EvalScore(name=WER_SCORE, value=0.0),
                 ],
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             ),
             TestCaseGeneralSemanticRobustnessEvaluateSample(
                 model_input="What is the capital of England?",
@@ -103,10 +91,31 @@ class TestGeneralSemanticRobustness:
                 expected_response=[
                     EvalScore(name=WER_SCORE, value=(1 / 3 + 0) / 2),
                 ],
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=BUTTER_FINGER),
+            ),
+            TestCaseGeneralSemanticRobustnessEvaluateSample(
+                model_input="What is the capital of England?",
+                original_model_output="Some model output.",
+                perturbed_model_output_1="Another model output.",
+                perturbed_model_output_2="Some model output.",
+                expected_response=[
+                    EvalScore(name=WER_SCORE, value=(1 / 3 + 0) / 2),
+                ],
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE),
+            ),
+            TestCaseGeneralSemanticRobustnessEvaluateSample(
+                model_input="What is the capital of England?",
+                original_model_output="Some model output.",
+                perturbed_model_output_1="Another model output.",
+                perturbed_model_output_2="Another model output.",
+                expected_response=[
+                    EvalScore(name=WER_SCORE, value=(1 / 3 + 1 / 3) / 2),
+                ],
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE),
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample(self, test_case, config):
+    def test_semantic_robustness_evaluate_sample(self, test_case):
         """
         GIVEN valid inputs
         WHEN GeneralSemanticRobustness.evaluate_sample is called
@@ -120,7 +129,7 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        eval_algorithm = GeneralSemanticRobustness(config)
+        eval_algorithm = GeneralSemanticRobustness(test_case.config)
         assert eval_algorithm.evaluate_sample(test_case.model_input, model) == test_case.expected_response
 
     @pytest.mark.parametrize(
@@ -131,22 +140,24 @@ class TestGeneralSemanticRobustness:
                 model=None,
                 expected_error_message="Missing required input: model i.e. ModelRunner, for GeneralSemanticRobustness "
                 "evaluate_sample",
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             ),
             TestCaseGeneralSemanticRobustnessEvaluateSampleInvalid(
                 model_input=None,
                 model=MagicMock(),
                 expected_error_message="Missing required input: model_input, for GeneralSemanticRobustness "
                 "evaluate_sample",
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample_invalid_input(self, test_case, config):
+    def test_semantic_robustness_evaluate_sample_invalid_input(self, test_case):
         """
         GIVEN invalid inputs
         WHEN GeneralSemanticRobustness.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
-        eval_algorithm = GeneralSemanticRobustness(config)
+        eval_algorithm = GeneralSemanticRobustness(test_case.config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.model)
 
@@ -159,10 +170,11 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Some model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=None,
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             )
         ],
     )
-    def test_semantic_robustness_evaluate_sample_invalid_model(self, test_case, config):
+    def test_semantic_robustness_evaluate_sample_invalid_model(self, test_case):
         """
         GIVEN a non-deterministic model
         WHEN GeneralSemanticRobustness.evaluate_sample is called
@@ -176,8 +188,7 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        eval_algorithm = GeneralSemanticRobustness(config)
-        eval_algorithm = GeneralSemanticRobustness(config)
+        eval_algorithm = GeneralSemanticRobustness(test_case.config)
         with pytest.raises(
             EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
         ):
@@ -201,8 +212,8 @@ class TestGeneralSemanticRobustness:
         input_dataset: Dataset
         prompt_template: Optional[str]
         dataset_config: Optional[DataConfig]
-        dataset_with_generated_model_output: Optional[Dataset]
         expected_response: List[EvalOutput]
+        save_data: bool
 
     @pytest.mark.parametrize(
         "test_case",
@@ -212,14 +223,12 @@ class TestGeneralSemanticRobustness:
                 input_dataset=DATASET_NO_CATEGORY,
                 dataset_config=None,
                 prompt_template=None,
-                dataset_with_generated_model_output=DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, WER_SCORE]
-                ),
+                save_data=True,
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -227,7 +236,7 @@ class TestGeneralSemanticRobustness:
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -235,7 +244,7 @@ class TestGeneralSemanticRobustness:
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -247,14 +256,12 @@ class TestGeneralSemanticRobustness:
                 input_dataset=DATASET,
                 dataset_config=None,
                 prompt_template=None,
-                dataset_with_generated_model_output=DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                    cols=[WER_SCORE]
-                ),
+                save_data=True,
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=[
                             CategoryScore(
@@ -262,7 +269,7 @@ class TestGeneralSemanticRobustness:
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 2)],
+                                scores=[EvalScore(name="word_error_rate", value=0.0)],
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -270,7 +277,7 @@ class TestGeneralSemanticRobustness:
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=[
                             CategoryScore(
@@ -278,7 +285,7 @@ class TestGeneralSemanticRobustness:
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 2)],
+                                scores=[EvalScore(name="word_error_rate", value=0.0)],
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -286,7 +293,7 @@ class TestGeneralSemanticRobustness:
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=[
                             CategoryScore(
@@ -294,7 +301,7 @@ class TestGeneralSemanticRobustness:
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 2)],
+                                scores=[EvalScore(name="word_error_rate", value=0.0)],
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -314,14 +321,12 @@ class TestGeneralSemanticRobustness:
                     category_location="tba",
                 ),
                 prompt_template="$feature",
-                dataset_with_generated_model_output=DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, WER_SCORE]
-                ),
+                save_data=False,
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
                         prompt_template="$feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -330,18 +335,12 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
     @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.is_predictor_deterministic")
     def test_semantic_robustness_evaluate(
         self,
-        is_predictor_deterministic,
-        generate_model_predict_response_for_dataset,
         save_dataset,
         get_dataset,
-        model,
         test_case,
         config,
     ):
@@ -351,108 +350,15 @@ class TestGeneralSemanticRobustness:
         WHEN GeneralSemanticRobustness evaluate() method is called
         THEN correct EvalOutput is returned
         """
-        is_predictor_deterministic.return_value = True
         get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.dataset_with_generated_model_output
         eval_algorithm = GeneralSemanticRobustness(config)
         actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, save=True, prompt_template=test_case.prompt_template
+            model=MockModelRunner(),
+            dataset_config=test_case.dataset_config,
+            save=test_case.save_data,
+            prompt_template=test_case.prompt_template,
         )
-        assert save_dataset.called
-        assert actual_response == test_case.expected_response
-
-    @pytest.mark.parametrize(
-        "test_case, eval_algo_config",
-        [
-            (
-                TestCaseSemanticRobustnessEvaluate(
-                    input_dataset=DATASET_NO_CATEGORY,
-                    dataset_config=DataConfig(
-                        dataset_name="my_custom_dataset",
-                        dataset_uri="tba",
-                        dataset_mime_type=MIME_TYPE_JSON,
-                        model_input_location="tba",
-                        target_output_location="tba",
-                        model_output_location=None,
-                        category_location="tba",
-                    ),
-                    prompt_template="$feature",
-                    dataset_with_generated_model_output=DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                        cols=[CATEGORY_COLUMN_NAME, WER_SCORE]
-                    ),
-                    expected_response=[
-                        EvalOutput(
-                            eval_name="general_semantic_robustness",
-                            dataset_name="my_custom_dataset",
-                            dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
-                            prompt_template="$feature",
-                            category_scores=None,
-                            output_path="/tmp/eval_results/",
-                        ),
-                    ],
-                ),
-                GeneralSemanticRobustnessConfig(perturbation_type=RANDOM_UPPER_CASE, num_perturbations=2),
-            ),
-            (
-                TestCaseSemanticRobustnessEvaluate(
-                    input_dataset=DATASET_NO_CATEGORY,
-                    dataset_config=DataConfig(
-                        dataset_name="my_custom_dataset",
-                        dataset_uri="tba",
-                        dataset_mime_type=MIME_TYPE_JSON,
-                        model_input_location="tba",
-                        target_output_location="tba",
-                        model_output_location=None,
-                        category_location="tba",
-                    ),
-                    prompt_template="$feature",
-                    dataset_with_generated_model_output=DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                        cols=[CATEGORY_COLUMN_NAME, WER_SCORE]
-                    ),
-                    expected_response=[
-                        EvalOutput(
-                            eval_name="general_semantic_robustness",
-                            dataset_name="my_custom_dataset",
-                            dataset_scores=[EvalScore(name="word_error_rate", value=(1 / 3 + 0) / 4)],
-                            prompt_template="$feature",
-                            category_scores=None,
-                            output_path="/tmp/eval_results/",
-                        ),
-                    ],
-                ),
-                GeneralSemanticRobustnessConfig(perturbation_type=WHITESPACE_ADD_REMOVE, num_perturbations=2),
-            ),
-        ],
-    )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.is_predictor_deterministic")
-    def test_semantic_robustness_evaluate_different_perturbation_type(
-        self,
-        is_predictor_deterministic,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
-        get_dataset,
-        model,
-        test_case,
-        eval_algo_config,
-    ):
-        """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN GeneralSemanticRobustness evaluate() method is called
-        THEN correct EvalOutput is returned
-        """
-        is_predictor_deterministic.return_value = True
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.dataset_with_generated_model_output
-        eval_algorithm = GeneralSemanticRobustness(eval_algo_config)
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, save=False, prompt_template=test_case.prompt_template
-        )
-        assert not save_dataset.called
+        assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
 
     class TestCaseSemanticRobustnessEvaluateInvalid(NamedTuple):
@@ -503,31 +409,12 @@ class TestGeneralSemanticRobustness:
                 prompt_template=None,
                 expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
-            TestCaseSemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template="$feature",
-                expected_error_message="For evaluating semantic robustness, the model should be deterministic.",
-            ),
         ],
     )
     @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
     @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.is_predictor_deterministic")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
-        is_predictor_deterministic,
-        generate_model_predict_response_for_dataset,
         get_dataset,
         model,
         test_case,
@@ -538,12 +425,6 @@ class TestGeneralSemanticRobustness:
         WHEN GeneralSemanticRobustness evaluate is called
         THEN correct exception with proper message is raised
         """
-        generate_model_predict_response_for_dataset.return_value = (
-            DATASET_WITH_SCORES_AND_PERTURBED_INPUT_OUTPUTS.drop_columns(
-                cols=[PERTURBED_INPUT_MODEL_OUTPUT_1, PERTURBED_INPUT_MODEL_OUTPUT_0, WER_SCORE, CATEGORY_COLUMN_NAME]
-            )
-        )
-        is_predictor_deterministic.return_value = False
         eval_algorithm = GeneralSemanticRobustness(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
@@ -552,55 +433,3 @@ class TestGeneralSemanticRobustness:
             eval_algorithm.evaluate(
                 model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
             )
-
-
-def test_add_perturbed_prompts():
-    """
-    GIVEN valid inputs
-    WHEN add_perturbed_prompts method is called
-    THEN row Dict is returned with expected columns
-    """
-    input_row = {MODEL_INPUT_COLUMN_NAME: "This is an input"}
-
-    expected_response = {
-        MODEL_INPUT_COLUMN_NAME: "This is an input",
-        "perturbed_input_prompt_0": "Summarise: This is dn imput",
-        "perturbed_input_prompt_1": "Summarise: This ia an inpit",
-    }
-
-    assert expected_response == add_perturbed_prompts(
-        row=input_row,
-        model_input_column=MODEL_INPUT_COLUMN_NAME,
-        perturbation_type=BUTTER_FINGER,
-        seed=5,
-        num_perturbations=2,
-        perturbation_config=ButterFingerConfig(),
-        prompt_composer=PromptComposer("Summarise: $feature"),
-    )
-
-
-def test_compute_wer():
-    """
-    GIVEN valid inputs
-    WHEN compute_wer method is called
-    THEN row Dict is returned with expected score column
-    """
-    input_row = {
-        MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
-        "perturbed_input_model_output_0": "Some model output.",
-        "perturbed_input_model_output_1": "Another model output.",
-    }
-
-    expected_response = {
-        MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
-        "perturbed_input_model_output_0": "Some model output.",
-        "perturbed_input_model_output_1": "Another model output.",
-        WER_SCORE: (1 / 3 + 0) / 2,
-    }
-
-    assert expected_response == compute_wer(
-        row=input_row,
-        original_output_column=MODEL_OUTPUT_COLUMN_NAME,
-        num_perturbations=2,
-        perturbed_input_output_column="perturbed_input_model_output",
-    )
