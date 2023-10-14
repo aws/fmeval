@@ -14,7 +14,6 @@ from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
 from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
-    aggregate_evaluation_scores,
     category_wise_aggregation,
     dataset_aggregation,
     save_dataset,

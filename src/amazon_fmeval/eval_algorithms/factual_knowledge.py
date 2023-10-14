@@ -85,7 +85,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param target_output: The expected responses from the model
         :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
                              evaluation
-        :return: an instance of EvalOutput that contains the score computed for prompts and responses.
+        :return: list of EvalScore object
         """
         if target_output is None:
             raise EvalAlgorithmClientError(
@@ -160,7 +160,6 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     data=dataset,
                     model_input_column_name=PROMPT_COLUMN_NAME,
                     model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
-                    model_log_probability_column_name=MODEL_LOG_PROBABILITY_COLUMN_NAME,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
