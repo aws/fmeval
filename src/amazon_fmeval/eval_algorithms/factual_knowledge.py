@@ -55,7 +55,7 @@ class FactualKnowledgeConfig(EvalAlgorithmConfig):
     target_output_delimiter: str
 
 
-SCORE_NAME = "factual_knowledge"
+FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
 
 
 class FactualKnowledge(EvalAlgorithmInterface):
@@ -69,7 +69,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param eval_algorithm_config: Factual knowledge eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+        self.eval_name = FACTUAL_KNOWLEDGE
         self._eval_algorithm_config = eval_algorithm_config
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
@@ -174,8 +174,10 @@ class FactualKnowledge(EvalAlgorithmInterface):
                         ]
                     )
 
-                dataset = dataset.add_column(SCORE_NAME, _generate_eval_scores)
-                dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [SCORE_NAME], agg_method=MEAN)
+                dataset = dataset.add_column(FACTUAL_KNOWLEDGE, _generate_eval_scores)
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [FACTUAL_KNOWLEDGE], agg_method=MEAN
+                )
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
@@ -189,7 +191,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[SCORE_NAME],
+                    score_names=[FACTUAL_KNOWLEDGE],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
