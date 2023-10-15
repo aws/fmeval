@@ -40,7 +40,7 @@ class EvalAlgorithm(Enum):
     PROMPT_STEREOTYPING = "prompt_stereotyping"
     FACTUAL_KNOWLEDGE = "factual_knowledge"
     TOXICITY = "toxicity"
-    SEMANTIC_ROBUSTNESS = "semantic_robustness"
+    GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
@@ -150,18 +150,18 @@ MODEL_TASK_EVALUATION_MAP = {
         EvalAlgorithm.PROMPT_STEREOTYPING,
         EvalAlgorithm.FACTUAL_KNOWLEDGE,
         EvalAlgorithm.TOXICITY,
-        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+        EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.CLASSIFICATION: [
-        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+        EvalAlgorithm.CLASSIFICATION_ACCURACY,
     ],
     ModelTask.QUESTION_ANSWERING: [
         EvalAlgorithm.TOXICITY,
-        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+        EvalAlgorithm.QA_ACCURACY,
     ],
     ModelTask.SUMMARIZATION: [
         EvalAlgorithm.TOXICITY,
-        EvalAlgorithm.SEMANTIC_ROBUSTNESS,
+        EvalAlgorithm.SUMMARIZATION_ACCURACY,
     ],
 }
 
@@ -175,6 +175,8 @@ CNN_DAILY_MAIL = "cnn_daily_mail"
 XSUM = "xsum"
 IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
+BOLD = "bold"
+WIKITEXT2 = "wikitext2"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
@@ -182,6 +184,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
 }
 
@@ -197,6 +200,9 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
+    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
+    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
+    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
@@ -269,5 +275,25 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         target_output_location="Recommended IND",
         model_output_location=None,
         category_location="Class Name",
+    ),
+    # TODO to be populated
+    BOLD: DataConfig(
+        dataset_name=BOLD,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location="tba",
+        category_location="tba",
+    ),
+    # TODO to be populated
+    WIKITEXT2: DataConfig(
+        dataset_name=WIKITEXT2,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location="tba",
+        category_location="tba",
     ),
 }

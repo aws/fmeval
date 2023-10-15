@@ -26,7 +26,7 @@ def get_dataset(config: DataConfig) -> ray.data.Dataset:
         data_source = get_data_source(config.dataset_uri)
         data_loader_config = _get_data_loader_config(data_source, config)
         data_loader = _get_data_loader(config.dataset_mime_type)
-        data = data_loader.load_dataset(data_loader_config)
+        data = data_loader.load_dataset(data_loader_config).materialize()
     return data
 
 
