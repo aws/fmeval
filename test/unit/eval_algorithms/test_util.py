@@ -1,15 +1,16 @@
 import json
+import multiprocessing as mp
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List, NamedTuple, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 import ray
 
-from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, PARALLELIZATION_FACTOR
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
 from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -19,6 +20,7 @@ from amazon_fmeval.eval_algorithms.util import (
     save_dataset,
     EvalOutputRecord,
     generate_output_dataset_path,
+    get_num_actors,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.util import camel_to_snake
@@ -33,6 +35,19 @@ def test_camel_to_snake():
     assert camel_to_snake("camel2_camel2_case") == "camel2_camel2_case"
     assert camel_to_snake("getHTTPResponseCode") == "get_http_response_code"
     assert camel_to_snake("HTTPResponseCodeXYZ") == "http_response_code_xyz"
+
+
+def test_get_actors():
+    os.environ[PARALLELIZATION_FACTOR] = "2"
+    assert get_num_actors() == 2
+
+    os.environ.pop(PARALLELIZATION_FACTOR)
+    assert get_num_actors() == mp.cpu_count() - 1
+
+
+def test_get_actors_invalid_value():
+    os.environ[PARALLELIZATION_FACTOR] = "hello"
+    assert get_num_actors() == mp.cpu_count() - 1
 
 
 class TestCaseGenerateModelOutput(NamedTuple):
@@ -160,6 +175,33 @@ def test_generate_prompt_column_for_dataset(test_case):
     )
     assert returned_dataset.count() == test_case.num_rows
     assert sorted(returned_dataset.take(test_case.num_rows), key=lambda x: x["id"]) == test_case.expected_dataset
+
+
+@patch("ray.data.ActorPoolStrategy")
+@patch("ray.data.Dataset")
+def test_num_actors_in_generate_prompt_column_for_dataset(dataset, actor_pool_strategy):
+    num_actors = mp.cpu_count() - 2
+    os.environ[PARALLELIZATION_FACTOR] = str(num_actors)
+    mock_model_runner = Mock()
+    mock_model_runner.predict.return_value = model_runner_return_value()
+    dataset.map.return_value = dataset
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, "model_input")
+    actor_pool_strategy.assert_called_with(size=num_actors)
+
+    os.environ.pop(PARALLELIZATION_FACTOR)
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, "model_input")
+    actor_pool_strategy.assert_called_with(size=mp.cpu_count() - 1)
+
+
+@patch("ray.data.ActorPoolStrategy")
+@patch("ray.data.Dataset")
+def test_num_actors_in_generate_prompt_column_for_dataset_bad_value(dataset, actor_pool_strategy):
+    os.environ[PARALLELIZATION_FACTOR] = str("hello")
+    mock_model_runner = Mock()
+    mock_model_runner.predict.return_value = model_runner_return_value()
+    dataset.map.return_value = dataset
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, "model_input")
+    actor_pool_strategy.assert_called_with(size=mp.cpu_count() - 1)
 
 
 def test_aggregate_dataset_invalid_agg():

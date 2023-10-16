@@ -12,7 +12,7 @@ from ray.data import Dataset
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
-from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, PARALLELIZATION_FACTOR
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -21,6 +21,16 @@ from amazon_fmeval.perf_util import timed_block
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_num_actors():
+    try:
+        num_actors = (
+            int(os.environ[PARALLELIZATION_FACTOR]) if PARALLELIZATION_FACTOR in os.environ else (mp.cpu_count() - 1)
+        )
+    except ValueError:
+        num_actors = mp.cpu_count() - 1
+    return num_actors
 
 
 def generate_model_predict_response_for_dataset(
@@ -71,7 +81,7 @@ def generate_model_predict_response_for_dataset(
                 return row
 
         data = data.map(
-            ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=mp.cpu_count() - 1)  # type: ignore[arg-type]
+            ModelRunnerWrapper, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
         ).materialize()
     return data
 
