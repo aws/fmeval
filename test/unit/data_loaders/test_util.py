@@ -1,6 +1,8 @@
+import random
+
 import pytest
 from typing import NamedTuple
-from unittest.mock import Mock, patch
+from unittest.mock import call, Mock, patch
 
 import ray.data
 
@@ -33,13 +35,17 @@ class TestDataLoaderUtil:
         config.dataset_name = "dataset1"
         config.dataset_uri = "unused"
         config.dataset_mime_type = "unused"
-
-        mock_get_data_loader.return_value.load_dataset.return_value = ray.data.from_items([{"score": 3}] * 2000)
+        items = [{"score": random.randint(0, 100)} for _ in range(2000)]
+        mock_get_data_loader.return_value.load_dataset.return_value = ray.data.from_items(items)
         data = get_dataset(config, 100)
         mock_get_data_loader.assert_called_once_with(config.dataset_mime_type)
-        assert 50 < data.count() < 150
-        mock_get_data_source.assert_called_once_with(config.dataset_uri)
-        mock_get_data_loader_config.assert_called_once_with(mock_get_data_source.return_value, config)
+        assert data.count() == 100
+        second_data = get_dataset(config, 100)
+        assert data.take_all() == second_data.take_all()
+        calls = [call(config.dataset_uri), call(config.dataset_uri)]
+        mock_get_data_source.assert_has_calls(calls)
+        calls = [call(mock_get_data_source.return_value, config), call(mock_get_data_source.return_value, config)]
+        mock_get_data_loader_config.assert_has_calls(calls)
 
     @patch("amazon_fmeval.data_loaders.util._get_data_loader", return_value=Mock())
     @patch("amazon_fmeval.data_loaders.util._get_data_loader_config", return_value=Mock())

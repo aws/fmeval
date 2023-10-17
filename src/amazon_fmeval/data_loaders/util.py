@@ -6,11 +6,12 @@ from typing import Type, Optional
 from s3fs import S3FileSystem
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, SEED
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, PARTITION_MULTIPLIER, SEED
 from amazon_fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile
 from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from amazon_fmeval.data_loaders.json_parser import JsonParser
 from amazon_fmeval.data_loaders.data_config import DataConfig
+from amazon_fmeval.eval_algorithms.util import get_num_actors
 from amazon_fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from amazon_fmeval.perf_util import timed_block
 
@@ -29,12 +30,13 @@ def get_dataset(config: DataConfig, num_records: Optional[int] = None) -> ray.da
         data_source = get_data_source(config.dataset_uri)
         data_loader_config = _get_data_loader_config(data_source, config)
         data_loader = _get_data_loader(config.dataset_mime_type)
-        data = data_loader.load_dataset(data_loader_config).materialize()
+        data = data_loader.load_dataset(data_loader_config)
         count = data.count()
         util.require(count > 0, "Data has to have at least one record")
         if num_records and num_records > 0:  # pragma: no branch
             num_records = min(num_records, count)
-            data = data.random_sample(num_records / count, seed=SEED)
+            data = ray.data.from_pandas(data.to_pandas().sample(num_records, random_state=SEED))
+        data = data.repartition(get_num_actors() * PARTITION_MULTIPLIER).materialize()
     return data
 
 
