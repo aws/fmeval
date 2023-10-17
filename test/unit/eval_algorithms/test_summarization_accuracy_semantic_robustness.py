@@ -1,3 +1,4 @@
+import os
 import re
 from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import patch, MagicMock
@@ -10,7 +11,7 @@ from ray.data import Dataset
 from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
-    MIME_TYPE_JSON, TARGET_OUTPUT_COLUMN_NAME,
+    MIME_TYPE_JSON, TARGET_OUTPUT_COLUMN_NAME, PARALLELIZATION_FACTOR,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
@@ -436,6 +437,7 @@ class TestSummarizationAccuracySemanticRobustness:
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch.dict(os.environ, {PARALLELIZATION_FACTOR: "1"})
     def test_semantic_robustness_evaluate(
         self,
         summarization_accuracy,

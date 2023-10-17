@@ -35,7 +35,7 @@ from amazon_fmeval.eval_algorithms.util import (
     save_dataset,
     aggregate_evaluation_scores,
     generate_output_dataset_path,
-    generate_prompt_column_for_dataset,
+    generate_prompt_column_for_dataset, get_num_actors,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -305,7 +305,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         return row
 
                 dataset = dataset.map(
-                    GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=1)
+                    GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())
                 ).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
