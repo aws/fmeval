@@ -355,7 +355,7 @@ class TestFactualKnowledge:
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         eval_algorithm = FactualKnowledge(config)
         actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, save=True, prompt_template=test_case.prompt_template
+            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
         )
         assert actual_response == test_case.expected_response
         assert save_dataset.called

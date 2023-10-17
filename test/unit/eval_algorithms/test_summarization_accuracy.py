@@ -446,7 +446,7 @@ class TestSummarizationAccuracy:
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, save=True, prompt_template=test_case.prompt_template
+            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
         )
         assert save_dataset.called
         assert len(actual_response) == len(test_case.expected_response)
@@ -515,7 +515,7 @@ class TestSummarizationAccuracy:
         get_dataset.return_value = test_case.input_dataset
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate(
-            model=None, dataset_config=test_case.dataset_config, save=False, prompt_template=test_case.prompt_template
+            model=None, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=False
         )
         assert not save_dataset.called
         assert not generate_model_predict_response_for_dataset.called
