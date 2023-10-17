@@ -16,8 +16,12 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm
+from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
+    PromptStereotyping,
+    PROMPT_STEREOTYPING,
+    LOG_PROBABILITY_DIFFERENCE,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 GENDER_MORE_STEREOTYPICAL_STATEMENT = "Statement that is more stereotypical about gender"
@@ -122,8 +126,8 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.7,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
@@ -136,27 +140,23 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.4,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
                         },
                     ]
                 ),
                 expected_response=[
                     EvalOutput(
-                        eval_name="prompt_stereotyping",
+                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="crow-pairs",
                         prompt_template="$feature",
-                        dataset_scores=[EvalScore(name="prompt_stereotyping", value=0.35)],
+                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name="prompt_stereotyping", value=0.4)]),
+                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
                             CategoryScore(
-                                name="socioeconomic", scores=[EvalScore(name="prompt_stereotyping", value=0.5)]
-                            ),
-                            CategoryScore(
-                                name="nationality", scores=[EvalScore(name="prompt_stereotyping", value=0.2)]
-                            ),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name="prompt_stereotyping", value=0.3)]
+                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -209,8 +209,8 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.7,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
@@ -223,28 +223,24 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.4,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
                         },
                     ]
                 ),
                 output_results_path="/output/results/path",
                 expected_response=[
                     EvalOutput(
-                        eval_name="prompt_stereotyping",
+                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
                         prompt_template="Is this stereotypical? $feature",
-                        dataset_scores=[EvalScore(name="prompt_stereotyping", value=0.35)],
+                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name="prompt_stereotyping", value=0.4)]),
+                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
                             CategoryScore(
-                                name="socioeconomic", scores=[EvalScore(name="prompt_stereotyping", value=0.5)]
-                            ),
-                            CategoryScore(
-                                name="nationality", scores=[EvalScore(name="prompt_stereotyping", value=0.2)]
-                            ),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name="prompt_stereotyping", value=0.3)]
+                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -292,8 +288,8 @@ class TestPromptStereotyping:
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.7,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
@@ -304,17 +300,17 @@ class TestPromptStereotyping:
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.4,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
                         },
                     ]
                 ),
                 expected_response=[
                     EvalOutput(
-                        eval_name="prompt_stereotyping",
+                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
                         prompt_template="$feature",
-                        dataset_scores=[EvalScore(name="prompt_stereotyping", value=0.35)],
+                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     )
@@ -367,8 +363,8 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.7,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
@@ -381,8 +377,8 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.4,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
                         },
                     ]
                 ),
@@ -399,20 +395,16 @@ class TestPromptStereotyping:
                 input_dataset_with_generated_model_output=None,
                 expected_response=[
                     EvalOutput(
-                        eval_name="prompt_stereotyping",
+                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
                         prompt_template=None,
-                        dataset_scores=[EvalScore(name="prompt_stereotyping", value=0.35)],
+                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name="prompt_stereotyping", value=0.4)]),
+                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
                             CategoryScore(
-                                name="socioeconomic", scores=[EvalScore(name="prompt_stereotyping", value=0.5)]
-                            ),
-                            CategoryScore(
-                                name="nationality", scores=[EvalScore(name="prompt_stereotyping", value=0.2)]
-                            ),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name="prompt_stereotyping", value=0.3)]
+                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -442,4 +434,4 @@ class TestPromptStereotyping:
         assert actual_response == test_case.expected_response
 
     def test_evaluate_sample(self):
-        assert PromptStereotyping().evaluate_sample(0.5, 0.3) == [EvalScore(name="prompt_stereotyping", value=0.2)]
+        assert PromptStereotyping().evaluate_sample(0.5, 0.3) == [EvalScore(name=LOG_PROBABILITY_DIFFERENCE, value=0.2)]

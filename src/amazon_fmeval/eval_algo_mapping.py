@@ -11,7 +11,6 @@ from amazon_fmeval.eval_algorithms.classification_accuracy import Classification
 from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     SummarizationAccuracySemanticRobustness,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 EVAL_ALGORITHMS: Dict[str, Type["EvalAlgorithmInterface"]] = {
     EvalAlgorithm.FACTUAL_KNOWLEDGE.value: FactualKnowledge,
@@ -22,16 +21,3 @@ EVAL_ALGORITHMS: Dict[str, Type["EvalAlgorithmInterface"]] = {
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: GeneralSemanticRobustness,
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: SummarizationAccuracySemanticRobustness,
 }
-
-
-def get_eval_algorithm(eval_name: str) -> Type["EvalAlgorithmInterface"]:
-    """
-    Get eval algorithm class with name
-
-    :param eval_name: eval algorithm name
-    :return: eval algorithm class
-    """
-    if eval_name in EVAL_ALGORITHMS:
-        return EVAL_ALGORITHMS[eval_name]
-    else:
-        raise EvalAlgorithmClientError(f"Unknown eval algorithm {eval_name}")

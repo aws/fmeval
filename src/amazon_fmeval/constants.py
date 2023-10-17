@@ -2,6 +2,9 @@
 EVAL_RESULTS_PATH = "EVAL_RESULTS_PATH"
 DEFAULT_EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
+# Number of actors to use
+PARALLELIZATION_FACTOR = "PARALLELIZATION_FACTOR"
+
 # Constants for column names in loaded ray datasets
 MODEL_INPUT_COLUMN_NAME = "model_input"
 MODEL_OUTPUT_COLUMN_NAME = "model_output"
