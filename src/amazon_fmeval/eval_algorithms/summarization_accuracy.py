@@ -67,6 +67,10 @@ logger = logging.getLogger(__name__)
 class SummarizationAccuracyConfig(EvalAlgorithmConfig):
     """
     Configuration for the summarization accuracy eval algorithm
+
+    :param rouge_type: Type of rouge metric in eval results
+    :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
+    :param model_type_for_bertscore: model to use for bert score
     """
 
     rouge_type: Optional[str] = ROUGE_2

@@ -21,6 +21,7 @@ from amazon_fmeval.eval_algorithms.util import (
     EvalOutputRecord,
     generate_output_dataset_path,
     get_num_actors,
+    generate_mean_delta_score,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.util import camel_to_snake
@@ -345,3 +346,40 @@ def test_save_dataset_many_rows(tmp_path):
             assert list(json_obj.keys()) == [MODEL_INPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, "scores"]
             assert json_obj[MODEL_INPUT_COLUMN_NAME] == f"input_{i}"
             assert json_obj[CATEGORY_COLUMN_NAME] == f"category_{i}"
+
+
+class TestCaseGenerateMeanDeltaScore(NamedTuple):
+    original_score: EvalScore
+    perturbed_input_scores: List[EvalScore]
+    expected_response: float
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseGenerateMeanDeltaScore(
+            original_score=EvalScore(name="my_score", value=2.0),
+            perturbed_input_scores=[EvalScore(name="my_score", value=0.5), EvalScore(name="my_score", value=1.0)],
+            expected_response=1.25,
+        ),
+        TestCaseGenerateMeanDeltaScore(
+            original_score=EvalScore(name="my_score", value=2.0),
+            perturbed_input_scores=[
+                EvalScore(name="my_score", value=0.5),
+                EvalScore(name="my_score", value=1.0),
+                EvalScore(name="my_score", value=2.5),
+                EvalScore(name="my_score", value=1.5),
+            ],
+            expected_response=0.625,
+        ),
+    ],
+)
+def test_generate_mean_delta_score(test_case):
+    """
+    GIVEN correct inputs
+    WHEN generate_mean_delta_score util method is called
+    THEN correct mean delta is returned
+    """
+    assert test_case.expected_response == generate_mean_delta_score(
+        test_case.original_score, test_case.perturbed_input_scores
+    )
