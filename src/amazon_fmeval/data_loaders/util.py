@@ -35,6 +35,9 @@ def get_dataset(config: DataConfig, num_records: Optional[int] = None) -> ray.da
         util.require(count > 0, "Data has to have at least one record")
         if num_records and num_records > 0:  # pragma: no branch
             num_records = min(num_records, count)
+            # We are using to_pandas, sampling with Pandas dataframe, and then converting back to Ray Dataset to use
+            # Pandas DataFrame's ability to sample deterministically. This is temporary workaround till Ray solves this
+            # issue: https://github.com/ray-project/ray/issues/40406
             data = ray.data.from_pandas(data.to_pandas().sample(num_records, random_state=SEED))
         data = data.repartition(get_num_actors() * PARTITION_MULTIPLIER).materialize()
     return data

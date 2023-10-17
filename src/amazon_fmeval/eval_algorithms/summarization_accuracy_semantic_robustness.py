@@ -249,6 +249,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records: int = 100,
     ) -> List[EvalOutput]:
         """
         Semantic Robustness evaluate.
@@ -275,7 +276,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         eval_outputs = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
             if is_custom_dataset_evaluation:
                 # TODO when user provide built-in DataConfig, we should provide default prompt_template
