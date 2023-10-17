@@ -160,6 +160,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records=100,
     ) -> List[EvalOutput]:
         """
         Summarization Accuracy evaluate
@@ -170,6 +171,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
+
         :return: List of EvalOutput objects.
         """
         is_custom_dataset_evaluation = False
@@ -181,7 +185,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
         eval_outputs = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
             if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")

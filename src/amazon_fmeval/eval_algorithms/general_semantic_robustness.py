@@ -174,12 +174,13 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
         ]
 
-    def evaluate(  # type: ignore[override]
+    def evaluate(
         self,
         model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records=100,
     ) -> List[EvalOutput]:
         """
         Semantic Robustness evaluate.
@@ -190,6 +191,8 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
         :return: List of EvalOutput objects.
         """
         util.require(
@@ -204,7 +207,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
 
         eval_outputs = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME])
             if is_custom_dataset_evaluation:
                 # TODO when user provide built-in DataConfig, we should provide default prompt_template

@@ -51,3 +51,6 @@ MEAN = "mean"
 # `EvalOutputRecord`s to accumulate  before writing them
 # to the output JSON Lines file.
 EVAL_OUTPUT_RECORDS_BATCH_SIZE = 1024
+
+# Dataloader seed
+SEED = 1234

@@ -1,6 +1,9 @@
 import pytest
 from typing import NamedTuple
 from unittest.mock import Mock, patch
+
+import ray.data
+
 from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
 from amazon_fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, DataSource
 from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
@@ -30,12 +33,36 @@ class TestDataLoaderUtil:
         config.dataset_name = "dataset1"
         config.dataset_uri = "unused"
         config.dataset_mime_type = "unused"
-        get_dataset(config)
 
+        mock_get_data_loader.return_value.load_dataset.return_value = ray.data.from_items([{"score": 3}] * 2000)
+        data = get_dataset(config, 100)
+        mock_get_data_loader.assert_called_once_with(config.dataset_mime_type)
+        assert 50 < data.count() < 150
         mock_get_data_source.assert_called_once_with(config.dataset_uri)
         mock_get_data_loader_config.assert_called_once_with(mock_get_data_source.return_value, config)
+
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader_config", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util.get_data_source", return_value=Mock())
+    def test_get_dataset_with_negative_num_records(
+        self, mock_get_data_source, mock_get_data_loader_config, mock_get_data_loader
+    ):
+        """
+        GIVEN a DataConfig
+        WHEN get_dataset is called
+        THEN all of get_dataset's helper methods get called with expected arguments
+        """
+        config = Mock(spec=DataConfig)
+        config.dataset_name = "dataset1"
+        config.dataset_uri = "unused"
+        config.dataset_mime_type = "unused"
+
+        mock_get_data_loader.return_value.load_dataset.return_value = ray.data.from_items([{"score": 3}] * 2000)
+        data = get_dataset(config, -1)
         mock_get_data_loader.assert_called_once_with(config.dataset_mime_type)
-        mock_get_data_loader.return_value.load_dataset.assert_called_once_with(mock_get_data_loader_config.return_value)
+        assert data.count() == 2000
+        mock_get_data_source.assert_called_once_with(config.dataset_uri)
+        mock_get_data_loader_config.assert_called_once_with(mock_get_data_source.return_value, config)
 
     class TestCaseGetDataLoaderConfigError(NamedTuple):
         dataset_mime_type: str

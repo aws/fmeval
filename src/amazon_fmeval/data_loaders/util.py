@@ -2,9 +2,11 @@ import logging
 import os
 import ray.data
 import urllib.parse
-from typing import Type
+from typing import Type, Optional
 from s3fs import S3FileSystem
-from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
+
+from amazon_fmeval import util
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, SEED
 from amazon_fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile
 from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from amazon_fmeval.data_loaders.json_parser import JsonParser
@@ -16,17 +18,23 @@ s3 = S3FileSystem()
 logger = logging.getLogger(__name__)
 
 
-def get_dataset(config: DataConfig) -> ray.data.Dataset:
+def get_dataset(config: DataConfig, num_records: Optional[int] = None) -> ray.data.Dataset:
     """
     Util method to load Ray datasets using an input DataConfig.
 
     :param config: Input DataConfig
+    :param num_records: the number of records to sample from the dataset
     """
     with timed_block(f"Loading dataset {config.dataset_name}", logger):
         data_source = get_data_source(config.dataset_uri)
         data_loader_config = _get_data_loader_config(data_source, config)
         data_loader = _get_data_loader(config.dataset_mime_type)
         data = data_loader.load_dataset(data_loader_config).materialize()
+        count = data.count()
+        util.require(count > 0, "Data has to have at least one record")
+        if num_records and num_records > 0:  # pragma: no branch
+            num_records = min(num_records, count)
+            data = data.random_sample(num_records / count, seed=SEED)
     return data
 
 
