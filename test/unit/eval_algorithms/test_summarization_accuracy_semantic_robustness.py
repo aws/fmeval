@@ -32,12 +32,15 @@ from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness im
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
-DATASET = ray.data.from_items(
+DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
             TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
+            DELTA_ROUGE_SCORE: 0.0,
+            DELTA_METEOR_SCORE: 0.0,
+            DELTA_BERT_SCORE: 0.0,
         },
         {
             MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
@@ -46,9 +49,14 @@ DATASET = ray.data.from_items(
             "You will find a selection of current and upcoming exhibitions here.",
             TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
+            DELTA_ROUGE_SCORE: 0.0,
+            DELTA_METEOR_SCORE: 0.0,
+            DELTA_BERT_SCORE: 0.0,
         },
     ]
 )
+
+DATASET = DATASET_WITH_SCORES.drop_columns(cols=[DELTA_ROUGE_SCORE, DELTA_METEOR_SCORE, DELTA_BERT_SCORE])
 
 DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
 
@@ -332,6 +340,7 @@ class TestSummarizationAccuracySemanticRobustness:
         dataset_config: Optional[DataConfig]
         expected_response: List[EvalOutput]
         save_data: bool
+        dataset_with_scores: Dataset
 
     @pytest.mark.parametrize(
         "test_case",
@@ -342,6 +351,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -375,6 +385,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
+                dataset_with_scores=DATASET_WITH_SCORES,
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -450,6 +461,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 ),
                 prompt_template="$feature",
                 save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -470,9 +482,10 @@ class TestSummarizationAccuracySemanticRobustness:
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
-    @patch.dict(os.environ, {PARALLELIZATION_FACTOR: "1"})
+    @patch.object(SummarizationAccuracySemanticRobustness, "_SummarizationAccuracySemanticRobustness__add_scores")
     def test_semantic_robustness_evaluate(
         self,
+        add_scores,
         summarization_accuracy,
         save_dataset,
         get_dataset,
@@ -485,6 +498,7 @@ class TestSummarizationAccuracySemanticRobustness:
         WHEN SummarizationAccuracySemanticRobustness evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        add_scores.return_value = test_case.dataset_with_scores
         get_dataset.return_value = test_case.input_dataset
         summarization_accuracy.return_value = MagicMock()
 

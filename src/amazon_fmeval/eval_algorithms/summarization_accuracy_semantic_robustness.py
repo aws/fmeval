@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Dict, Any
 
 import ray.data
+from ray.data import Dataset
 
 from amazon_fmeval import util
 from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN, TARGET_OUTPUT_COLUMN_NAME
@@ -166,7 +167,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
         )
 
-    def __reduce__(self):
+    def __reduce__(self):  # pragma: no cover
         """
         Custom serializer method used by Ray when it serializes instances of this
         class during dataset.map() operations.
@@ -242,14 +243,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         ]
 
     @staticmethod
-    def _generate_mean_delta_score(original_score: EvalScore, reference_scores: List[EvalScore]):
+    def _generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores: List[EvalScore]):
         """
-        Private util method to generate mean od difference between original and reference scores
+        Private util method to generate mean of difference between original and reference scores
         :param original_score: Original score
-        :param reference_scores: List of reference scores
+        :param perturbed_input_scores: List of scores for model inference outputs on perturbed inputs
         """
-        return sum([original_score.value - reference_score.value for reference_score in reference_scores]) / len(
-            reference_scores
+        return sum([original_score.value - reference_score.value for reference_score in perturbed_input_scores]) / len(
+            perturbed_input_scores
         )
 
     def evaluate(  # type: ignore[override]
@@ -304,32 +305,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-
-                evaluate_sample_fn = self.evaluate_sample
-
-                class GenerateEvalScoresActor:  # pragma: no cover
-                    """
-                    This class represents the Ray Actor that gets eval scores for every row in ray dataset by
-                    calling evaluate_sample of the same class.
-
-                    We use Ray Actors instead of Tasks because the Actor approach minimizes
-                    the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
-                    With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
-                    class gets deserialized once per Actor when the Actor gets initialized.
-                    """
-
-                    def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
-                        assert prompt_template  # to satisfy mypy
-                        scores = evaluate_sample_fn(
-                            row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template
-                        )
-                        for score in scores:
-                            row[score.name] = score.value
-                        return row
-
-                dataset = dataset.map(
-                    GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())
-                ).materialize()
+                dataset = self.__add_scores(model, prompt_template, dataset)
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
@@ -357,3 +333,39 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 )
 
         return eval_outputs
+
+    def __add_scores(self, model: ModelRunner, prompt_template: str, dataset: Dataset) -> Dataset:  # pragma: no cover
+        """
+        Private method to encapsulate map call on evaluate sample. Specifically created for cleaner mocking in
+        unit tests.
+        :param model: model to be used for evaluation
+        :param prompt_template: prompt template
+        :param dataset: input ray dataset
+        :returns: ray dataset with added score columns
+        """
+        print("entered my method")
+        evaluate_sample_fn = self.evaluate_sample
+
+        class GenerateEvalScoresActor:  # pragma: no cover
+            """
+            This class represents the Ray Actor that gets eval scores for every row in ray dataset by
+            calling evaluate_sample of the same class.
+
+            We use Ray Actors instead of Tasks because the Actor approach minimizes
+            the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
+            With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
+            class gets deserialized once per Actor when the Actor gets initialized.
+            """
+
+            def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
+                assert prompt_template  # to satisfy mypy
+                scores = evaluate_sample_fn(
+                    row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template
+                )
+                for score in scores:
+                    row[score.name] = score.value
+                return row
+
+        return dataset.map(
+            GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
+        ).materialize()
