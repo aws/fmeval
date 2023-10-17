@@ -45,6 +45,7 @@ class EvalAlgorithm(Enum):
     QA_ACCURACY = "qa_accuracy"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
     CLASSIFICATION_ACCURACY = "classification_accuracy"
+    SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
 
     def __str__(self):
         """
@@ -162,6 +163,7 @@ MODEL_TASK_EVALUATION_MAP = {
     ModelTask.SUMMARIZATION: [
         EvalAlgorithm.TOXICITY,
         EvalAlgorithm.SUMMARIZATION_ACCURACY,
+        EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
 }
 
@@ -186,6 +188,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -203,6 +206,8 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
+    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, CNN_DAILY_MAIL): "Summarise: $feature",
+    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, XSUM): "Summarise: $feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs

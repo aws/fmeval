@@ -19,10 +19,11 @@ class TestEvalAlgorithmInterface:
         class MyAlgorithm(EvalAlgorithmInterface):
             def evaluate(
                 self,
-                model: Optional[ModelRunner],
+                model: Optional[ModelRunner] = None,
                 dataset_config: Optional[DataConfig] = None,
                 prompt_template: str = None,
                 save: bool = False,
+                num_records=100,
             ) -> EvalOutput:
                 pass
 
@@ -45,10 +46,11 @@ class TestEvalAlgorithmInterface:
         class MyAlgorithm(EvalAlgorithmInterface):
             def evaluate(
                 self,
-                model: Optional[ModelRunner],
+                model: Optional[ModelRunner] = None,
                 dataset_config: Optional[DataConfig] = None,
                 prompt_template: str = None,
                 save: bool = False,
+                num_records=100,
             ) -> EvalOutput:
                 pass
 

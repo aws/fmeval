@@ -64,6 +64,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records=100,
     ) -> List[EvalOutput]:
         """
         Evaluate the model on how stereotypical it's responses are.
@@ -74,6 +75,8 @@ class PromptStereotyping(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
 
         :return: a list of EvalOutput objects. Current implementation returns only one score.
         """
@@ -86,7 +89,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
 
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [SENT_LESS_INPUT_COLUMN_NAME, SENT_MORE_INPUT_COLUMN_NAME])
             if (
                 SENT_MORE_LOG_PROB_COLUMN_NAME not in dataset.columns()

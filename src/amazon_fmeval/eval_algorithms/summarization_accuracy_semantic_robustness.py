@@ -1,14 +1,14 @@
-import itertools
 import logging
+from collections import defaultdict
 
-import evaluate as hf_evaluate
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-import pandas as pd
+import ray.data
+from ray.data import Dataset
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN
+from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN, TARGET_OUTPUT_COLUMN_NAME
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.eval_algorithms import (
@@ -28,12 +28,25 @@ from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbatio
     RandomUpperCaseConfig,
     WhitespaceAddRemoveConfig,
 )
+from amazon_fmeval.eval_algorithms.summarization_accuracy import (
+    ROUGE_2,
+    DEFAULT_MODEL_TYPE,
+    SummarizationAccuracyConfig,
+    ROUGE_TYPES,
+    MODEL_TYPES_SUPPORTED,
+    SummarizationAccuracy,
+    ROUGE_SCORE,
+    METEOR_SCORE,
+    BERT_SCORE,
+)
 from amazon_fmeval.eval_algorithms.util import (
     validate_dataset,
     save_dataset,
     aggregate_evaluation_scores,
     generate_output_dataset_path,
     generate_prompt_column_for_dataset,
+    get_num_actors,
+    generate_mean_delta_score,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -53,15 +66,18 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
     WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
 }
 
-WER_SCORE = "word_error_rate"
-
 PROMPT_COLUMN_NAME = "prompt"
+
+PREFIX_FOR_DELTA_SCORES = "delta_"
+DELTA_ROUGE_SCORE = PREFIX_FOR_DELTA_SCORES + ROUGE_SCORE
+DELTA_METEOR_SCORE = PREFIX_FOR_DELTA_SCORES + METEOR_SCORE
+DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
 
 
 @dataclass(frozen=True)
-class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
+class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     """
-    Configuration for the general semantic robustness eval algorithm.
+    Configuration for the summarization accuracy semantic robustness eval algorithm.
 
     :param perturbation_type: perturbation type for generating perturbed inputs
     :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
@@ -74,6 +90,9 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
         whitespace_add_remove perturbation_type
     :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
         whitespace_add_remove perturbation_type
+    :param rouge_type: Type of rouge metric in eval results
+    :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
+    :param model_type_for_bertscore: model to use for bert score
     """
 
     perturbation_type: str = BUTTER_FINGER
@@ -83,6 +102,9 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     random_uppercase_corrupt_proportion: Optional[float] = 0.1
     whitespace_remove_prob: Optional[float] = 0.1
     whitespace_add_prob: Optional[float] = 0.05
+    rouge_type: Optional[str] = ROUGE_2
+    use_stemmer_for_rouge: bool = True
+    model_type_for_bertscore: Optional[str] = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
@@ -91,27 +113,40 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
 
+        if not self.rouge_type in ROUGE_TYPES:
+            raise EvalAlgorithmClientError(
+                f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig, "
+                f"please choose from acceptable values: {ROUGE_TYPES}"
+            )
 
-class GeneralSemanticRobustness(EvalAlgorithmInterface):
+        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+            raise EvalAlgorithmClientError(
+                f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
+            )
+
+
+class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     """
-    Semantic Robustness Eval algorithm for General task LLMs
+    Semantic Robustness Eval algorithm for Summarization Accuracy task LLMs
 
     This evaluation measures how much the model output changes as a result of semantic preserving
     perturbations. Given the input, e.g., "A quick brown fox jumps over the lazy dog", the
     evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
     whitespace perturbation that changes the input text to "A q uick bro wn fox ju mps overthe lazy
     dog". The evaluation then measures how much the model output changes when prompted with the
-    original vs. perturbed input. The output difference is measured using Word Error Rate (WER).
-    https://huggingface.co/spaces/evaluate-metric/wer
+    original vs. perturbed input. The algo compares summarization accuracy of model output for original model output
+    and model output for perturbed inputs, returns delta between rouge, meteor and bert
+    scores.
     """
 
-    def __init__(self, eval_algorithm_config: GeneralSemanticRobustnessConfig):
+    def __init__(self, eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig):
         """Default constructor
 
-        :param eval_algorithm_config: General Semantic Robustness eval algorithm config.
+        :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value
+        self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
@@ -125,20 +160,46 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
             )
 
+        self._summarization_accuracy_eval_algo = SummarizationAccuracy(
+            SummarizationAccuracyConfig(
+                rouge_type=eval_algorithm_config.rouge_type,
+                use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+                model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+            )
+        )
+
+    def __reduce__(self):  # pragma: no cover
+        """
+        Custom serializer method used by Ray when it serializes instances of this
+        class during dataset.map() operations.
+        """
+        serialized_data = (self._eval_algorithm_config,)
+        return SummarizationAccuracySemanticRobustness, serialized_data
+
     def evaluate_sample(
-        self, model_input: str, model: ModelRunner, prompt_template: str = "$feature"
+        self, model_input: str, target_output: str, model: ModelRunner, prompt_template: str = "$feature"
     ) -> List[EvalScore]:  # type: ignore[override]
         """
-        Semantic Robustness evaluate sample.
+        Summarization Accuracy Semantic Robustness evaluate sample.
 
         :param model_input: text input for model
+        :param target_output: The expected responses from the model
         :param model: An instance of ModelRunner which is the model under evaluation
         :param prompt_template: A template which can be used to compose prompt using model_input
         :return: list of EvalScore object
         """
-        util.require(model_input, "Missing required input: model_input, for GeneralSemanticRobustness evaluate_sample")
         util.require(
-            model, "Missing required input: model i.e. ModelRunner, for GeneralSemanticRobustness " "evaluate_sample"
+            model_input,
+            "Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample",
+        )
+        util.require(
+            model,
+            "Missing required input: model i.e. ModelRunner, for "
+            "SummarizationAccuracySemanticRobustness evaluate_sample",
+        )
+        util.require(
+            target_output,
+            "Missing required input: target_output, for " "SummarizationAccuracySemanticRobustness evaluate_sample",
         )
 
         prompt_composer = PromptComposer(prompt_template)
@@ -160,27 +221,35 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
         perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
 
-        wer = hf_evaluate.load("wer")
+        original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+            target_output=target_output, model_output=original_model_output
+        )
+
+        perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
+        for perturbed_input_output in perturbed_input_outputs:
+            accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+                target_output=target_output, model_output=perturbed_input_output
+            )
+            for accuracy_score in accuracy_scores:
+                perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
 
         return [
             EvalScore(
-                name=WER_SCORE,
-                value=wer.compute(
-                    predictions=perturbed_input_outputs,
-                    references=list(
-                        itertools.repeat(original_model_output, self._eval_algorithm_config.num_perturbations)
-                    ),
+                name=PREFIX_FOR_DELTA_SCORES + original_score.name,
+                value=generate_mean_delta_score(
+                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
                 ),
             )
+            for original_score in original_summarization_accuracy_scores
         ]
 
-    def evaluate(
+    def evaluate(  # type: ignore[override]
         self,
         model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
-        num_records=100,
+        num_records: int = 100,
     ) -> List[EvalOutput]:
         """
         Semantic Robustness evaluate.
@@ -191,12 +260,12 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
         :return: List of EvalOutput objects.
         """
         util.require(
-            model, "Missing required input: model i.e. ModelRunner, for GeneralSemanticRobustness evaluate method"
+            model,
+            "Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
+            "evaluate method",
         )
         is_custom_dataset_evaluation = False
         if dataset_config:
@@ -208,7 +277,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
             if is_custom_dataset_evaluation:
                 # TODO when user provide built-in DataConfig, we should provide default prompt_template
                 util.require(
@@ -227,21 +296,11 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
+                dataset = self.__add_scores(model, prompt_template, dataset)
 
-                def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                    """
-                    Map function generating the scores for every input record in input dataset
-                    """
-                    return pd.Series(
-                        data=[
-                            self.evaluate_sample(row[MODEL_INPUT_COLUMN_NAME], model, prompt_template)[0].value
-                            for index, row in df.iterrows()
-                        ]
-                    )
-
-                dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score)
-
-                dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+                )
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
@@ -256,7 +315,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[WER_SCORE],
+                    score_names=[DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -265,3 +324,39 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 )
 
         return eval_outputs
+
+    def __add_scores(self, model: ModelRunner, prompt_template: str, dataset: Dataset) -> Dataset:  # pragma: no cover
+        """
+        Private method to encapsulate map call on evaluate sample. Specifically created for cleaner mocking in
+        unit tests.
+        :param model: model to be used for evaluation
+        :param prompt_template: prompt template
+        :param dataset: input ray dataset
+        :returns: ray dataset with added score columns
+        """
+        print("entered my method")
+        evaluate_sample_fn = self.evaluate_sample
+
+        class GenerateEvalScoresActor:  # pragma: no cover
+            """
+            This class represents the Ray Actor that gets eval scores for every row in ray dataset by
+            calling evaluate_sample of the same class.
+
+            We use Ray Actors instead of Tasks because the Actor approach minimizes
+            the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
+            With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
+            class gets deserialized once per Actor when the Actor gets initialized.
+            """
+
+            def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
+                assert prompt_template  # to satisfy mypy
+                scores = evaluate_sample_fn(
+                    row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template
+                )
+                for score in scores:
+                    row[score.name] = score.value
+                return row
+
+        return dataset.map(
+            GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
+        ).materialize()

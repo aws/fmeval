@@ -1,6 +1,6 @@
 import pytest
 
-from amazon_fmeval.eval_algo_mapping import get_eval_algorithm
+from amazon_fmeval import get_eval_algorithm
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 

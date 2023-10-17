@@ -355,8 +355,8 @@ class TestGeneralSemanticRobustness:
         actual_response = eval_algorithm.evaluate(
             model=MockModelRunner(),
             dataset_config=test_case.dataset_config,
-            save=test_case.save_data,
             prompt_template=test_case.prompt_template,
+            save=test_case.save_data,
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
