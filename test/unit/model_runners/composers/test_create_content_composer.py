@@ -3,7 +3,7 @@ import pytest
 from typing import NamedTuple
 
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers import create_content_composer, Composer, ContentComposer
+from amazon_fmeval.model_runners.composers import create_content_composer, Composer, JsonContentComposer
 
 
 class TestCreateContentComposer:
@@ -15,7 +15,7 @@ class TestCreateContentComposer:
         "test_case",
         [
             # Test case to verify that create_content_composer correctly creates a SingleRequestComposer
-            TestCaseGetComposerType('{"data":$prompt}', ContentComposer),
+            TestCaseGetComposerType('{"data":$prompt}', JsonContentComposer),
         ],
     )
     def test_create_content_composer(self, test_case):
@@ -38,7 +38,7 @@ class TestCreateContentComposer:
     @pytest.mark.parametrize(
         "template, expected_composer_type, prompts",
         [
-            ('"data":$prompt', ContentComposer, ['["John",40]']),
+            ('"data":$prompt', JsonContentComposer, ['["John",40]']),
         ],
     )
     def test_not_stringified_json(self, template, expected_composer_type, prompts):

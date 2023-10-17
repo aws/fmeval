@@ -25,7 +25,7 @@ class Composer(abc.ABC):
 
 
 # mypy: ignore-errors
-class ContentComposer(Composer):
+class JsonContentComposer(Composer):
     KEYWORD = "prompt"
 
     def __init__(self, template: str):
@@ -37,7 +37,7 @@ class ContentComposer(Composer):
         # prompts: ['["John",40]']
         # result: '{"data":["John",40],"names":["Name","Age"]}'
         try:
-            return json.loads(Composer.compose(self, prompt))
+            return json.loads(self.vanilla_template.substitute(**{self.keyword: json.dumps(prompt)}))
         except Exception as e:
             raise EvalAlgorithmClientError(
                 f"Unable to load a JSON object with content_template '{self.vanilla_template.template}' for prompt {prompt} ",
