@@ -11,7 +11,9 @@ from ray.data import Dataset
 from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
-    MIME_TYPE_JSON, TARGET_OUTPUT_COLUMN_NAME, PARALLELIZATION_FACTOR,
+    MIME_TYPE_JSON,
+    TARGET_OUTPUT_COLUMN_NAME,
+    PARALLELIZATION_FACTOR,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
@@ -20,9 +22,13 @@ from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
     WHITESPACE_ADD_REMOVE,
 )
 from amazon_fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, ROUGE_SCORE, BERT_SCORE
-from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import \
-    SummarizationAccuracySemanticRobustnessConfig, SummarizationAccuracySemanticRobustness, DELTA_METEOR_SCORE, \
-    DELTA_ROUGE_SCORE, DELTA_BERT_SCORE
+from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
+    SummarizationAccuracySemanticRobustnessConfig,
+    SummarizationAccuracySemanticRobustness,
+    DELTA_METEOR_SCORE,
+    DELTA_ROUGE_SCORE,
+    DELTA_BERT_SCORE,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
@@ -35,9 +41,9 @@ DATASET = ray.data.from_items(
         },
         {
             MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
-                                     "museum landscape and numerous UNESCO World Heritage sites."
-                                     " It is also an international exhibition venue. "
-                                     "You will find a selection of current and upcoming exhibitions here.",
+            "museum landscape and numerous UNESCO World Heritage sites."
+            " It is also an international exhibition venue. "
+            "You will find a selection of current and upcoming exhibitions here.",
             TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
         },
@@ -138,8 +144,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
                 ],
-                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2,
-                                                                     perturbation_type=RANDOM_UPPER_CASE),
+                config=SummarizationAccuracySemanticRobustnessConfig(
+                    num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
+                ),
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
                 model_input="Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
@@ -167,8 +174,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
                 ],
-                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2,
-                                                                     perturbation_type=WHITESPACE_ADD_REMOVE),
+                config=SummarizationAccuracySemanticRobustnessConfig(
+                    num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
+                ),
             ),
         ],
     )
@@ -189,12 +197,17 @@ class TestSummarizationAccuracySemanticRobustness:
 
         summarization_accuracy_instance = MagicMock()
         summarization_accuracy_instance.evaluate_sample.side_effect = [
-            test_case.sa_eval_score_original, test_case.sa_eval_score_perturbed_1, test_case.sa_eval_score_perturbed_2]
+            test_case.sa_eval_score_original,
+            test_case.sa_eval_score_perturbed_1,
+            test_case.sa_eval_score_perturbed_2,
+        ]
         summarization_accuracy.return_value = summarization_accuracy_instance
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
-        assert eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, model) == \
-               test_case.expected_response
+        assert (
+            eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, model)
+            == test_case.expected_response
+        )
 
     @pytest.mark.parametrize(
         "test_case",
@@ -204,7 +217,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 target_output="I like cake.",
                 model=None,
                 expected_error_message="Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
-                                       "evaluate_sample",
+                "evaluate_sample",
                 config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateSampleInvalid(
@@ -212,7 +225,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 target_output="I like cake.",
                 model=MagicMock(),
                 expected_error_message="Missing required input: model_input, for SummarizationAccuracySemanticRobustness "
-                                       "evaluate_sample",
+                "evaluate_sample",
                 config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateSampleInvalid(
@@ -220,7 +233,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 target_output=None,
                 model=MagicMock(),
                 expected_error_message="Missing required input: target_output, for SummarizationAccuracySemanticRobustness "
-                                       "evaluate_sample",
+                "evaluate_sample",
                 config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
             ),
         ],
@@ -286,30 +299,32 @@ class TestSummarizationAccuracySemanticRobustness:
                 bertscore_model_type=None,
                 perturbation_type="butter_finger",
                 expected_error_message="Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig, "
-                                       "please choose from acceptable values: ['rouge1', 'rouge2', 'rougeL']",
+                "please choose from acceptable values: ['rouge1', 'rouge2', 'rougeL']",
             ),
             TestCaseSemanticRobustnessInvalidConfig(
                 rouge_type="rouge1",
                 bertscore_model_type="distilbert-base-uncased",
                 perturbation_type="butter_finger",
                 expected_error_message="Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
-                                       "SummarizationAccuracyConfig, please choose from acceptable values: ["
-                                       "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli']",
+                "SummarizationAccuracyConfig, please choose from acceptable values: ["
+                "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli']",
             ),
             TestCaseSemanticRobustnessInvalidConfig(
                 rouge_type="rouge1",
                 bertscore_model_type="distilbert-base-uncased",
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
-                                       "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
+                "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
             ),
         ],
     )
     def test_semantic_robustness_invalid_config(self, test_case):
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            SummarizationAccuracySemanticRobustnessConfig(perturbation_type=test_case.perturbation_type,
-                                                          rouge_type=test_case.rouge_type,
-                                                          model_type_for_bertscore=test_case.bertscore_model_type)
+            SummarizationAccuracySemanticRobustnessConfig(
+                perturbation_type=test_case.perturbation_type,
+                rouge_type=test_case.rouge_type,
+                model_type_for_bertscore=test_case.bertscore_model_type,
+            )
 
     class TestCaseSummarizationAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
@@ -331,9 +346,11 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="cnn_daily_mail",
-                        dataset_scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
                         prompt_template="Summarise: $feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -341,13 +358,15 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="xsum",
-                        dataset_scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
                         prompt_template="Summarise: $feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",
-                    )
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -360,22 +379,28 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="cnn_daily_mail",
-                        dataset_scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
                         prompt_template="Summarise: $feature",
                         category_scores=[
                             CategoryScore(
-                                name="dummy_category_1", scores=[
-                                        EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)]
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name="delta_rouge", value=0.0),
+                                    EvalScore(name="delta_bertscore", value=0.0),
+                                    EvalScore(name="delta_meteor", value=0.0),
+                                ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                                scores=[
+                                    EvalScore(name="delta_rouge", value=0.0),
+                                    EvalScore(name="delta_bertscore", value=0.0),
+                                    EvalScore(name="delta_meteor", value=0.0),
+                                ],
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -383,22 +408,28 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="xsum",
-                        dataset_scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
                         prompt_template="Summarise: $feature",
                         category_scores=[
                             CategoryScore(
-                                name="dummy_category_1", scores=[
-                                        EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)]
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name="delta_rouge", value=0.0),
+                                    EvalScore(name="delta_bertscore", value=0.0),
+                                    EvalScore(name="delta_meteor", value=0.0),
+                                ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                                scores=[
+                                    EvalScore(name="delta_rouge", value=0.0),
+                                    EvalScore(name="delta_bertscore", value=0.0),
+                                    EvalScore(name="delta_meteor", value=0.0),
+                                ],
                             ),
                         ],
                         output_path="/tmp/eval_results/",
@@ -423,9 +454,11 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name='delta_rouge', value=0.0),
-                                        EvalScore(name='delta_bertscore', value=0.0),
-                                        EvalScore(name='delta_meteor', value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
                         prompt_template="$feature",
                         category_scores=None,
                         output_path="/tmp/eval_results/",

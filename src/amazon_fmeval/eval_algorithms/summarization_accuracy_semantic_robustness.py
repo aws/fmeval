@@ -27,15 +27,24 @@ from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbatio
     RandomUpperCaseConfig,
     WhitespaceAddRemoveConfig,
 )
-from amazon_fmeval.eval_algorithms.summarization_accuracy import ROUGE_2, DEFAULT_MODEL_TYPE, \
-    SummarizationAccuracyConfig, ROUGE_TYPES, MODEL_TYPES_SUPPORTED, SummarizationAccuracy, ROUGE_SCORE, METEOR_SCORE, \
-    BERT_SCORE
+from amazon_fmeval.eval_algorithms.summarization_accuracy import (
+    ROUGE_2,
+    DEFAULT_MODEL_TYPE,
+    SummarizationAccuracyConfig,
+    ROUGE_TYPES,
+    MODEL_TYPES_SUPPORTED,
+    SummarizationAccuracy,
+    ROUGE_SCORE,
+    METEOR_SCORE,
+    BERT_SCORE,
+)
 from amazon_fmeval.eval_algorithms.util import (
     validate_dataset,
     save_dataset,
     aggregate_evaluation_scores,
     generate_output_dataset_path,
-    generate_prompt_column_for_dataset, get_num_actors,
+    generate_prompt_column_for_dataset,
+    get_num_actors,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -150,18 +159,19 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
 
         self._summarization_accuracy_eval_algo = SummarizationAccuracy(
-            SummarizationAccuracyConfig(rouge_type=eval_algorithm_config.rouge_type,
-                                        use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
-                                        model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore))
+            SummarizationAccuracyConfig(
+                rouge_type=eval_algorithm_config.rouge_type,
+                use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+                model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+            )
+        )
 
     def __reduce__(self):
         """
         Custom serializer method used by Ray when it serializes instances of this
         class during dataset.map() operations.
         """
-        serialized_data = (
-            self._eval_algorithm_config,
-        )
+        serialized_data = (self._eval_algorithm_config,)
         return SummarizationAccuracySemanticRobustness, serialized_data
 
     def evaluate_sample(
@@ -176,12 +186,19 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to compose prompt using model_input
         :return: list of EvalScore object
         """
-        util.require(model_input,
-                     "Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample")
-        util.require(model, "Missing required input: model i.e. ModelRunner, for "
-                            "SummarizationAccuracySemanticRobustness evaluate_sample")
-        util.require(target_output, "Missing required input: target_output, for "
-                                    "SummarizationAccuracySemanticRobustness evaluate_sample")
+        util.require(
+            model_input,
+            "Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample",
+        )
+        util.require(
+            model,
+            "Missing required input: model i.e. ModelRunner, for "
+            "SummarizationAccuracySemanticRobustness evaluate_sample",
+        )
+        util.require(
+            target_output,
+            "Missing required input: target_output, for " "SummarizationAccuracySemanticRobustness evaluate_sample",
+        )
 
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
@@ -203,12 +220,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
 
         original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
-            target_output=target_output, model_output=original_model_output)
+            target_output=target_output, model_output=original_model_output
+        )
 
         perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
         for perturbed_input_output in perturbed_input_outputs:
             accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
-                target_output=target_output, model_output=perturbed_input_output)
+                target_output=target_output, model_output=perturbed_input_output
+            )
             for accuracy_score in accuracy_scores:
                 perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
 
@@ -216,7 +235,8 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             EvalScore(
                 name=PREFIX_FOR_DELTA_SCORES + original_score.name,
                 value=self._generate_mean_delta_score(
-                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]),
+                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
+                ),
             )
             for original_score in original_summarization_accuracy_scores
         ]
@@ -228,8 +248,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param original_score: Original score
         :param reference_scores: List of reference scores
         """
-        return sum([original_score.value - reference_score.value
-                    for reference_score in reference_scores]) / len(reference_scores)
+        return sum([original_score.value - reference_score.value for reference_score in reference_scores]) / len(
+            reference_scores
+        )
 
     def evaluate(  # type: ignore[override]
         self,
@@ -250,8 +271,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :return: List of EvalOutput objects.
         """
         util.require(
-            model, "Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
-                   "evaluate method"
+            model,
+            "Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
+            "evaluate method",
         )
         is_custom_dataset_evaluation = False
         if dataset_config:
@@ -299,7 +321,8 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                     def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
                         assert prompt_template  # to satisfy mypy
                         scores = evaluate_sample_fn(
-                            row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template)
+                            row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template
+                        )
                         for score in scores:
                             row[score.name] = score.value
                         return row
@@ -309,7 +332,8 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 ).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN)
+                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+                )
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
