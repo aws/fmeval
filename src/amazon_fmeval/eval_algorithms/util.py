@@ -355,3 +355,15 @@ def generate_output_dataset_path(path_to_parent_dir: str, eval_name: str, datase
     :returns: A path that is unique to an evaluation/dataset pair for a given job.
     """
     return os.path.join(path_to_parent_dir, f"{eval_name}_{dataset_name}.jsonl")
+
+
+def generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores: List[EvalScore]) -> float:
+    """
+    Util method to generate mean of difference between original and perturbed input scores
+    :param original_score: Original score
+    :param perturbed_input_scores: List of scores for model inference outputs on perturbed inputs
+    :returns: mean of delta between the scores
+    """
+    return sum([original_score.value - reference_score.value for reference_score in perturbed_input_scores]) / len(
+        perturbed_input_scores
+    )

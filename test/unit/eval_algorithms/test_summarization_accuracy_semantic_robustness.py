@@ -1,4 +1,3 @@
-import os
 import re
 from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import patch, MagicMock
@@ -13,7 +12,6 @@ from amazon_fmeval.constants import (
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
     TARGET_OUTPUT_COLUMN_NAME,
-    PARALLELIZATION_FACTOR,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore

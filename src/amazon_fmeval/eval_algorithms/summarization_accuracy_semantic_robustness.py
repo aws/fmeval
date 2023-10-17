@@ -46,6 +46,7 @@ from amazon_fmeval.eval_algorithms.util import (
     generate_output_dataset_path,
     generate_prompt_column_for_dataset,
     get_num_actors,
+    generate_mean_delta_score,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -235,23 +236,12 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         return [
             EvalScore(
                 name=PREFIX_FOR_DELTA_SCORES + original_score.name,
-                value=self._generate_mean_delta_score(
+                value=generate_mean_delta_score(
                     original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
                 ),
             )
             for original_score in original_summarization_accuracy_scores
         ]
-
-    @staticmethod
-    def _generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores: List[EvalScore]):
-        """
-        Private util method to generate mean of difference between original and reference scores
-        :param original_score: Original score
-        :param perturbed_input_scores: List of scores for model inference outputs on perturbed inputs
-        """
-        return sum([original_score.value - reference_score.value for reference_score in perturbed_input_scores]) / len(
-            perturbed_input_scores
-        )
 
     def evaluate(  # type: ignore[override]
         self,
