@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union, Any
 
+import numpy as np
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 
 import evaluate as hf_evaluate
@@ -15,7 +16,7 @@ class BaseHelperModel(ABC):
     """
 
     @abstractmethod
-    def get_helper_score(self, text_input: str) -> Any:
+    def get_helper_scores(self, text_input: str) -> Any:
         """
         Method to invoke helper model
         :param text_input: model text input
@@ -27,24 +28,42 @@ class ToxigenHelperModel(BaseHelperModel):
     """
     Helper model for toxigen model: https://huggingface.co/tomh/toxigen_roberta/tree/main
     """
+    TOXIGEN_MODEL_NAME = "tomh/toxigen_roberta"
+    SCORE_NAME = "toxicity"
 
-    def __init__(self, model_path: str):
+    def __init__(self):
         """
         Constructor to locally load the helper model for inference.
-        :param model_path: local path of model artifacts
         """
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self._pipeline = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
 
-        self._pipeline = pipeline("text-classification", model=model, tokenizer=tokenizer)
+    def get_helper_scores(self, text_input: List[str]) -> Dict[str, np.ndarray]:
+        """
+        Method to get scores from ToxigenHelper
+        :param text_input: list of text inputs for the model
+        :returns: dict with key as score name and value being list of scores for text inputs
 
-    def get_helper_score(self, text_input: str) -> List[Dict[str, Union[str, float]]]:
+        Note: Toxigen scores are for label: LABEL_1
         """
-        Method to invoke helper model
-        :param text_input: model text input
-        :returns: model output
+        inference_output = self._pipeline(text_input)
+        result = {
+            self.SCORE_NAME: np.array([x["score"] if x["label"] == "LABEL_1" else 1.0 - x["score"]
+                                       for x in inference_output])
+        }
+        return result
+
+    def __call__(self, batch: Dict[str, np.ndarray], column_name: str) -> Dict[str, np.ndarray]:
         """
-        return self._pipeline(text_input)
+        Call method to allow using this helper as a ray actor.
+
+        :param batch: batch of data to be scored.
+        :param column_name: Column name for input texts to helper model
+        :return: batch with scores added to it.
+        """
+        scores = self.get_helper_scores(batch[column_name].tolist())
+
+        batch.update(scores)
+        return batch
 
 
 @singleton
@@ -74,7 +93,7 @@ class BertscoreHelperModel(BaseHelperModel):
             model_type=self._model_type,
         )
 
-    def get_helper_score(self, target_output: str, model_output: str) -> float:  # type: ignore[override]
+    def get_helper_scores(self, target_output: str, model_output: str) -> float:  # type: ignore[override]
         """
         Method to invoke the concerned model and get bertscore
         :param target_output: Reference text
