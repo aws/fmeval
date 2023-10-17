@@ -4,6 +4,7 @@ DEFAULT_EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
 # Number of actors to use
 PARALLELIZATION_FACTOR = "PARALLELIZATION_FACTOR"
+PARTITION_MULTIPLIER = 5
 
 # Constants for column names in loaded ray datasets
 MODEL_INPUT_COLUMN_NAME = "model_input"
@@ -51,3 +52,6 @@ MEAN = "mean"
 # `EvalOutputRecord`s to accumulate  before writing them
 # to the output JSON Lines file.
 EVAL_OUTPUT_RECORDS_BATCH_SIZE = 1024
+
+# Dataloader seed
+SEED = 1234

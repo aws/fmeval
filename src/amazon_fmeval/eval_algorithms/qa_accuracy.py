@@ -165,6 +165,7 @@ class QAAccuracy(EvalAlgorithmInterface):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records=100,
     ) -> List[EvalOutput]:
         is_custom_dataset_evaluation = False
         if dataset_config:
@@ -175,7 +176,7 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
             if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")

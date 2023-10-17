@@ -33,6 +33,7 @@ class EvalAlgorithmInterface(ABC):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records: int = 100,
     ) -> List[EvalOutput]:
         """
         Computes the evaluation score for dataset(s).
@@ -43,6 +44,8 @@ class EvalAlgorithmInterface(ABC):
         :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
         :return: List of EvalOutput objects.
         """
 
