@@ -8,7 +8,15 @@ import ray.data
 from ray.data import Dataset
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN, TARGET_OUTPUT_COLUMN_NAME
+from amazon_fmeval.constants import (
+    MODEL_INPUT_COLUMN_NAME,
+    TARGET_OUTPUT_COLUMN_NAME,
+    MEAN,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    PREFIX_FOR_DELTA_SCORES,
+)
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.eval_algorithms import (
@@ -20,7 +28,7 @@ from amazon_fmeval.eval_algorithms import (
     EVAL_PROMPT_TEMPLATES,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
-from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbations import (
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
     ButterFinger,
     RandomUpperCase,
     WhitespaceAddRemove,
@@ -56,10 +64,6 @@ from amazon_fmeval.perf_util import timed_block
 logger = logging.getLogger(__name__)
 
 # All the perturbation types supported by this eval algo
-BUTTER_FINGER = "butter_finger"
-RANDOM_UPPER_CASE = "random_upper_case"
-WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
-
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
     BUTTER_FINGER: ButterFinger,
     RANDOM_UPPER_CASE: RandomUpperCase,
@@ -98,13 +102,13 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
     seed: int = 5
-    butter_finger_perturbation_prob: Optional[float] = 0.1
-    random_uppercase_corrupt_proportion: Optional[float] = 0.1
-    whitespace_remove_prob: Optional[float] = 0.1
-    whitespace_add_prob: Optional[float] = 0.05
-    rouge_type: Optional[str] = ROUGE_2
+    butter_finger_perturbation_prob: float = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
+    whitespace_remove_prob: float = 0.1
+    whitespace_add_prob: float = 0.05
+    rouge_type: str = ROUGE_2
     use_stemmer_for_rouge: bool = True
-    model_type_for_bertscore: Optional[str] = DEFAULT_MODEL_TYPE
+    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
@@ -334,7 +338,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param dataset: input ray dataset
         :returns: ray dataset with added score columns
         """
-        print("entered my method")
         evaluate_sample_fn = self.evaluate_sample
 
         class GenerateEvalScoresActor:  # pragma: no cover

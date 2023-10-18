@@ -73,9 +73,9 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
     :param model_type_for_bertscore: model to use for bert score
     """
 
-    rouge_type: Optional[str] = ROUGE_2
+    rouge_type: str = ROUGE_2
     use_stemmer_for_rouge: bool = True
-    model_type_for_bertscore: Optional[str] = DEFAULT_MODEL_TYPE
+    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
         if not self.rouge_type in ROUGE_TYPES:
@@ -310,7 +310,7 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
     :returns: rouge score: boolean indicating using stemmer for rouge
     """
     bertscore = BertscoreHelperModel(model_type=config.model_type_for_bertscore)
-    return bertscore.get_helper_score(target_output, model_output)
+    return bertscore.get_helper_scores(target_output, model_output)
 
 
 def add_score_to_dataset(

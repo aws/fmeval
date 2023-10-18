@@ -43,6 +43,7 @@ class EvalAlgorithm(Enum):
     GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
+    QA_ACCURACY_SEMANTIC_ROBUSTNESS = "qa_accuracy_semantic_robustness"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
     CLASSIFICATION_ACCURACY = "classification_accuracy"
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
@@ -89,17 +90,21 @@ class EvalOutput:
     :param category_scores: A list of CategoryScore object that contain the scores for each category in the dataset.
     :param output_path: Local path of eval output on dataset. This output contains prompt-response with
     record wise eval scores
+    :param error: A string error message for a failed evaluation.
     """
 
     eval_name: str
     dataset_name: str
-    dataset_scores: List[EvalScore]
+    dataset_scores: Optional[List[EvalScore]] = None
     prompt_template: Optional[str] = None
     category_scores: Optional[List[CategoryScore]] = None
     output_path: Optional[str] = None
+    error: Optional[str] = None
 
     def __post_init__(self):  # pragma: no cover
         """Post initialisation validations for EvalOutput"""
+        assert self.dataset_scores or self.error
+
         if not self.category_scores:
             return
 
@@ -116,11 +121,14 @@ class EvalOutput:
             assert self.eval_name == other.eval_name
             assert self.dataset_name == other.dataset_name
             assert self.prompt_template == other.prompt_template
+            assert self.error == other.error
             assert self.dataset_scores if other.dataset_scores else not self.dataset_scores
-            assert len(self.dataset_scores) == len(other.dataset_scores)
-            assert seq(self.dataset_scores).sorted(key=lambda x: x.name).zip(
-                seq(other.dataset_scores).sorted(key=lambda x: x.name)
-            ).filter(lambda x: x[0] == x[1]).len() == len(self.dataset_scores)
+            if self.dataset_scores:  # pragma: no branch
+                assert self.dataset_scores and other.dataset_scores
+                assert len(self.dataset_scores) == len(other.dataset_scores)
+                assert seq(self.dataset_scores).sorted(key=lambda x: x.name).zip(
+                    seq(other.dataset_scores).sorted(key=lambda x: x.name)
+                ).filter(lambda x: x[0] == x[1]).len() == len(self.dataset_scores)
             assert self.category_scores if other.category_scores else not self.category_scores
             if self.category_scores:
                 assert seq(self.category_scores).sorted(key=lambda cat_score: cat_score.name).zip(
@@ -159,6 +167,7 @@ MODEL_TASK_EVALUATION_MAP = {
     ModelTask.QUESTION_ANSWERING: [
         EvalAlgorithm.TOXICITY,
         EvalAlgorithm.QA_ACCURACY,
+        EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.SUMMARIZATION: [
         EvalAlgorithm.TOXICITY,
@@ -179,16 +188,20 @@ IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
 WIKITEXT2 = "wikitext2"
+REAL_TOXICITY_PROMPTS = "real_toxicity_prompts"
+REAL_TOXICITY_PROMPTS_CHALLENGING = "real_toxicity_prompts_challenging"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.FACTUAL_KNOWLEDGE.value: [TREX],
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+    EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -198,6 +211,9 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.QA_ACCURACY.value, BOOLQ): "$feature",
     (EvalAlgorithm.QA_ACCURACY.value, TRIVIA_QA): "$feature",
     (EvalAlgorithm.QA_ACCURACY.value, NATURAL_QUESTIONS): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, BOOLQ): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, TRIVIA_QA): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, NATURAL_QUESTIONS): "$feature",
     (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
@@ -208,6 +224,9 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, CNN_DAILY_MAIL): "Summarise: $feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, XSUM): "Summarise: $feature",
+    (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
+    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
+    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
@@ -294,6 +313,26 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     # TODO to be populated
     WIKITEXT2: DataConfig(
         dataset_name=WIKITEXT2,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location="tba",
+        category_location="tba",
+    ),
+    # TODO to be populated
+    REAL_TOXICITY_PROMPTS: DataConfig(
+        dataset_name=REAL_TOXICITY_PROMPTS,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location="tba",
+        category_location="tba",
+    ),
+    # TODO to be populated
+    REAL_TOXICITY_PROMPTS_CHALLENGING: DataConfig(
+        dataset_name=REAL_TOXICITY_PROMPTS_CHALLENGING,
         dataset_uri="dummy link",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="tba",

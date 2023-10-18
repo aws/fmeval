@@ -55,7 +55,7 @@ class WhitespaceAddRemoveConfig:
     add_prob: float = 0.05
 
 
-class SemanticPreservingPerturbation(ABC):
+class SemanticPerturbationUtil(ABC):
     """
     The interface that each perturbation should implement.
     """
@@ -87,7 +87,7 @@ class SemanticPreservingPerturbation(ABC):
         np.random.seed(seed)
 
 
-class ButterFinger(SemanticPreservingPerturbation):
+class ButterFinger(SemanticPerturbationUtil):
     """
     Given a text, add keyboard induced typos in randomly selected words.
     Keyboard induced typos are ones where a character is replaced by adjacent characters on the keyboard.
@@ -155,7 +155,7 @@ class ButterFinger(SemanticPreservingPerturbation):
         return perturbed_texts
 
 
-class RandomUpperCase(SemanticPreservingPerturbation):
+class RandomUpperCase(SemanticPerturbationUtil):
     """
     Convert random characters in the text to uppercase.
     Example:
@@ -182,7 +182,7 @@ class RandomUpperCase(SemanticPreservingPerturbation):
         return "".join(new_sentence)
 
 
-class WhitespaceAddRemove(SemanticPreservingPerturbation):
+class WhitespaceAddRemove(SemanticPerturbationUtil):
     """
     Add and remove whitespaces at random.
     Example:
