@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import io
-
+import pickle
 import pytest
 from botocore.response import StreamingBody
 
@@ -126,3 +126,28 @@ class TestBedrockModelRunner:
                 content_type=MIME_TYPE_JSON,
                 accept_type=MIME_TYPE_JSON,
             )
+
+    @patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True)
+    def test_bedrock_model_runner_serializer(self, boto3_client):
+        """
+        GIVEN a valid BedrockModelRunner
+        WHEN it is serialized (via pickle.dumps)
+        THEN its __reduce__ method produces the correct output, which is verified by
+            pickle.loads returning a correct BedrockModelRunner instance
+        """
+        bedrock_model_runner = BedrockModelRunner(
+            model_id=MODEL_ID,
+            content_template=CONTENT_TEMPLATE,
+            output=OUTPUT_JMES_PATH,
+            log_probability=LOG_PROBABILITY_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        deserialized: BedrockModelRunner = pickle.loads(pickle.dumps(bedrock_model_runner))
+        assert deserialized._model_id == bedrock_model_runner._model_id
+        assert deserialized._content_template == bedrock_model_runner._content_template
+        assert deserialized._output == bedrock_model_runner._output
+        assert deserialized._log_probability == bedrock_model_runner._log_probability
+        assert deserialized._content_type == bedrock_model_runner._content_type
+        assert deserialized._accept_type == bedrock_model_runner._accept_type
+        assert deserialized._bedrock_runtime_client.service_name == "bedrock-runtime"
