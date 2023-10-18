@@ -3,7 +3,7 @@ import re
 import pytest
 
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers.composers import ContentComposer, PromptComposer
+from amazon_fmeval.model_runners.composers.composers import JsonContentComposer, PromptComposer
 
 
 class TestContentComposerComposer:
@@ -11,12 +11,12 @@ class TestContentComposerComposer:
     @pytest.fixture
     def composer(self):
         template = '{"data":$prompt}'
-        return ContentComposer(template)
+        return JsonContentComposer(template)
 
     # Test case to verify composing a single prompt
     @pytest.mark.parametrize(
         "prompts, expected_result",
-        [('["John",40]', {"data": ["John", 40]})],
+        [('["John",40]', {"data": '["John",40]'})],
     )
     def test_compose_single_prompt(self, composer, prompts, expected_result):
         result = composer.compose(prompts)
@@ -25,7 +25,7 @@ class TestContentComposerComposer:
     # Test case to verify error is raised for an invalid template
     def test_invalid_template(self):
         template = '{"data":$invalid}'
-        composer = ContentComposer(template)
+        composer = JsonContentComposer(template)
         prompt = '["John",40]'
         with pytest.raises(
             EvalAlgorithmClientError,

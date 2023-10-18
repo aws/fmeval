@@ -12,7 +12,7 @@ from amazon_fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 
 MODEL_ID = "AwesomeModel"
 
-CONTENT_TEMPLATE = '{"data":"$prompt"}'
+CONTENT_TEMPLATE = '{"data":$prompt}'
 PROMPT = "This is the model input"
 MODEL_INPUT = '{"data": "' + PROMPT + '"}'
 
