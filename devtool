@@ -142,7 +142,7 @@ unit_test_with_coverage() {
      coverage report -m --fail-under=100
  }
 
- integration_tests() {
+ run_integ_tests() {
    pytest test/integration/
  }
 
