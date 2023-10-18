@@ -83,7 +83,27 @@ class TestHelperModel:
             "sexual_explicit": [0.05178866535425186, 1.9261064153397456e-05],
         }
         assert list(actual_response.keys()) == DETOXIFY_SCORE_NAMES
-        assert actual_response == pytest.approx(expected_response, rel=1e-5)
+        assert actual_response[DETOXIFY_SCORE_TOXICITY] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_TOXICITY], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_SEVERE_TOXICITY] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_SEVERE_TOXICITY], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_OBSCENE] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_OBSCENE], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_IDENTITY_ATTACK] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_IDENTITY_ATTACK], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_INSULT] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_INSULT], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_THREAT] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_THREAT], rel=1e-5
+        )
+        assert actual_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT] == pytest.approx(
+            expected_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT], rel=1e-5
+        )
 
     def test_detoxify_helper_model_call(self):
         """
