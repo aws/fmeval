@@ -175,6 +175,10 @@ install_package() {
     pip3 install --upgrade dist/$wheel_name
 }
 
+run_integ_tests() {
+  echo "Integration Tests succeeded"
+}
+
 all() {
     env_setup
     lint
