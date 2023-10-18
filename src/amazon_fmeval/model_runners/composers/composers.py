@@ -40,7 +40,7 @@ class JsonContentComposer(Composer):
         # This is not included in the Composer class itself because this is specifically needed for
         # JSON content types, but not necessarily required for other content types.
         try:
-            return json.loads(self.vanilla_template.substitute(**{self.keyword: json.dumps(prompt)}))
+            return json.loads(Composer.compose(self, json.dumps(prompt)))
         except Exception as e:
             raise EvalAlgorithmClientError(
                 f"Unable to load a JSON object with content_template '{self.vanilla_template.template}' for prompt {prompt} ",
