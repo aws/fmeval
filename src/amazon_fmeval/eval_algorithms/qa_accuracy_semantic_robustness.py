@@ -10,26 +10,29 @@ from dataclasses import dataclass
 import amazon_fmeval.util as util
 from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_LOG_PROBABILITY_COLUMN_NAME,
     MEAN,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    PREFIX_FOR_DELTA_SCORES,
 )
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbations import (
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
+    ButterFinger,
+    RandomUpperCase,
+    WhitespaceAddRemove,
     ButterFingerConfig,
     RandomUpperCaseConfig,
     WhitespaceAddRemoveConfig,
 )
 from amazon_fmeval.eval_algorithms.util import (
-    generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
     aggregate_evaluation_scores,
     validate_dataset,
     save_dataset,
     generate_output_dataset_path,
-    get_num_actors,
     generate_mean_delta_score,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import (
@@ -56,20 +59,14 @@ from amazon_fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
     QAAccuracyConfig,
 )
-from amazon_fmeval.eval_algorithms.general_semantic_robustness import ButterFinger, RandomUpperCase, WhitespaceAddRemove
 
 # All the perturbation types supported by this eval algo
-BUTTER_FINGER = "butter_finger"
-RANDOM_UPPER_CASE = "random_upper_case"
-WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
-
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
     BUTTER_FINGER: ButterFinger,
     RANDOM_UPPER_CASE: RandomUpperCase,
     WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
 }
 
-PREFIX_FOR_DELTA_SCORES = "delta_"
 DELTA_F1_SCORE = PREFIX_FOR_DELTA_SCORES + F1_SCORE
 DELTA_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + EXACT_MATCH_SCORE
 DELTA_QUASI_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + QUASI_EXACT_MATCH_SCORE
@@ -99,17 +96,17 @@ class QAAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
         whitespace_add_remove perturbation_type
     """
 
-    target_output_delimiter: Optional[str] = None
+    target_output_delimiter: Optional[str] = "<OR>"
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
     seed: int = 5
     # BUTTER FINGER PERTURBATION
-    butter_finger_perturbation_prob: Optional[float] = 0.1
+    butter_finger_perturbation_prob: float = 0.1
     # RANDOM UPPER CASE PERTURBATION
-    random_uppercase_corrupt_proportion: Optional[float] = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
     # WHITESPACE ADD REMOVE PERTURBATION
-    whitespace_remove_prob: Optional[float] = 0.1
-    whitespace_add_prob: Optional[float] = 0.05
+    whitespace_remove_prob: float = 0.1
+    whitespace_add_prob: float = 0.05
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
@@ -203,13 +200,6 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 data=dataset,
                 model_input_column_name=MODEL_INPUT_COLUMN_NAME,
                 prompt_column_name=PROMPT_COLUMN_NAME,
-            )
-            dataset = generate_model_predict_response_for_dataset(
-                model=model,
-                data=dataset,
-                model_input_column_name=PROMPT_COLUMN_NAME,
-                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
-                model_log_probability_column_name=MODEL_LOG_PROBABILITY_COLUMN_NAME,
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 

@@ -8,7 +8,15 @@ import ray.data
 from ray.data import Dataset
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MEAN, TARGET_OUTPUT_COLUMN_NAME
+from amazon_fmeval.constants import (
+    MODEL_INPUT_COLUMN_NAME,
+    TARGET_OUTPUT_COLUMN_NAME,
+    MEAN,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    PREFIX_FOR_DELTA_SCORES,
+)
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.eval_algorithms import (
@@ -56,10 +64,6 @@ from amazon_fmeval.perf_util import timed_block
 logger = logging.getLogger(__name__)
 
 # All the perturbation types supported by this eval algo
-BUTTER_FINGER = "butter_finger"
-RANDOM_UPPER_CASE = "random_upper_case"
-WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
-
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
     BUTTER_FINGER: ButterFinger,
     RANDOM_UPPER_CASE: RandomUpperCase,

@@ -55,3 +55,10 @@ EVAL_OUTPUT_RECORDS_BATCH_SIZE = 1024
 
 # Dataloader seed
 SEED = 1234
+
+# Semantic robustness perturbation types
+BUTTER_FINGER = "butter_finger"
+RANDOM_UPPER_CASE = "random_upper_case"
+WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
+
+PREFIX_FOR_DELTA_SCORES = "delta_"

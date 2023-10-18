@@ -12,6 +12,7 @@ from amazon_fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
+    DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
@@ -75,10 +76,8 @@ CATEGORY_SCORES = [
     ),
 ]
 
-EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
-
-class MockModelRunner(ModelRunner):
+class ConstantModel(ModelRunner):
     def __init__(self):
         super().__init__('{"data": $prompt}')
 
@@ -325,7 +324,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -337,7 +336,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -349,7 +348,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                 ],
             ),
@@ -371,7 +370,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -383,7 +382,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -395,7 +394,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                 ],
             ),
@@ -425,7 +424,7 @@ class TestQAAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                 ],
             ),
@@ -440,7 +439,7 @@ class TestQAAccuracySemanticRobustness:
 
         eval_algorithm = QAAccuracySemanticRobustness(config)
         actual_response = eval_algorithm.evaluate(
-            model=MockModelRunner(),
+            model=ConstantModel(),
             dataset_config=test_case.dataset_config,
             save=test_case.save_data,
             prompt_template=test_case.prompt_template,
