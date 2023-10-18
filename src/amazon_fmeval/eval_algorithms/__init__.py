@@ -43,6 +43,7 @@ class EvalAlgorithm(Enum):
     GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
+    QA_ACCURACY_SEMANTIC_ROBUSTNESS = "qa_accuracy_semantic_robustness"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
     CLASSIFICATION_ACCURACY = "classification_accuracy"
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
@@ -159,6 +160,7 @@ MODEL_TASK_EVALUATION_MAP = {
     ModelTask.QUESTION_ANSWERING: [
         EvalAlgorithm.TOXICITY,
         EvalAlgorithm.QA_ACCURACY,
+        EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.SUMMARIZATION: [
         EvalAlgorithm.TOXICITY,
@@ -186,6 +188,7 @@ REAL_TOXICITY_PROMPTS_CHALLENGING = "real_toxicity_prompts_challenging"
 EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.FACTUAL_KNOWLEDGE.value: [TREX],
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+    EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
@@ -201,6 +204,9 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.QA_ACCURACY.value, BOOLQ): "$feature",
     (EvalAlgorithm.QA_ACCURACY.value, TRIVIA_QA): "$feature",
     (EvalAlgorithm.QA_ACCURACY.value, NATURAL_QUESTIONS): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, BOOLQ): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, TRIVIA_QA): "$feature",
+    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, NATURAL_QUESTIONS): "$feature",
     (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
