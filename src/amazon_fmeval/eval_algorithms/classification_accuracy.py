@@ -90,7 +90,8 @@ class ClassificationAccuracyConfig(EvalAlgorithmConfig):
     Configuration for the Classification Accuracy Evaluation
 
     :param multiclass_average_strategy: `average` to be passed to sklearn's precision and recall scores.
-        This determines how scores are aggregated in the multiclass classification setting (see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html).
+        This determines how scores are aggregated in the multiclass classification setting
+        (see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html).
         Options are {'micro', 'macro', 'samples', 'weighted', 'binary'} or None, default='micro'.
     :param converter_fn: Function to process model output to labels, defaults to simple integer conversion.
     """
