@@ -25,7 +25,7 @@ class Composer(abc.ABC):
 
 
 # mypy: ignore-errors
-class ContentComposer(Composer):
+class JsonContentComposer(Composer):
     KEYWORD = "prompt"
 
     def __init__(self, template: str):
@@ -35,9 +35,12 @@ class ContentComposer(Composer):
         # The placeholder $prompt is replaced by a single JSON prompt. E.g.,
         # template: '{"data":$prompt}'
         # prompts: ['["John",40]']
-        # result: '{"data":["John",40],"names":["Name","Age"]}'
+        # result: '{"data":"[\"John\",40]"}'
+        # This composer uses json.dumps to make sure the double quotes included are properly escaped.
+        # This is not included in the Composer class itself because this is specifically needed for
+        # JSON content types, but not necessarily required for other content types.
         try:
-            return json.loads(Composer.compose(self, prompt))
+            return json.loads(Composer.compose(self, json.dumps(prompt)))
         except Exception as e:
             raise EvalAlgorithmClientError(
                 f"Unable to load a JSON object with content_template '{self.vanilla_template.template}' for prompt {prompt} ",
