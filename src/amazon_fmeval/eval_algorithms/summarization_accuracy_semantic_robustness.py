@@ -334,7 +334,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param dataset: input ray dataset
         :returns: ray dataset with added score columns
         """
-        print("entered my method")
         evaluate_sample_fn = self.evaluate_sample
 
         class GenerateEvalScoresActor:  # pragma: no cover

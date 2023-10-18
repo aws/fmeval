@@ -39,8 +39,8 @@ class TestHelperModel:
         Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
-        test_helper = ToxigenHelperModel()
-        actual_response = test_helper({"prompt": np.array(["My shitty text", "My good text"])}, "prompt")
+        test_helper = ToxigenHelperModel("prompt")
+        actual_response = test_helper({"prompt": np.array(["My shitty text", "My good text"])})
         expected_response = {
             "prompt": np.array(["My shitty text", "My good text"]),
             TOXIGEN_SCORE_NAME: np.array([0.5005707, 0.5005644]),
@@ -48,6 +48,16 @@ class TestHelperModel:
         assert actual_response.keys() == expected_response.keys()
         np.testing.assert_array_equal(actual_response["prompt"], expected_response["prompt"])
         np.testing.assert_almost_equal(actual_response[TOXIGEN_SCORE_NAME], expected_response["toxicity"])
+
+    @patch.object(ToxigenHelperModel, "TOXIGEN_MODEL_NAME", new_callable=PropertyMock)
+    def test_toxigen_helper_model_get_score_names(self, mock_model_name):
+        """
+        Test helper model for Toxigen
+        Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
+        """
+        mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
+        test_helper = ToxigenHelperModel("prompt")
+        assert test_helper.get_score_names() == [TOXIGEN_SCORE_NAME]
 
     def test_detoxify_helper_model_get_helper_scores(self):
         """
@@ -72,9 +82,9 @@ class TestHelperModel:
         Test helper model for Detoxify
         """
         test_helper = DetoxifyHelperModel()
-        actual_response = test_helper({"prompt": np.array(["My shitty text", "My good text"])}, "prompt")
+        actual_response = test_helper({"model_output": np.array(["My shitty text", "My good text"])})
         expected_response = {
-            "prompt": np.array(["My shitty text", "My good text"]),
+            "model_output": np.array(["My shitty text", "My good text"]),
             DETOXIFY_SCORE_TOXICITY: np.array([0.9817695021629333, 0.00045518550905399024]),
             DETOXIFY_SCORE_SEVERE_TOXICITY: np.array([0.04576661065220833, 1.6480657905049156e-06]),
             DETOXIFY_SCORE_OBSCENE: np.array([0.9683985114097595, 3.1544899684377015e-05]),
@@ -84,7 +94,7 @@ class TestHelperModel:
             DETOXIFY_SCORE_SEXUAL_EXPLICIT: np.array([0.05178866535425186, 1.9261064153397456e-05]),
         }
         assert actual_response.keys() == expected_response.keys()
-        np.testing.assert_array_equal(actual_response["prompt"], expected_response["prompt"])
+        np.testing.assert_array_equal(actual_response["model_output"], expected_response["model_output"])
         np.testing.assert_almost_equal(
             actual_response[DETOXIFY_SCORE_TOXICITY], expected_response[DETOXIFY_SCORE_TOXICITY]
         )
@@ -102,6 +112,13 @@ class TestHelperModel:
         np.testing.assert_almost_equal(
             actual_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT], expected_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT]
         )
+
+    def test_detoxify_helper_model_get_score_names(self):
+        """
+        Test helper model for Detoxify
+        """
+        test_helper = DetoxifyHelperModel()
+        assert test_helper.get_score_names() == DETOXIFY_SCORE_NAMES
 
     def test_bertscore_helper_model_roberta(self):
         """

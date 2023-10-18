@@ -82,8 +82,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         It considers the completion to be correct if the answer is contained within the model output generated.
 
         :param target_output: The expected responses from the model
-        :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
-                             evaluation
+        :param model_output: The output of a model that we want to evaluate.
         :return: list of EvalScore object
         """
         if target_output is None:
