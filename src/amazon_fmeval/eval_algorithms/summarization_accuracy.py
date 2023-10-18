@@ -310,7 +310,7 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
     :returns: rouge score: boolean indicating using stemmer for rouge
     """
     bertscore = BertscoreHelperModel(model_type=config.model_type_for_bertscore)
-    return bertscore.get_helper_score(target_output, model_output)
+    return bertscore.get_helper_scores(target_output, model_output)
 
 
 def add_score_to_dataset(
