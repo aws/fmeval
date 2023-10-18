@@ -60,8 +60,9 @@ class BedrockModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
+        body = json.dumps(composed_data)
         response = self._bedrock_runtime_client.invoke_model(
-            body=composed_data, modelId=self._model_id, accept=self._accept_type, contentType=self._content_type
+            body=body, modelId=self._model_id, accept=self._accept_type, contentType=self._content_type
         )
         model_output = json.loads(response.get("body").read())
         output = (
