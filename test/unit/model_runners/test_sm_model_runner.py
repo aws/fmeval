@@ -11,7 +11,7 @@ from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
 
-CONTENT_TEMPLATE = '{"data":"$prompt"}'
+CONTENT_TEMPLATE = '{"data":$prompt}'
 PROMPT = "This is the model input"
 MODEL_INPUT = '{"data": "' + PROMPT + '"}'
 

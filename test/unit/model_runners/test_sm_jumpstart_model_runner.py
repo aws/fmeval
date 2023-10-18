@@ -13,7 +13,7 @@ CUSTOM_ATTRIBUTES = "CustomAttributes"
 MODEL_ID = "AwesomeModel"
 MODEL_VERSION = "v1.2.3"
 
-CONTENT_TEMPLATE = '{"data":"$prompt"}'
+CONTENT_TEMPLATE = '{"data":$prompt}'
 PROMPT = "This is the model input"
 MODEL_INPUT = '{"data": "' + PROMPT + '"}'
 
