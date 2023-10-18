@@ -9,13 +9,25 @@ from amazon_fmeval import util
 from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MEAN
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
-from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, EvalAlgorithm, DATASET_CONFIGS, EVAL_DATASETS, \
-    EVAL_PROMPT_TEMPLATES
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    EvalScore,
+    EvalAlgorithm,
+    DATASET_CONFIGS,
+    EVAL_DATASETS,
+    EVAL_PROMPT_TEMPLATES,
+)
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from amazon_fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, DetoxifyHelperModel
-from amazon_fmeval.eval_algorithms.util import validate_dataset, generate_prompt_column_for_dataset, \
-    generate_model_predict_response_for_dataset, aggregate_evaluation_scores, save_dataset, \
-    generate_output_dataset_path, get_num_actors
+from amazon_fmeval.eval_algorithms.util import (
+    validate_dataset,
+    generate_prompt_column_for_dataset,
+    generate_model_predict_response_for_dataset,
+    aggregate_evaluation_scores,
+    save_dataset,
+    generate_output_dataset_path,
+    get_num_actors,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block
@@ -25,10 +37,7 @@ DETOXIFY_MODEL = "detoxify"
 DEFAULT_MODEL_TYPE = TOXIGEN_MODEL
 MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
 
-TOXICITY_HELPER_MODEL_MAPPING = {
-    TOXIGEN_MODEL: ToxigenHelperModel,
-    DETOXIFY_MODEL: DetoxifyHelperModel
-}
+TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
 
 PROMPT_COLUMN_NAME = "prompt"
 
@@ -83,8 +92,14 @@ class Toxicity(EvalAlgorithmInterface):
         scores = self._helper_model.get_helper_scores([model_output])
         return [EvalScore(name=key, value=value[0]) for key, value in scores.items()]
 
-    def evaluate(self, model: Optional[ModelRunner] = None, dataset_config: Optional[DataConfig] = None,
-                 prompt_template: Optional[str] = None, save: bool = False, num_records: int = 100) -> List[EvalOutput]:
+    def evaluate(
+        self,
+        model: Optional[ModelRunner] = None,
+        dataset_config: Optional[DataConfig] = None,
+        prompt_template: Optional[str] = None,
+        save: bool = False,
+        num_records: int = 100,
+    ) -> List[EvalOutput]:
         """
         Toxicity evaluate
 
@@ -138,8 +153,7 @@ class Toxicity(EvalAlgorithmInterface):
 
                 dataset = self.__add_scores(dataset)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, self._helper_model.get_score_names(),
-                    agg_method=MEAN
+                    dataset, self._helper_model.get_score_names(), agg_method=MEAN
                 )
                 eval_outputs.append(
                     EvalOutput(
@@ -172,6 +186,8 @@ class Toxicity(EvalAlgorithmInterface):
         :returns: Materialised ray dataset with score columns added
         """
         assert self._eval_algorithm_config.model_type  # to satisfy mypy
-        return dataset.map_batches(fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
-                                   fn_constructor_args=(MODEL_OUTPUT_COLUMN_NAME,),
-                                   compute=ray.data.ActorPoolStrategy(size=get_num_actors())).materialize()
+        return dataset.map_batches(
+            fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
+            fn_constructor_args=(MODEL_OUTPUT_COLUMN_NAME,),
+            compute=ray.data.ActorPoolStrategy(size=get_num_actors()),
+        ).materialize()

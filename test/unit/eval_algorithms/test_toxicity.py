@@ -1,4 +1,3 @@
-import os
 import re
 from typing import NamedTuple, List, Optional
 from unittest.mock import patch, MagicMock
@@ -8,15 +7,32 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, \
-    MIME_TYPE_JSON
+from amazon_fmeval.constants import (
+    MODEL_INPUT_COLUMN_NAME,
+    CATEGORY_COLUMN_NAME,
+    MODEL_OUTPUT_COLUMN_NAME,
+    MIME_TYPE_JSON,
+)
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
-from amazon_fmeval.eval_algorithms.helper_models.helper_model import TOXIGEN_SCORE_NAME, DETOXIFY_SCORE_TOXICITY, \
-    DETOXIFY_SCORE_SEVERE_TOXICITY, DETOXIFY_SCORE_OBSCENE, DETOXIFY_SCORE_IDENTITY_ATTACK, DETOXIFY_SCORE_INSULT, \
-    DETOXIFY_SCORE_THREAT, DETOXIFY_SCORE_SEXUAL_EXPLICIT, DETOXIFY_SCORE_NAMES
-from amazon_fmeval.eval_algorithms.toxicity import ToxicityConfig, Toxicity, TOXIGEN_MODEL, DETOXIFY_MODEL, \
-    PROMPT_COLUMN_NAME
+from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
+    TOXIGEN_SCORE_NAME,
+    DETOXIFY_SCORE_TOXICITY,
+    DETOXIFY_SCORE_SEVERE_TOXICITY,
+    DETOXIFY_SCORE_OBSCENE,
+    DETOXIFY_SCORE_IDENTITY_ATTACK,
+    DETOXIFY_SCORE_INSULT,
+    DETOXIFY_SCORE_THREAT,
+    DETOXIFY_SCORE_SEXUAL_EXPLICIT,
+    DETOXIFY_SCORE_NAMES,
+)
+from amazon_fmeval.eval_algorithms.toxicity import (
+    ToxicityConfig,
+    Toxicity,
+    TOXIGEN_MODEL,
+    DETOXIFY_MODEL,
+    PROMPT_COLUMN_NAME,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET_TOXIGEN = ray.data.from_items(
@@ -50,7 +66,7 @@ DATASET_DETOXIFY = ray.data.from_items(
             DETOXIFY_SCORE_IDENTITY_ATTACK: 0.5,
             DETOXIFY_SCORE_INSULT: 0.5,
             DETOXIFY_SCORE_THREAT: 0.5,
-            DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5
+            DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5,
         },
         {
             MODEL_INPUT_COLUMN_NAME: "sample model input",
@@ -62,7 +78,7 @@ DATASET_DETOXIFY = ray.data.from_items(
             DETOXIFY_SCORE_IDENTITY_ATTACK: 0.5,
             DETOXIFY_SCORE_INSULT: 0.5,
             DETOXIFY_SCORE_THREAT: 0.5,
-            DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5
+            DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5,
         },
     ]
 )
@@ -78,9 +94,7 @@ class TestToxicity:
     @staticmethod
     def get_toxigen_mock():
         instance = MagicMock()
-        instance.get_helper_scores.return_value = {
-            TOXIGEN_SCORE_NAME: [0.5]
-        }
+        instance.get_helper_scores.return_value = {TOXIGEN_SCORE_NAME: [0.5]}
         instance.get_score_names.return_value = [TOXIGEN_SCORE_NAME]
         toxigen_mock = MagicMock()
         toxigen_mock.return_value = instance
@@ -107,14 +121,18 @@ class TestToxicity:
         model_output: str
         expected_response: List[EvalScore]
 
-    @pytest.mark.parametrize("test_case", [
-        TestCaseToxicityEvaluateSample(
-            model_output="Dummy toxic model output",
-            expected_response=[EvalScore(name=TOXIGEN_SCORE_NAME, value=0.5)]
-        )
-    ])
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        TOXIGEN_MODEL: get_toxigen_mock()})
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseToxicityEvaluateSample(
+                model_output="Dummy toxic model output",
+                expected_response=[EvalScore(name=TOXIGEN_SCORE_NAME, value=0.5)],
+            )
+        ],
+    )
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+    )
     def test_toxicity_evaluate_sample_toxigen(self, test_case, config):
         """
         GIVEN valid inputs
@@ -124,23 +142,26 @@ class TestToxicity:
         eval_algorithm = Toxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
-    @pytest.mark.parametrize("test_case", [
-        TestCaseToxicityEvaluateSample(
-            model_output="Dummy toxic model output",
-            expected_response=[
-                EvalScore(name=DETOXIFY_SCORE_TOXICITY, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_SEVERE_TOXICITY, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_OBSCENE, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_IDENTITY_ATTACK, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_INSULT, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_THREAT, value=0.1),
-                EvalScore(name=DETOXIFY_SCORE_SEXUAL_EXPLICIT, value=0.1)
-                ,
-            ]
-        )
-    ])
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        DETOXIFY_MODEL: get_detoxify_mock()})
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseToxicityEvaluateSample(
+                model_output="Dummy toxic model output",
+                expected_response=[
+                    EvalScore(name=DETOXIFY_SCORE_TOXICITY, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_SEVERE_TOXICITY, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_OBSCENE, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_IDENTITY_ATTACK, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_INSULT, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_THREAT, value=0.1),
+                    EvalScore(name=DETOXIFY_SCORE_SEXUAL_EXPLICIT, value=0.1),
+                ],
+            )
+        ],
+    )
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {DETOXIFY_MODEL: get_detoxify_mock()}
+    )
     def test_toxicity_evaluate_sample_detoxify(self, test_case):
         """
         GIVEN valid inputs
@@ -151,8 +172,9 @@ class TestToxicity:
         eval_algorithm = Toxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        TOXIGEN_MODEL: get_toxigen_mock()})
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+    )
     def test_toxicity_evaluate_sample_invalid_input(self, config):
         """
         GIVEN invalid inputs
@@ -170,8 +192,10 @@ class TestToxicity:
         WHEN ToxicityConfig is initialised
         THEN expected error is raised
         """
-        expected_error_message = "Invalid model_type: my_model requested in ToxicityConfig, please choose from " \
-                                 "acceptable values: ['toxigen', 'detoxify']"
+        expected_error_message = (
+            "Invalid model_type: my_model requested in ToxicityConfig, please choose from "
+            "acceptable values: ['toxigen', 'detoxify']"
+        )
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             ToxicityConfig(model_type="my_model")
 
@@ -188,50 +212,73 @@ class TestToxicity:
         [
             # Built-in datasets evaluate for dataset without category
             TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]),
+                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
-                    EvalOutput(eval_name='toxicity', dataset_name='bold',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)],
-                               prompt_template='$feature', category_scores=None, output_path='/tmp/eval_results/'),
-                    EvalOutput(eval_name='toxicity', dataset_name='real_toxicity_prompts',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)],
-                               prompt_template='$feature', category_scores=None, output_path='/tmp/eval_results/')],
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="bold",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="real_toxicity_prompts",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
+                ],
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=None,
                 prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[TOXIGEN_SCORE_NAME]),
+                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(cols=[TOXIGEN_SCORE_NAME]),
                 dataset_with_scores=DATASET_TOXIGEN,
                 expected_response=[
-                    EvalOutput(eval_name='toxicity', dataset_name='bold',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)], prompt_template='$feature',
-                               category_scores=[CategoryScore(name='dummy_category_1',
-                                                              scores=[EvalScore(name='toxicity', value=1.0)]),
-                                                CategoryScore(name='dummy_category_2',
-                                                              scores=[EvalScore(name='toxicity', value=1.0)])],
-                               output_path='/tmp/eval_results/'),
-                    EvalOutput(eval_name='toxicity', dataset_name='real_toxicity_prompts',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)], prompt_template='$feature',
-                               category_scores=[CategoryScore(name='dummy_category_1',
-                                                              scores=[EvalScore(name='toxicity', value=1.0)]),
-                                                CategoryScore(name='dummy_category_2',
-                                                              scores=[EvalScore(name='toxicity', value=1.0)])],
-                               output_path='/tmp/eval_results/')],
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="bold",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=[
+                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
+                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
+                        ],
+                        output_path="/tmp/eval_results/",
+                    ),
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="real_toxicity_prompts",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=[
+                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
+                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
+                        ],
+                        output_path="/tmp/eval_results/",
+                    ),
+                ],
             ),
             # Custom dataset evaluate
             TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -243,12 +290,18 @@ class TestToxicity:
                 ),
                 prompt_template="$feature",
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]),
+                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
-                    EvalOutput(eval_name='toxicity', dataset_name='my_custom_dataset',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)],
-                               prompt_template='$feature', category_scores=None, output_path='/tmp/eval_results/')
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    )
                 ],
             ),
         ],
@@ -258,8 +311,9 @@ class TestToxicity:
     @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
     @patch.object(Toxicity, "_Toxicity__add_scores")
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        TOXIGEN_MODEL: get_toxigen_mock()})
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+    )
     def test_toxicity_evaluate(
         self,
         add_score_to_dataset,
@@ -290,8 +344,9 @@ class TestToxicity:
         "test_case",
         [
             TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -305,9 +360,14 @@ class TestToxicity:
                 input_dataset_with_generated_model_output=None,
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
-                    EvalOutput(eval_name='toxicity', dataset_name='my_custom_dataset',
-                               dataset_scores=[EvalScore(name='toxicity', value=1.0)],
-                               prompt_template='$feature', category_scores=None, output_path='/tmp/eval_results/')
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    )
                 ],
             ),
         ],
@@ -316,8 +376,9 @@ class TestToxicity:
     @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
     @patch.object(Toxicity, "_Toxicity__add_scores")
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        TOXIGEN_MODEL: get_toxigen_mock()})
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+    )
     def test_toxicity_evaluate_no_model(
         self,
         add_score_to_dataset,
@@ -354,16 +415,18 @@ class TestToxicity:
         "test_case",
         [
             TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME, MODEL_OUTPUT_COLUMN_NAME]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 model_provided=False,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
             TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -378,9 +441,15 @@ class TestToxicity:
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
             TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 MODEL_INPUT_COLUMN_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[
+                        PROMPT_COLUMN_NAME,
+                        CATEGORY_COLUMN_NAME,
+                        TOXIGEN_SCORE_NAME,
+                        MODEL_OUTPUT_COLUMN_NAME,
+                        MODEL_INPUT_COLUMN_NAME,
+                    ]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -395,8 +464,9 @@ class TestToxicity:
                 expected_error_message="Missing required column: model_input, for evaluate() method",
             ),
             TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME,
-                                                                 TOXIGEN_SCORE_NAME]),
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -414,11 +484,10 @@ class TestToxicity:
     )
     @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
     @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch.dict("amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {
-        TOXIGEN_MODEL: get_toxigen_mock()})
-    def test_toxicity_evaluate_invalid_input(
-        self, get_dataset, model, test_case, config
-    ):
+    @patch.dict(
+        "amazon_fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+    )
+    def test_toxicity_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs
         WHEN Toxicity evaluate() method is called
