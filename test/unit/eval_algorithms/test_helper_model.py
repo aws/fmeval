@@ -30,7 +30,7 @@ class TestHelperModel:
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
         test_helper = ToxigenHelperModel()
-        actual_response = test_helper.get_helper_scores(["My shitty text", "My good text"])
+        actual_response = test_helper.get_helper_scores(["My toxic text", "My good text"])
         assert TOXIGEN_SCORE_NAME in actual_response
         assert actual_response[TOXIGEN_SCORE_NAME] == pytest.approx([0.5005707144737244, 0.5005643963813782], rel=1e-5)
 
@@ -44,10 +44,10 @@ class TestHelperModel:
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
         test_helper = ToxigenHelperModel("prompt")
-        actual_response = test_helper({"prompt": np.array(["My shitty text", "My good text"])})
+        actual_response = test_helper({"prompt": np.array(["My toxic text", "My good text"])})
         expected_response = {
-            "prompt": np.array(["My shitty text", "My good text"]),
-            TOXIGEN_SCORE_NAME: np.array([0.5005707, 0.5005644]),
+            "prompt": np.array(["My toxic text", "My good text"]),
+            TOXIGEN_SCORE_NAME: np.array([0.5005719, 0.5005644]),
         }
         assert actual_response.keys() == expected_response.keys()
         np.testing.assert_array_equal(actual_response["prompt"], expected_response["prompt"])
@@ -72,15 +72,15 @@ class TestHelperModel:
         THEN correct output is returned
         """
         test_helper = DetoxifyHelperModel()
-        actual_response = test_helper.get_helper_scores(["My shitty text", "My good text"])
+        actual_response = test_helper.get_helper_scores(["My toxic text", "My good text"])
         expected_response = {
-            "toxicity": [0.9817695021629333, 0.00045518550905399024],
-            "severe_toxicity": [0.04576661065220833, 1.6480657905049156e-06],
-            "obscene": [0.9683985114097595, 3.1544899684377015e-05],
-            "identity_attack": [0.007208856288343668, 6.863904854981229e-05],
-            "insult": [0.28945454955101013, 8.761371282162145e-05],
-            "threat": [0.0014990373747423291, 2.826379204634577e-05],
-            "sexual_explicit": [0.05178866535425186, 1.9261064153397456e-05],
+            DETOXIFY_SCORE_TOXICITY: [0.06483059376478195, 0.00045518550905399024],
+            DETOXIFY_SCORE_SEVERE_TOXICITY: [1.26147870105342e-05, 1.6480657905049156e-06],
+            DETOXIFY_SCORE_OBSCENE: [0.0009980567265301943, 3.1544899684377015e-05],
+            DETOXIFY_SCORE_IDENTITY_ATTACK: [0.0012085289927199483, 6.863904854981229e-05],
+            DETOXIFY_SCORE_INSULT: [0.00813359022140503, 8.761371282162145e-05],
+            DETOXIFY_SCORE_THREAT: [0.0004742506134789437, 2.826379204634577e-05],
+            DETOXIFY_SCORE_SEXUAL_EXPLICIT: [0.00044487009290605783, 1.9261064153397456e-05],
         }
         assert list(actual_response.keys()) == DETOXIFY_SCORE_NAMES
         assert actual_response[DETOXIFY_SCORE_TOXICITY] == pytest.approx(
@@ -112,16 +112,16 @@ class TestHelperModel:
         THEN correct output is returned
         """
         test_helper = DetoxifyHelperModel()
-        actual_response = test_helper({"model_output": np.array(["My shitty text", "My good text"])})
+        actual_response = test_helper({"model_output": np.array(["My toxic text", "My good text"])})
         expected_response = {
-            "model_output": np.array(["My shitty text", "My good text"]),
-            DETOXIFY_SCORE_TOXICITY: np.array([0.9817695021629333, 0.00045518550905399024]),
-            DETOXIFY_SCORE_SEVERE_TOXICITY: np.array([0.04576661065220833, 1.6480657905049156e-06]),
-            DETOXIFY_SCORE_OBSCENE: np.array([0.9683985114097595, 3.1544899684377015e-05]),
-            DETOXIFY_SCORE_IDENTITY_ATTACK: np.array([0.007208856288343668, 6.863904854981229e-05]),
-            DETOXIFY_SCORE_INSULT: np.array([0.28945454955101013, 8.761371282162145e-05]),
-            DETOXIFY_SCORE_THREAT: np.array([0.0014990373747423291, 2.826379204634577e-05]),
-            DETOXIFY_SCORE_SEXUAL_EXPLICIT: np.array([0.05178866535425186, 1.9261064153397456e-05]),
+            "model_output": np.array(["My toxic text", "My good text"]),
+            DETOXIFY_SCORE_TOXICITY: np.array([0.06483059376478195, 0.00045518550905399024]),
+            DETOXIFY_SCORE_SEVERE_TOXICITY: np.array([1.26147870105342e-05, 1.6480657905049156e-06]),
+            DETOXIFY_SCORE_OBSCENE: np.array([0.0009980567265301943, 3.1544899684377015e-05]),
+            DETOXIFY_SCORE_IDENTITY_ATTACK: np.array([0.0012085289927199483, 6.863904854981229e-05]),
+            DETOXIFY_SCORE_INSULT: np.array([0.00813359022140503, 8.761371282162145e-05]),
+            DETOXIFY_SCORE_THREAT: np.array([0.0004742506134789437, 2.826379204634577e-05]),
+            DETOXIFY_SCORE_SEXUAL_EXPLICIT: np.array([0.00044487009290605783, 1.9261064153397456e-05]),
         }
         assert actual_response.keys() == expected_response.keys()
         np.testing.assert_array_equal(actual_response["model_output"], expected_response["model_output"])

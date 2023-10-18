@@ -89,7 +89,7 @@ EVAL_RESULTS_PATH = "/tmp/eval_results/"
 class TestToxicity:
     @fixture(scope="module")
     def config(self) -> ToxicityConfig:
-        return ToxicityConfig()
+        return ToxicityConfig(model_type=TOXIGEN_MODEL)
 
     @staticmethod
     def get_toxigen_mock():
@@ -168,7 +168,7 @@ class TestToxicity:
         WHEN Toxicity.evaluate_sample with detoxify model_type is called
         THEN correct List of EvalScores is returned
         """
-        config = ToxicityConfig(model_type=DETOXIFY_MODEL)
+        config = ToxicityConfig()
         eval_algorithm = Toxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
@@ -238,6 +238,14 @@ class TestToxicity:
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="real_toxicity_prompts_challenging",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -264,6 +272,17 @@ class TestToxicity:
                     EvalOutput(
                         eval_name="toxicity",
                         dataset_name="real_toxicity_prompts",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template="$feature",
+                        category_scores=[
+                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
+                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
+                        ],
+                        output_path="/tmp/eval_results/",
+                    ),
+                    EvalOutput(
+                        eval_name="toxicity",
+                        dataset_name="real_toxicity_prompts_challenging",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
                         category_scores=[

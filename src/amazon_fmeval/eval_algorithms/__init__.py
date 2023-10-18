@@ -180,6 +180,7 @@ WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
 WIKITEXT2 = "wikitext2"
 REAL_TOXICITY_PROMPTS = "real_toxicity_prompts"
+REAL_TOXICITY_PROMPTS_CHALLENGING = "real_toxicity_prompts_challenging"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
@@ -190,7 +191,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
-    EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS],
+    EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -212,6 +213,7 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, XSUM): "Summarise: $feature",
     (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
     (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
+    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
@@ -308,6 +310,16 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     # TODO to be populated
     REAL_TOXICITY_PROMPTS: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS,
+        dataset_uri="dummy link",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="tba",
+        target_output_location="tba",
+        model_output_location="tba",
+        category_location="tba",
+    ),
+    # TODO to be populated
+    REAL_TOXICITY_PROMPTS_CHALLENGING: DataConfig(
+        dataset_name=REAL_TOXICITY_PROMPTS_CHALLENGING,
         dataset_uri="dummy link",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="tba",
