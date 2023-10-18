@@ -210,7 +210,7 @@ class TestSummarizationAccuracy:
         THEN correct List of EvalScores is returned
         """
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
+        bertscore_helper_model_instance.get_helper_scores.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
 
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
@@ -708,7 +708,7 @@ class TestSummarizationAccuracy:
     @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_get_bert_score(self, bertscore_helper_model, test_case, config):
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.500000
+        bertscore_helper_model_instance.get_helper_scores.return_value = 0.500000
         bertscore_helper_model.return_value = bertscore_helper_model_instance
         assert test_case.expected_score == get_bert_score(test_case.target_output, test_case.model_output, config)
 

@@ -1,12 +1,32 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Union, Any
+from typing import Any, Dict, List
 
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from detoxify import Detoxify
+from transformers import pipeline
 
 import evaluate as hf_evaluate
 
 from amazon_fmeval.util import singleton
+
+TOXIGEN_SCORE_NAME = "toxicity"
+
+DETOXIFY_SCORE_TOXICITY = "toxicity"
+DETOXIFY_SCORE_SEVERE_TOXICITY = "severe_toxicity"
+DETOXIFY_SCORE_OBSCENE = "obscene"
+DETOXIFY_SCORE_IDENTITY_ATTACK = "identity_attack"
+DETOXIFY_SCORE_INSULT = "insult"
+DETOXIFY_SCORE_THREAT = "threat"
+DETOXIFY_SCORE_SEXUAL_EXPLICIT = "sexual_explicit"
+DETOXIFY_SCORE_NAMES = [
+    DETOXIFY_SCORE_TOXICITY,
+    DETOXIFY_SCORE_SEVERE_TOXICITY,
+    DETOXIFY_SCORE_OBSCENE,
+    DETOXIFY_SCORE_IDENTITY_ATTACK,
+    DETOXIFY_SCORE_INSULT,
+    DETOXIFY_SCORE_THREAT,
+    DETOXIFY_SCORE_SEXUAL_EXPLICIT,
+]
 
 
 class BaseHelperModel(ABC):
@@ -28,16 +48,16 @@ class ToxigenHelperModel(BaseHelperModel):
     """
     Helper model for toxigen model: https://huggingface.co/tomh/toxigen_roberta/tree/main
     """
+
     TOXIGEN_MODEL_NAME = "tomh/toxigen_roberta"
-    SCORE_NAME = "toxicity"
 
     def __init__(self):
         """
         Constructor to locally load the helper model for inference.
         """
-        self._pipeline = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
+        self._model = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
 
-    def get_helper_scores(self, text_input: List[str]) -> Dict[str, np.ndarray]:
+    def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
         """
         Method to get scores from ToxigenHelper
         :param text_input: list of text inputs for the model
@@ -45,10 +65,9 @@ class ToxigenHelperModel(BaseHelperModel):
 
         Note: Toxigen scores are for label: LABEL_1
         """
-        inference_output = self._pipeline(text_input)
+        inference_output = self._model(text_input)
         result = {
-            self.SCORE_NAME: np.array([x["score"] if x["label"] == "LABEL_1" else 1.0 - x["score"]
-                                       for x in inference_output])
+            TOXIGEN_SCORE_NAME: [x["score"] if x["label"] == "LABEL_1" else 1.0 - x["score"] for x in inference_output]
         }
         return result
 
@@ -62,7 +81,48 @@ class ToxigenHelperModel(BaseHelperModel):
         """
         scores = self.get_helper_scores(batch[column_name].tolist())
 
-        batch.update(scores)
+        for key, value in scores.items():
+            batch.update({key: np.array(value)})
+        return batch
+
+
+class DetoxifyHelperModel(BaseHelperModel):
+    """
+    Helper model for Detoxify: https://github.com/unitaryai/detoxify
+
+    TODO: To be switched to consuming HF model once consistency issue is resolved:
+    https://huggingface.co/unitary/unbiased-toxic-roberta. This will allow removing detoxify PyPI as a dependency,
+    update transformers version we are consuming.
+    """
+
+    DETOXIFY_MODEL_TYPE = "unbiased"
+
+    def __init__(self):
+        """
+        Constructor to locally load the helper model for inference.
+        """
+        self._model = Detoxify(model_type="unbiased").predict
+
+    def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
+        """
+        Method to get scores from DetoxifyHelper
+        :param text_input: list of text inputs for the model
+        :returns: dict with keys as score name and value being list of scores for text inputs
+        """
+        return self._model(text_input)
+
+    def __call__(self, batch: Dict[str, np.ndarray], column_name: str) -> Dict[str, np.ndarray]:
+        """
+        Call method to allow using this helper as a ray actor.
+
+        :param batch: batch of data to be scored.
+        :param column_name: Column name for input texts to helper model
+        :return: batch with scores added to it.
+        """
+        scores = self.get_helper_scores(batch[column_name].tolist())
+
+        for key, value in scores.items():
+            batch.update({key: np.array(value)})
         return batch
 
 
