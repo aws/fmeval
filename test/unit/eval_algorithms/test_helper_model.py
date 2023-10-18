@@ -23,7 +23,9 @@ class TestHelperModel:
     @patch.object(ToxigenHelperModel, "TOXIGEN_MODEL_NAME", new_callable=PropertyMock)
     def test_toxigen_helper_model_get_helper_scores(self, mock_model_name):
         """
-        Test helper model for Toxigen
+        GIVEN valid inputs
+        WHEN get_helper_scores() method of ToxigenHelperModel is called
+        THEN correct output is returned
         Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
@@ -35,7 +37,9 @@ class TestHelperModel:
     @patch.object(ToxigenHelperModel, "TOXIGEN_MODEL_NAME", new_callable=PropertyMock)
     def test_toxigen_helper_model_call(self, mock_model_name):
         """
-        Test helper model for Toxigen
+        GIVEN valid inputs
+        WHEN __call__() method of ToxigenHelperModel is called
+        THEN correct output is returned
         Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
@@ -52,7 +56,9 @@ class TestHelperModel:
     @patch.object(ToxigenHelperModel, "TOXIGEN_MODEL_NAME", new_callable=PropertyMock)
     def test_toxigen_helper_model_get_score_names(self, mock_model_name):
         """
-        Test helper model for Toxigen
+        GIVEN valid inputs
+        WHEN get_score_names() method of ToxigenHelperModel is called
+        THEN correct output is returned
         Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
         """
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
@@ -61,7 +67,9 @@ class TestHelperModel:
 
     def test_detoxify_helper_model_get_helper_scores(self):
         """
-        Test helper model for Detoxify
+        GIVEN valid inputs
+        WHEN get_helper_scores() method of DetoxifyHelperModel is called
+        THEN correct output is returned
         """
         test_helper = DetoxifyHelperModel()
         actual_response = test_helper.get_helper_scores(["My shitty text", "My good text"])
@@ -79,7 +87,9 @@ class TestHelperModel:
 
     def test_detoxify_helper_model_call(self):
         """
-        Test helper model for Detoxify
+        GIVEN valid inputs
+        WHEN __call__() method of DetoxifyHelperModel is called
+        THEN correct output is returned
         """
         test_helper = DetoxifyHelperModel()
         actual_response = test_helper({"model_output": np.array(["My shitty text", "My good text"])})
@@ -115,7 +125,9 @@ class TestHelperModel:
 
     def test_detoxify_helper_model_get_score_names(self):
         """
-        Test helper model for Detoxify
+        GIVEN valid inputs
+        WHEN get_score_names() method of DetoxifyHelperModel is called
+        THEN correct output is returned
         """
         test_helper = DetoxifyHelperModel()
         assert test_helper.get_score_names() == DETOXIFY_SCORE_NAMES
