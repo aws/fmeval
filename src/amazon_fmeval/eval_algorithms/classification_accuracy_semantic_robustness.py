@@ -1,8 +1,9 @@
 import logging
+import warnings
 from collections import defaultdict
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, List, Optional, Dict
 
 from dataclasses import dataclass
 
@@ -20,9 +21,6 @@ from amazon_fmeval.constants import (
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
-    ButterFinger,
-    RandomUpperCase,
-    WhitespaceAddRemove,
     ButterFingerConfig,
     RandomUpperCaseConfig,
     WhitespaceAddRemoveConfig,
@@ -51,14 +49,14 @@ from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block
-from amazon_fmeval.eval_algorithms.qa_accuracy import (
-    F1_SCORE,
-    EXACT_MATCH_SCORE,
-    QUASI_EXACT_MATCH_SCORE,
-    QA_ACCURACY_SCORES_TO_FUNCS,
-    QAAccuracy,
-    QAAccuracyConfig,
+from amazon_fmeval.eval_algorithms.classification_accuracy import (
+    convert_model_output_to_label,
+    ClassificationAccuracy,
+    ClassificationAccuracyConfig,
+    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
+    CLASSIFICATION_ACCURACY_SCORE,
 )
+from amazon_fmeval.eval_algorithms.general_semantic_robustness import ButterFinger, RandomUpperCase, WhitespaceAddRemove
 
 # All the perturbation types supported by this eval algo
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
@@ -67,22 +65,21 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
     WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
 }
 
-DELTA_F1_SCORE = PREFIX_FOR_DELTA_SCORES + F1_SCORE
-DELTA_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + EXACT_MATCH_SCORE
-DELTA_QUASI_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + QUASI_EXACT_MATCH_SCORE
+PREFIX_FOR_DELTA_SCORES = "delta_"
+DELTA_CLASSIFICATION_ACCURACY_SCORE = PREFIX_FOR_DELTA_SCORES + CLASSIFICATION_ACCURACY_SCORE
+
 
 PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class QAAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
+class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     """
-    Configuration for the QA Accuracy Semantic Robustness Evaluation
+    Configuration for the Classification Accuracy Semantic Robustness Evaluation
 
-    :param target_output_delimiter: Target Output can have multiple answers. We expect customer to combine all the
-        possible answers into a single string and use the delimiter to separate them. For instance,
-        if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
+    :param valid_labels: List of valid string label
+    :param converter_fn: Function to process model output to labels, defaults to simple integer conversion
     :param perturbation_type: perturbation type for generating perturbed inputs
     :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
     :param seed: Seed to be configured for generating perturbations
@@ -96,7 +93,8 @@ class QAAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
         whitespace_add_remove perturbation_type
     """
 
-    target_output_delimiter: Optional[str] = "<OR>"
+    valid_labels: List[str]
+    converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
     seed: int = 5
@@ -111,27 +109,29 @@ class QAAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"Invalid perturbation type '{self.perturbation_type} requested, please "
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
-        if self.target_output_delimiter == "":
-            raise EvalAlgorithmClientError(
-                "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
-            )
+        for i, label in enumerate(self.valid_labels):
+            if not isinstance(label, str):
+                warnings.warn("Valid labels should be strings, casting.")
+                self.valid_labels[i] = str(label)
 
 
-QA_ACCURACY_SEMANTIC_ROBUSTNESS = EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value
+CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
 
 
-class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
+class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
     """
-    QA Accuracy Semantic Robustness Eval algorithm
+    Classification Accuracy Eval algorithm
     """
 
-    def __init__(self, eval_algorithm_config: QAAccuracySemanticRobustnessConfig):
+    eval_name = EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
+
+    def __init__(self, eval_algorithm_config: ClassificationAccuracySemanticRobustnessConfig):
         """Default constructor
 
-        :param eval_algorithm_config: QA Accuracy Semantic Robustness eval algorithm config.
+        :param eval_algorithm_config: Classification Accuracy Semantic Robustness eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = QA_ACCURACY_SEMANTIC_ROBUSTNESS
+        self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
@@ -145,9 +145,9 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
             )
 
-        self._qa_accuracy_eval_algo = QAAccuracy(
-            eval_algorithm_config=QAAccuracyConfig(
-                target_output_delimiter=eval_algorithm_config.target_output_delimiter
+        self._classification_accuracy_eval_algo = ClassificationAccuracy(
+            eval_algorithm_config=ClassificationAccuracyConfig(
+                valid_labels=eval_algorithm_config.valid_labels, converter_fn=eval_algorithm_config.converter_fn
             )
         )
 
@@ -157,7 +157,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         class during dataset.map() operations.
         """
         serialized_data = (self._eval_algorithm_config,)
-        return QAAccuracySemanticRobustness, serialized_data
+        return ClassificationAccuracySemanticRobustness, serialized_data
 
     def evaluate(
         self,
@@ -167,7 +167,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         save: bool = False,
     ) -> List[EvalOutput]:
         """
-        QA Accuracy Semantic Robustness evaluate.
+        Classification Accuracy Semantic Robustness evaluate.
 
         :param model: An instance of ModelRunner which is the model under evaluation
         :param dataset_config: Configures the single dataset used for evaluation. If not provided,
@@ -177,7 +177,10 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :returns: A List of EvalOutput objects.
         """
-        util.require(model, "Missing required input: model i.e. ModelRunner, for QAAccuracySemanticRobustness evaluate")
+        util.require(
+            model,
+            "Missing required input: model i.e. ModelRunner, for ClassificationAccuracySemanticRobustness evaluate",
+        )
         is_custom_dataset_evaluation = False
         if dataset_config:
             is_custom_dataset_evaluation = True
@@ -188,7 +191,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config)
-            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
+            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
             if is_custom_dataset_evaluation:
                 # TODO when user provide built-in DataConfig, we should provide default prompt_template
                 util.require(
@@ -221,7 +224,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 dataset = dataset.map(_generate_score_columns).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [DELTA_F1_SCORE, DELTA_EXACT_MATCH_SCORE, DELTA_QUASI_EXACT_MATCH_SCORE], agg_method=MEAN
+                    dataset, [DELTA_CLASSIFICATION_ACCURACY_SCORE], agg_method=MEAN
                 )
 
                 eval_outputs.append(
@@ -237,7 +240,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
+                    score_names=[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -249,7 +252,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
     def evaluate_sample(self, model_input: str, model: ModelRunner, target_output: str, prompt_template: str = "$feature") -> List[EvalScore]:  # type: ignore[override]
         """
-        Evaluate a single QA record for Semantic Robustness.
+        Evaluate a single record for Classification Accuracy Semantic Robustness.
 
         :param model_input: text input for model
         :param model: An instance of ModelRunner which is the model under evaluation
@@ -258,13 +261,16 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         :returns: A List of EvalScores computed for prompts and responses.
         """
         util.require(
-            model_input, "Missing required input: model_input, for QAAccuracySemanticRobustness evaluate_sample"
+            model_input,
+            "Missing required input: model_input, for ClassificationAccuracySemanticRobustness evaluate_sample",
         )
         util.require(
-            model, "Missing required input: model i.e. ModelRunner, for QAAccuracySemanticRobustness evaluate_sample"
+            model,
+            "Missing required input: model i.e. ModelRunner, for ClassificationAccuracySemanticRobustness evaluate_sample",
         )
         util.require(
-            target_output, "Missing required input: target_output, for " "QAAccuracySemanticRobustness evaluate_sample"
+            target_output,
+            "Missing required input: target_output, for " "ClassificationAccuracySemanticRobustness evaluate_sample",
         )
 
         prompt_composer = PromptComposer(prompt_template)
@@ -288,24 +294,24 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
         perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
 
-        original_qa_accuracy_scores = self._qa_accuracy_eval_algo.evaluate_sample(
+        original_classification_accuracy_scores = self._classification_accuracy_eval_algo.evaluate_sample(
             target_output=target_output, model_output=original_model_output
         )
 
-        perturbed_outputs_qa_accuracy_scores = defaultdict(list)
+        perturbed_outputs_classification_accuracy_scores = defaultdict(lambda: [])
         for perturbed_input_output in perturbed_input_outputs:
-            accuracy_scores = self._qa_accuracy_eval_algo.evaluate_sample(
+            accuracy_scores = self._classification_accuracy_eval_algo.evaluate_sample(
                 target_output=target_output, model_output=perturbed_input_output
             )
             for accuracy_score in accuracy_scores:
-                perturbed_outputs_qa_accuracy_scores[accuracy_score.name].append(accuracy_score)
+                perturbed_outputs_classification_accuracy_scores[accuracy_score.name].append(accuracy_score)
 
         return [
             EvalScore(
                 name=PREFIX_FOR_DELTA_SCORES + original_score.name,
                 value=generate_mean_delta_score(
-                    original_score, perturbed_outputs_qa_accuracy_scores[original_score.name]
+                    original_score, perturbed_outputs_classification_accuracy_scores[original_score.name]
                 ),
             )
-            for original_score in original_qa_accuracy_scores
+            for original_score in original_classification_accuracy_scores
         ]

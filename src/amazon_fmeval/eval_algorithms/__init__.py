@@ -45,8 +45,9 @@ class EvalAlgorithm(Enum):
     QA_ACCURACY = "qa_accuracy"
     QA_ACCURACY_SEMANTIC_ROBUSTNESS = "qa_accuracy_semantic_robustness"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
-    CLASSIFICATION_ACCURACY = "classification_accuracy"
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
+    CLASSIFICATION_ACCURACY = "classification_accuracy"
+    CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
 
     def __str__(self):
         """
@@ -163,6 +164,7 @@ MODEL_TASK_EVALUATION_MAP = {
     ],
     ModelTask.CLASSIFICATION: [
         EvalAlgorithm.CLASSIFICATION_ACCURACY,
+        EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.QUESTION_ANSWERING: [
         EvalAlgorithm.TOXICITY,
@@ -200,6 +202,9 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
+    EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
+        IMDB_MOVIE_REVIEWS
+    ],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
 }
@@ -219,6 +224,8 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, IMDB_MOVIE_REVIEWS): "$feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",

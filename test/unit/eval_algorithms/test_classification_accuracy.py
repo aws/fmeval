@@ -100,22 +100,15 @@ class TestClassificationAccuracy:
     def config(self) -> ClassificationAccuracyConfig:
         return ClassificationAccuracyConfig(valid_labels=["1", "2", "3", "4", "5"])
 
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
-    def test_classification_accuracy_config_format_with_castable_labels(
-        self, generate_model_predict_response_for_dataset, get_dataset
-    ):
+    def test_classification_accuracy_config_format_with_castable_labels(self):
         """
-        GIVEN ClassificationAccuracyConfig with valid labels are int but can be cast to str
-        WHEN ClassificationAccuracy is initialized with castable config
-        THEN warning is raised
+        GIVEN valid labels are int but can be cast to str
+        WHEN ClassificationAccuracyConfig is initialized with castable integer labels
+        THEN warning is raised, ClassificationAccuracyConfig is initialized successfully
         """
-        get_dataset.return_value = CLASSIFICATION_DATASET
-        generate_model_predict_response_for_dataset.return_value = CLASSIFICATION_DATASET
-        castable_config = ClassificationAccuracyConfig(valid_labels=[1, 2, 3, 4, 5])
-        eval_algorithm = ClassificationAccuracy(castable_config)
         with pytest.warns():
-            eval_algorithm.evaluate(model=None, dataset_config=None)
+            castable_config = ClassificationAccuracyConfig(valid_labels=[1, 2, 3, 4, 5])
+            assert castable_config.valid_labels == ["1", "2", "3", "4", "5"]
 
     class TestCaseClassificationAccuracyEvaluate(NamedTuple):
         input_dataset: Dataset

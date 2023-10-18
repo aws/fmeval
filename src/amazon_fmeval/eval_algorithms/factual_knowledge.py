@@ -54,7 +54,6 @@ class FactualKnowledgeConfig(EvalAlgorithmConfig):
     target_output_delimiter: Optional[str] = "<OR>"
 
     def __post_init__(self):
-        # Empty delimiter will raise ValueError when trying to split with
         if self.target_output_delimiter == "":
             raise EvalAlgorithmClientError(
                 "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
