@@ -36,8 +36,10 @@ class BedrockModelRunner(ModelRunner):
         :param accept_type: The accept type of the request sent to the model for inference
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
-        self._bedrock_runtime_client = get_bedrock_runtime_client()
         self._model_id = model_id
+        self._content_template = content_template
+        self._output = output
+        self._log_probability = log_probability
         self._content_type = content_type
         self._accept_type = accept_type
 
@@ -50,6 +52,7 @@ class BedrockModelRunner(ModelRunner):
             self._content_type == MIME_TYPE_JSON,
             f"Model content type `{self._content_type}` is not supported.",
         )
+        self._bedrock_runtime_client = get_bedrock_runtime_client()
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
         """
@@ -57,8 +60,9 @@ class BedrockModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
+        body = json.dumps(composed_data)
         response = self._bedrock_runtime_client.invoke_model(
-            body=composed_data, modelId=self._model_id, accept=self._accept_type, contentType=self._content_type
+            body=body, modelId=self._model_id, accept=self._accept_type, contentType=self._content_type
         )
         model_output = json.loads(response.get("body").read())
         output = (
@@ -72,3 +76,18 @@ class BedrockModelRunner(ModelRunner):
             else None
         )
         return output, log_probability
+
+    def __reduce__(self):
+        """
+        Custom serializer method used by Ray when it serializes instances of this
+        class in eval_algorithms.util.generate_model_predict_response_for_dataset.
+        """
+        serialized_data = (
+            self._model_id,
+            self._content_template,
+            self._output,
+            self._log_probability,
+            self._content_type,
+            self._accept_type,
+        )
+        return BedrockModelRunner, serialized_data
