@@ -2,7 +2,7 @@ from typing import NamedTuple, List, Union
 
 import pytest
 
-from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbations import (
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
     ButterFinger,
     ButterFingerConfig,
     RandomUpperCaseConfig,
@@ -12,7 +12,7 @@ from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbatio
 )
 
 
-class TestSemanticPreservingPerturbation:
+class TestSemanticPerturbationUtils:
     class TestData(NamedTuple):
         seed: int
         input_text: str

@@ -20,7 +20,7 @@ from amazon_fmeval.eval_algorithms import (
     EVAL_PROMPT_TEMPLATES,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
-from amazon_fmeval.eval_algorithms.helper_models.semantic_preserving_perturbations import (
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
     ButterFinger,
     RandomUpperCase,
     WhitespaceAddRemove,
