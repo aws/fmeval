@@ -118,6 +118,18 @@ class TestQAAccuracy:
     def config(self) -> QAAccuracyConfig:
         return QAAccuracyConfig(target_output_delimiter="<OR>")
 
+    def test_qa_accuracy_invalid_config(self):
+        """
+        GIVEN empty string target_output_delimiter
+        WHEN QAAccuracyConfig is initialized
+        THEN correct exception with proper message is raised
+        """
+        expected_error_message = (
+            "Empty target_output_delimiter is provided. " "Please either provide a non-empty string, or set it to None"
+        )
+        with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
+            QAAccuracyConfig(target_output_delimiter="")
+
     class TestCaseQAAccuracyEvaluateSample(NamedTuple):
         model_input: str
         model_output: str

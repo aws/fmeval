@@ -25,6 +25,18 @@ class TestFactualKnowledge:
     def config(self) -> FactualKnowledgeConfig:
         return FactualKnowledgeConfig(target_output_delimiter="<OR>")
 
+    def test_factual_knowledge_invalid_config(self):
+        """
+        GIVEN empty string target_output_delimiter
+        WHEN FactualKnowledgeConfig is initialized
+        THEN correct exception with proper message is raised
+        """
+        expected_error_message = (
+            "Empty target_output_delimiter is provided. " "Please either provide a non-empty string, or set it to None"
+        )
+        with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
+            FactualKnowledgeConfig(target_output_delimiter="")
+
     class TestCaseFactualKnowledgeEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
