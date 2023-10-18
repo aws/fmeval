@@ -6,6 +6,7 @@ from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import GeneralSemanticRobustness
 from amazon_fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
 from amazon_fmeval.eval_algorithms.qa_accuracy import QAAccuracy
+from amazon_fmeval.eval_algorithms.qa_toxicity import QAToxicity
 from amazon_fmeval.eval_algorithms.summarization_accuracy import SummarizationAccuracy
 from amazon_fmeval.eval_algorithms.classification_accuracy import ClassificationAccuracy
 from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
@@ -22,4 +23,5 @@ EVAL_ALGORITHMS: Dict[str, Type["EvalAlgorithmInterface"]] = {
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: GeneralSemanticRobustness,
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: SummarizationAccuracySemanticRobustness,
     EvalAlgorithm.TOXICITY.value: Toxicity,
+    EvalAlgorithm.QA_TOXICITY.value: QAToxicity,
 }
