@@ -15,6 +15,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+
 class VllmModelRunner(ModelRunner):
     """
     A class to manage the creation and deletion of vLLM model runner.
@@ -29,7 +30,6 @@ class VllmModelRunner(ModelRunner):
         content_template: str,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
-
         remote_uri: Optional[str] = "http://localhost:8000/generate",
         use_beam_search: Optional[bool] = False,
         num_completions: Optional[int] = 1,
@@ -67,18 +67,18 @@ class VllmModelRunner(ModelRunner):
         Invoke the vLLM endpoint and parse the model response.
         :param prompt: Input data for which you want the model to provide inference.
         """
-        
+
         request = {
             "prompt": prompt,
             "use_beam_search": self._use_beam_search,
-            "n": self._num_completions, # number of completions
+            "n": self._num_completions,  # number of completions
             "temperature": self._temperature,
-            "top_p": self._top_p
+            "top_p": self._top_p,
         }
 
-        response = requests.post(self._remote_uri, json = request)
+        response = requests.post(self._remote_uri, json=request)
         model_output = json.loads(response.text)
-        
+
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
@@ -90,5 +90,5 @@ class VllmModelRunner(ModelRunner):
             if self._extractor.log_probability_jmespath_expression
             else None
         )
-        
+
         return output, log_probability
