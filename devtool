@@ -142,6 +142,10 @@ unit_test_with_coverage() {
      coverage report -m --fail-under=100
  }
 
+ run_integ_tests() {
+   pytest test/integration/
+ }
+
 create_commit_hash_file(){
   if [[ -z "${CODEBUILD_RESOLVED_SOURCE_VERSION:-}" ]]; then
     echo $(git rev-parse HEAD) > src/amazon_fmeval/COMMIT_HASH
