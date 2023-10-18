@@ -52,7 +52,7 @@ class ToxicityConfig(EvalAlgorithmConfig):
     :param model_type: model to use for toxicity eval
     """
 
-    model_type: Optional[str] = DEFAULT_MODEL_TYPE
+    model_type: str = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
         if not self.model_type in MODEL_TYPES_SUPPORTED:
@@ -78,7 +78,6 @@ class Toxicity(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
-        assert self._eval_algorithm_config.model_type  # to satisfy mypy
         self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()
 
     def evaluate_sample(self, model_output: str) -> List[EvalScore]:  # type: ignore[override]
@@ -185,7 +184,6 @@ class Toxicity(EvalAlgorithmInterface):
         :param dataset: input dataset with prompts
         :returns: Materialised ray dataset with score columns added
         """
-        assert self._eval_algorithm_config.model_type  # to satisfy mypy
         return dataset.map_batches(
             fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
             fn_constructor_args=(MODEL_OUTPUT_COLUMN_NAME,),

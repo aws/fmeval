@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 from detoxify import Detoxify
@@ -53,7 +53,7 @@ class ToxigenHelperModel(BaseHelperModel):
     TOXIGEN_MODEL_NAME = "tomh/toxigen_roberta"
     COLUMN_NAME = MODEL_OUTPUT_COLUMN_NAME
 
-    def __init__(self, column_name: Optional[str] = COLUMN_NAME):
+    def __init__(self, column_name: str = COLUMN_NAME):
         """
         Constructor to locally load the helper model for inference.
 
@@ -83,7 +83,6 @@ class ToxigenHelperModel(BaseHelperModel):
         :param batch: batch of data to be scored.
         :return: batch with scores added to it.
         """
-        assert self._column_name  # to satisfy mypy
         scores = self.get_helper_scores(batch[self._column_name].tolist())
 
         for key, value in scores.items():
@@ -111,7 +110,7 @@ class DetoxifyHelperModel(BaseHelperModel):
     DETOXIFY_MODEL_TYPE = "unbiased"
     COLUMN_NAME = MODEL_OUTPUT_COLUMN_NAME
 
-    def __init__(self, column_name: Optional[str] = COLUMN_NAME):
+    def __init__(self, column_name: str = COLUMN_NAME):
         """
         Constructor to locally load the helper model for inference.
 
@@ -135,7 +134,6 @@ class DetoxifyHelperModel(BaseHelperModel):
         :param batch: batch of data to be scored.
         :return: batch with scores added to it.
         """
-        assert self._column_name  # to satisfy mypy
         scores = self.get_helper_scores(batch[self._column_name].tolist())
 
         for key, value in scores.items():
