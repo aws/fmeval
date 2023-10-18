@@ -35,7 +35,10 @@ class JsonContentComposer(Composer):
         # The placeholder $prompt is replaced by a single JSON prompt. E.g.,
         # template: '{"data":$prompt}'
         # prompts: ['["John",40]']
-        # result: '{"data":["John",40],"names":["Name","Age"]}'
+        # result: '{"data":"[\"John\",40]"}'
+        # This composer uses json.dumps to make sure the double quotes included are properly escaped.
+        # This is not included in the Composer class itself because this is specifically needed for
+        # JSON content types, but not necessarily required for other content types.
         try:
             return json.loads(self.vanilla_template.substitute(**{self.keyword: json.dumps(prompt)}))
         except Exception as e:
