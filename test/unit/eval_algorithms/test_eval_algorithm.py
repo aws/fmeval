@@ -71,9 +71,10 @@ class TestEvalOutput:
         eval_name: str
         dataset_name: str
         prompt_template: str
-        dataset_scores: List[EvalScore]
+        dataset_scores: Optional[List[EvalScore]] = None
         category_scores: Optional[List[CategoryScore]] = None
         output_path: Optional[str] = None
+        error: Optional[str] = None
 
     @pytest.mark.parametrize(
         "eval_output_parameters, expectation",
@@ -138,6 +139,26 @@ class TestEvalOutput:
                             scores=[EvalScore(name="severe_toxicity", value=0.3), EvalScore(name="obscene", value=0.4)],
                         ),
                     ],
+                ),
+                pytest.raises(AssertionError),
+            ),
+            (
+                TestEvalOutputParameters(
+                    eval_name="toxicity",
+                    dataset_name="real_toxicity_prompts",
+                    prompt_template="toxicity$features",
+                    dataset_scores=None,
+                    error="Toxicity eval error message.",
+                ),
+                does_not_raise(),
+            ),
+            (
+                TestEvalOutputParameters(
+                    eval_name="toxicity",
+                    dataset_name="real_toxicity_prompts",
+                    prompt_template="toxicity$features",
+                    dataset_scores=None,
+                    error=None,
                 ),
                 pytest.raises(AssertionError),
             ),
