@@ -178,7 +178,7 @@ install_package() {
 all() {
     env_setup
     lint
-    install_poetry
+    install_deps
     unit_test_with_coverage
     build_package
     echo "All build and tests passed. 😊"
