@@ -2,39 +2,42 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List
 
-import pandas as pd
+import ray
+from ray.data import Dataset
 
-from amazon_fmeval.constants import (
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_INPUT_COLUMN_NAME,
-    MEAN,
-)
-import amazon_fmeval.util as util
-from amazon_fmeval.data_loaders.util import get_dataset
+from amazon_fmeval import util
+from amazon_fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MEAN
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms.util import save_dataset, generate_output_dataset_path
-from amazon_fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.eval_algorithms import (
-    EvalAlgorithm,
     EvalOutput,
     EvalScore,
+    EvalAlgorithm,
+    DATASET_CONFIGS,
     EVAL_DATASETS,
     EVAL_PROMPT_TEMPLATES,
-    DATASET_CONFIGS,
 )
+from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
+from amazon_fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, DetoxifyHelperModel
 from amazon_fmeval.eval_algorithms.util import (
-    generate_model_predict_response_for_dataset,
-    generate_prompt_column_for_dataset,
-    aggregate_evaluation_scores,
     validate_dataset,
+    generate_prompt_column_for_dataset,
+    generate_model_predict_response_for_dataset,
+    aggregate_evaluation_scores,
+    save_dataset,
+    generate_output_dataset_path,
+    get_num_actors,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block
+
+TOXIGEN_MODEL = "toxigen"
+DETOXIFY_MODEL = "detoxify"
+DEFAULT_MODEL_TYPE = DETOXIFY_MODEL
+MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
+
+TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
 
 PROMPT_COLUMN_NAME = "prompt"
 
@@ -42,69 +45,51 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class FactualKnowledgeConfig(EvalAlgorithmConfig):
+class ToxicityConfig(EvalAlgorithmConfig):
     """
-    Configuration for the factual knowledge eval algorithm
+    Configuration for the toxicity eval algorithm
 
-    :param target_output_delimiter: Target Output can have multiple answers. We expect customer to combine all the
-        possible answers into a single string and use the delimiter to separate them. For instance,
-        if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
+    :param model_type: model to use for toxicity eval
     """
 
-    target_output_delimiter: Optional[str] = "<OR>"
+    model_type: str = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
-        # Empty delimiter will raise ValueError when trying to split with
-        if self.target_output_delimiter == "":
+        if not self.model_type in MODEL_TYPES_SUPPORTED:
             raise EvalAlgorithmClientError(
-                "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
+                f"Invalid model_type: {self.model_type} requested in ToxicityConfig, "
+                f"please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
             )
 
 
-FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+TOXICITY = EvalAlgorithm.TOXICITY.value
 
 
-class FactualKnowledge(EvalAlgorithmInterface):
+class Toxicity(EvalAlgorithmInterface):
     """
-    Factual Knowledge Eval algorithm
+    Toxicity eval algorithm
     """
 
-    def __init__(self, eval_algorithm_config: FactualKnowledgeConfig):
+    def __init__(self, eval_algorithm_config: ToxicityConfig):
         """Default constructor
 
-        :param eval_algorithm_config: Factual knowledge eval algorithm config.
+        :param eval_algorithm_config: Toxicity eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = FACTUAL_KNOWLEDGE
+        self.eval_name = TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
+        self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()
 
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
+    def evaluate_sample(self, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """
-        Factual knowledge evaluate sample.
+        Toxicity evaluate sample
 
-        Given an input prompt e.g., "London is the capital of" and expected answers(target_output) like
-        ["United Kingdom", "England"], if the model is able to arrive at the correct completion(model_output).
-        Generating any of the expected answers is considered a correct completion.
-        Since models might generate long outputs, this evaluation does not look for an exact match.
-        It considers the completion to be correct if the answer is contained within the model output generated.
-
-        :param target_output: The expected responses from the model
         :param model_output: The output of a model that we want to evaluate.
-        :return: list of EvalScore object
+        :return: list of EvalScore objects
         """
-        if target_output is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: target_output, for FactualKnowledge evaluate_sample"
-            )
-        if model_output is None:
-            raise EvalAlgorithmClientError("Missing required input: model_output, for FactualKnowledge evaluate_sample")
-
-        return [
-            EvalScore(
-                name=self.eval_name,
-                value=self._get_score(target_output=target_output, model_output=model_output),
-            )
-        ]
+        util.require(model_output, "Missing required input: target_output, for Toxicity evaluate_sample")
+        scores = self._helper_model.get_helper_scores([model_output])
+        return [EvalScore(name=key, value=value[0]) for key, value in scores.items()]
 
     def evaluate(
         self,
@@ -112,16 +97,10 @@ class FactualKnowledge(EvalAlgorithmInterface):
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
-        num_records=300,
+        num_records: int = 100,
     ) -> List[EvalOutput]:
         """
-        Factual knowledge evaluate.
-
-        Given an input prompt e.g., "London is the capital of" and expected answers(target_output) like
-        ["United Kingdom", "England"], if the model is able to arrive at the correct completion(model_output).
-        Generating any of the expected answers is considered a correct completion.
-        Since models might generate long outputs, this evaluation does not look for an exact match.
-        It considers the completion to be correct if the answer is contained within the model output generated.
+        Toxicity evaluate
 
         :param model: An instance of ModelRunner which is the model under evaluation
         :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
@@ -131,7 +110,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
-        :return: List of EvalOutput objects. Current implementation returns only one score.
+        :return: List of EvalOutput objects.
         """
         is_custom_dataset_evaluation = False
         if dataset_config:
@@ -143,7 +122,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME])
             if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 if is_custom_dataset_evaluation:
@@ -171,20 +150,9 @@ class FactualKnowledge(EvalAlgorithmInterface):
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-                def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                    """
-                    Map function generating the scores for every input record in input dataset
-                    """
-                    return pd.Series(
-                        data=[
-                            self._get_score(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME])
-                            for index, row in df.iterrows()
-                        ]
-                    )
-
-                dataset = dataset.add_column(FACTUAL_KNOWLEDGE, _generate_eval_scores)
+                dataset = self.__add_scores(dataset)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [FACTUAL_KNOWLEDGE], agg_method=MEAN
+                    dataset, self._helper_model.get_score_names(), agg_method=MEAN
                 )
                 eval_outputs.append(
                     EvalOutput(
@@ -199,7 +167,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[FACTUAL_KNOWLEDGE],
+                    score_names=self._helper_model.get_score_names(),
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -209,15 +177,15 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         return eval_outputs
 
-    def _get_score(self, target_output: str, model_output: str) -> int:
+    def __add_scores(self, dataset: Dataset) -> Dataset:  # pragma: no cover
         """
-        Method to generate accuracy score for a target_output and model_output
+        Private method to encapsulate making map_batch call to helper model
 
-        :param target_output: Target output
-        :param model_output: Model output
-        :returns: Accuracy score i.e. O or 1
+        :param dataset: input dataset with prompts
+        :returns: Materialised ray dataset with score columns added
         """
-        possible_targets = target_output.split(self._eval_algorithm_config.target_output_delimiter)
-        model_output_lower_case = model_output.lower()
-
-        return int(any([t.lower() in model_output_lower_case for t in possible_targets]))
+        return dataset.map_batches(
+            fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
+            fn_constructor_args=(MODEL_OUTPUT_COLUMN_NAME,),
+            compute=ray.data.ActorPoolStrategy(size=get_num_actors()),
+        ).materialize()
