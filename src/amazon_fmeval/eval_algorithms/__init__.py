@@ -90,17 +90,21 @@ class EvalOutput:
     :param category_scores: A list of CategoryScore object that contain the scores for each category in the dataset.
     :param output_path: Local path of eval output on dataset. This output contains prompt-response with
     record wise eval scores
+    :param error: A string error message for a failed evaluation.
     """
 
     eval_name: str
     dataset_name: str
-    dataset_scores: List[EvalScore]
+    dataset_scores: Optional[List[EvalScore]] = None
     prompt_template: Optional[str] = None
     category_scores: Optional[List[CategoryScore]] = None
     output_path: Optional[str] = None
+    error: Optional[str] = None
 
     def __post_init__(self):  # pragma: no cover
         """Post initialisation validations for EvalOutput"""
+        assert self.dataset_scores or self.error
+
         if not self.category_scores:
             return
 
@@ -117,11 +121,14 @@ class EvalOutput:
             assert self.eval_name == other.eval_name
             assert self.dataset_name == other.dataset_name
             assert self.prompt_template == other.prompt_template
+            assert self.error == other.error
             assert self.dataset_scores if other.dataset_scores else not self.dataset_scores
-            assert len(self.dataset_scores) == len(other.dataset_scores)
-            assert seq(self.dataset_scores).sorted(key=lambda x: x.name).zip(
-                seq(other.dataset_scores).sorted(key=lambda x: x.name)
-            ).filter(lambda x: x[0] == x[1]).len() == len(self.dataset_scores)
+            if self.dataset_scores:  # pragma: no branch
+                assert self.dataset_scores and other.dataset_scores
+                assert len(self.dataset_scores) == len(other.dataset_scores)
+                assert seq(self.dataset_scores).sorted(key=lambda x: x.name).zip(
+                    seq(other.dataset_scores).sorted(key=lambda x: x.name)
+                ).filter(lambda x: x[0] == x[1]).len() == len(self.dataset_scores)
             assert self.category_scores if other.category_scores else not self.category_scores
             if self.category_scores:
                 assert seq(self.category_scores).sorted(key=lambda cat_score: cat_score.name).zip(
