@@ -1,6 +1,6 @@
 import warnings
 import torch
-from transformers import GenerationConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
@@ -10,7 +10,7 @@ from amazon_fmeval.model_runners.model_runner import ModelRunner
 @dataclass(frozen=True)
 class HFModelConfig:
     model_name: str
-    generation_config: GenerationConfig
+    max_new_tokens: int
     normalize_probabilities: bool = False
     seed: int = 0
     remove_prompt_from_generated_text: bool = True
@@ -26,9 +26,8 @@ class HuggingFaceCausalLLMModelRunner(ModelRunner):
         input_ids = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
         generations = self.model.generate(
             **input_ids,
-            max_new_tokens=self.config.generation_config.max_new_tokens,
+            max_new_tokens=self.config.max_new_tokens,
             pad_token_id=self.tokenizer.eos_token_id,
-            generation_config=self.config.generation_config,
         )
         generation_contains_input = (
             input_ids["input_ids"][0] == generations[0][: input_ids["input_ids"].shape[1]]

@@ -1,6 +1,5 @@
 import os
 from pytest import approx
-from transformers import GenerationConfig
 from test.integration.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
 from amazon_fmeval import get_eval_algorithm
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledgeConfig
@@ -10,8 +9,7 @@ from amazon_fmeval.constants import MIME_TYPE_JSONLINES
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
-generation_config = GenerationConfig(max_new_tokens=32)
-hf_config = HFModelConfig(model_name="gpt2", generation_config=generation_config)
+hf_config = HFModelConfig(model_name="gpt2", max_new_tokens=32)
 model = HuggingFaceCausalLLMModelRunner(model_config=hf_config)
 factual_knowledge_config = FactualKnowledgeConfig("<OR>")
 factual_knowledge_algo = get_eval_algorithm("factual_knowledge")(factual_knowledge_config)
