@@ -79,10 +79,10 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
     seed: int = 5
-    butter_finger_perturbation_prob: Optional[float] = 0.1
-    random_uppercase_corrupt_proportion: Optional[float] = 0.1
-    whitespace_remove_prob: Optional[float] = 0.1
-    whitespace_add_prob: Optional[float] = 0.05
+    butter_finger_perturbation_prob: float = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
+    whitespace_remove_prob: float = 0.1
+    whitespace_add_prob: float = 0.05
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
