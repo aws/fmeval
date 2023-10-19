@@ -42,6 +42,7 @@ DATA_CONFIG_LOCATION_SUFFIX = "_location"
 # Supported MIME types
 MIME_TYPE_JSON = "application/json"
 MIME_TYPE_JSONLINES = "application/jsonlines"
+MIME_TYPE_X_TEXT = "application/x-text"
 
 SUPPORTED_MIME_TYPES = [MIME_TYPE_JSON, MIME_TYPE_JSONLINES]
 

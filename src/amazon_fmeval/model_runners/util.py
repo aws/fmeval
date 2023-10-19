@@ -2,10 +2,13 @@
 Utilities for model runners.
 """
 import logging
-from typing import Literal
 import boto3
 import botocore
 import sagemaker
+from typing import Literal, Union
+from sagemaker.serializers import JSONSerializer, IdentitySerializer
+
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_X_TEXT
 
 logger = logging.getLogger(__name__)
 
@@ -90,3 +93,16 @@ def is_endpoint_in_service(
     if not desc or "EndpointStatus" not in desc or desc["EndpointStatus"] != "InService":
         in_service = False
     return in_service
+
+
+def get_serializer(content_type: str) -> Union[JSONSerializer, IdentitySerializer]:  # type: ignore[return]
+    """
+    Returns a serializer based on the input content type.
+
+    :param content_type: A model's content type.
+    :return: A sagemaker serializer.
+    """
+    if content_type == MIME_TYPE_JSON:
+        return JSONSerializer()
+    elif content_type == MIME_TYPE_X_TEXT:  # pragma: no branch
+        return IdentitySerializer()

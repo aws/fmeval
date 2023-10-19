@@ -1,6 +1,14 @@
+import pytest
+from typing import NamedTuple, Union
 from unittest.mock import MagicMock, patch
-
-from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service, get_bedrock_runtime_client
+from sagemaker.serializers import JSONSerializer, IdentitySerializer
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_X_TEXT
+from amazon_fmeval.model_runners.util import (
+    get_sagemaker_session,
+    is_endpoint_in_service,
+    get_bedrock_runtime_client,
+    get_serializer,
+)
 
 ENDPOINT_NAME = "valid_endpoint_name"
 
@@ -57,3 +65,25 @@ def test_is_endpoint_in_service_false():
     mock_sagemaker_session = MagicMock()
     mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "Updating"}
     assert is_endpoint_in_service(mock_sagemaker_session, ENDPOINT_NAME) == False
+
+
+class TestCaseGetSerializer(NamedTuple):
+    mime_type: str
+    expected_class: Union[type[JSONSerializer], type[IdentitySerializer]]
+
+
+@pytest.mark.parametrize(
+    "mime_type, expected_class",
+    [
+        TestCaseGetSerializer(
+            mime_type=MIME_TYPE_JSON,
+            expected_class=JSONSerializer,
+        ),
+        TestCaseGetSerializer(
+            mime_type=MIME_TYPE_X_TEXT,
+            expected_class=IdentitySerializer,
+        ),
+    ],
+)
+def test_get_serializer(mime_type, expected_class):
+    assert isinstance(get_serializer(mime_type), expected_class)

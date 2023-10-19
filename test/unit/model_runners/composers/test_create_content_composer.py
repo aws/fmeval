@@ -2,27 +2,38 @@ import pytest
 
 from typing import NamedTuple
 
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_X_TEXT
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers import create_content_composer, Composer, JsonContentComposer
+from amazon_fmeval.model_runners.composers import (
+    create_content_composer,
+    Composer,
+    JsonContentComposer,
+    StringContentComposer,
+)
 
 
 class TestCreateContentComposer:
     class TestCaseGetComposerType(NamedTuple):
         template: str
+        content_type: str
         expected_composer_type: Composer
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            # Test case to verify that create_content_composer correctly creates a SingleRequestComposer
-            TestCaseGetComposerType('{"data":$prompt}', JsonContentComposer),
+            TestCaseGetComposerType(
+                template='{"data":$prompt}', content_type=MIME_TYPE_JSON, expected_composer_type=JsonContentComposer
+            ),
+            TestCaseGetComposerType(
+                template="$prompt", content_type=MIME_TYPE_X_TEXT, expected_composer_type=StringContentComposer
+            ),
         ],
     )
     def test_create_content_composer(self, test_case):
-        composer = create_content_composer(test_case.template)
+        composer = create_content_composer(template=test_case.template, content_type=test_case.content_type)
         assert isinstance(composer, test_case.expected_composer_type)
 
-    # Test case to verify that create_content_composer raises CustomerError for an invalid template
+    # Test case to verify that create_content_composer raises EvalAlgorithmClientError for an invalid template
     def test_invalid_template(self):
         template = '{"data":$invalid}'
         message = "Invalid input - unable to create a content composer"
@@ -49,6 +60,6 @@ class TestCreateContentComposer:
         """
         composer = create_content_composer(template=template)
         assert isinstance(composer, expected_composer_type)
-        error_message = "Unable to load a JSON object with content_template "
+        error_message = "Unable to load a JSON object with template "
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             composer.compose(prompts)
