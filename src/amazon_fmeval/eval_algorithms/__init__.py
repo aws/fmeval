@@ -40,6 +40,7 @@ class EvalAlgorithm(Enum):
     PROMPT_STEREOTYPING = "prompt_stereotyping"
     FACTUAL_KNOWLEDGE = "factual_knowledge"
     TOXICITY = "toxicity"
+    QA_TOXICITY = "qa_toxicity"
     GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
@@ -167,7 +168,7 @@ MODEL_TASK_EVALUATION_MAP = {
         EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.QUESTION_ANSWERING: [
-        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.QA_TOXICITY,
         EvalAlgorithm.QA_ACCURACY,
         EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
@@ -207,6 +208,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     ],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
+    EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -234,6 +236,9 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
     (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
     (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, BOOLQ): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, TRIVIA_QA): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, NATURAL_QUESTIONS): "$feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
