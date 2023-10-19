@@ -10,7 +10,7 @@ import sagemaker
 logger = logging.getLogger(__name__)
 
 
-def get_boto_session() -> boto3.session.Session:  # pragma: no cover
+def get_boto_session() -> boto3.session.Session:
     """
     Get boto3 session with adaptive retry config
     :return: The new session
@@ -26,25 +26,24 @@ def get_boto_session() -> boto3.session.Session:  # pragma: no cover
 
 
 def get_sagemaker_session(
-    boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "standard",
-    retry_attempts: int = 0,
-) -> sagemaker.Session:  # pragma: no cover
+    boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "adaptive",
+    retry_attempts: int = 10,
+) -> sagemaker.Session:
     """
     Get SageMaker session with adaptive retry config.
-    :param boto_retry_mode: retry mode used for botocore config (standard/adaptive).
+    :param boto_retry_mode: retry mode used for botocore config (legacy/standard/adaptive).
     :param retry_attempts: max retry attempts used for botocore client failures
     :return: The new session
     """
     boto_session = get_boto_session()
-    # noinspection PyTypeChecker
-    sagemaker_client = boto_session.client(service_name="sagemaker")
-    # noinspection PyTypeChecker
-    sagemaker_runtime_client = boto_session.client(  # type: ignore
+    boto_config = botocore.client.Config(retries={"mode": boto_retry_mode, "max_attempts": retry_attempts})
+    sagemaker_client = boto_session.client(
+        service_name="sagemaker",
+        config=boto_config,
+    )
+    sagemaker_runtime_client = boto_session.client(
         service_name="sagemaker-runtime",
-        config=botocore.client.Config(
-            # Disable retry because our Predictor class has its own retry logic
-            retries={"mode": boto_retry_mode, "max_attempts": retry_attempts}
-        ),
+        config=boto_config,
     )
     sagemaker_session = sagemaker.session.Session(
         boto_session=boto_session,
@@ -55,23 +54,19 @@ def get_sagemaker_session(
 
 
 def get_bedrock_runtime_client(
-    boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "standard",
-    retry_attempts: int = 0,
-) -> boto3.session.Session.client:  # pragma: no cover
+    boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "adaptive",
+    retry_attempts: int = 10,
+) -> boto3.session.Session.client:
     """
     Get Bedrock runtime client with adaptive retry config.
-    :param boto_retry_mode: retry mode used for botocore config (standard/adaptive).
+    :param boto_retry_mode: retry mode used for botocore config (legacy/standard/adaptive).
     :param retry_attempts: max retry attempts used for botocore client failures
     :return: The new session
     """
     boto_session = get_boto_session()
-    # noinspection PyTypeChecker
     bedrock_runtime_client = boto_session.client(  # type: ignore
         service_name="bedrock-runtime",
-        config=botocore.client.Config(
-            # Disable retry because our Predictor class has its own retry logic
-            retries={"mode": boto_retry_mode, "max_attempts": retry_attempts}
-        ),
+        config=botocore.client.Config(retries={"mode": boto_retry_mode, "max_attempts": retry_attempts}),
     )
     return bedrock_runtime_client
 
