@@ -65,7 +65,13 @@ class QAAccuracyConfig(EvalAlgorithmConfig):
         if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
     """
 
-    target_output_delimiter: str
+    target_output_delimiter: Optional[str] = "<OR>"
+
+    def __post_init__(self):
+        if self.target_output_delimiter == "":
+            raise EvalAlgorithmClientError(
+                "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
+            )
 
 
 def _normalize_text_quac_protocol(text: str) -> str:
