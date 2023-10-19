@@ -13,6 +13,7 @@ from amazon_fmeval.constants import (
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     DEFAULT_EVAL_RESULTS_PATH,
+    MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
@@ -29,31 +30,24 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
-QA_DATASET_WITH_SCORES = ray.data.from_items(
+QA_DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "What is the capital of Italy?",
             TARGET_OUTPUT_COLUMN_NAME: "Rome",
             CATEGORY_COLUMN_NAME: "capitals",
-            DELTA_F1_SCORE: 0.0,
-            DELTA_EXACT_MATCH_SCORE: 0.0,
-            DELTA_QUASI_EXACT_MATCH_SCORE: 0.0,
+            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
         },
         {
             MODEL_INPUT_COLUMN_NAME: "When did Argentina win the FIFA World Cup?",
             TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022.",
             CATEGORY_COLUMN_NAME: "sports",
-            DELTA_F1_SCORE: 0.0,
-            DELTA_EXACT_MATCH_SCORE: 0.0,
-            DELTA_QUASI_EXACT_MATCH_SCORE: 0.0,
+            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
         },
     ]
 )
 
-
-QA_DATASET = QA_DATASET_WITH_SCORES.drop_columns(
-    cols=[DELTA_F1_SCORE, DELTA_EXACT_MATCH_SCORE, DELTA_QUASI_EXACT_MATCH_SCORE]
-)
+QA_DATASET = QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=MODEL_OUTPUT_COLUMN_NAME)
 
 QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
 
@@ -218,6 +212,92 @@ class TestQAAccuracySemanticRobustness:
             )
             == test_case.expected_response
         )
+        assert model.predict.call_count == 4
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracySemanticRobustnessEvaluateSample(
+                model_input="What is the capital of England?",
+                original_model_output="london!",
+                perturbed_model_output_1="Some model output.",
+                perturbed_model_output_2="Some model output.",
+                target_output="London",
+                expected_response=[
+                    EvalScore(name=DELTA_F1_SCORE, value=1.0),
+                    EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
+                ],
+                config=QAAccuracySemanticRobustnessConfig(target_output_delimiter="<OR>", num_perturbations=2),
+            ),
+        ],
+    )
+    def test_qa_accuracy_semantic_robustness_evaluate_sample_with_model_output(self, test_case):
+        """
+        GIVEN valid inputs with model_output
+        WHEN QAAccuracySemanticRobustness.evaluate_sample is called
+        THEN correct List of EvalScores is returned
+        """
+        model = MagicMock()
+        model.predict.side_effect = [
+            (test_case.original_model_output,),
+            (test_case.perturbed_model_output_1,),
+            (test_case.perturbed_model_output_2,),
+        ]
+
+        eval_algorithm = QAAccuracySemanticRobustness(test_case.config)
+        assert (
+            eval_algorithm.evaluate_sample(
+                model_input=test_case.model_input,
+                model=model,
+                target_output=test_case.target_output,
+                model_output=test_case.original_model_output,
+            )
+            == test_case.expected_response
+        )
+        assert model.predict.call_count == 3
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracySemanticRobustnessEvaluateSample(
+                model_input="What is the capital of England?",
+                original_model_output="london!",
+                perturbed_model_output_1="Some model output.",
+                perturbed_model_output_2="Some model output.",
+                target_output="London",
+                expected_response=[
+                    EvalScore(name=DELTA_F1_SCORE, value=1.0),
+                    EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
+                ],
+                config=QAAccuracySemanticRobustnessConfig(target_output_delimiter="<OR>", num_perturbations=2),
+            ),
+        ],
+    )
+    def test_semantic_robustness_evaluate_sample_without_checking_model_determinism(self, test_case):
+        """
+        GIVEN valid inputs with model_output, and specified not check model determinism
+        WHEN QAAccuracySemanticRobustness.evaluate_sample is called
+        THEN correct List of EvalScores is returned
+        """
+        model = MagicMock()
+        model.predict.side_effect = [
+            (test_case.perturbed_model_output_1,),
+            (test_case.perturbed_model_output_2,),
+        ]
+        eval_algorithm = QAAccuracySemanticRobustness(test_case.config)
+        assert (
+            eval_algorithm.evaluate_sample(
+                model_input=test_case.model_input,
+                model=model,
+                model_output=test_case.original_model_output,
+                target_output=test_case.target_output,
+                check_model_determinism=False,
+            )
+            == test_case.expected_response
+        )
+        assert model.predict.call_count == 2
 
     class TestCaseQAAccuracySemanticRobustnessEvaluateSampleInvalid(NamedTuple):
         model_input: str
@@ -297,11 +377,11 @@ class TestQAAccuracySemanticRobustness:
 
     class TestCaseQAAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
+        input_dataset_with_generated_model_output: Dataset
         prompt_template: Optional[str]
         dataset_config: Optional[DataConfig]
         expected_response: List[EvalOutput]
         save_data: bool
-        dataset_with_scores: Dataset
 
     @pytest.mark.parametrize(
         "test_case",
@@ -309,10 +389,12 @@ class TestQAAccuracySemanticRobustness:
             # Built-in datasets evaluate for dataset without category
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
+                input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(
+                    cols=CATEGORY_COLUMN_NAME
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
-                dataset_with_scores=QA_DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -354,11 +436,11 @@ class TestQAAccuracySemanticRobustness:
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseQAAccuracySemanticRobustnessEvaluate(
-                input_dataset=QA_DATASET,
+                input_dataset=QA_DATASET_WITH_MODEL_OUTPUT,
+                input_dataset_with_generated_model_output=QA_DATASET,
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
-                dataset_with_scores=QA_DATASET_WITH_SCORES,
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -401,6 +483,9 @@ class TestQAAccuracySemanticRobustness:
             # Custom dataset evaluate
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
+                input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(
+                    cols=CATEGORY_COLUMN_NAME
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -412,7 +497,6 @@ class TestQAAccuracySemanticRobustness:
                 ),
                 prompt_template="$feature",
                 save_data=False,
-                dataset_with_scores=QA_DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
@@ -432,9 +516,19 @@ class TestQAAccuracySemanticRobustness:
     )
     @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.save_dataset")
+    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
     @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
-    def test_qa_accuracy_semantic_robustness_evaluate(self, qa_accuracy, save_dataset, get_dataset, test_case, config):
+    def test_qa_accuracy_semantic_robustness_evaluate(
+        self, qa_accuracy, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
+    ):
+        """
+        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
+            and request to save records with scores
+        WHEN QAAccuracySemanticRobustness evaluate() method is called
+        THEN correct EvalOutput is returned
+        """
         get_dataset.return_value = test_case.input_dataset
+        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         qa_accuracy.return_value = MagicMock()
 
         eval_algorithm = QAAccuracySemanticRobustness(config)
@@ -446,6 +540,47 @@ class TestQAAccuracySemanticRobustness:
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracySemanticRobustnessEvaluate(
+                input_dataset=QA_DATASET,
+                input_dataset_with_generated_model_output=None,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template="$feature",
+                save_data=False,
+                expected_response=None,
+            ),
+        ],
+    )
+    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
+    def test_qa_accuracy_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
+        """
+        GIVEN a non-deterministic model
+        WHEN QAAccuracySemanticRobustness.evaluate is called
+        THEN correct exception with proper message is raised
+        """
+        model = MagicMock()
+        original_model_output = "some model output"
+        model.predict.side_effect = [
+            (original_model_output,),
+            (original_model_output + "1",),
+        ]
+        get_dataset.return_value = test_case.input_dataset
+        eval_algorithm = QAAccuracySemanticRobustness(config)
+        with pytest.raises(
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
+        ):
+            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 
     class TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
         input_dataset: Dataset

@@ -13,6 +13,7 @@ from amazon_fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
+    DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
 from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
@@ -110,7 +111,7 @@ DATASET_SCORES = [
     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=3 / 5),
 ]
 
-EVAL_RESULTS_PATH = "/tmp/eval_results/"
+EVAL_RESULTS_PATH = DEFAULT_EVAL_RESULTS_PATH
 
 
 class TestQAAccuracy:

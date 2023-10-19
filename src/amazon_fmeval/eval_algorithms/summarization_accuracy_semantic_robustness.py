@@ -16,6 +16,7 @@ from amazon_fmeval.constants import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
+    MODEL_OUTPUT_COLUMN_NAME, NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
@@ -55,6 +56,7 @@ from amazon_fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
     get_num_actors,
     generate_mean_delta_score,
+    generate_model_predict_response_for_dataset,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -180,7 +182,13 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         return SummarizationAccuracySemanticRobustness, serialized_data
 
     def evaluate_sample(
-        self, model_input: str, target_output: str, model: ModelRunner, prompt_template: str = "$feature"
+        self,
+        model_input: str,
+        target_output: str,
+        model: ModelRunner,
+        model_output: Optional[str] = None,
+        prompt_template: str = "$feature",
+        check_model_determinism: bool = True,
     ) -> List[EvalScore]:  # type: ignore[override]
         """
         Summarization Accuracy Semantic Robustness evaluate sample.
@@ -188,7 +196,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param model_input: text input for model
         :param target_output: The expected responses from the model
         :param model: An instance of ModelRunner which is the model under evaluation
+        :param model_output: The output of a model that we want to evaluate.
         :param prompt_template: A template which can be used to compose prompt using model_input
+        :param check_model_determinism: A bool flag to check if model is deterministic or not.
         :return: list of EvalScore object
         """
         util.require(
@@ -207,11 +217,11 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
-        original_model_output = model.predict(original_prompt)[0]
+        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
 
-        # Check if predictor is deterministic
-        if model.predict(original_prompt)[0] != original_model_output:
-            raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+        if check_model_determinism:
+            if model.predict(original_prompt)[0] != original_model_output:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
             seed=self._eval_algorithm_config.seed
@@ -298,6 +308,21 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             dataset = generate_prompt_column_for_dataset(
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
+
+            # Check if predictor is deterministic
+            for row in dataset.limit(NUM_ROWS_DETERMINISTIC).iter_rows():
+                original_prompt = row[PROMPT_COLUMN_NAME]
+                original_model_output = model.predict(original_prompt)[0]
+                if model.predict(original_prompt)[0] != original_model_output:
+                    raise EvalAlgorithmClientError(
+                        "For evaluating semantic robustness, the model should be deterministic."
+                    )
+            dataset = generate_model_predict_response_for_dataset(
+                model=model,
+                data=dataset,
+                model_input_column_name=PROMPT_COLUMN_NAME,
+                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+            )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = self.__add_scores(model, prompt_template, dataset)
 
@@ -353,7 +378,12 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
                 assert prompt_template  # to satisfy mypy
                 scores = evaluate_sample_fn(
-                    row[MODEL_INPUT_COLUMN_NAME], row[TARGET_OUTPUT_COLUMN_NAME], model, prompt_template
+                    model_input=row[MODEL_INPUT_COLUMN_NAME],
+                    target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                    model=model,
+                    model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                    prompt_template=prompt_template,
+                    check_model_determinism=False,
                 )
                 for score in scores:
                     row[score.name] = score.value
