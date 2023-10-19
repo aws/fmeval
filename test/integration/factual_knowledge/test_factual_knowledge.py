@@ -1,25 +1,22 @@
 import os
 from pytest import approx
-from test.integration.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
-from amazon_fmeval import get_eval_algorithm
-from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledgeConfig
+from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from ..test_model_runners import hf_model_runner
 
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
-hf_config = HFModelConfig(model_name="gpt2", max_new_tokens=32)
-model = HuggingFaceCausalLLMModelRunner(model_config=hf_config)
 factual_knowledge_config = FactualKnowledgeConfig("<OR>")
-factual_knowledge_algo = get_eval_algorithm("factual_knowledge")(factual_knowledge_config)
+factual_knowledge_algo = FactualKnowledge(factual_knowledge_config)
 
 
 class TestFactualKnowledge:
     test_dir = "factual_knowledge"
 
     def test_evaluate_sample(self):
-        model_output = model.predict("London is the capital of")[0]
+        model_output = hf_model_runner.predict("London is the capital of")[0]
         eval_score = factual_knowledge_algo.evaluate_sample(
             target_output="UK<OR>England<OR>United Kingdom", model_output=model_output
         )[0]
@@ -35,7 +32,7 @@ class TestFactualKnowledge:
             category_location="knowledge_category",
         )
         eval_outputs = factual_knowledge_algo.evaluate(
-            model=model,
+            model=hf_model_runner,
             dataset_config=dataset_config,
             prompt_template="$feature",
             save=True,
