@@ -1,7 +1,11 @@
 import os
 from pytest import approx
 from amazon_fmeval.eval_algorithms.qa_accuracy import (
-    QAAccuracy, QAAccuracyConfig, F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE
+    QAAccuracy,
+    QAAccuracyConfig,
+    F1_SCORE,
+    EXACT_MATCH_SCORE,
+    QUASI_EXACT_MATCH_SCORE,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
@@ -18,8 +22,7 @@ class TestQAAccuracy:
     test_dir = "qa_accuracy"
 
     def test_evaluate_sample(self):
-        model_input = \
-            """
+        model_input = """
             <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
             Do not repeat the question. Do not answer in complete sentences.<</SYS>>
             Question: London is the capital of [/INST]
@@ -39,8 +42,7 @@ class TestQAAccuracy:
             model_input_location="question",
             target_output_location="answer",
         )
-        prompt_template = \
-            """
+        prompt_template = """
             <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
             Do not repeat the question. Do not answer in complete sentences. <</SYS>>
             Question: $feature [/INST]
