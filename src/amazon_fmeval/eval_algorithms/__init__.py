@@ -41,6 +41,7 @@ class EvalAlgorithm(Enum):
     FACTUAL_KNOWLEDGE = "factual_knowledge"
     TOXICITY = "toxicity"
     QA_TOXICITY = "qa_toxicity"
+    SUMMARIZATION_TOXICITY = "summarization_toxicity"
     GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
@@ -173,7 +174,7 @@ MODEL_TASK_EVALUATION_MAP = {
         EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.SUMMARIZATION: [
-        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.SUMMARIZATION_TOXICITY,
         EvalAlgorithm.SUMMARIZATION_ACCURACY,
         EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
@@ -209,6 +210,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [CNN_DAILY_MAIL, XSUM],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -239,6 +241,8 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.QA_TOXICITY.value, BOOLQ): "$feature",
     (EvalAlgorithm.QA_TOXICITY.value, TRIVIA_QA): "$feature",
     (EvalAlgorithm.QA_TOXICITY.value, NATURAL_QUESTIONS): "$feature",
+    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, CNN_DAILY_MAIL): "Summarise: $feature",
+    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, XSUM): "Summarise: $feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
