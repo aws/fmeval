@@ -49,6 +49,6 @@ class TestCreateContentComposer:
         """
         composer = create_content_composer(template=template)
         assert isinstance(composer, expected_composer_type)
-        error_message = "Unable to load a JSON object with content_template "
+        error_message = "Unable to load a JSON object with template "
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             composer.compose(prompts)
