@@ -14,6 +14,7 @@ class HFModelConfig:
     normalize_probabilities: bool = False
     seed: int = 0
     remove_prompt_from_generated_text: bool = True
+    do_sample: bool = False
 
 
 class HuggingFaceCausalLLMModelRunner(ModelRunner):
@@ -28,6 +29,7 @@ class HuggingFaceCausalLLMModelRunner(ModelRunner):
             **input_ids,
             max_new_tokens=self.config.max_new_tokens,
             pad_token_id=self.tokenizer.eos_token_id,
+            do_sample=self.config.do_sample
         )
         generation_contains_input = (
             input_ids["input_ids"][0] == generations[0][: input_ids["input_ids"].shape[1]]
