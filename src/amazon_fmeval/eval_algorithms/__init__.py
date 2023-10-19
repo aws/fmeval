@@ -40,13 +40,16 @@ class EvalAlgorithm(Enum):
     PROMPT_STEREOTYPING = "prompt_stereotyping"
     FACTUAL_KNOWLEDGE = "factual_knowledge"
     TOXICITY = "toxicity"
+    QA_TOXICITY = "qa_toxicity"
+    SUMMARIZATION_TOXICITY = "summarization_toxicity"
     GENERAL_SEMANTIC_ROBUSTNESS = "general_semantic_robustness"
     ACCURACY = "accuracy"
     QA_ACCURACY = "qa_accuracy"
     QA_ACCURACY_SEMANTIC_ROBUSTNESS = "qa_accuracy_semantic_robustness"
     SUMMARIZATION_ACCURACY = "summarization_accuracy"
-    CLASSIFICATION_ACCURACY = "classification_accuracy"
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
+    CLASSIFICATION_ACCURACY = "classification_accuracy"
+    CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
 
     def __str__(self):
         """
@@ -163,14 +166,15 @@ MODEL_TASK_EVALUATION_MAP = {
     ],
     ModelTask.CLASSIFICATION: [
         EvalAlgorithm.CLASSIFICATION_ACCURACY,
+        EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.QUESTION_ANSWERING: [
-        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.QA_TOXICITY,
         EvalAlgorithm.QA_ACCURACY,
         EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
     ModelTask.SUMMARIZATION: [
-        EvalAlgorithm.TOXICITY,
+        EvalAlgorithm.SUMMARIZATION_TOXICITY,
         EvalAlgorithm.SUMMARIZATION_ACCURACY,
         EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS,
     ],
@@ -200,8 +204,13 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
+    EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
+        IMDB_MOVIE_REVIEWS
+    ],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
+    EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [CNN_DAILY_MAIL, XSUM],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -219,6 +228,8 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, IMDB_MOVIE_REVIEWS): "$feature",
+    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
@@ -227,6 +238,11 @@ EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
     (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
     (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
     (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, BOOLQ): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, TRIVIA_QA): "$feature",
+    (EvalAlgorithm.QA_TOXICITY.value, NATURAL_QUESTIONS): "$feature",
+    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, CNN_DAILY_MAIL): "Summarise: $feature",
+    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, XSUM): "Summarise: $feature",
 }
 
 # Mapping of Built-in dataset names and their DataConfigs
