@@ -52,8 +52,8 @@ class JsonContentComposer(Composer):
         """
         The placeholder $prompt is replaced by a single JSON prompt. E.g.,
         template: '{"data": $prompt}'
-        data:     '["John",40]'
-        result:   {"data": '["John",40]'}
+        data:     "[\"John\",40]"
+        result:   {"data": "[\"John\",40]"}
         This composer uses json.dumps to make sure the double quotes included are properly escaped.
 
         :param data: The data used to replace self.placeholder in self.vanilla_template.
