@@ -17,7 +17,7 @@ def create_content_composer(template: Optional[str] = None, content_type: str = 
         vanilla_template = VanillaTemplate(template)  # type: ignore
 
         if identifiers := vanilla_template.get_unique_identifiers():
-            if JsonContentComposer.KEYWORD in identifiers:
+            if JsonContentComposer.PLACEHOLDER in identifiers:
                 composer = JsonContentComposer(template=template)  # type: ignore
             else:
                 logger.error(f"Found placeholders {identifiers} in template '{template}'.")
