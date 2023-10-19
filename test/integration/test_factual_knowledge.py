@@ -3,7 +3,7 @@ from pytest import approx
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from ..test_model_runners import hf_model_runner
+from test.integration.models.model_runners import hf_model_runner
 
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"

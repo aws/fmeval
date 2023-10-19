@@ -9,7 +9,7 @@ from amazon_fmeval.eval_algorithms.qa_accuracy import (
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from ..test_model_runners import js_model_runner, js_model_runner_prompt_template
+from test.integration.models.model_runners import js_model_runner, js_model_runner_prompt_template
 
 ABS_TOL = 2e-2
 os.environ["PARALLELIZATION_FACTOR"] = "2"

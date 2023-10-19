@@ -1,6 +1,6 @@
 from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
-from test.integration.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
+from test.integration.models.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
 
 """
 These model runners get used by various different integration tests.
