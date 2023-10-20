@@ -3,11 +3,11 @@ from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 from test.integration.models.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
 
 """
-These model runners get used by various different integration tests.
+These model runners get used by each of the integration tests.
 """
 
 # JumpStart model runner
-js_endpoint_name = "meta-textgeneration-llama-2-7b-f-2023-10-18-18-31-53-528"
+js_endpoint_name = "meta-textgeneration-llama-2-7b-f"
 js_model_id, js_model_version = "meta-textgeneration-llama-2-7b-f", "*"
 js_model_runner = JumpStartModelRunner(
     endpoint_name=js_endpoint_name,
@@ -24,7 +24,7 @@ js_model_runner_prompt_template = """
     """
 
 # SageMaker model runner
-sm_endpoint_name = "meta-textgeneration-llama-2-7b-f-2023-10-18-18-31-53-528"
+sm_endpoint_name = "meta-textgeneration-llama-2-7b-f"
 sm_model_runner = SageMakerModelRunner(
     endpoint_name=sm_endpoint_name,
     output="[0].generation.content",
