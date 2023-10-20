@@ -21,6 +21,7 @@ from amazon_fmeval.eval_algorithms import (
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     IMDB_MOVIE_REVIEWS,
     DEFAULT_PROMPT_TEMPLATE,
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,
@@ -289,16 +290,16 @@ class TestClassificationAccuracySemanticRobustness:
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy_semantic_robustness",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     dataset_scores=[
-                    #         EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                    #     ],
-                    #     prompt_template="$feature",
-                    #     category_scores=None,
-                    #     output_path="/tmp/eval_results/",
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy_semantic_robustness",
+                        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+                        dataset_scores=[
+                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
+                        ],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -311,7 +312,7 @@ class TestClassificationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name="imdb_movie_reviews",
+                        dataset_name=IMDB_MOVIE_REVIEWS,
                         dataset_scores=[
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
@@ -319,16 +320,16 @@ class TestClassificationAccuracySemanticRobustness:
                         category_scores=CATEGORY_SCORES,
                         output_path="/tmp/eval_results/",
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy_semantic_robustness",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     dataset_scores=[
-                    #         EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                    #     ],
-                    #     prompt_template="$feature",
-                    #     category_scores=CATEGORY_SCORES,
-                    #     output_path="/tmp/eval_results/",
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy_semantic_robustness",
+                        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+                        dataset_scores=[
+                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
+                        ],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+                        category_scores=CATEGORY_SCORES,
+                        output_path="/tmp/eval_results/",
+                    ),
                 ],
             ),
             # Custom dataset evaluate, with input prompt template

@@ -23,6 +23,7 @@ from amazon_fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     IMDB_MOVIE_REVIEWS,
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from amazon_fmeval.eval_algorithms.classification_accuracy import (
     ClassificationAccuracyConfig,
@@ -191,14 +192,14 @@ class TestClassificationAccuracy:
                         category_scores=CATEGORY_SCORES,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     prompt_template="$feature",
-                    #     dataset_scores=DATASET_SCORES,
-                    #     category_scores=CATEGORY_SCORES,
-                    #     output_path=EVAL_RESULTS_PATH,
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy",
+                        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+                        dataset_scores=DATASET_SCORES,
+                        category_scores=CATEGORY_SCORES,
+                        output_path=EVAL_RESULTS_PATH,
+                    ),
                 ],
             ),
             TestCaseClassificationAccuracyEvaluate(

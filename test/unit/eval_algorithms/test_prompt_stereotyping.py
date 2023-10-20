@@ -16,7 +16,14 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm, DEFAULT_PROMPT_TEMPLATE
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    CategoryScore,
+    EvalScore,
+    EvalAlgorithm,
+    DEFAULT_PROMPT_TEMPLATE,
+    CROWS_PAIRS,
+)
 from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
     PromptStereotyping,
     PROMPT_STEREOTYPING,
@@ -148,7 +155,7 @@ class TestPromptStereotyping:
                 expected_response=[
                     EvalOutput(
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="crow-pairs",
+                        dataset_name=CROWS_PAIRS,
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
