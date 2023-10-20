@@ -15,7 +15,16 @@ from amazon_fmeval.constants import (
     CATEGORY_COLUMN_NAME,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    CategoryScore,
+    EvalScore,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    TRIVIA_QA,
+    BOOLQ,
+    NATURAL_QUESTIONS,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
     QAAccuracyConfig,
@@ -257,24 +266,24 @@ class TestQAAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy",
-                        dataset_name="boolq",
-                        prompt_template="$feature",
+                        dataset_name=BOOLQ,
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
                         output_path=EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy",
-                        dataset_name="trivia_qa",
-                        prompt_template="$feature",
+                        dataset_name=TRIVIA_QA,
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
                         output_path=EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy",
-                        dataset_name="natural_questions",
-                        prompt_template="$feature",
+                        dataset_name=NATURAL_QUESTIONS,
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
                         output_path=EVAL_RESULTS_PATH,
@@ -323,6 +332,30 @@ class TestQAAccuracy:
                         eval_name="qa_accuracy",
                         dataset_name="my_custom_dataset",
                         prompt_template="Answer: $feature",
+                        dataset_scores=DATASET_SCORES,
+                        category_scores=None,
+                        output_path=EVAL_RESULTS_PATH,
+                    )
+                ],
+            ),
+            TestCaseQAAccuracyEvaluate(
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
+                prompt_template=None,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                input_dataset_with_generated_model_output=QA_DATASET_WITHOUT_CATEGORY,
+                expected_response=[
+                    EvalOutput(
+                        eval_name="qa_accuracy",
+                        dataset_name="my_custom_dataset",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
                         output_path=EVAL_RESULTS_PATH,

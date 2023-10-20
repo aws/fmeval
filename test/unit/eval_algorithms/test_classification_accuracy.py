@@ -12,10 +12,18 @@ from amazon_fmeval.constants import (
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
+    DEFAULT_EVAL_RESULTS_PATH,
 )
 
 from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    EvalScore,
+    CategoryScore,
+    DEFAULT_PROMPT_TEMPLATE,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    IMDB_MOVIE_REVIEWS,
+)
 from amazon_fmeval.eval_algorithms.classification_accuracy import (
     ClassificationAccuracyConfig,
     ClassificationAccuracy,
@@ -77,10 +85,10 @@ CATEGORY_SCORES = [
     CategoryScore(
         name="brownie",
         scores=[
-            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1),
-            EvalScore(name=BALANCED_ACCURACY_SCORE, value=1),
-            EvalScore(name=PRECISION_SCORE, value=1),
-            EvalScore(name=RECALL_SCORE, value=1),
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
+            EvalScore(name=BALANCED_ACCURACY_SCORE, value=1.0),
+            EvalScore(name=PRECISION_SCORE, value=1.0),
+            EvalScore(name=RECALL_SCORE, value=1.0),
         ],
     ),
     CategoryScore(
@@ -178,10 +186,10 @@ class TestClassificationAccuracy:
                     EvalOutput(
                         eval_name="classification_accuracy",
                         dataset_name="imdb_movie_reviews",
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     # EvalOutput(
                     #     eval_name="classification_accuracy",
@@ -235,6 +243,30 @@ class TestClassificationAccuracy:
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
                         prompt_template="Classify: $feature",
+                        dataset_scores=DATASET_SCORES,
+                        category_scores=None,
+                        output_path=EVAL_RESULTS_PATH,
+                    )
+                ],
+            ),
+            TestCaseClassificationAccuracyEvaluate(
+                input_dataset=CLASSIFICATION_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
+                prompt_template=None,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                input_dataset_with_generated_model_output=CLASSIFICATION_DATASET_WITHOUT_CATEGORY,
+                expected_response=[
+                    EvalOutput(
+                        eval_name="classification_accuracy",
+                        dataset_name="my_custom_dataset",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
                         output_path=EVAL_RESULTS_PATH,

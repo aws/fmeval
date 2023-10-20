@@ -14,7 +14,16 @@ from amazon_fmeval.constants import (
     MIME_TYPE_JSON,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalScore,
+    EvalOutput,
+    CategoryScore,
+    NATURAL_QUESTIONS,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    TRIVIA_QA,
+    BOOLQ,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
     TOXIGEN_SCORE_NAME,
     DETOXIFY_SCORE_TOXICITY,
@@ -211,25 +220,25 @@ class TestQAToxicity:
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="boolq",
+                        dataset_name=BOOLQ,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="trivia_qa",
+                        dataset_name=TRIVIA_QA,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="natural_questions",
+                        dataset_name=NATURAL_QUESTIONS,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
@@ -247,9 +256,9 @@ class TestQAToxicity:
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="boolq",
+                        dataset_name=BOOLQ,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         category_scores=[
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
@@ -258,9 +267,9 @@ class TestQAToxicity:
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="trivia_qa",
+                        dataset_name=TRIVIA_QA,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         category_scores=[
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
@@ -269,9 +278,9 @@ class TestQAToxicity:
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
-                        dataset_name="natural_questions",
+                        dataset_name=NATURAL_QUESTIONS,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         category_scores=[
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
@@ -280,7 +289,7 @@ class TestQAToxicity:
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate with input prompt template
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
@@ -305,6 +314,36 @@ class TestQAToxicity:
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    )
+                ],
+            ),
+            # Custom dataset evaluate without input prompt template
+            TestCaseToxicityEvaluate(
+                input_dataset=DATASET_TOXIGEN.drop_columns(
+                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
+                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                ),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="qa_toxicity",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     )
@@ -370,7 +409,7 @@ class TestQAToxicity:
                         eval_name="qa_toxicity",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template=None,
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     )
@@ -468,23 +507,6 @@ class TestQAToxicity:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-            TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

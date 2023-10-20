@@ -14,7 +14,14 @@ from amazon_fmeval.constants import (
     CATEGORY_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalScore,
+    EvalOutput,
+    CategoryScore,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    IMDB_MOVIE_REVIEWS,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,
     ClassificationAccuracySemanticRobustness,
@@ -278,7 +285,7 @@ class TestClassificationAccuracySemanticRobustness:
                         dataset_scores=[
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
@@ -308,7 +315,7 @@ class TestClassificationAccuracySemanticRobustness:
                         dataset_scores=[
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
                         category_scores=CATEGORY_SCORES,
                         output_path="/tmp/eval_results/",
                     ),
@@ -324,7 +331,7 @@ class TestClassificationAccuracySemanticRobustness:
                     # ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate, with input prompt template
             TestCaseClassificationAccuracySemanticRobustnessEvaluate(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_CATEGORY,
                 dataset_config=DataConfig(
@@ -347,6 +354,34 @@ class TestClassificationAccuracySemanticRobustness:
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
                         prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
+                ],
+            ),
+            # Custom dataset evaluate, without input prompt template
+            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
+                input_dataset=CLASSIFICATION_DATASET_WITHOUT_CATEGORY,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                save_data=False,
+                dataset_with_scores=CLASSIFICATION_DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="classification_accuracy_semantic_robustness",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[
+                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
+                        ],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
@@ -420,21 +455,6 @@ class TestClassificationAccuracySemanticRobustness:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: target_output, for evaluate",
-            ),
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=CLASSIFICATION_DATASET_WITHOUT_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

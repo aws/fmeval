@@ -214,36 +214,29 @@ EVAL_DATASETS: Dict[str, List[str]] = {
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
-# TODO: To be correctly populated
-EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
-    (EvalAlgorithm.FACTUAL_KNOWLEDGE.value, TREX): "Answer: $feature",
-    (EvalAlgorithm.QA_ACCURACY.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_ACCURACY.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_ACCURACY.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, IMDB_MOVIE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, XSUM): "Summarise: $feature",
-    (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
-    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
-    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, XSUM): "Summarise: $feature",
+DEFAULT_PROMPT_TEMPLATE = "$feature"
+
+BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
+    BOOLQ: 'Respond to the following question. Valid answers are "true" or "false". $feature Answer:',
+    TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
+    NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
+    CNN_DAILY_MAIL: "Summarise the following text in a few sentences: $feature",
+    XSUM: "Summarise the following text in one sentence: $feature",
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
+    "or 1 (positive sentiment). Review: $feature. Classification:",
+    IMDB_MOVIE_REVIEWS: "Classify the sentiment of the following review with negative or "
+    "positive sentiment. Review: $feature. Classification:",
 }
+
+
+def get_default_prompt_template(dataset_name: str) -> str:
+    """
+    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,
+        the method returns a generic default prompt template.
+    :param dataset_name: Name of dataset
+    """
+    return BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES.get(dataset_name, DEFAULT_PROMPT_TEMPLATE)
+
 
 # Mapping of Built-in dataset names and their DataConfigs
 # TODO: To be updated once datasets are uploaded in S3, update Configs accordingly
