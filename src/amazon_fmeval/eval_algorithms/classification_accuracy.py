@@ -26,9 +26,9 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
-    EVAL_PROMPT_TEMPLATES,
     DATASET_CONFIGS,
     CategoryScore,
+    get_default_prompt_template,
 )
 from amazon_fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
@@ -126,9 +126,21 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         save: bool = False,
         num_records=100,
     ) -> List[EvalOutput]:
-        is_custom_dataset_evaluation = False
+        """
+        Classification Accuracy evaluate.
+
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
+                               evaluated on all built-in datasets configured for this evaluation.
+        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+            will be used.
+        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
+        :returns: List of EvalOutput objects. Current implementation returns only one score.
+        """
         if dataset_config:
-            is_custom_dataset_evaluation = True
             dataset_configs = [dataset_config]
         else:
             dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
@@ -136,23 +148,14 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            dataset_prompt_template = None
             if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
-                if is_custom_dataset_evaluation:
-                    # TODO when user provide built-in DataConfig, we should provide default prompt_template
-                    util.require(
-                        prompt_template is not None,
-                        f"Missing required input: prompt_template for evaluating custom dataset : {dataset_config}",
-                    )
-                else:
-                    prompt_template = EVAL_PROMPT_TEMPLATES[self.eval_name, dataset_config.dataset_name]
-                    util.assert_condition(
-                        prompt_template is not None,
-                        f"No Prompt Template configured for ({self.eval_name}, {dataset_config.dataset_name})",
-                    )
-                assert prompt_template  # to satisfy mypy
+                dataset_prompt_template = (
+                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+                )
                 dataset = generate_prompt_column_for_dataset(
-                    prompt_template=prompt_template,
+                    prompt_template=dataset_prompt_template,
                     data=dataset,
                     model_input_column_name=MODEL_INPUT_COLUMN_NAME,
                     prompt_column_name=PROMPT_COLUMN_NAME,
@@ -245,7 +248,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     EvalOutput(
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
-                        prompt_template=prompt_template,
+                        prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=list(category_scores.values()) if category_scores else None,
                         output_path=self._eval_results_path,

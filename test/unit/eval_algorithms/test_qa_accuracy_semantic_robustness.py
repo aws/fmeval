@@ -15,7 +15,16 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    EvalScore,
+    CategoryScore,
+    TRIVIA_QA,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    BOOLQ,
+    NATURAL_QUESTIONS,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustnessConfig,
     QAAccuracySemanticRobustness,
@@ -316,37 +325,37 @@ class TestQAAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="boolq",
+                        dataset_name=BOOLQ,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="trivia_qa",
+                        dataset_name=TRIVIA_QA,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="natural_questions",
+                        dataset_name=NATURAL_QUESTIONS,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -362,43 +371,43 @@ class TestQAAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="boolq",
+                        dataset_name=BOOLQ,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         category_scores=CATEGORY_SCORES,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="trivia_qa",
+                        dataset_name=TRIVIA_QA,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         category_scores=CATEGORY_SCORES,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy_semantic_robustness",
-                        dataset_name="natural_questions",
+                        dataset_name=NATURAL_QUESTIONS,
                         dataset_scores=[
                             EvalScore(name=DELTA_F1_SCORE, value=0.0),
                             EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         category_scores=CATEGORY_SCORES,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate, with input prompt template
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
                 dataset_config=DataConfig(
@@ -423,6 +432,36 @@ class TestQAAccuracySemanticRobustness:
                             EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                         ],
                         prompt_template="$feature",
+                        category_scores=None,
+                        output_path=DEFAULT_EVAL_RESULTS_PATH,
+                    ),
+                ],
+            ),
+            # Custom dataset evaluate, without input prompt template
+            TestCaseQAAccuracySemanticRobustnessEvaluate(
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                save_data=False,
+                dataset_with_scores=QA_DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="qa_accuracy_semantic_robustness",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[
+                            EvalScore(name=DELTA_F1_SCORE, value=0.0),
+                            EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
+                            EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
+                        ],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -494,21 +533,6 @@ class TestQAAccuracySemanticRobustness:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: target_output, for evaluate",
-            ),
-            TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

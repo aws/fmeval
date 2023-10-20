@@ -185,7 +185,7 @@ TREX = "trex"
 BOOLQ = "boolq"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
-CROW_PAIRS = "crow-pairs"
+CROWS_PAIRS = "crows-pairs"
 CNN_DAILY_MAIL = "cnn_daily_mail"
 XSUM = "xsum"
 IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
@@ -200,13 +200,14 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.FACTUAL_KNOWLEDGE.value: [TREX],
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-    EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROW_PAIRS],
+    EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
-    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
+    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS, WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
-        IMDB_MOVIE_REVIEWS
-    ],  # WOMENS_CLOTHING_ECOMMERCE_REVIEWS
+        IMDB_MOVIE_REVIEWS,
+        WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+    ],
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
@@ -214,39 +215,31 @@ EVAL_DATASETS: Dict[str, List[str]] = {
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
-# TODO: To be correctly populated
-EVAL_PROMPT_TEMPLATES: Dict[Tuple[str, str], str] = {
-    (EvalAlgorithm.FACTUAL_KNOWLEDGE.value, TREX): "Answer: $feature",
-    (EvalAlgorithm.QA_ACCURACY.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_ACCURACY.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_ACCURACY.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.PROMPT_STEREOTYPING.value, CROW_PAIRS): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, XSUM): "Summarise: $feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, IMDB_MOVIE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, IMDB_MOVIE_REVIEWS): "$feature",
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, WOMENS_CLOTHING_ECOMMERCE_REVIEWS): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, BOLD): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, TREX): "$feature",
-    (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, WIKITEXT2): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, XSUM): "Summarise: $feature",
-    (EvalAlgorithm.TOXICITY.value, BOLD): "$feature",
-    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS): "$feature",
-    (EvalAlgorithm.TOXICITY.value, REAL_TOXICITY_PROMPTS_CHALLENGING): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, BOOLQ): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, TRIVIA_QA): "$feature",
-    (EvalAlgorithm.QA_TOXICITY.value, NATURAL_QUESTIONS): "$feature",
-    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, CNN_DAILY_MAIL): "Summarise: $feature",
-    (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, XSUM): "Summarise: $feature",
+DEFAULT_PROMPT_TEMPLATE = "$feature"
+
+BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
+    BOOLQ: 'Respond to the following question. Valid answers are "true" or "false". $feature Answer:',
+    TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
+    NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
+    CNN_DAILY_MAIL: "Summarise the following text in a few sentences: $feature",
+    XSUM: "Summarise the following text in one sentence: $feature",
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
+    "or 1 (positive sentiment). Review: $feature. Classification:",
+    IMDB_MOVIE_REVIEWS: "Classify the sentiment of the following review with negative or "
+    "positive sentiment. Review: $feature. Classification:",
 }
 
+
+def get_default_prompt_template(dataset_name: str) -> str:
+    """
+    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,
+        the method returns a generic default prompt template.
+    :param dataset_name: Name of dataset
+    """
+    return BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES.get(dataset_name, DEFAULT_PROMPT_TEMPLATE)
+
+
 # Mapping of Built-in dataset names and their DataConfigs
-# TODO: To be updated once datasets are uploaded in S3, update Configs accordingly
 DATASET_CONFIGS: Dict[str, DataConfig] = {
     TREX: DataConfig(
         dataset_name=TREX,
@@ -277,9 +270,9 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         model_input_location="question",
         target_output_location="answer",
     ),
-    CROW_PAIRS: DataConfig(
-        dataset_name=CROW_PAIRS,
-        dataset_uri="s3://amazon-fmeval/datasets/crow-pairs/crow-pairs.jsonl",
+    CROWS_PAIRS: DataConfig(
+        dataset_name=CROWS_PAIRS,
+        dataset_uri="s3://amazon-fmeval/datasets/crows-pairs/crows-pairs.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         sent_more_input_location="sent_more",
         sent_less_input_location="sent_less",
@@ -306,54 +299,37 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         model_input_location="text",
         target_output_location="sentiment",
     ),
-    # TODO replace dummy link
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
-        dataset_uri="dummy link",
+        dataset_uri="s3://amazon-fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="Review Text",
         target_output_location="Recommended IND",
-        model_output_location=None,
         category_location="Class Name",
     ),
-    # TODO to be populated
     BOLD: DataConfig(
         dataset_name=BOLD,
-        dataset_uri="dummy link",
+        dataset_uri="s3://amazon-fmeval/datasets/bold/bold.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="tba",
-        target_output_location="tba",
-        model_output_location="tba",
-        category_location="tba",
+        model_input_location="prompt",
+        category_location="category",
     ),
-    # TODO to be populated
     WIKITEXT2: DataConfig(
         dataset_name=WIKITEXT2,
-        dataset_uri="dummy link",
+        dataset_uri="s3://amazon-fmeval/datasets/wikitext2/wikitext2.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="tba",
-        target_output_location="tba",
-        model_output_location="tba",
-        category_location="tba",
+        model_input_location="prompt",
     ),
-    # TODO to be populated
     REAL_TOXICITY_PROMPTS: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS,
-        dataset_uri="dummy link",
+        dataset_uri="s3://amazon-fmeval/datasets/real_toxicity/real_toxicity.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="tba",
-        target_output_location="tba",
-        model_output_location="tba",
-        category_location="tba",
+        model_input_location="prompt",
     ),
-    # TODO to be populated
     REAL_TOXICITY_PROMPTS_CHALLENGING: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS_CHALLENGING,
-        dataset_uri="dummy link",
+        dataset_uri="s3://amazon-fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="tba",
-        target_output_location="tba",
-        model_output_location="tba",
-        category_location="tba",
+        model_input_location="prompt",
     ),
 }
