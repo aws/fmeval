@@ -14,6 +14,8 @@ from amazon_fmeval.constants import (
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
+    MODEL_OUTPUT_COLUMN_NAME,
+    NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
@@ -41,6 +43,8 @@ from amazon_fmeval.eval_algorithms.util import (
     aggregate_evaluation_scores,
     generate_output_dataset_path,
     generate_prompt_column_for_dataset,
+    generate_model_predict_response_for_dataset,
+    verify_model_determinism,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -116,6 +120,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
+        self._is_model_deterministic: Optional[bool] = None
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -129,13 +134,18 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
 
     def evaluate_sample(
-        self, model_input: str, model: ModelRunner, prompt_template: str = DEFAULT_PROMPT_TEMPLATE
+        self,
+        model_input: str,
+        model: ModelRunner,
+        model_output: Optional[str] = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
     ) -> List[EvalScore]:  # type: ignore[override]
         """
         Semantic Robustness evaluate sample.
 
         :param model_input: text input for model
         :param model: An instance of ModelRunner which is the model under evaluation
+        :param model_output: The output of a model that we want to evaluate.
         :param prompt_template: A template which can be used to compose prompt using model_input
         :return: list of EvalScore object
         """
@@ -146,11 +156,11 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
 
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
-        original_model_output = model.predict(original_prompt)[0]
+        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
 
-        # Check if predictor is deterministic
-        if model.predict(original_prompt)[0] != original_model_output:
-            raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+        if self._is_model_deterministic is None:
+            if model.predict(original_prompt)[0] != original_model_output:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
             seed=self._eval_algorithm_config.seed
@@ -217,6 +227,17 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset = generate_prompt_column_for_dataset(
                 dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
+
+            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            if not self._is_model_deterministic:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+
+            dataset = generate_model_predict_response_for_dataset(
+                model=model,
+                data=dataset,
+                model_input_column_name=PROMPT_COLUMN_NAME,
+                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+            )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
@@ -225,12 +246,17 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                     """
                     return pd.Series(
                         data=[
-                            self.evaluate_sample(row[MODEL_INPUT_COLUMN_NAME], model, dataset_prompt_template)[0].value
+                            self.evaluate_sample(
+                                model_input=row[MODEL_INPUT_COLUMN_NAME],
+                                model=model,
+                                model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                                prompt_template=dataset_prompt_template,
+                            )[0].value
                             for index, row in df.iterrows()
                         ]
                     )
 
-                dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score)
+                dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
                 eval_outputs.append(
@@ -243,7 +269,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                         output_path=self._eval_results_path,
                     )
                 )
-
+            self._is_model_deterministic = None
             if save:
                 save_dataset(
                     dataset=dataset,
