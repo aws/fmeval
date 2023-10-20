@@ -282,16 +282,16 @@ class TestClassificationAccuracySemanticRobustness:
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy_semantic_robustness",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     dataset_scores=[
-                    #         EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                    #     ],
-                    #     prompt_template="$feature",
-                    #     category_scores=None,
-                    #     output_path="/tmp/eval_results/",
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy_semantic_robustness",
+                        dataset_name="womens_clothing_ecommerce_reviews",
+                        dataset_scores=[
+                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
+                        ],
+                        prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -312,16 +312,16 @@ class TestClassificationAccuracySemanticRobustness:
                         category_scores=CATEGORY_SCORES,
                         output_path="/tmp/eval_results/",
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy_semantic_robustness",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     dataset_scores=[
-                    #         EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                    #     ],
-                    #     prompt_template="$feature",
-                    #     category_scores=CATEGORY_SCORES,
-                    #     output_path="/tmp/eval_results/",
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy_semantic_robustness",
+                        dataset_name="womens_clothing_ecommerce_reviews",
+                        dataset_scores=[
+                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
+                        ],
+                        prompt_template="$feature",
+                        category_scores=CATEGORY_SCORES,
+                        output_path="/tmp/eval_results/",
+                    ),
                 ],
             ),
             # Custom dataset evaluate

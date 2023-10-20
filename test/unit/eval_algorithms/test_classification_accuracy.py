@@ -183,14 +183,14 @@ class TestClassificationAccuracy:
                         category_scores=CATEGORY_SCORES,
                         output_path=EVAL_RESULTS_PATH,
                     ),
-                    # EvalOutput(
-                    #     eval_name="classification_accuracy",
-                    #     dataset_name="womens_clothing_ecommerce_reviews",
-                    #     prompt_template="$feature",
-                    #     dataset_scores=DATASET_SCORES,
-                    #     category_scores=CATEGORY_SCORES,
-                    #     output_path=EVAL_RESULTS_PATH,
-                    # ),
+                    EvalOutput(
+                        eval_name="classification_accuracy",
+                        dataset_name="womens_clothing_ecommerce_reviews",
+                        prompt_template="$feature",
+                        dataset_scores=DATASET_SCORES,
+                        category_scores=CATEGORY_SCORES,
+                        output_path=EVAL_RESULTS_PATH,
+                    ),
                 ],
             ),
             TestCaseClassificationAccuracyEvaluate(
