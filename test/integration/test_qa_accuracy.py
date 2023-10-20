@@ -11,7 +11,7 @@ from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import js_model_runner, js_model_runner_prompt_template
 
-ABS_TOL = 2e-2
+ABS_TOL = 1e-6  # scores and model are deterministic, so approx() should be used purely to handle floating point error
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 config = QAAccuracyConfig("<OR>")
@@ -48,8 +48,8 @@ class TestQAAccuracy:
         )[0]
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
-                assert eval_score.value == approx(0.36, abs=ABS_TOL)
+                assert eval_score.value == approx(0.360630, abs=ABS_TOL)
             elif eval_score.name == EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.07, abs=ABS_TOL)
+                assert eval_score.value == approx(0.060606, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.29, abs=ABS_TOL)
+                assert eval_score.value == approx(0.303030, abs=ABS_TOL)
