@@ -62,3 +62,6 @@ RANDOM_UPPER_CASE = "random_upper_case"
 WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
 
 PREFIX_FOR_DELTA_SCORES = "delta_"
+
+# Check if model is deterministic for first NUM_ROWS_DETERMINISTIC rows of dataset
+NUM_ROWS_DETERMINISTIC = 5

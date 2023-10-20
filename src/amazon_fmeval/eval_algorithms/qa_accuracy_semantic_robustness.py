@@ -16,6 +16,8 @@ from amazon_fmeval.constants import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
+    MODEL_OUTPUT_COLUMN_NAME,
+    NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.data_loaders.util import get_dataset
 from amazon_fmeval.data_loaders.data_config import DataConfig
@@ -34,6 +36,8 @@ from amazon_fmeval.eval_algorithms.util import (
     save_dataset,
     generate_output_dataset_path,
     generate_mean_delta_score,
+    generate_model_predict_response_for_dataset,
+    verify_model_determinism,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
@@ -134,6 +138,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = QA_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
+        self._is_model_deterministic: Optional[bool] = None
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -162,10 +167,11 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
     def evaluate(
         self,
-        model: Optional[ModelRunner],
+        model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
         save: bool = False,
+        num_records=100,
     ) -> List[EvalOutput]:
         """
         QA Accuracy Semantic Robustness evaluate.
@@ -177,6 +183,8 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
         :returns: A List of EvalOutput objects.
         """
         util.require(model, "Missing required input: model i.e. ModelRunner, for QAAccuracySemanticRobustness evaluate")
@@ -187,7 +195,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config)
+            dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -198,11 +206,26 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 model_input_column_name=MODEL_INPUT_COLUMN_NAME,
                 prompt_column_name=PROMPT_COLUMN_NAME,
             )
+
+            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            if not self._is_model_deterministic:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+
+            dataset = generate_model_predict_response_for_dataset(
+                model=model,
+                data=dataset,
+                model_input_column_name=PROMPT_COLUMN_NAME,
+                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+            )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     scores = self.evaluate_sample(
-                        row[MODEL_INPUT_COLUMN_NAME], model, row[TARGET_OUTPUT_COLUMN_NAME], dataset_prompt_template
+                        model_input=row[MODEL_INPUT_COLUMN_NAME],
+                        model=model,
+                        target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                        model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                        prompt_template=dataset_prompt_template,
                     )
                     for score in scores:
                         row[score.name] = score.value
@@ -224,6 +247,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                         output_path=self._eval_results_path,
                     )
                 )
+            self._is_model_deterministic = None
             if save:
                 save_dataset(
                     dataset=dataset,
@@ -238,7 +262,12 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         return eval_outputs
 
     def evaluate_sample(
-        self, model_input: str, model: ModelRunner, target_output: str, prompt_template: str = DEFAULT_PROMPT_TEMPLATE
+        self,
+        model_input: str,
+        model: ModelRunner,
+        target_output: str,
+        model_output: Optional[str] = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
     ) -> List[EvalScore]:  # type: ignore[override]
         """
         Evaluate a single QA record for Semantic Robustness.
@@ -246,6 +275,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param model_input: text input for model
         :param model: An instance of ModelRunner which is the model under evaluation
         :param target_output: The expected responses from the model
+        :param model_output: The output of a model that we want to evaluate.
         :param prompt_template: A template which can be used to compose prompt using model_input
         :returns: A List of EvalScores computed for prompts and responses.
         """
@@ -261,11 +291,11 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
-        original_model_output = model.predict(original_prompt)[0]
+        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
 
-        # Check if predictor is deterministic
-        if model.predict(original_prompt)[0] != original_model_output:
-            raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+        if self._is_model_deterministic is None:
+            if model.predict(original_prompt)[0] != original_model_output:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
             seed=self._eval_algorithm_config.seed
