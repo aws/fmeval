@@ -1,4 +1,5 @@
 import os
+import random
 from typing import NamedTuple, Dict
 
 import pytest
@@ -12,9 +13,11 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_F1_SCORE,
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
+    ButterFinger,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import ButterFingerConfig
 from test.integration.models.model_runners import sm_model_runner, sm_model_runner_prompt_template
 
 ABS_TOL = 3e-2
@@ -131,3 +134,21 @@ class TestQAAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+
+    def test_butterfinger(self):
+        bf = ButterFinger(seed=5)
+        config = ButterFingerConfig(0.1)
+        for i in range(10):
+            perturbed_inputs = bf.perturb(
+                text="London is the capital of",
+                config=config,
+                num_perturbations=5,
+            )
+            print(f"Perturbed inputs: {perturbed_inputs}")
+        assert False  # so that print statements get sent to terminal
+
+    def test_random(self):
+        random.seed(5)
+        x = random.choice(range(0, 100))
+        print(x)
+        assert False
