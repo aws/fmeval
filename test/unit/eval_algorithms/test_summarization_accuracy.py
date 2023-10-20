@@ -16,7 +16,15 @@ from amazon_fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
+from amazon_fmeval.eval_algorithms import (
+    CategoryScore,
+    EvalOutput,
+    EvalScore,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    CNN_DAILY_MAIL,
+    XSUM,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
     SummarizationAccuracy,
@@ -293,8 +301,8 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
-                        dataset_name="cnn_daily_mail",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
                             EvalScore(name="rouge", value=0.2),
@@ -305,8 +313,8 @@ class TestSummarizationAccuracy:
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
-                        dataset_name="xsum",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
                             EvalScore(name="rouge", value=0.2),
@@ -326,8 +334,8 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
-                        dataset_name="cnn_daily_mail",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
                             EvalScore(name="rouge", value=0.2),
@@ -355,8 +363,8 @@ class TestSummarizationAccuracy:
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
-                        dataset_name="xsum",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
                             EvalScore(name="rouge", value=0.2),
@@ -384,7 +392,7 @@ class TestSummarizationAccuracy:
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate with input prompt template
             TestCaseSummarizationAccuracyEvaluate(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
                 dataset_config=DataConfig(
@@ -402,6 +410,35 @@ class TestSummarizationAccuracy:
                     EvalOutput(
                         eval_name="summarization_accuracy",
                         prompt_template="Summarise: $feature",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
+                        ],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    )
+                ],
+            ),
+            # Custom dataset evaluate without input prompt template
+            TestCaseSummarizationAccuracyEvaluate(
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
+                expected_response=[
+                    EvalOutput(
+                        eval_name="summarization_accuracy",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
@@ -473,7 +510,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
+                        prompt_template=None,
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
                             EvalScore(name="meteor", value=0.2),
@@ -588,21 +625,6 @@ class TestSummarizationAccuracy:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-            TestCaseSummarizationAccuracyEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

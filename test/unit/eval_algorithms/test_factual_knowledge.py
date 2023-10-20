@@ -15,7 +15,7 @@ from amazon_fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm
+from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm, DEFAULT_PROMPT_TEMPLATE
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig, PROMPT_COLUMN_NAME
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 
@@ -156,28 +156,28 @@ class TestFactualKnowledge:
                     [
                         {
                             MODEL_INPUT_COLUMN_NAME: "London is the capital of",
-                            PROMPT_COLUMN_NAME: "Answer: London is the capital of",
+                            PROMPT_COLUMN_NAME: "London is the capital of",
                             TARGET_OUTPUT_COLUMN_NAME: "England<OR>UK",
                             CATEGORY_COLUMN_NAME: "Capitals",
                             MODEL_OUTPUT_COLUMN_NAME: "uk",
                         },
                         {
                             MODEL_INPUT_COLUMN_NAME: "Paris is the capital of",
-                            PROMPT_COLUMN_NAME: "Answer: Paris is the capital of",
+                            PROMPT_COLUMN_NAME: "Paris is the capital of",
                             TARGET_OUTPUT_COLUMN_NAME: "France",
                             CATEGORY_COLUMN_NAME: "Capitals",
                             MODEL_OUTPUT_COLUMN_NAME: "uk",
                         },
                         {
                             MODEL_INPUT_COLUMN_NAME: "Pulp Fiction was directed by",
-                            PROMPT_COLUMN_NAME: "Answer: Pulp Fiction was directed by",
+                            PROMPT_COLUMN_NAME: "Pulp Fiction was directed by",
                             TARGET_OUTPUT_COLUMN_NAME: "QUENTIN TARANTINO",
                             CATEGORY_COLUMN_NAME: "Movies",
                             MODEL_OUTPUT_COLUMN_NAME: "Quentin Tarantino",
                         },
                         {
                             MODEL_INPUT_COLUMN_NAME: "Dark knight was directed by",
-                            PROMPT_COLUMN_NAME: "Answer: Dark knight was directed by",
+                            PROMPT_COLUMN_NAME: "Dark knight was directed by",
                             TARGET_OUTPUT_COLUMN_NAME: "Christopher Nolan<OR>NOLAN",
                             CATEGORY_COLUMN_NAME: "Movies",
                             MODEL_OUTPUT_COLUMN_NAME: "nolan",
@@ -187,7 +187,7 @@ class TestFactualKnowledge:
                 expected_response=[
                     EvalOutput(
                         eval_name="factual_knowledge",
-                        prompt_template="Answer: $feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_name="trex",
                         dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
                         category_scores=[
@@ -309,7 +309,7 @@ class TestFactualKnowledge:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template=None,
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
@@ -341,7 +341,7 @@ class TestFactualKnowledge:
                     EvalOutput(
                         eval_name="factual_knowledge",
                         dataset_name="my_custom_dataset",
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
@@ -572,44 +572,6 @@ class TestFactualKnowledge:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-            TestCaseFactualKnowledgeEvaluateInvalid(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            MODEL_INPUT_COLUMN_NAME: "London is the capital of",
-                            TARGET_OUTPUT_COLUMN_NAME: "England<OR>UK",
-                            CATEGORY_COLUMN_NAME: "Capitals",
-                        },
-                        {
-                            MODEL_INPUT_COLUMN_NAME: "Paris is the capital of",
-                            TARGET_OUTPUT_COLUMN_NAME: "France",
-                            CATEGORY_COLUMN_NAME: "Capitals",
-                        },
-                        {
-                            MODEL_INPUT_COLUMN_NAME: "Pulp Fiction was directed by",
-                            TARGET_OUTPUT_COLUMN_NAME: "QUENTIN TARANTINO",
-                            CATEGORY_COLUMN_NAME: "Movies",
-                        },
-                        {
-                            MODEL_INPUT_COLUMN_NAME: "Dark knight was directed by",
-                            TARGET_OUTPUT_COLUMN_NAME: "Christopher Nolan<OR>NOLAN",
-                            CATEGORY_COLUMN_NAME: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

@@ -14,7 +14,15 @@ from amazon_fmeval.constants import (
     TARGET_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalScore,
+    EvalOutput,
+    CategoryScore,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    CNN_DAILY_MAIL,
+    XSUM,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
@@ -353,25 +361,25 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="cnn_daily_mail",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="xsum",
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
@@ -387,13 +395,13 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="cnn_daily_mail",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
@@ -416,13 +424,13 @@ class TestSummarizationAccuracySemanticRobustness:
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="xsum",
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
@@ -445,7 +453,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate with input prompt template
             TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
                 input_dataset=DATASET_NO_CATEGORY,
                 dataset_config=DataConfig(
@@ -470,6 +478,36 @@ class TestSummarizationAccuracySemanticRobustness:
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
                         prompt_template="$feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
+                ],
+            ),
+            # Custom dataset evaluate without input prompt template
+            TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
+                input_dataset=DATASET_NO_CATEGORY,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="summarization_accuracy_semantic_robustness",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path="/tmp/eval_results/",
                     ),
@@ -557,21 +595,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: target_output, for evaluate() method",
-            ),
-            TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )
