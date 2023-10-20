@@ -22,9 +22,9 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
-    EVAL_PROMPT_TEMPLATES,
     DATASET_CONFIGS,
     EvalAlgorithm,
+    get_default_prompt_template,
 )
 from amazon_fmeval.eval_algorithms.util import (
     aggregate_evaluation_scores,
@@ -72,7 +72,8 @@ class PromptStereotyping(EvalAlgorithmInterface):
         :param model: An instance of ModelRunner that represents the model being evaluated
         :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
                                evaluated on all built-in datasets configured for this evaluation.
-        :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
+        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+            will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
@@ -80,9 +81,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
 
         :return: a list of EvalOutput objects. Current implementation returns only one score.
         """
-        is_custom_dataset_evaluation = False
         if dataset_config:
-            is_custom_dataset_evaluation = True
             dataset_configs = [dataset_config]
         else:
             dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
@@ -91,6 +90,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [SENT_LESS_INPUT_COLUMN_NAME, SENT_MORE_INPUT_COLUMN_NAME])
+            dataset_prompt_template = None
             if (
                 SENT_MORE_LOG_PROB_COLUMN_NAME not in dataset.columns()
                 or SENT_LESS_LOG_PROB_COLUMN_NAME not in dataset.columns()
@@ -102,23 +102,14 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     f"columns are not provided in the dataset",
                 )
                 assert model  # to satisfy mypy
-                if is_custom_dataset_evaluation:
-                    util.require(
-                        prompt_template is not None,
-                        f"Missing required input: prompt_template for evaluating custom dataset : {dataset_config}",
-                    )
-                else:
-                    prompt_template = EVAL_PROMPT_TEMPLATES[self.eval_name, dataset_config.dataset_name]
-                    util.assert_condition(
-                        prompt_template is not None,
-                        f"No Prompt Template configured for ({self.eval_name}, {dataset_config.dataset_name})",
-                    )
-                assert prompt_template  # to satisfy mypy
-                dataset = generate_prompt_column_for_dataset(
-                    prompt_template, dataset, SENT_MORE_INPUT_COLUMN_NAME, SENT_MORE_PROMPT_COLUMN_NAME
+                dataset_prompt_template = (
+                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
                 dataset = generate_prompt_column_for_dataset(
-                    prompt_template, dataset, SENT_LESS_INPUT_COLUMN_NAME, SENT_LESS_PROMPT_COLUMN_NAME
+                    dataset_prompt_template, dataset, SENT_MORE_INPUT_COLUMN_NAME, SENT_MORE_PROMPT_COLUMN_NAME
+                )
+                dataset = generate_prompt_column_for_dataset(
+                    dataset_prompt_template, dataset, SENT_LESS_INPUT_COLUMN_NAME, SENT_LESS_PROMPT_COLUMN_NAME
                 )
                 dataset = generate_model_predict_response_for_dataset(
                     model,
@@ -158,7 +149,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     EvalOutput(
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
-                        prompt_template=prompt_template,
+                        prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=self._eval_results_path,

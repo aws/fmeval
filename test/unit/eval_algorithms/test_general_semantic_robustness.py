@@ -15,7 +15,7 @@ from amazon_fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
+from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
     GeneralSemanticRobustnessConfig,
@@ -202,7 +202,7 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
-        eval_algorithm._is_mode_deterministic = True
+        eval_algorithm._is_model_deterministic = True
         assert (
             eval_algorithm.evaluate_sample(
                 model_input=test_case.model_input,
@@ -353,7 +353,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -361,7 +361,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -369,7 +369,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -387,7 +387,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
@@ -403,7 +403,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
@@ -419,7 +419,7 @@ class TestGeneralSemanticRobustness:
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
@@ -433,7 +433,7 @@ class TestGeneralSemanticRobustness:
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate with input prompt template
             TestCaseSemanticRobustnessEvaluate(
                 input_dataset=DATASET_NO_CATEGORY,
                 input_dataset_with_generated_model_output=DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY,
@@ -446,14 +446,40 @@ class TestGeneralSemanticRobustness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="Answer: $feature",
                 save_data=False,
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
-                        prompt_template="$feature",
+                        prompt_template="Answer: $feature",
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    ),
+                ],
+            ),
+            # Custom dataset evaluate without input prompt template
+            TestCaseSemanticRobustnessEvaluate(
+                input_dataset=DATASET_NO_CATEGORY,
+                input_dataset_with_generated_model_output=DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                save_data=False,
+                expected_response=[
+                    EvalOutput(
+                        eval_name="general_semantic_robustness",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
                         output_path=DEFAULT_EVAL_RESULTS_PATH,
                     ),
@@ -522,21 +548,6 @@ class TestGeneralSemanticRobustness:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-            TestCaseSemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

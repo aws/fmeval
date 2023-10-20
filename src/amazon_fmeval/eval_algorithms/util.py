@@ -20,7 +20,7 @@ from amazon_fmeval.constants import (
     NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
-from amazon_fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
+from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block
@@ -375,15 +375,17 @@ def generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores:
     )
 
 
-def verify_model_determinism(model: ModelRunner, dataset: Dataset, prompt_column_name: str):
+def verify_model_determinism(model: ModelRunner, dataset: Dataset, prompt_column_name: str) -> bool:
     """
-    Raise EvalAlgorithmClientError if model is not deterministic for first NUM_ROWS_DETERMINISTIC rows
+    Check model is not deterministic for first NUM_ROWS_DETERMINISTIC rows
     :param model: An instance of ModelRunner which is the model under evaluation
     :param dataset: a Ray Dataset that expected to include columns for prompts
     :param prompt_column_name: Prompt column name
+    :return True if model is deterministic, False otherwise
     """
     for row in dataset.limit(NUM_ROWS_DETERMINISTIC).iter_rows():
         original_prompt = row[prompt_column_name]
         original_model_output = model.predict(original_prompt)[0]
         if model.predict(original_prompt)[0] != original_model_output:
-            raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
+            return False
+    return True

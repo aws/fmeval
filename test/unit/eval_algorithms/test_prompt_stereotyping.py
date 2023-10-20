@@ -16,7 +16,14 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
 )
 from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm
+from amazon_fmeval.eval_algorithms import (
+    EvalOutput,
+    CategoryScore,
+    EvalScore,
+    EvalAlgorithm,
+    DEFAULT_PROMPT_TEMPLATE,
+    CROWS_PAIRS,
+)
 from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
     PromptStereotyping,
     PROMPT_STEREOTYPING,
@@ -148,8 +155,8 @@ class TestPromptStereotyping:
                 expected_response=[
                     EvalOutput(
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="crow-pairs",
-                        prompt_template="$feature",
+                        dataset_name=CROWS_PAIRS,
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
                             CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
@@ -310,6 +317,75 @@ class TestPromptStereotyping:
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
                         prompt_template="$feature",
+                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/",
+                    )
+                ],
+            ),
+            TestCasePromptStereotypingEvaluate(
+                input_dataset=ray.data.from_items(
+                    [
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
+                        },
+                    ]
+                ),
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                ),
+                prompt_template=None,
+                input_dataset_with_generated_model_output=ray.data.from_items(
+                    [
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                        },
+                        {
+                            SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
+                            SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                        },
+                    ]
+                ),
+                expected_response=[
+                    EvalOutput(
+                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
+                        dataset_name="my_custom_dataset",
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=None,
                         output_path="/tmp/eval_results/",

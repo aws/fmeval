@@ -30,7 +30,7 @@ from amazon_fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     verify_model_determinism,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
+from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.util import camel_to_snake
 
 MODEL_INPUT_COLUMN_NAME = "model_input"
@@ -397,6 +397,7 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
     prompt_column_name: str
     expect_num_predict_calls: int
     predict_result: List
+    expect_response: bool
 
 
 @pytest.mark.parametrize(
@@ -427,6 +428,7 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
             predict_result=[("model output 1",), ("model output 1",), ("model output 2",), ("model output 2",)],
             expect_num_predict_calls=4,
             prompt_column_name="another prompt column",
+            expect_response=True,
         ),
         # only test first 5 rows
         TestCaseVerifyModelDeterminism(
@@ -472,24 +474,8 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
             ],
             expect_num_predict_calls=10,
             prompt_column_name=PROMPT_COLUMN_NAME,
+            expect_response=True,
         ),
-    ],
-)
-def test_verify_model_determinism(test_case):
-    """
-    GIVEN a deterministic model and other inputs
-    WHEN verify_model_determinism is called
-    THEN no Exception raised
-    """
-    model = MagicMock()
-    model.predict.side_effect = test_case.predict_result
-    verify_model_determinism(model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name)
-    assert model.predict.call_count == test_case.expect_num_predict_calls
-
-
-@pytest.mark.parametrize(
-    "test_case",
-    [
         # dataset fewer than 5 rows
         TestCaseVerifyModelDeterminism(
             dataset=ray.data.from_items(
@@ -512,21 +498,43 @@ def test_verify_model_determinism(test_case):
             ],
             expect_num_predict_calls=2,
             prompt_column_name=PROMPT_COLUMN_NAME,
+            expect_response=False,
         ),
     ],
 )
-def test_verify_model_determinism_raise_exception(test_case):
+def test_verify_model_determinism(test_case):
     """
-    GIVEN a non-deterministic model and other inputs
+    GIVEN a deterministic model and other inputs
     WHEN verify_model_determinism is called
-    THEN Exception raised
+    THEN no Exception raised
     """
     model = MagicMock()
     model.predict.side_effect = test_case.predict_result
-    with pytest.raises(
-        EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-    ):
-        verify_model_determinism(
-            model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
-        )
-        assert model.predict.call_count == test_case.expect_num_predict_calls
+    result = verify_model_determinism(
+        model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
+    )
+    assert model.predict.call_count == test_case.expect_num_predict_calls
+    assert result == test_case.expect_response
+
+
+# @pytest.mark.parametrize(
+#     "test_case",
+#     [
+#
+#     ],
+# )
+# def test_verify_model_determinism_raise_exception(test_case):
+#     """
+#     GIVEN a non-deterministic model and other inputs
+#     WHEN verify_model_determinism is called
+#     THEN Exception raised
+#     """
+#     model = MagicMock()
+#     model.predict.side_effect = test_case.predict_result
+#     with pytest.raises(
+#         EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
+#     ):
+#         verify_model_determinism(
+#             model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
+#         )
+#         assert model.predict.call_count == test_case.expect_num_predict_calls

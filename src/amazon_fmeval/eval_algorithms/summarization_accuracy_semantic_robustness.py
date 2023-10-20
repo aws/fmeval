@@ -27,7 +27,8 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     DATASET_CONFIGS,
     EVAL_DATASETS,
-    EVAL_PROMPT_TEMPLATES,
+    DEFAULT_PROMPT_TEMPLATE,
+    get_default_prompt_template,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
@@ -155,7 +156,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
-        self._is_mode_deterministic: Optional[bool] = None
+        self._is_model_deterministic: Optional[bool] = None
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -190,7 +191,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         target_output: str,
         model: ModelRunner,
         model_output: Optional[str] = None,
-        prompt_template: str = "$feature",
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
     ) -> List[EvalScore]:  # type: ignore[override]
         """
         Summarization Accuracy Semantic Robustness evaluate sample.
@@ -220,7 +221,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         original_prompt = prompt_composer.compose(model_input)
         original_model_output = model_output if model_output else model.predict(original_prompt)[0]
 
-        if self._is_mode_deterministic is None:
+        if self._is_model_deterministic is None:
             if model.predict(original_prompt)[0] != original_model_output:
                 raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
@@ -271,9 +272,12 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param model: An instance of ModelRunner which is the model under evaluation
         :param dataset_config: Configures the single dataset used for evaluation. If not provided,
             evaluation will use all of it's supported built-in datasets
-        :param prompt_template: A template which can be used to generate prompts, optional for the built-in datasets.
+        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+            will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
         :return: List of EvalOutput objects.
         """
         util.require(
@@ -281,9 +285,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             "Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
             "evaluate method",
         )
-        is_custom_dataset_evaluation = False
         if dataset_config:
-            is_custom_dataset_evaluation = True
             dataset_configs = [dataset_config]
         else:
             dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
@@ -292,26 +294,16 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
-            if is_custom_dataset_evaluation:
-                # TODO when user provide built-in DataConfig, we should provide default prompt_template
-                util.require(
-                    prompt_template,
-                    f"Missing required input: prompt_template for evaluating custom dataset : {dataset_config}",
-                )
-            else:
-                prompt_template = EVAL_PROMPT_TEMPLATES[self.eval_name, dataset_config.dataset_name]
-                util.assert_condition(
-                    prompt_template is not None,
-                    f"No Prompt Template configured for ({self.eval_name}, {dataset_config.dataset_name})",
-                )
-
-            assert prompt_template  # to satisfy mypy
+            dataset_prompt_template = (
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+            )
             dataset = generate_prompt_column_for_dataset(
-                prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+                dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
 
-            verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
-            self._is_mode_deterministic = True
+            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            if not self._is_model_deterministic:
+                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
@@ -320,7 +312,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-                dataset = self.__add_scores(model, prompt_template, dataset)
+                dataset = self.__add_scores(model, dataset_prompt_template, dataset)
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
@@ -329,13 +321,13 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                     EvalOutput(
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
-                        prompt_template=prompt_template,
+                        prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=self._eval_results_path,
                     )
                 )
-            self._is_mode_deterministic = None
+            self._is_model_deterministic = None
             if save:
                 save_dataset(
                     dataset=dataset,
