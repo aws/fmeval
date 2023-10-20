@@ -515,26 +515,3 @@ def test_verify_model_determinism(test_case):
     )
     assert model.predict.call_count == test_case.expect_num_predict_calls
     assert result == test_case.expect_response
-
-
-# @pytest.mark.parametrize(
-#     "test_case",
-#     [
-#
-#     ],
-# )
-# def test_verify_model_determinism_raise_exception(test_case):
-#     """
-#     GIVEN a non-deterministic model and other inputs
-#     WHEN verify_model_determinism is called
-#     THEN Exception raised
-#     """
-#     model = MagicMock()
-#     model.predict.side_effect = test_case.predict_result
-#     with pytest.raises(
-#         EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-#     ):
-#         verify_model_determinism(
-#             model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
-#         )
-#         assert model.predict.call_count == test_case.expect_num_predict_calls
