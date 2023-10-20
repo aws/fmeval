@@ -190,9 +190,9 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample_without_checking_model_determinism(self, test_case):
+    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, test_case):
         """
-        GIVEN valid inputs with model_output, and specified not check model determinism
+        GIVEN valid inputs with model_output, and a deterministic model
         WHEN GeneralSemanticRobustness.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
@@ -202,12 +202,12 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
+        eval_algorithm._is_mode_deterministic = True
         assert (
             eval_algorithm.evaluate_sample(
                 model_input=test_case.model_input,
                 model=model,
                 model_output=test_case.original_model_output,
-                check_model_determinism=False,
             )
             == test_case.expected_response
         )
@@ -271,7 +271,7 @@ class TestGeneralSemanticRobustness:
 
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
         ):
             eval_algorithm.evaluate_sample(test_case.model_input, model)
 
@@ -334,7 +334,7 @@ class TestGeneralSemanticRobustness:
         get_dataset.return_value = test_case.input_dataset
         eval_algorithm = GeneralSemanticRobustness(config)
         with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
         ):
             eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 

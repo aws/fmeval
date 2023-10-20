@@ -3,14 +3,20 @@ import multiprocessing as mp
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List, NamedTuple, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
 import ray
+from ray.data import Dataset
 
-from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, EVAL_OUTPUT_RECORDS_BATCH_SIZE, PARALLELIZATION_FACTOR
+from amazon_fmeval.constants import (
+    CATEGORY_COLUMN_NAME,
+    EVAL_OUTPUT_RECORDS_BATCH_SIZE,
+    PARALLELIZATION_FACTOR,
+    TARGET_OUTPUT_COLUMN_NAME,
+)
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
 from amazon_fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -22,8 +28,9 @@ from amazon_fmeval.eval_algorithms.util import (
     generate_output_dataset_path,
     get_num_actors,
     generate_mean_delta_score,
+    verify_model_determinism,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmInternalError
+from amazon_fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 from amazon_fmeval.util import camel_to_snake
 
 MODEL_INPUT_COLUMN_NAME = "model_input"
@@ -383,3 +390,143 @@ def test_generate_mean_delta_score(test_case):
     assert test_case.expected_response == generate_mean_delta_score(
         test_case.original_score, test_case.perturbed_input_scores
     )
+
+
+class TestCaseVerifyModelDeterminism(NamedTuple):
+    dataset: Dataset
+    prompt_column_name: str
+    expect_num_predict_calls: int
+    predict_result: List
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        # dataset fewer than 5 rows
+        TestCaseVerifyModelDeterminism(
+            dataset=ray.data.from_items(
+                [
+                    {
+                        MODEL_INPUT_COLUMN_NAME: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+                        "another prompt column": "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+                        TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
+                    },
+                    {
+                        MODEL_INPUT_COLUMN_NAME: "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
+                        "museum landscape and numerous UNESCO World Heritage sites."
+                        " It is also an international exhibition venue. "
+                        "You will find a selection of current and upcoming exhibitions here.",
+                        "another prompt column": "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
+                        "museum landscape and numerous UNESCO World Heritage sites."
+                        " It is also an international exhibition venue. "
+                        "You will find a selection of current and upcoming exhibitions here.",
+                        TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
+                    },
+                ]
+            ),
+            predict_result=[("model output 1",), ("model output 1",), ("model output 2",), ("model output 2",)],
+            expect_num_predict_calls=4,
+            prompt_column_name="another prompt column",
+        ),
+        # only test first 5 rows
+        TestCaseVerifyModelDeterminism(
+            dataset=ray.data.from_items(
+                [
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: What is the capital of Italy?",
+                        TARGET_OUTPUT_COLUMN_NAME: "Rome",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: When did Argentina win the FIFA World Cup?",
+                        TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022.",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: What is the capital of England?",
+                        TARGET_OUTPUT_COLUMN_NAME: "London",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: What is the color of blood?",
+                        TARGET_OUTPUT_COLUMN_NAME: "Red",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: Who directed Pulp Fiction?",
+                        TARGET_OUTPUT_COLUMN_NAME: "Quentin Tarantino",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: When did Argentina win the FIFA World Cup?",
+                        TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022",
+                    },
+                ]
+            ),
+            predict_result=[
+                ("model output 1",),
+                ("model output 1",),
+                ("model output 2",),
+                ("model output 2",),
+                ("model output 2",),
+                ("model output 2",),
+                ("model output 4",),
+                ("model output 4",),
+                ("model output 5",),
+                ("model output 5",),
+            ],
+            expect_num_predict_calls=10,
+            prompt_column_name=PROMPT_COLUMN_NAME,
+        ),
+    ],
+)
+def test_verify_model_determinism(test_case):
+    """
+    GIVEN a deterministic model and other inputs
+    WHEN verify_model_determinism is called
+    THEN no Exception raised
+    """
+    model = MagicMock()
+    model.predict.side_effect = test_case.predict_result
+    verify_model_determinism(model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name)
+    assert model.predict.call_count == test_case.expect_num_predict_calls
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        # dataset fewer than 5 rows
+        TestCaseVerifyModelDeterminism(
+            dataset=ray.data.from_items(
+                [
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: What is the capital of Italy?",
+                        TARGET_OUTPUT_COLUMN_NAME: "Rome",
+                    },
+                    {
+                        PROMPT_COLUMN_NAME: "Answer: When did Argentina win the FIFA World Cup?",
+                        TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022.",
+                    },
+                ]
+            ),
+            predict_result=[
+                ("model output 1",),
+                ("different model output 1",),
+                ("model output 2",),
+                ("different model output 2",),
+            ],
+            expect_num_predict_calls=2,
+            prompt_column_name=PROMPT_COLUMN_NAME,
+        ),
+    ],
+)
+def test_verify_model_determinism_raise_exception(test_case):
+    """
+    GIVEN a non-deterministic model and other inputs
+    WHEN verify_model_determinism is called
+    THEN Exception raised
+    """
+    model = MagicMock()
+    model.predict.side_effect = test_case.predict_result
+    with pytest.raises(
+        EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
+    ):
+        verify_model_determinism(
+            model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
+        )
+        assert model.predict.call_count == test_case.expect_num_predict_calls

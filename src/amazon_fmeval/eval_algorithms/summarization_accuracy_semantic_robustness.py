@@ -16,7 +16,8 @@ from amazon_fmeval.constants import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
-    MODEL_OUTPUT_COLUMN_NAME, NUM_ROWS_DETERMINISTIC,
+    MODEL_OUTPUT_COLUMN_NAME,
+    NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.data_loaders.util import get_dataset
@@ -57,6 +58,7 @@ from amazon_fmeval.eval_algorithms.util import (
     get_num_actors,
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
+    verify_model_determinism,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
@@ -153,6 +155,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
+        self._is_mode_deterministic: Optional[bool] = None
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -188,7 +191,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         model: ModelRunner,
         model_output: Optional[str] = None,
         prompt_template: str = "$feature",
-        check_model_determinism: bool = True,
     ) -> List[EvalScore]:  # type: ignore[override]
         """
         Summarization Accuracy Semantic Robustness evaluate sample.
@@ -198,7 +200,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param model: An instance of ModelRunner which is the model under evaluation
         :param model_output: The output of a model that we want to evaluate.
         :param prompt_template: A template which can be used to compose prompt using model_input
-        :param check_model_determinism: A bool flag to check if model is deterministic or not.
         :return: list of EvalScore object
         """
         util.require(
@@ -219,7 +220,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         original_prompt = prompt_composer.compose(model_input)
         original_model_output = model_output if model_output else model.predict(original_prompt)[0]
 
-        if check_model_determinism:
+        if self._is_mode_deterministic is None:
             if model.predict(original_prompt)[0] != original_model_output:
                 raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
@@ -309,14 +310,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
             )
 
-            # Check if predictor is deterministic
-            for row in dataset.limit(NUM_ROWS_DETERMINISTIC).iter_rows():
-                original_prompt = row[PROMPT_COLUMN_NAME]
-                original_model_output = model.predict(original_prompt)[0]
-                if model.predict(original_prompt)[0] != original_model_output:
-                    raise EvalAlgorithmClientError(
-                        "For evaluating semantic robustness, the model should be deterministic."
-                    )
+            verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            self._is_mode_deterministic = True
+
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
@@ -339,7 +335,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         output_path=self._eval_results_path,
                     )
                 )
-
+            self._is_mode_deterministic = None
             if save:
                 save_dataset(
                     dataset=dataset,
@@ -383,7 +379,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                     model=model,
                     model_output=row[MODEL_OUTPUT_COLUMN_NAME],
                     prompt_template=prompt_template,
-                    check_model_determinism=False,
                 )
                 for score in scores:
                     row[score.name] = score.value
