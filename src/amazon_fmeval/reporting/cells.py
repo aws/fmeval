@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import markdown
 from IPython import display
 
-from amazon_fmeval.reporting.constants import CENTER, ListType, MARKDOWN_EXTENSIONS
+from amazon_fmeval.reporting.constants import CENTER, ListType, MARKDOWN_EXTENSIONS, RIGHT
 from amazon_fmeval.reporting.constants import SINGLE_NEWLINE, DOUBLE_NEWLINE
 
 
@@ -95,9 +95,11 @@ class ColumnsLayoutCell(MarkdownCell):
         """
         div_begin = '<div class="row" markdown="1">'
         div_end = "</div>"
-        col_div = f'<div class="column" markdown="1" style="float: left;width: {str(int(100//len(columns)))}%;"> \n'
-        result = "".join([col_div + SINGLE_NEWLINE.join([str(item) for item in col]) + div_end for col in columns])
-        super().__init__(div_begin, result, div_end)
+        col_div = f'<div class="column" markdown="1" style="float: left;width: {str(int(100//len(columns)))}%;">\n'
+        result = "".join(
+            [col_div + SINGLE_NEWLINE.join([str(item) for item in col]) + SINGLE_NEWLINE + div_end for col in columns]
+        )
+        super().__init__(div_begin, result, div_end, ' <br style="clear:both" />')
 
 
 class FigureCell(MarkdownCell):
@@ -106,7 +108,11 @@ class FigureCell(MarkdownCell):
     """
 
     def __init__(
-        self, fig: plt.Figure, width: Optional[str] = None, height: Optional[str] = None, align: Optional[str] = None
+        self,
+        fig: plt.Figure,
+        width: Optional[str] = None,
+        height: Optional[str] = None,
+        center: Optional[bool] = True,
     ):
         """
         Initializes a FigureCell.
@@ -114,10 +120,10 @@ class FigureCell(MarkdownCell):
         :param fig: The Pyplot figure that this cell represents.
         :param width: See _html_wrapper docstring
         :param height: See _html_wrapper docstring
-        :param align: See _html_wrapper docstring
+        :param center: if the figure is center aligned
         """
         encoded = FigureCell._encode(fig)
-        html = FigureCell._html_wrapper(encoded, height, width, align)
+        html = FigureCell._html_wrapper(encoded=encoded, height=height, width=width, center=center)
         super().__init__(html)
 
     @staticmethod
@@ -137,23 +143,28 @@ class FigureCell(MarkdownCell):
         return encoded
 
     @staticmethod
-    def _html_wrapper(encoded: bytes, align: Optional[str], height: Optional[str], width: Optional[str]) -> str:
+    def _html_wrapper(
+        encoded: bytes, height: Optional[str], width: Optional[str], center: Optional[bool] = True
+    ) -> str:
         """
         Decodes the provided base64-encoded bytes (which will generally correspond to
         an encoded Pyplot Figure) as a string, then wraps it in HTML.
 
         :param encoded: The base64 encoded bytes to be wrapped
-        :param align: The `align` HTML attribute
         :param height: The `height` HTML attribute
         :param width: The `width` HTML attribute
+        :param center: Horizontal centering of the figure
         :returns: An HTML string representing the wrapped encoded string
         """
+        style = 'style="display: block;'
+        if center:  # pragma: no branch
+            style += "margin-left:auto; margin-right: auto;"
+        if width:
+            style += f"width:{width}; "
+        if height:
+            style += f"height:{height};"
         encoded_str = encoded.decode("utf-8")
-        html = "<br><img src='data:image/png;base64,{}'".format(encoded_str)
-        html += " width='{}'".format(width) if width else ""
-        html += " height='{}'".format(height) if height else ""
-        html += " align='{}'".format(align) if align else ""
-        html += "><br>"
+        html = f"<br><img {style}\" src='data:image/png;base64,{encoded_str}'><br>"
         return html
 
 
@@ -168,6 +179,9 @@ class BarPlotCell(FigureCell):
         heights: List[Union[int, float]],
         color: Optional[Union[List[str], str]] = None,
         title: str = "Title",
+        plot_height: Optional[str] = None,
+        plot_width: Optional[str] = None,
+        center: Optional[bool] = True,
     ):
         """
         Initializes a BarPlotCell.
@@ -175,12 +189,15 @@ class BarPlotCell(FigureCell):
         :param labels: The labels corresponding to each of the bars in the plot
         :param heights: The heights of the bars in the plot
         :param title: The title of the bar plot
+        :param plot_height: Height of the plot as a string
+        :param plot_width: Width the plot as a string
+        :param center: Boolean indicating if the plot should be center aligned in the page
         """
         assert len(labels) == len(
             heights
         ), f"Number of labels in {labels} does not match number of bar heights in {heights}"
         fig = BarPlotCell._create_bar_plot_fig(labels, heights, color=color, title=title)
-        super().__init__(fig)
+        super().__init__(fig, height=plot_height, width=plot_width, center=center)
 
     @staticmethod
     def _create_bar_plot_fig(
@@ -188,10 +205,28 @@ class BarPlotCell(FigureCell):
         heights: List[Union[int, float]],
         color: Optional[Union[List[str], str]] = None,
         title: str = "Title",
+        set_spines_visible: bool = False,
+        set_ticks_visible: bool = False,
+        set_horizontal_grid_lines: bool = True,
+        max_bar_width: float = 0.3,
     ) -> plt.Figure:
         fig, ax = plt.subplots()
-        ax.bar(labels, heights, color=color)
+        ax.bar(labels, heights, width=max_bar_width, color=color)
         ax.set_title(title)
+
+        # auto-format bar labels to not overlap
+        fig.autofmt_xdate()
+        if set_horizontal_grid_lines:  # pragma: no branch
+            ax.grid(axis="y")
+            ax.set_axisbelow(True)
+        if not set_spines_visible:  # pragma: no branch
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+        if not set_ticks_visible:  # pragma: no branch
+            plt.tick_params(axis="both", which="both", length=0)
+
         return fig
 
 
@@ -210,7 +245,9 @@ class TableCell(MarkdownCell):
         data: List[List[Any]],
         headers: List[str],
         table_align: str = CENTER,
-        cell_align: str = CENTER,
+        cell_align: str = RIGHT,
+        style: Optional[str] = None,
+        caption: Optional[str] = None,
     ):
         """
         Initializes a TableCell.
@@ -223,11 +260,18 @@ class TableCell(MarkdownCell):
         assert len(headers) == len(data[0]), (
             f"Number of headers in {headers} does not match " f"the number of columns in the data: {len(data[0])}"
         )
-        html = TableCell._create_table_html(data, headers, table_align, cell_align)
+        html = TableCell._create_table_html(data, headers, table_align, cell_align, style, caption)
         super().__init__(html)
 
     @staticmethod
-    def _create_table_html(data: List[List[Any]], headers: List[str], table_align: str, cell_align: str) -> str:
+    def _create_table_html(
+        data: List[List[Any]],
+        headers: List[str],
+        table_align: str,
+        cell_align: str,
+        style: Optional[str],
+        caption: Optional[str],
+    ) -> str:
         """
         Creates the HTML for a table.
 
@@ -237,8 +281,10 @@ class TableCell(MarkdownCell):
         :param cell_align: The alignment of text within each cell of the table
         :returns: A string encoding the HTML for the table
         """
+        table_style = f'style="{style}"' if style else ""
         html = [
-            f"<table align={table_align}>",
+            f"<table align={table_align} {table_style}>",
+            f'<caption style="text-align: left; padding-bottom: 15px;">{caption}</caption>' if caption else "",
             TableCell._create_table_row(headers, cell_align, is_header=True),
         ]
         for row in data:
@@ -258,7 +304,8 @@ class TableCell(MarkdownCell):
         """
         tag = "th" if is_header else "td"
         html = ["<tr>"]
-        for elem in row:
-            html.append(f"<{tag} align={cell_align}>{elem}</{tag}>")
+        for i, elem in enumerate(row):
+            style = f'style="text-align: {cell_align};"' if i != 0 else ""
+            html.append(f"<{tag} {style}>{elem}</{tag}>")
         html.append("</tr>")
         return " ".join(html)

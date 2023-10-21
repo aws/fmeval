@@ -1,6 +1,7 @@
-from unittest.mock import patch, Mock, call
+from unittest.mock import patch, Mock, call, MagicMock
 
 from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
+from amazon_fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
 from amazon_fmeval.reporting.cells import BarPlotCell, TableCell
 from amazon_fmeval.reporting.eval_output_cells import (
     CategoryBarPlotCell,
@@ -31,7 +32,7 @@ class TestEvalOutputCells:
         """
         categories = ["nationality", "religion", "age"]
         scores = [0.314, 0.271, 0.888]
-        score_name = "Stereotyping"
+        score_name = PROMPT_STEREOTYPING
         dataset_score = 0.6
 
         cat_bar_plot = CategoryBarPlotCell(categories, scores, score_name, dataset_score)
@@ -39,7 +40,7 @@ class TestEvalOutputCells:
             labels=categories + [DATASET_SCORE_LABEL],
             heights=scores + [dataset_score],
             color=[CATEGORY_BAR_COLOR, CATEGORY_BAR_COLOR, CATEGORY_BAR_COLOR, OVERALL_BAR_COLOR],
-            title="Stereotyping Scores",
+            title="Is_biased Score",
         )
         assert str(cat_bar_plot) == str(manually_created_bar_plot)
 
@@ -58,7 +59,9 @@ class TestEvalOutputCells:
                     {"Name": "c", "Age": 3},
                 ],
                 kwargs={},
-                expected_table=TableCell(data=[["b", 2], ["a", 1], ["c", 3]], headers=["Name", "Age"]),
+                expected_table=TableCell(
+                    data=[["b", 2], ["a", 1], ["c", 3]], headers=["Name", "Age"], cell_align="left"
+                ),
             ),
             TestCaseRayDatasetTableCell(
                 items=[
@@ -67,7 +70,9 @@ class TestEvalOutputCells:
                     {"Name": "c", "Age": 3},
                 ],
                 kwargs={"col_to_sort": "Age"},
-                expected_table=TableCell(data=[["a", 1], ["b", 2], ["c", 3]], headers=["Name", "Age"]),
+                expected_table=TableCell(
+                    data=[["a", 1], ["b", 2], ["c", 3]], headers=["Name", "Age"], cell_align="left"
+                ),
             ),
             TestCaseRayDatasetTableCell(
                 items=[
@@ -77,7 +82,9 @@ class TestEvalOutputCells:
                     {"Name": "d", "Age": 4},
                 ],
                 kwargs={"k": 3},
-                expected_table=TableCell(data=[["b", 2], ["a", 1], ["c", 3]], headers=["Name", "Age"]),
+                expected_table=TableCell(
+                    data=[["b", 2], ["a", 1], ["c", 3]], headers=["Name", "Age"], cell_align="left"
+                ),
             ),
             TestCaseRayDatasetTableCell(
                 items=[
@@ -88,7 +95,33 @@ class TestEvalOutputCells:
                     {"Name": "e", "Age": 5},
                 ],
                 kwargs={"col_to_sort": "Age", "k": 3, "descending": True},
-                expected_table=TableCell(data=[["e", 5], ["d", 4], ["c", 3]], headers=["Name", "Age"]),
+                expected_table=TableCell(
+                    data=[["e", 5], ["d", 4], ["c", 3]], headers=["Name", "Age"], cell_align="left"
+                ),
+            ),
+            TestCaseRayDatasetTableCell(
+                items=[
+                    {"Name": "b", "Age": -2},
+                    {"Name": "a", "Age": 1},
+                    {"Name": "c", "Age": 3},
+                ],
+                kwargs={"col_to_sort": "Age", "k": 3, "abs_val": True},
+                expected_table=TableCell(
+                    data=[["a", 1], ["b", -2], ["c", 3]], headers=["Name", "Age"], cell_align="left"
+                ),
+            ),
+            TestCaseRayDatasetTableCell(
+                items=[
+                    {"Name": "b", "Age": 2, "category": "Sex"},
+                    {"Name": "a", "Age": 1, "category": "Race"},
+                    {"Name": "c", "Age": 3, "category": "Sex"},
+                ],
+                kwargs={},
+                expected_table=TableCell(
+                    data=[["Sex", "b", 2], ["Race", "a", 1], ["Sex", "c", 3]],
+                    headers=["Category", "Name", "Age"],
+                    cell_align="left",
+                ),
             ),
         ],
     )
@@ -161,17 +194,39 @@ class TestEvalOutputCells:
         categories = ["nationality", "religion", "age"]
         scores = [0.314, 0.271, 0.888]
         dataset_score = 0.5
+
+        expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model scores lowest in the category **religion**. "
         with patch("amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"):
-
             cell = CategoryScoreCell(categories, scores, "prompt stereotyping", dataset_score)
-            assert (
-                str(cell) == f"Score breakdown per prompt stereotyping evaluation category:  \n\n"
-                "AggBPCell  \n\n"
-                "The model scores lowest in this category: **religion**. "
-            )
+            assert str(cell) == expected_cell
 
+    @pytest.mark.parametrize(
+        "score_column_name, binary, expected_cell",
+        [
+            (
+                "word_error_rate",
+                False,
+                "Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.  \n\nRayTable  \n\nRayTable",
+            ),
+            (
+                "log_probability_difference",
+                False,
+                "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. Below are a few example of the most and least stereotypical prompts. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.  \n\nRayTable  \n\nRayTable",
+            ),
+            (
+                "",
+                False,
+                "Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.   \n\nRayTable  \n\nRayTable",
+            ),
+            (
+                "",
+                True,
+                "Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.   \n\nRayTable  \n\nRayTable",
+            ),
+        ],
+    )
     @patch("amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell", return_value="RayTable")
-    def test_score_table_cell(self, mock_ray_table):
+    def test_score_table_cell(self, mock_ray_table, score_column_name, binary, expected_cell):
         """
         GIVEN a valid dataset and score column name
         WHEN a ScoreTableCell is created
@@ -179,18 +234,31 @@ class TestEvalOutputCells:
             and the included RayDatasetTableCells that make up the ScoreTableCell
             are initialized correctly
         """
-        dataset = Mock()
-        score_column_name = ""
-        cell = ScoreTableCell(dataset, score_column_name)
+        dataset = MagicMock()
+        dataset.count = Mock(return_value=10)
+        cell = ScoreTableCell(dataset, score_column_name, binary)
 
         # Assert structure of returned MarkdownCell is correct
-        assert (
-            str(cell)
-            == f"Below are a few examples of the highest and lowest-scoring examples across all categories:   "
-            f"\n\n**Top {NUM_SAMPLES_TO_DISPLAY_IN_TABLE} highest-scoring examples:**  \n\nRayTable  "
-            f"\n\n**Bottom {NUM_SAMPLES_TO_DISPLAY_IN_TABLE} lowest-scoring examples:**  \n\nRayTable"
-        )
+        assert str(cell) == expected_cell
 
+        if score_column_name == "log_probability_difference":
+            abs_val = True
+            captions = [
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} most stereotypical examples:",
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} least stereotypical examples:",
+            ]
+        elif binary:
+            captions = [
+                f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} correct examples:",
+                f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} incorrect examples:",
+            ]
+            abs_val = False
+        else:
+            abs_val = False
+            captions = [
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} highest-scoring examples:",
+                f"Bottom {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} lowest-scoring examples:",
+            ]
         # Assert RayDatasetTableCells are created with the right arguments
         mock_ray_table.assert_has_calls(
             [
@@ -199,12 +267,16 @@ class TestEvalOutputCells:
                     score_column_name,
                     k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
                     descending=True,
+                    abs_val=abs_val,
+                    caption=captions[0],
                 ),
                 call(
                     dataset,
                     score_column_name,
                     k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
                     descending=False,
+                    abs_val=abs_val,
+                    caption=captions[1],
                 ),
             ]
         )
@@ -219,10 +291,11 @@ class TestEvalOutputCells:
             "amazon_fmeval.reporting.eval_output_cells.ScoreTableCell", return_value="table"
         ):
             # GIVEN
-
-            dataset = Mock()
-            score_name = "Stereotyping"
-            score_column_name = "stereotyping"
+            dataset = MagicMock()
+            dataset.columns = Mock(return_value=["col1", "col2"])
+            dataset.select_columns = Mock()
+            score_name = "prompt_stereotyping"
+            score_column_name = "prompt_stereotyping"
             dataset_score = 0.88
             categories = ["nationality", "religion", "age"]
             category_scores = [0.314, 0.271, 0.888]
@@ -236,15 +309,13 @@ class TestEvalOutputCells:
                 categories=categories,
                 category_scores=category_scores,
             )
-
+            expected_cell = "##### Is_biased Score  \n\nThe is_biased prompt stereotyping score is a value between 0 and 1. Non-stereotyping models score around 0.5. Both 0 and 1 indicate stereotyping model behaviour.  \n\n**Overall Score: 0.88**  \n\ncategory_score  \n\ntable"
             # THEN
-            assert str(cell) == (
-                "### Stereotyping  \n\n" "**Overall Score: 0.88**  \n\n" "category_score  \n\n" "table"
-            )
+            assert str(cell) == expected_cell
 
-    def test_eval_output_cell(self):
+    def test_eval_output_cell_custom_dataset(self):
         """
-        GIVEN a EvalOutput object and dataset containing evaluation scores.
+        GIVEN a EvalOutput object for an evaluation on a custom dataset and dataset containing evaluation scores.
         WHEN a EvalOutputCell is created
         THEN the string representation of the EvalOutputCell matches what is expected
         """
@@ -272,66 +343,80 @@ class TestEvalOutputCells:
             ),
         ]
         eval_output = EvalOutput(
-            eval_name="summarization accuracy",
+            eval_name="summarization_accuracy",
             dataset_name="Dataset 1",
             prompt_template="prompt",
             dataset_scores=dataset_scores,
             category_scores=category_scores,
         )
 
-        items = [
-            {
-                "prompt": "prompt 1",
-                "category": "Gender",
-                "rouge_score_column": 0.53,
-                "bert_score_column": 0.30,
-                "meteor_score_column": 0.66,
-            },
-            {
-                "prompt": "prompt 2",
-                "category": "Gender",
-                "rouge_score_column": 0.2,
-                "bert_score_column": 0.5,
-                "meteor_score_column": 0.1,
-            },
-            {
-                "prompt": "prompt 3",
-                "category": "Race",
-                "rouge_score_column": 0.9,
-                "bert_score_column": 0.84,
-                "meteor_score_column": 0.70,
-            },
-            {
-                "prompt": "prompt 4",
-                "category": "Race",
-                "rouge_score_column": 0.43,
-                "bert_score_column": 0.3,
-                "meteor_score_column": 0.6,
-            },
-            {
-                "prompt": "prompt 5",
-                "category": "Gender",
-                "rouge_score_column": 0.3,
-                "bert_score_column": 0.7,
-                "meteor_score_column": 0.01,
-            },
-            {
-                "prompt": "prompt 6",
-                "category": "Race",
-                "rouge_score_column": 0.8,
-                "bert_score_column": 0.51,
-                "meteor_score_column": 0.2,
-            },
+        dataset = MagicMock()
+        dataset.count = Mock(return_value=10)
+        dataset.columns = Mock(return_value=["col1", "col2", "col3"])
+        dataset.select_columns = Mock()
+        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+            cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
+            expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
+            assert str(cell) == expected_cell
+
+    def test_eval_output_cell_built_in_dataset(self):
+        """
+        GIVEN a EvalOutput object for an evaluation on a built-in dataset and dataset containing evaluation scores.
+        WHEN a EvalOutputCell is created
+        THEN the string representation of the EvalOutputCell matches what is expected
+        """
+        dataset_scores = [
+            EvalScore(name="rouge", value=0.33),
+            EvalScore(name="bert score", value=0.5),
+            EvalScore(name="meteor", value=0.9),
         ]
-        dataset = ray.data.from_items(items)
-        score_column_names = {
-            "rouge": "rouge_score_column",
-            "bert score": "bert_score_column",
-            "meteor": "meteor_score_column",
-        }
-        # Patching `CategoryBarPlotCell` due to validation bug with `BarPlotCell`, see
-        # `TestCell.test_bar_plot_cell_init_success` for details.
-        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="CategoryBarPlot"):
-            cell = EvalOutputCell(eval_output=eval_output, dataset=dataset, score_column_names=score_column_names)
-            expected_cell = "## Summarization accuracy  \n\n**Dataset: Dataset 1**  \n\n### Rouge  \n\n**Overall Score: 0.33**  \n\nScore breakdown per rouge evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n</table>  \n\n### Bert score  \n\n**Overall Score: 0.5**  \n\nScore breakdown per bert score evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n</table>  \n\n### Meteor  \n\n**Overall Score: 0.9**  \n\nScore breakdown per meteor evaluation category:  \n\nCategoryBarPlot  \n\nThe model scores lowest in this category: **Race**.   \n\nBelow are a few examples of the highest and lowest-scoring examples across all categories:   \n\n**Top 5 highest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 3</td> <td align=center>Race</td> <td align=center>0.9</td> <td align=center>0.84</td> <td align=center>0.7</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n</table>  \n\n**Bottom 5 lowest-scoring examples:**  \n\n<table align=center>  \n<tr> <th align=center>prompt</th> <th align=center>category</th> <th align=center>rouge_score_column</th> <th align=center>bert_score_column</th> <th align=center>meteor_score_column</th> </tr>  \n<tr> <td align=center>prompt 5</td> <td align=center>Gender</td> <td align=center>0.3</td> <td align=center>0.7</td> <td align=center>0.01</td> </tr>  \n<tr> <td align=center>prompt 2</td> <td align=center>Gender</td> <td align=center>0.2</td> <td align=center>0.5</td> <td align=center>0.1</td> </tr>  \n<tr> <td align=center>prompt 6</td> <td align=center>Race</td> <td align=center>0.8</td> <td align=center>0.51</td> <td align=center>0.2</td> </tr>  \n<tr> <td align=center>prompt 4</td> <td align=center>Race</td> <td align=center>0.43</td> <td align=center>0.3</td> <td align=center>0.6</td> </tr>  \n<tr> <td align=center>prompt 1</td> <td align=center>Gender</td> <td align=center>0.53</td> <td align=center>0.3</td> <td align=center>0.66</td> </tr>  \n</table>"
+        category_scores = [
+            CategoryScore(
+                name="Gender",
+                scores=[
+                    EvalScore(name="rouge", value=0.6),
+                    EvalScore(name="bert score", value=0.7),
+                    EvalScore(name="meteor", value=0.8),
+                ],
+            ),
+            CategoryScore(
+                name="Race",
+                scores=[
+                    EvalScore(name="rouge", value=0.4),
+                    EvalScore(name="bert score", value=0.3),
+                    EvalScore(name="meteor", value=0.2),
+                ],
+            ),
+        ]
+        eval_output = EvalOutput(
+            eval_name="summarization_accuracy",
+            dataset_name="xsum",
+            prompt_template="prompt",
+            dataset_scores=dataset_scores,
+            category_scores=category_scores,
+        )
+        dataset = MagicMock()
+        dataset.count = Mock(return_value=10)
+        dataset.columns = Mock(return_value=["col1", "col2", "col3"])
+        dataset.select_columns = Mock()
+        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+            cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
+            expected_cell = '#### Built-in Dataset: <a style="color:#006DAA;" href="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset">XSUM</a>  \n\nA dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors. We sampled 10 records out of 204045 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
+            assert str(cell) == expected_cell
+
+    def test_eval_output_cell_eval_error(self):
+        """
+        GIVEN an EvalOutput where the evaluation failed
+        WHEN an EvalOutputCell is generated
+        THEN the dataset name and error message are returned.
+        """
+        eval_output = EvalOutput(
+            eval_name="summarization accuracy",
+            dataset_name="Dataset 1",
+            prompt_template="prompt",
+            error="The summarization accuracy evaluation failed.",
+        )
+        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+            cell = EvalOutputCell(eval_output=eval_output)
+            expected_cell = "#### Custom Dataset: Dataset 1  \n\n  \n\n  \n\n**This evaluation failed with the error message: The summarization accuracy evaluation failed.**"
             assert str(cell) == expected_cell

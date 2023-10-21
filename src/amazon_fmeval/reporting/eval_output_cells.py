@@ -1,13 +1,48 @@
-from amazon_fmeval.eval_algorithms.eval_algorithm import EvalOutput
+from typing import List, Optional, Any
+import ray.data
+from textwrap import shorten
+
+from amazon_fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, TREX
+from amazon_fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
+from amazon_fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
+from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
+    SENT_LESS_LOG_PROB_COLUMN_NAME,
+    SENT_MORE_LOG_PROB_COLUMN_NAME,
+    LOG_PROBABILITY_DIFFERENCE,
+)
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, COLUMN_NAMES
 from amazon_fmeval.reporting.cells import MarkdownCell, BarPlotCell, TableCell, BoldCell, HeadingCell
 from amazon_fmeval.reporting.constants import (
+    LEFT,
     CATEGORY_BAR_COLOR,
     OVERALL_BAR_COLOR,
     NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
     DATASET_SCORE_LABEL,
+    SCORE_DESCRIPTIONS,
+    DATASET_DETAILS,
+    TABLE_DESCRIPTION,
+    WER_TABLE_DESCRIPTION,
+    STEREOTYPING_TABLE_DESCRIPTION,
+    FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION,
+    TREX_DESCRIPTION_EXAMPLES,
+    BUILT_IN_DATASET,
+    CUSTOM_DATASET,
+    AGGREGATE_ONLY_SCORES,
+    MAX_CHAR,
+    PROMPT_COLUMN_NAME,
+    TOXICITY_EVAL_NAMES,
+    TOXIGEN_NAME,
+    DETOXIFY_NAME,
 )
-from typing import List, Optional
-import ray.data
+from amazon_fmeval.reporting.util import format_dataset_name, format_string
+
+
+TABLE_COLUMNS = (
+    list(set(COLUMN_NAMES))
+    + [PROMPT_COLUMN_NAME]
+    + list(set(SCORE_DESCRIPTIONS.keys()))
+    + [SENT_LESS_LOG_PROB_COLUMN_NAME, SENT_MORE_LOG_PROB_COLUMN_NAME]
+)
 
 
 class CategoryBarPlotCell(BarPlotCell):
@@ -15,12 +50,24 @@ class CategoryBarPlotCell(BarPlotCell):
     This class represents a bar plot that displays category-level and overall evaluation scores.
     """
 
-    def __init__(self, categories: List[str], scores: List[float], score_name: str, dataset_score: float):
+    def __init__(
+        self,
+        categories: List[str],
+        scores: List[float],
+        score_name: str,
+        dataset_score: float,
+        height: Optional[str] = None,
+        width: Optional[str] = None,
+        center: bool = True,
+    ):
         """
         :param categories: The names of the categories.
         :param scores: The values of the category scores.
         :param score_name: The name of the score that was computed in the evaluation.
         :param dataset_score: The overall score for the dataset.
+        :param height: Height of the plot as a string
+        :param width: Width the plot as a string
+        :param center: Boolean indicating if the plot should be center aligned in the page
         """
         labels = categories + [DATASET_SCORE_LABEL]
         heights = scores + [dataset_score]
@@ -29,6 +76,9 @@ class CategoryBarPlotCell(BarPlotCell):
             heights=heights,
             color=CategoryBarPlotCell._create_bar_plot_colors(labels),
             title=CategoryBarPlotCell._create_bar_plot_title(score_name),
+            plot_height=height,
+            plot_width=width,
+            center=center,
         )
 
     @staticmethod
@@ -50,7 +100,7 @@ class CategoryBarPlotCell(BarPlotCell):
         :param evaluation_type: Ex - "Stereotyping"
         :returns: A title to be used in the bar plot for category scores
         """
-        return f"{evaluation_type} Scores"
+        return format_string(f"{evaluation_type}", as_title=True, as_score=True, as_plot_title=True)
 
 
 class RayDatasetTableCell(TableCell):
@@ -64,21 +114,50 @@ class RayDatasetTableCell(TableCell):
         col_to_sort: Optional[str] = None,
         k: Optional[int] = None,
         descending: bool = False,
+        abs_val: bool = False,
+        caption: Optional[str] = None,
+        cell_align: str = LEFT,
     ):
         """
         :param dataset: The Ray Dataset that we create a TableCell out of
         :param col_to_sort: The name of the column in the dataset to sort by
         :param k: The number of samples from the dataset to display in the table
         :param descending: Whether to sort in descending order.
+        :param abs_val: Whether to sort by absolute value when sorting is enabled.
+        :param caption: The caption text before the table.
+        :param cell_align: The text alignment within cells.
         """
         if col_to_sort:
             assert (
                 col_to_sort in dataset.columns()
             ), f"Column to be sorted `{col_to_sort}` is not present in dataset columns: {dataset.columns()}"
-            dataset = dataset.sort(col_to_sort, descending=descending)
+            if abs_val:
+                pd_dataset = dataset.to_pandas()
+                pd_dataset = pd_dataset.sort_values(by=col_to_sort, key=abs, ascending=not descending)
+                dataset = ray.data.from_pandas(pd_dataset)
+            else:
+                dataset = dataset.sort(col_to_sort, descending=descending)
         samples = dataset.take(k) if k else dataset.take_all()  # take() uses min(k, num samples in dataset)
-        table_data = [list(sample.values()) for sample in samples]  # convert list of dicts to list of lists
-        super().__init__(data=table_data, headers=dataset.columns())
+        table_data = [RayDatasetTableCell.truncate_samples(list(sample.values())) for sample in samples]
+        headers = dataset.columns()
+        if CATEGORY_COLUMN_NAME in headers:  # pragma: no branch
+            category_idx = headers.index(CATEGORY_COLUMN_NAME)
+            table_data = [[row[category_idx]] + row[:category_idx] + row[category_idx + 1 :] for row in table_data]
+            headers = [headers[category_idx]] + headers[:category_idx] + headers[category_idx + 1 :]
+        headers = [format_string(header, as_column_name=True, as_title=True) for header in headers]
+        super().__init__(data=table_data, headers=headers, cell_align=cell_align, caption=caption)
+
+    @staticmethod
+    def truncate_samples(samples: List[Any]) -> List[Any]:
+        """
+        :param samples: List of items representing one row in the table.
+        :return: Table row with strings longer than MAX_CHAR truncated.
+        """
+        truncated_samples = [
+            shorten(sample, MAX_CHAR) if isinstance(sample, str) and len(sample) > MAX_CHAR else sample
+            for sample in samples
+        ]
+        return truncated_samples
 
 
 class CategoryScoreCell(MarkdownCell):
@@ -87,19 +166,30 @@ class CategoryScoreCell(MarkdownCell):
         scoring category.
     """
 
-    def __init__(self, categories: List[str], scores: List[float], score_name: str, dataset_score: float):
+    def __init__(self, categories: List[str], scores: List[float], score_name: str, dataset_score: float, n: int = 10):
         """
         :param categories: The names of the categories.
         :param scores: The values of the category scores.
         :param score_name: The name of the score that was computed in the evaluation.
         :param dataset_score: The overall score for the dataset.
+        :param n: Max number of categories to display.
         """
-        bar_plot = CategoryBarPlotCell(categories, scores, score_name, dataset_score)
+
+        note = (
+            f"The top {n} categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location."
+            if len(categories) > n
+            else ""
+        )
+        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories))))
+        bar_plot = CategoryBarPlotCell(
+            sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height="70%", width="70%"
+        )
         lowest_category = CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
         super().__init__(
-            f"Score breakdown per {score_name} evaluation category:",
+            f"The plot shows the score breakdown into individual categories.",
+            note,
             bar_plot,
-            f"The model scores lowest in this category: **{lowest_category}**. ",
+            f"The model scores lowest in the category **{lowest_category}**. ",
         )
 
     @staticmethod
@@ -122,18 +212,78 @@ class ScoreTableCell(MarkdownCell):
     This class generates two tables displaying the highest and lowest-scoring examples from a particular score.
     """
 
-    def __init__(self, dataset: ray.data.Dataset, score_column_name: str):
+    def __init__(self, dataset: ray.data.Dataset, score_column_name: str, binary: Optional[bool] = False):
         """
         :param dataset: The Ray Dataset used in the evaluation task.
         :param score_column_name: The name of the score column in the dataset.
+        :param binary: Boolean indicating if the score is binary.
         """
-        super().__init__(
-            MarkdownCell("Below are a few examples of the highest and lowest-scoring examples across all categories: "),
-            BoldCell(f"Top {NUM_SAMPLES_TO_DISPLAY_IN_TABLE} highest-scoring examples:"),
-            RayDatasetTableCell(dataset, score_column_name, k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE, descending=True),
-            BoldCell(f"Bottom {NUM_SAMPLES_TO_DISPLAY_IN_TABLE} lowest-scoring examples:"),
-            RayDatasetTableCell(dataset, score_column_name, k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE, descending=False),
-        )
+        if score_column_name == WER_SCORE:
+            description = WER_TABLE_DESCRIPTION
+        elif score_column_name == LOG_PROBABILITY_DIFFERENCE:
+            description = STEREOTYPING_TABLE_DESCRIPTION
+        else:
+            description = TABLE_DESCRIPTION
+
+        if score_column_name == LOG_PROBABILITY_DIFFERENCE:
+            top_description = (
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} most stereotypical examples:"
+            )
+            bottom_description = (
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} least stereotypical examples:"
+            )
+            abs_val = True
+        else:
+            top_description = f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} highest-scoring examples:"
+            bottom_description = (
+                f"Bottom {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} lowest-scoring examples:"
+            )
+            abs_val = False
+
+        # Display highest and lowest scoring examples
+        if not binary:
+            cells = [
+                MarkdownCell(description),
+                RayDatasetTableCell(
+                    dataset,
+                    score_column_name,
+                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
+                    descending=True,
+                    abs_val=abs_val,
+                    caption=top_description,
+                ),
+                RayDatasetTableCell(
+                    dataset,
+                    score_column_name,
+                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
+                    descending=False,
+                    abs_val=abs_val,
+                    caption=bottom_description,
+                ),
+            ]
+        # Display correct/incorrect examples
+        else:
+            description = FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
+            cells = [
+                MarkdownCell(description),
+                RayDatasetTableCell(
+                    dataset,
+                    score_column_name,
+                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
+                    descending=True,
+                    abs_val=abs_val,
+                    caption=f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} correct examples:",
+                ),
+                RayDatasetTableCell(
+                    dataset,
+                    score_column_name,
+                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
+                    descending=False,
+                    abs_val=abs_val,
+                    caption=f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} incorrect examples:",
+                ),
+            ]
+        super().__init__(*cells)
 
 
 class ScoreCell(MarkdownCell):
@@ -144,7 +294,7 @@ class ScoreCell(MarkdownCell):
 
     def __init__(
         self,
-        dataset: ray.data.Dataset,
+        dataset: Optional[ray.data.Dataset],
         score_name: str,
         score_column_name: str,
         dataset_score: float,
@@ -160,44 +310,120 @@ class ScoreCell(MarkdownCell):
         :param category_scores: The values of the category scores.
         """
         cells = [
-            HeadingCell(text=f"{score_name.capitalize()}", level=3),
+            HeadingCell(text=f"{format_string(score_name, as_title=True, as_score=True)}", level=5),
+            MarkdownCell(SCORE_DESCRIPTIONS[score_name]),
             BoldCell(f"Overall Score: {dataset_score}"),
         ]
         if categories and category_scores:  # pragma: no branch
             cells.append(CategoryScoreCell(categories, category_scores, score_name, dataset_score))
-        cells.append(ScoreTableCell(dataset, score_column_name))
+        if dataset:  # pragma: no cover
+            columns = [i for i in TABLE_COLUMNS if i != "target_output"] if score_name == WER_SCORE else TABLE_COLUMNS
+            present_columns = [col for col in dataset.columns() if col in columns]
+            dataset = dataset.select_columns(present_columns)
+            is_binary_score = (
+                True if score_name in [EvalAlgorithm.FACTUAL_KNOWLEDGE.value, CLASSIFICATION_ACCURACY_SCORE] else False
+            )
+            cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))
         super().__init__(*cells)
 
 
 class EvalOutputCell(MarkdownCell):
-    def __init__(self, eval_output: EvalOutput, dataset: ray.data.Dataset, score_column_names: dict):
+    def __init__(
+        self,
+        eval_output: EvalOutput,
+        dataset: Optional[ray.data.Dataset] = None,
+        score_column_names: Optional[dict] = None,
+    ):
         """
         :param eval_output: A EvalOutput object from an evaluation.
         :param dataset: The Ray dataset containing the evaluation scores.
         :param score_column_names: A dict mapping the score names and score column names for the evaluation.
         """
-        eval_heading = HeadingCell(text=f"{eval_output.eval_name.capitalize()}", level=2)
-        dataset_name_cell = BoldCell(f"Dataset: {eval_output.dataset_name.capitalize()}")
-        dataset_scores = {dataset_score.name: dataset_score.value for dataset_score in eval_output.dataset_scores}
-        score_cells = []
-        for score_name, dataset_score_value in dataset_scores.items():
-            categories = (
-                {
-                    category_score.name: score.value
-                    for category_score in eval_output.category_scores
-                    for score in category_score.scores
-                    if score.name == score_name
-                }
-                if eval_output.category_scores
-                else None
+        dataset_type = BUILT_IN_DATASET if eval_output.dataset_name in DATASET_CONFIGS else CUSTOM_DATASET
+        dataset_description = EvalOutputCell.get_dataset_description(
+            dataset_name=eval_output.dataset_name,
+            dataset_type=dataset_type,
+            dataset=dataset,
+            eval_name=eval_output.eval_name,
+        )
+        toxicity_detector_name = (
+            f"Toxicity detector model: {DETOXIFY_NAME}"
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) > 1
+            else f"Toxicity detector model: {TOXIGEN_NAME}"
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) == 1
+            else ""
+        )
+
+        eval_cells = [
+            HeadingCell(f"{dataset_type}: {format_dataset_name(eval_output.dataset_name, hyperlink=True)}", level=4),
+            MarkdownCell(dataset_description),
+            MarkdownCell(toxicity_detector_name),
+        ]
+        if eval_output.error:
+            error_cell = BoldCell(f"This evaluation failed with the error message: {eval_output.error}")
+            eval_cells.append(error_cell)
+        else:
+            dataset_scores = {dataset_score.name: dataset_score.value for dataset_score in eval_output.dataset_scores}
+            for score_name, dataset_score_value in dataset_scores.items():
+                categories = (
+                    {
+                        category_score.name: score.value
+                        for category_score in eval_output.category_scores
+                        for score in category_score.scores
+                        if score.name == score_name
+                    }
+                    if eval_output.category_scores
+                    else None
+                )
+                score_column_name = (
+                    LOG_PROBABILITY_DIFFERENCE if score_name == EvalAlgorithm.PROMPT_STEREOTYPING.value else score_name
+                )
+                if score_name not in AGGREGATE_ONLY_SCORES:  # pragma: no branch
+                    score_cell = ScoreCell(
+                        dataset=dataset,
+                        score_name=score_name,
+                        score_column_name=score_column_name,
+                        dataset_score=dataset_score_value,
+                        categories=list(categories.keys()) if categories else None,
+                        category_scores=list(categories.values()) if categories else None,
+                    )
+                    eval_cells.append(score_cell)
+
+        super().__init__(*eval_cells)
+
+    @staticmethod
+    def get_dataset_sampling_description(dataset_name: str, dataset: ray.data.Dataset) -> str:
+        """
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :return: String describing the number of samples used in the evaluation.
+        """
+        num_records = dataset.count()
+        total_records = DATASET_DETAILS[dataset_name].size if dataset_name in DATASET_DETAILS else num_records
+
+        return f"We sampled {num_records} records out of {total_records} in the full dataset."
+
+    @staticmethod
+    def get_dataset_description(
+        dataset_name: str, dataset_type: str, dataset: Optional[ray.data.Dataset], eval_name: Optional[str] = None
+    ) -> str:
+        """
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset_type: Whether the dataset is a built-in or custom dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :param eval_name: The name of the selected evaluation.
+        :return: The description of the dataset, including the number of samples used in the evaluation.
+        """
+
+        dataset_sampling_description = (
+            EvalOutputCell.get_dataset_sampling_description(dataset_name, dataset) if dataset else ""
+        )
+        if dataset_type == CUSTOM_DATASET:
+            return dataset_sampling_description
+        else:
+            dataset_description = (
+                DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
+                if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+                else DATASET_DETAILS[dataset_name].description
             )
-            score_cell = ScoreCell(
-                dataset=dataset,
-                score_name=score_name,
-                score_column_name=score_column_names[score_name],
-                dataset_score=dataset_score_value,
-                categories=list(categories.keys()) if categories else None,
-                category_scores=list(categories.values()) if categories else None,
-            )
-            score_cells.append(score_cell)
-        super().__init__(eval_heading, dataset_name_cell, *score_cells)
+            return dataset_description + " " + dataset_sampling_description
