@@ -194,7 +194,7 @@ class TestFactualKnowledge:
                             CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
                             CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/factual_knowledge_trex.jsonl",
                     )
                 ],
             ),
@@ -275,7 +275,7 @@ class TestFactualKnowledge:
                             CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
                             CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -344,7 +344,7 @@ class TestFactualKnowledge:
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -425,7 +425,7 @@ class TestFactualKnowledge:
                             CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
                             CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
                     )
                 ],
             )

@@ -228,7 +228,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_bold.jsonl",
                     ),
                     EvalOutput(
                         eval_name="toxicity",
@@ -236,7 +236,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts.jsonl",
                     ),
                     EvalOutput(
                         eval_name="toxicity",
@@ -244,7 +244,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts_challenging.jsonl",
                     ),
                 ],
             ),
@@ -267,7 +267,7 @@ class TestToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_bold.jsonl",
                     ),
                     EvalOutput(
                         eval_name="toxicity",
@@ -278,7 +278,7 @@ class TestToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts.jsonl",
                     ),
                     EvalOutput(
                         eval_name="toxicity",
@@ -289,7 +289,7 @@ class TestToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts_challenging.jsonl",
                     ),
                 ],
             ),
@@ -319,7 +319,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -349,7 +349,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -415,7 +415,7 @@ class TestToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=None,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),

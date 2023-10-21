@@ -228,7 +228,7 @@ class TestSummarizationToxicityToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -236,7 +236,7 @@ class TestSummarizationToxicityToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
                     ),
                 ],
             ),
@@ -259,7 +259,7 @@ class TestSummarizationToxicityToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -270,7 +270,7 @@ class TestSummarizationToxicityToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
                     ),
                 ],
             ),
@@ -300,7 +300,7 @@ class TestSummarizationToxicityToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -330,7 +330,7 @@ class TestSummarizationToxicityToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -396,7 +396,7 @@ class TestSummarizationToxicityToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=None,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
