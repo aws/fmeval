@@ -224,7 +224,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_boolq.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -232,7 +232,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_trivia_qa.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -240,7 +240,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_natural_questions.jsonl",
                     ),
                 ],
             ),
@@ -263,7 +263,7 @@ class TestQAToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_boolq.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -274,7 +274,7 @@ class TestQAToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_trivia_qa.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -285,7 +285,7 @@ class TestQAToxicity:
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_natural_questions.jsonl",
                     ),
                 ],
             ),
@@ -315,7 +315,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl/",
                     )
                 ],
             ),
@@ -345,7 +345,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -411,7 +411,7 @@ class TestQAToxicity:
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=None,
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),

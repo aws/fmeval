@@ -166,7 +166,7 @@ class TestPromptStereotyping:
                                 name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/prompt_stereotyping_crows_pairs.jsonl",
                     )
                 ],
             ),
@@ -250,7 +250,7 @@ class TestPromptStereotyping:
                                 name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -319,7 +319,7 @@ class TestPromptStereotyping:
                         prompt_template="$feature",
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -388,7 +388,7 @@ class TestPromptStereotyping:
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -483,7 +483,7 @@ class TestPromptStereotyping:
                                 name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
                     )
                 ],
             )

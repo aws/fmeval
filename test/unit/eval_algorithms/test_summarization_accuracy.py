@@ -309,7 +309,7 @@ class TestSummarizationAccuracy:
                             EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
@@ -321,7 +321,7 @@ class TestSummarizationAccuracy:
                             EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
                     ),
                 ],
             ),
@@ -359,7 +359,7 @@ class TestSummarizationAccuracy:
                                 ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
@@ -388,7 +388,7 @@ class TestSummarizationAccuracy:
                                 ],
                             ),
                         ],
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
                     ),
                 ],
             ),
@@ -417,7 +417,7 @@ class TestSummarizationAccuracy:
                             EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -446,7 +446,7 @@ class TestSummarizationAccuracy:
                             EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -518,7 +518,7 @@ class TestSummarizationAccuracy:
                             EvalScore(name="bertscore", value=0.2),
                         ],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),

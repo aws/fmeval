@@ -182,7 +182,11 @@ class FactualKnowledge(EvalAlgorithmInterface):
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
-                        output_path=self._eval_results_path,
+                        output_path=generate_output_dataset_path(
+                            path_to_parent_dir=self._eval_results_path,
+                            eval_name=self.eval_name,
+                            dataset_name=dataset_config.dataset_name,
+                        ),
                     )
                 )
             if save:

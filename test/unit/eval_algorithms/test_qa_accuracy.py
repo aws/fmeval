@@ -271,7 +271,7 @@ class TestQAAccuracy:
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_boolq.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy",
@@ -279,7 +279,7 @@ class TestQAAccuracy:
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_trivia_qa.jsonl",
                     ),
                     EvalOutput(
                         eval_name="qa_accuracy",
@@ -287,7 +287,7 @@ class TestQAAccuracy:
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_natural_questions.jsonl",
                     ),
                 ],
             ),
@@ -311,7 +311,7 @@ class TestQAAccuracy:
                         prompt_template="Answer: $feature",
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -335,7 +335,7 @@ class TestQAAccuracy:
                         prompt_template="Answer: $feature",
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -359,7 +359,7 @@ class TestQAAccuracy:
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -410,7 +410,7 @@ class TestQAAccuracy:
                         prompt_template=None,
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
-                        output_path=EVAL_RESULTS_PATH,
+                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
             )
