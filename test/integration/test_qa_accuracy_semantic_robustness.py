@@ -17,7 +17,7 @@ from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import sm_model_runner, sm_model_runner_prompt_template
 
-ABS_TOL = 3e-2
+ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 
@@ -80,9 +80,9 @@ class TestQAAccuracySemanticRobustness:
                     perturbation_type=BUTTER_FINGER, num_perturbations=5, seed=5, butter_finger_perturbation_prob=0.1
                 ),
                 expected_scores={
-                    DELTA_F1_SCORE: 0.18,
-                    DELTA_EXACT_MATCH_SCORE: 0.03,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.16,
+                    DELTA_F1_SCORE: 0.1879,
+                    DELTA_EXACT_MATCH_SCORE: 0.0383,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1858,
                 },
             ),
             TestCaseEvaluate(
@@ -93,9 +93,9 @@ class TestQAAccuracySemanticRobustness:
                     random_uppercase_corrupt_proportion=0.1,
                 ),
                 expected_scores={
-                    DELTA_F1_SCORE: 0.08,
-                    DELTA_EXACT_MATCH_SCORE: 0.02,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.09,
+                    DELTA_F1_SCORE: 0.0984,
+                    DELTA_EXACT_MATCH_SCORE: 0.0323,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1111,
                 },
             ),
             TestCaseEvaluate(
@@ -107,9 +107,9 @@ class TestQAAccuracySemanticRobustness:
                     whitespace_add_prob=0.05,
                 ),
                 expected_scores={
-                    DELTA_F1_SCORE: 0.08,
-                    DELTA_EXACT_MATCH_SCORE: 0.02,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.08,
+                    DELTA_F1_SCORE: 0.0976,
+                    DELTA_EXACT_MATCH_SCORE: 0.0161,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1010,
                 },
             ),
         ],
