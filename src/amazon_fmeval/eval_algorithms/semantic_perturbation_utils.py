@@ -60,7 +60,7 @@ class SemanticPerturbationUtil(ABC):
     The interface that each perturbation should implement.
     """
 
-    def __init__(self, seed: int = 97123):
+    def __init__(self, seed: int = 5):
         self.set_seed(seed)
 
     @abstractmethod
