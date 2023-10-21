@@ -84,7 +84,6 @@ class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     :param converter_fn: Function to process model output to labels, defaults to simple integer conversion
     :param perturbation_type: perturbation type for generating perturbed inputs
     :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
-    :param seed: Seed to be configured for generating perturbations
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
         butter_finger perturbation_type
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
@@ -99,7 +98,6 @@ class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
-    seed: int = 5
     butter_finger_perturbation_prob: float = 0.1
     random_uppercase_corrupt_proportion: float = 0.1
     whitespace_remove_prob: float = 0.1
@@ -300,9 +298,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
             if model.predict(original_prompt)[0] != original_model_output:
                 raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
-        perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type](
-            seed=self._eval_algorithm_config.seed
-        )
+        perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
 
         perturbed_inputs = perturbation.perturb(
             text=model_input,
