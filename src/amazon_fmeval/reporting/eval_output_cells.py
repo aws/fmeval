@@ -218,71 +218,52 @@ class ScoreTableCell(MarkdownCell):
         :param score_column_name: The name of the score column in the dataset.
         :param binary: Boolean indicating if the score is binary.
         """
-        if score_column_name == WER_SCORE:
-            description = WER_TABLE_DESCRIPTION
-        elif score_column_name == LOG_PROBABILITY_DIFFERENCE:
-            description = STEREOTYPING_TABLE_DESCRIPTION
-        else:
-            description = TABLE_DESCRIPTION
+        description = (
+            WER_TABLE_DESCRIPTION
+            if score_column_name == WER_SCORE
+            else STEREOTYPING_TABLE_DESCRIPTION
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
+            if binary
+            else TABLE_DESCRIPTION
+        )
 
-        if score_column_name == LOG_PROBABILITY_DIFFERENCE:
-            top_description = (
-                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} most stereotypical examples:"
-            )
-            bottom_description = (
-                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} least stereotypical examples:"
-            )
-            abs_val = True
-        else:
-            top_description = f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} highest-scoring examples:"
-            bottom_description = (
-                f"Bottom {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} lowest-scoring examples:"
-            )
-            abs_val = False
+        n_samples = min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())
+        top_description = (
+            (f"Top {n_samples} most stereotypical examples:")
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f"{n_samples} correct examples:"
+            if binary
+            else f"Top {n_samples} highest-scoring examples:"
+        )
+        bottom_description = (
+            (f"Top {n_samples} least stereotypical examples:")
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f"{n_samples} incorrect examples:"
+            if binary
+            else f"Bottom {n_samples} lowest-scoring examples:"
+        )
+        abs_val = True if score_column_name == LOG_PROBABILITY_DIFFERENCE else False
 
-        # Display highest and lowest scoring examples
-        if not binary:
-            cells = [
-                MarkdownCell(description),
-                RayDatasetTableCell(
-                    dataset,
-                    score_column_name,
-                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
-                    descending=True,
-                    abs_val=abs_val,
-                    caption=top_description,
-                ),
-                RayDatasetTableCell(
-                    dataset,
-                    score_column_name,
-                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
-                    descending=False,
-                    abs_val=abs_val,
-                    caption=bottom_description,
-                ),
-            ]
-        # Display correct/incorrect examples
-        else:
-            description = FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
-            cells = [
-                MarkdownCell(description),
-                RayDatasetTableCell(
-                    dataset,
-                    score_column_name,
-                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
-                    descending=True,
-                    abs_val=abs_val,
-                    caption=f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} correct examples:",
-                ),
-                RayDatasetTableCell(
-                    dataset,
-                    score_column_name,
-                    k=NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
-                    descending=False,
-                    abs_val=abs_val,
-                    caption=f"{min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} incorrect examples:",
-                ),
-            ]
+        cells = [
+            MarkdownCell(description),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=True,
+                abs_val=abs_val,
+                caption=top_description,
+            ),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=False,
+                abs_val=abs_val,
+                caption=bottom_description,
+            ),
+        ]
         super().__init__(*cells)
 
 
