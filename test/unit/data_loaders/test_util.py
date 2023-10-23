@@ -70,6 +70,21 @@ class TestDataLoaderUtil:
         mock_get_data_source.assert_called_once_with(config.dataset_uri)
         mock_get_data_loader_config.assert_called_once_with(mock_get_data_source.return_value, config)
 
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util._get_data_loader_config", return_value=Mock())
+    @patch("amazon_fmeval.data_loaders.util.get_data_source", return_value=Mock())
+    def test_get_dataset_sampling_determinism_in_large_datasets(
+        self, mock_get_data_source, mock_get_data_loader_config, mock_get_data_loader
+    ):
+        data = ray.data.from_items([i for i in range(200000)])
+        config = Mock(spec=DataConfig)
+        config.dataset_name = "dataset1"
+        config.dataset_uri = "unused"
+        config.dataset_mime_type = "unused"
+        mock_get_data_loader.return_value.load_dataset.return_value = data
+        data = get_dataset(config, 20)
+        assert data.take_all() == get_dataset(config, 20).take_all()
+
     class TestCaseGetDataLoaderConfigError(NamedTuple):
         dataset_mime_type: str
         error_message: str

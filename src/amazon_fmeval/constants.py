@@ -65,3 +65,5 @@ PREFIX_FOR_DELTA_SCORES = "delta_"
 
 # Check if model is deterministic for first NUM_ROWS_DETERMINISTIC rows of dataset
 NUM_ROWS_DETERMINISTIC = 5
+
+MAX_ROWS_TO_TAKE = 1000
