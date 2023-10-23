@@ -1,7 +1,8 @@
+import multiprocessing as mp
 import os
 import re
 
-from amazon_fmeval.constants import EVAL_RESULTS_PATH, DEFAULT_EVAL_RESULTS_PATH
+from amazon_fmeval.constants import EVAL_RESULTS_PATH, DEFAULT_EVAL_RESULTS_PATH, PARALLELIZATION_FACTOR
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 
 
@@ -69,3 +70,13 @@ def singleton(cls):
         return instances[cls]
 
     return get_instance
+
+
+def get_num_actors():
+    try:
+        num_actors = (
+            int(os.environ[PARALLELIZATION_FACTOR]) if PARALLELIZATION_FACTOR in os.environ else (mp.cpu_count() - 1)
+        )
+    except ValueError:
+        num_actors = mp.cpu_count() - 1
+    return num_actors

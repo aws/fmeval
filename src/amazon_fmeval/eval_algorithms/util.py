@@ -3,8 +3,6 @@ import logging
 import os
 import pandas as pd
 import ray.data
-import multiprocessing as mp
-
 
 import amazon_fmeval.util as util
 
@@ -16,7 +14,6 @@ from amazon_fmeval.constants import (
     CATEGORY_COLUMN_NAME,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     MEAN,
-    PARALLELIZATION_FACTOR,
     NUM_ROWS_DETERMINISTIC,
 )
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
@@ -24,19 +21,9 @@ from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block
-
+from amazon_fmeval.util import get_num_actors
 
 logger = logging.getLogger(__name__)
-
-
-def get_num_actors():
-    try:
-        num_actors = (
-            int(os.environ[PARALLELIZATION_FACTOR]) if PARALLELIZATION_FACTOR in os.environ else (mp.cpu_count() - 1)
-        )
-    except ValueError:
-        num_actors = mp.cpu_count() - 1
-    return num_actors
 
 
 def generate_model_predict_response_for_dataset(

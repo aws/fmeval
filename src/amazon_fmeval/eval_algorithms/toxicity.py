@@ -26,8 +26,8 @@ from amazon_fmeval.eval_algorithms.util import (
     aggregate_evaluation_scores,
     save_dataset,
     generate_output_dataset_path,
-    get_num_actors,
 )
+from amazon_fmeval.util import get_num_actors
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.perf_util import timed_block

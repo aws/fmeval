@@ -78,7 +78,7 @@ DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[CATEGORY_COLUMN_NAME])
 
 class MockModelRunner(ModelRunner):
     def __init__(self):
-        super().__init__('{"data": $prompt}')
+        super().__init__('{"data": $prompt}', output="output")
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
         return "Some model output.", None

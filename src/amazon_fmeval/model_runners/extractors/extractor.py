@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 from abc import ABC, abstractmethod
 
 
@@ -12,7 +12,7 @@ class Extractor(ABC):
     """
 
     @abstractmethod
-    def extract_log_probability(self, data: Union[List, Dict], num_records: int) -> Optional[List]:
+    def extract_log_probability(self, data: Union[List, Dict], num_records: int) -> Union[List[float], float]:
         """
         Extract log probability from model response.
 
@@ -21,7 +21,7 @@ class Extractor(ABC):
         """
 
     @abstractmethod
-    def extract_output(self, data: Union[List, Dict], num_records: int) -> Optional[Union[List, str, float]]:
+    def extract_output(self, data: Union[List, Dict], num_records: int) -> Union[List[str], str]:
         """
         Extract output from model response.
 

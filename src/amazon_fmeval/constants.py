@@ -74,3 +74,7 @@ MAX_ROWS_TO_TAKE = 100000
 
 # The absolute tolerance used when performing approximate numerical comparisons
 ABS_TOL = 1e-4
+
+# Jumpstart
+JUMPSTART_MODEL_ID = "jumpstart_model_id"
+JUMPSTART_MODEL_VERSION = "jumpstart_model_version"

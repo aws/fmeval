@@ -16,11 +16,12 @@ class ModelRunner(ABC):
 
     def __init__(
         self,
-        content_template: str,
+        content_template: Optional[str] = None,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
         content_type: str = MIME_TYPE_JSON,
         accept_type: str = MIME_TYPE_JSON,
+        **kwargs
     ):
         """
         :param content_template: String template to compose the model input from the prompt
@@ -29,9 +30,12 @@ class ModelRunner(ABC):
         :param content_type: The content type of the request sent to the model for inference
         :param accept_type: The accept type of the request sent to the model for inference
         """
-        self._composer = create_content_composer(content_type=content_type, template=content_template)
+        self._composer = create_content_composer(content_type=content_type, template=content_template, kwargs=kwargs)
         self._extractor = create_extractor(
-            model_accept_type=accept_type, output_location=output, log_probability_location=log_probability
+            model_accept_type=accept_type,
+            output_location=output,
+            log_probability_location=log_probability,
+            kwargs=kwargs,
         )
 
     @abstractmethod

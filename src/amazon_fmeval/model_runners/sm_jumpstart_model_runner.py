@@ -24,7 +24,7 @@ class JumpStartModelRunner(ModelRunner):
         self,
         endpoint_name: str,
         model_id: str,
-        content_template: str,
+        content_template: Optional[str] = None,
         model_version: Optional[str] = "*",
         custom_attributes: Optional[str] = None,
         output: Optional[str] = None,
@@ -40,7 +40,15 @@ class JumpStartModelRunner(ModelRunner):
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
         """
-        super().__init__(content_template, output, log_probability, MIME_TYPE_JSON, MIME_TYPE_JSON)
+        super().__init__(
+            content_template=content_template,
+            output=output,
+            log_probability=log_probability,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+            jumpstart_model_id=model_id,
+            jumpstart_model_version=model_version,
+        )
         self._endpoint_name = endpoint_name
         self._model_id = model_id
         self._content_template = content_template
@@ -60,10 +68,6 @@ class JumpStartModelRunner(ModelRunner):
             sagemaker_session=sagemaker_session,
         )
         util.require(predictor.accept == MIME_TYPE_JSON, f"Model accept type `{predictor.accept}` is not supported.")
-        util.require(
-            predictor.content_type == MIME_TYPE_JSON,
-            f"Model content type `{predictor.content_type}` is not supported.",
-        )
         self._predictor = predictor
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
