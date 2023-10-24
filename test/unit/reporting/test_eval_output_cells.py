@@ -22,15 +22,6 @@ import ray.data
 import pytest
 
 
-class Matcher:
-    def __init__(self, compare, some_obj):
-        self.compare = compare
-        self.some_obj = some_obj
-
-    def __eq__(self, other):
-        return self.compare(self.some_obj, other)
-
-
 class TestEvalOutputCells:
     def test_category_bar_plot_cell_init_success(self):
         """
@@ -208,7 +199,7 @@ class TestEvalOutputCells:
         sorted_scores = [0.888, 0.314, 0.271]
         expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model scores lowest in the category **religion**. "
         with patch(
-            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", autospec=True, return_value="AggBPCell"
+            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
         ) as category_bar_plot:
             cell = CategoryScoreCell(categories, scores, EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_score)
             category_bar_plot.assert_called_with(
