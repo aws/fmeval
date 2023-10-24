@@ -2,7 +2,7 @@ from typing import Dict, Type
 
 from amazon_fmeval.eval_algorithms import EvalAlgorithm
 from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
-    ClassificationAccuracySemanticRobustnessConfig,
+    ClassificationAccuracySemanticRobustness,
 )
 from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge
@@ -28,6 +28,6 @@ EVAL_ALGORITHMS: Dict[str, Type["EvalAlgorithmInterface"]] = {
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: SummarizationAccuracySemanticRobustness,
     EvalAlgorithm.TOXICITY.value: Toxicity,
     EvalAlgorithm.QA_TOXICITY.value: QAToxicity,
-    EvalAlgorithm.SUMMARIZATION_TOXICITY: SummarizationToxicity,
-    EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS: ClassificationAccuracySemanticRobustnessConfig,
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: SummarizationToxicity,
+    EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: ClassificationAccuracySemanticRobustness,
 }
