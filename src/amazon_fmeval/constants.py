@@ -49,7 +49,7 @@ SUPPORTED_MIME_TYPES = [MIME_TYPE_JSON, MIME_TYPE_JSONLINES]
 MEAN = "mean"
 
 # Configures `save_dataset` behavior regarding how many
-# `EvalOutputRecord`s to accumulate  before writing them
+# EvalOutputRecords to accumulate before writing them
 # to the output JSON Lines file.
 EVAL_OUTPUT_RECORDS_BATCH_SIZE = 1024
 
@@ -67,3 +67,6 @@ PREFIX_FOR_DELTA_SCORES = "delta_"
 NUM_ROWS_DETERMINISTIC = 5
 
 MAX_ROWS_TO_TAKE = 100000
+
+# The absolute tolerance used when performing approximate numerical comparisons
+ABS_TOL = 1e-4
