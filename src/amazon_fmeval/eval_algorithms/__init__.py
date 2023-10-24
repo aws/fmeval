@@ -1,11 +1,10 @@
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Type, Dict, Tuple
-
+from typing import List, Optional, Type, Dict
 from functional import seq
 
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from amazon_fmeval.constants import MIME_TYPE_JSONLINES, ABS_TOL
 from amazon_fmeval.data_loaders.data_config import DataConfig
 
 
@@ -24,7 +23,7 @@ class EvalScore:
     def __eq__(self, other: Type["EvalScore"]):  # type: ignore[override]
         try:
             assert self.name == other.name
-            assert math.isclose(self.value, other.value)
+            assert math.isclose(self.value, other.value, abs_tol=ABS_TOL)
             return True
         except AssertionError:
             return False
