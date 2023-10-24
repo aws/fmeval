@@ -7,7 +7,7 @@ import amazon_fmeval.util as util
 from typing import Optional, Tuple
 from amazon_fmeval.constants import MIME_TYPE_JSON
 from amazon_fmeval.model_runners.model_runner import ModelRunner
-from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
+import amazon_fmeval.model_runners.util as model_runner_util
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,9 @@ class SageMakerModelRunner(ModelRunner):
         self._content_type = content_type
         self._accept_type = accept_type
 
-        sagemaker_session = get_sagemaker_session()
+        sagemaker_session = model_runner_util.get_sagemaker_session()
         util.require(
-            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
+            model_runner_util.is_endpoint_in_service(sagemaker_session, self._endpoint_name),
             "Endpoint {endpoint_name} is not in service",
         )
         self._predictor = sagemaker.predictor.Predictor(
