@@ -136,9 +136,11 @@ class TestSageMakerModelRunner:
             custom_attributes=CUSTOM_ATTRIBUTES,
             output=OUTPUT_JMES_PATH,
             log_probability=LOG_PROBABILITY_JMES_PATH,
+            sagemaker_session=mock_sagemaker_session,
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
         )
+        # deserialized = sm_model_runner
         deserialized: SageMakerModelRunner = pickle.loads(pickle.dumps(sm_model_runner))
         assert deserialized._endpoint_name == sm_model_runner._endpoint_name
         assert deserialized._content_template == sm_model_runner._content_template

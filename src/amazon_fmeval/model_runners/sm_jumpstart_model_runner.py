@@ -6,6 +6,8 @@ import logging
 import sagemaker
 from typing import Optional, Tuple
 
+from sagemaker.session import Session
+
 import amazon_fmeval.util as util
 from amazon_fmeval.constants import MIME_TYPE_JSON
 from amazon_fmeval.model_runners.model_runner import ModelRunner
@@ -29,6 +31,7 @@ class JumpStartModelRunner(ModelRunner):
         custom_attributes: Optional[str] = None,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
+        sagemaker_session: Optional[Session] = None,
     ):
         """
         :param endpoint_name: Name of the SageMaker endpoint to be used for model predictions
@@ -39,6 +42,7 @@ class JumpStartModelRunner(ModelRunner):
                                   SageMaker endpoint invocation
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
+        :param sagemaker_session: SageMaker session to be reused
         """
         super().__init__(content_template, output, log_probability, MIME_TYPE_JSON, MIME_TYPE_JSON)
         self._endpoint_name = endpoint_name
@@ -48,16 +52,16 @@ class JumpStartModelRunner(ModelRunner):
         self._custom_attributes = custom_attributes
         self._output = output
         self._log_probability = log_probability
-        sagemaker_session = get_sagemaker_session()
+        self._sagemaker_session = get_sagemaker_session() if not sagemaker_session else sagemaker_session
         util.require(
-            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
+            is_endpoint_in_service(self._sagemaker_session, self._endpoint_name),
             f"Endpoint {self._endpoint_name} is not in service",
         )
         predictor = sagemaker.predictor.retrieve_default(
             endpoint_name=self._endpoint_name,
             model_id=self._model_id,
             model_version=self._model_version,
-            sagemaker_session=sagemaker_session,
+            sagemaker_session=self._sagemaker_session,
         )
         util.require(predictor.accept == MIME_TYPE_JSON, f"Model accept type `{predictor.accept}` is not supported.")
         util.require(
@@ -98,5 +102,6 @@ class JumpStartModelRunner(ModelRunner):
             self._custom_attributes,
             self._output,
             self._log_probability,
+            self._sagemaker_session,
         )
         return JumpStartModelRunner, serialized_data

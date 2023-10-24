@@ -5,6 +5,7 @@ import logging
 import sagemaker
 import amazon_fmeval.util as util
 from typing import Optional, Tuple
+from sagemaker.session import Session
 from amazon_fmeval.constants import MIME_TYPE_JSON
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 from amazon_fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
@@ -27,6 +28,7 @@ class SageMakerModelRunner(ModelRunner):
         log_probability: Optional[str] = None,
         content_type: str = MIME_TYPE_JSON,
         accept_type: str = MIME_TYPE_JSON,
+        sagemaker_session: Optional[Session] = None,
     ):
         """
         :param endpoint_name: Name of the SageMaker endpoint to be used for model predictions
@@ -37,6 +39,7 @@ class SageMakerModelRunner(ModelRunner):
         :param log_probability: JMESPath expression of log probability in the model output
         :param content_type: The content type of the request sent to the model for inference
         :param accept_type: The accept type of the request sent to the model for inference
+        :param sagemaker_session: SageMaker session to be reused
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
         self._endpoint_name = endpoint_name
@@ -47,14 +50,14 @@ class SageMakerModelRunner(ModelRunner):
         self._content_type = content_type
         self._accept_type = accept_type
 
-        sagemaker_session = get_sagemaker_session()
+        self._sagemaker_session = get_sagemaker_session() if not sagemaker_session else sagemaker_session
         util.require(
-            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
+            is_endpoint_in_service(self._sagemaker_session, self._endpoint_name),
             "Endpoint {endpoint_name} is not in service",
         )
         self._predictor = sagemaker.predictor.Predictor(
             endpoint_name=self._endpoint_name,
-            sagemaker_session=sagemaker_session,
+            sagemaker_session=self._sagemaker_session,
             # we only support JSON format model input/output currently
             serializer=sagemaker.serializers.JSONSerializer(),
             deserializer=sagemaker.deserializers.JSONDeserializer(),
@@ -92,5 +95,6 @@ class SageMakerModelRunner(ModelRunner):
             self._log_probability,
             self._content_type,
             self._accept_type,
+            self._sagemaker_session
         )
         return SageMakerModelRunner, serialized_data
