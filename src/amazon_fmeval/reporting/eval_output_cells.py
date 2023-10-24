@@ -180,7 +180,7 @@ class CategoryScoreCell(MarkdownCell):
             if len(categories) > n
             else ""
         )
-        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories))))
+        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories), reverse=True)))
         bar_plot = CategoryBarPlotCell(
             sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height="70%", width="70%"
         )

@@ -1,6 +1,6 @@
 from unittest.mock import patch, Mock, call, MagicMock
 
-from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore
+from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore, EvalAlgorithm
 from amazon_fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
 from amazon_fmeval.reporting.cells import BarPlotCell, TableCell
 from amazon_fmeval.reporting.eval_output_cells import (
@@ -195,9 +195,72 @@ class TestEvalOutputCells:
         scores = [0.314, 0.271, 0.888]
         dataset_score = 0.5
 
+        sorted_categories = ["age", "nationality", "religion"]
+        sorted_scores = [0.888, 0.314, 0.271]
         expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model scores lowest in the category **religion**. "
-        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"):
-            cell = CategoryScoreCell(categories, scores, "prompt stereotyping", dataset_score)
+        with patch(
+            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
+        ) as category_bar_plot:
+            cell = CategoryScoreCell(categories, scores, EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_score)
+            category_bar_plot.assert_called_with(
+                sorted_categories,
+                sorted_scores,
+                EvalAlgorithm.PROMPT_STEREOTYPING.value,
+                dataset_score,
+                height="70%",
+                width="70%",
+            )
+            assert str(cell) == expected_cell
+
+    def test_category_score_cell_over_n_categories(self):
+        """
+        GIVEN over 10 categories
+        WHEN a CategoryScoreCell is created
+        THEN the top 10 categories and their scores are shown in the CategoryBarPlot
+        """
+        categories = [
+            "nationality",
+            "religion",
+            "age",
+            "owner",
+            "profession",
+            "manufacturer",
+            "director",
+            "tributary",
+            "team",
+            "capitals",
+            "founders",
+            "creator",
+        ]
+        scores = [0.314, 0.271, 0.888, 0.642, 0.5, 0, 1, 0.091, 0.411, 0.296, 0.333, 1]
+        dataset_score = 0.283
+
+        sorted_top_categories = [
+            "director",
+            "creator",
+            "age",
+            "owner",
+            "profession",
+            "team",
+            "founders",
+            "nationality",
+            "capitals",
+            "religion",
+        ]
+        sorted_top_scores = [1, 1, 0.888, 0.642, 0.5, 0.411, 0.333, 0.314, 0.296, 0.271]
+        expected_cell = "The plot shows the score breakdown into individual categories.  \n\nThe top 10 categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location.  \n\nAggBPCell  \n\nThe model scores lowest in the category **manufacturer**. "
+        with patch(
+            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
+        ) as category_bar_plot:
+            cell = CategoryScoreCell(categories, scores, EvalAlgorithm.FACTUAL_KNOWLEDGE.value, dataset_score)
+            category_bar_plot.assert_called_with(
+                sorted_top_categories,
+                sorted_top_scores,
+                EvalAlgorithm.FACTUAL_KNOWLEDGE.value,
+                dataset_score,
+                height="70%",
+                width="70%",
+            )
             assert str(cell) == expected_cell
 
     @pytest.mark.parametrize(
