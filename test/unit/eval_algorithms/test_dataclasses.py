@@ -1,5 +1,3 @@
-import math
-
 import pytest
 from typing import NamedTuple
 from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
@@ -45,7 +43,7 @@ class TestDataClasses:
                 eval_score_2=EvalScore(name="my_score", value=0.42 - 2 * ABS_TOL),
                 expected=False,
             ),
-        ]
+        ],
     )
     def test_eval_score_eq(self, eval_score_1, eval_score_2, expected):
         """
@@ -67,17 +65,11 @@ class TestDataClasses:
             TestCaseCategoryScore(
                 category_score_1=CategoryScore(
                     name="category_name",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 category_score_2=CategoryScore(
                     name="category_name",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 expected=True,
             ),
@@ -88,15 +80,14 @@ class TestDataClasses:
                     scores=[
                         EvalScore(name="eval_1", value=0.42),
                         EvalScore(name="eval_2", value=0.162),
-                    ]
+                    ],
                 ),
                 category_score_2=CategoryScore(
                     name="category_name",
                     scores=[
                         EvalScore(name="eval_2", value=0.162),
                         EvalScore(name="eval_1", value=0.42),
-
-                    ]
+                    ],
                 ),
                 expected=True,
             ),
@@ -104,17 +95,14 @@ class TestDataClasses:
             TestCaseCategoryScore(
                 category_score_1=CategoryScore(
                     name="category_name",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 category_score_2=CategoryScore(
                     name="category_name",
                     scores=[
                         EvalScore(name="eval_1", value=0.42 + ABS_TOL),
-                        EvalScore(name="eval_2", value=0.162 - ABS_TOL)
-                    ]
+                        EvalScore(name="eval_2", value=0.162 - ABS_TOL),
+                    ],
                 ),
                 expected=True,
             ),
@@ -122,17 +110,11 @@ class TestDataClasses:
             TestCaseCategoryScore(
                 category_score_1=CategoryScore(
                     name="category_1",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 category_score_2=CategoryScore(
                     name="category_2",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 expected=False,
             ),
@@ -140,21 +122,15 @@ class TestDataClasses:
             TestCaseCategoryScore(
                 category_score_1=CategoryScore(
                     name="category_name",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162)],
                 ),
                 category_score_2=CategoryScore(
                     name="category_name",
-                    scores=[
-                        EvalScore(name="eval_1", value=0.42),
-                        EvalScore(name="eval_2", value=0.162 + 2 * ABS_TOL)
-                    ]
+                    scores=[EvalScore(name="eval_1", value=0.42), EvalScore(name="eval_2", value=0.162 + 2 * ABS_TOL)],
                 ),
                 expected=False,
             ),
-        ]
+        ],
     )
     def test_category_score_eq(self, category_score_1, category_score_2, expected):
         assert (category_score_1 == category_score_2) == expected
