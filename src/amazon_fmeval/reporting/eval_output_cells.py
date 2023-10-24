@@ -174,13 +174,12 @@ class CategoryScoreCell(MarkdownCell):
         :param dataset_score: The overall score for the dataset.
         :param n: Max number of categories to display.
         """
-
         note = (
             f"The top {n} categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location."
             if len(categories) > n
             else ""
         )
-        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories))))
+        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories), reverse=True)))
         bar_plot = CategoryBarPlotCell(
             sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height="70%", width="70%"
         )
