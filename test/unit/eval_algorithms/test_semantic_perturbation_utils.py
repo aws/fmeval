@@ -121,3 +121,56 @@ class TestSemanticPerturbationUtils:
             )
             == test_case.expected_outputs
         )
+
+    @pytest.mark.parametrize(
+        "test_case, perturbation_type",
+        [
+            (
+                TestData(
+                    seed=5,
+                    input_text="A quick brown fox jumps over the lazy dog 10 times.",
+                    expected_outputs=[
+                        "A quick trowm fox jumpa over tne lazy dog 10 times.",
+                        "A quicy brodn fud jumps oveg tke lasj dog 10 times.",
+                        "A quick bwown fox jumps ovev the lazy dkg 10 times.",
+                    ],
+                    config=ButterFingerConfig(),
+                    num_perturbations=3,
+                ),
+                ButterFinger,
+            ),
+            (
+                TestData(
+                    seed=5,
+                    input_text="A quick brown fox jumps over the lazy dog 10 times.",
+                    expected_outputs=[
+                        "A quick  brown fox  jumps ove r the lazy dog 10 time s.",
+                        "A quick b row n fo x  jumps over the  lazy dog 10 time s.",
+                        "A quick b rown fox jumps over the lazy dog 10 times.",
+                    ],
+                    config=WhitespaceAddRemoveConfig(),
+                    num_perturbations=3,
+                ),
+                WhitespaceAddRemove,
+            ),
+            (
+                TestData(
+                    seed=5,
+                    input_text="A quick brown fox jumps over the lazy dog 10 times.",
+                    expected_outputs=[
+                        "A quick brown fox jUmps over The Lazy doG 10 times.",
+                        "A quIck brown fox jumps over the lazy dog 10 times.",
+                        "A quick brown Fox jumps over the lAzy dog 10 tImes.",
+                    ],
+                    config=RandomUpperCaseConfig(),
+                    num_perturbations=3,
+                ),
+                RandomUpperCase,
+            ),
+        ],
+    )
+    def test_default_seed(self, test_case, perturbation_type):
+        assert (
+            perturbation_type().perturb(test_case.input_text, test_case.config, test_case.num_perturbations)
+            == test_case.expected_outputs
+        )

@@ -6,7 +6,7 @@ from typing import Type, Optional
 from s3fs import S3FileSystem
 
 from amazon_fmeval import util
-from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, PARTITION_MULTIPLIER, SEED
+from amazon_fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, PARTITION_MULTIPLIER, SEED, MAX_ROWS_TO_TAKE
 from amazon_fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile
 from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from amazon_fmeval.data_loaders.json_parser import JsonParser
@@ -34,11 +34,21 @@ def get_dataset(config: DataConfig, num_records: Optional[int] = None) -> ray.da
         count = data.count()
         util.require(count > 0, "Data has to have at least one record")
         if num_records and num_records > 0:  # pragma: no branch
+            # TODO update sampling logic - current logic is biased towards first MAX_ROWS_TO_TAKE rows
             num_records = min(num_records, count)
             # We are using to_pandas, sampling with Pandas dataframe, and then converting back to Ray Dataset to use
             # Pandas DataFrame's ability to sample deterministically. This is temporary workaround till Ray solves this
             # issue: https://github.com/ray-project/ray/issues/40406
-            data = ray.data.from_pandas(data.to_pandas().sample(num_records, random_state=SEED))
+            if count > MAX_ROWS_TO_TAKE:
+                # If count is larger than 100000, we take the first 100000 row, and then sample from that to
+                # maintain deterministic behaviour. We are using take_batch to get a pandas dataframe of size
+                # MAX_ROWS_TO_TAKE when the size of original dataset is greater than MAX_ROWS_TO_TAKE. This is to avoid
+                # failures in driver node by pulling too much data.
+                pandas_df = data.take_batch(batch_size=MAX_ROWS_TO_TAKE, batch_format="pandas")
+            else:
+                pandas_df = data.to_pandas()
+            sampled_df = pandas_df.sample(num_records, random_state=SEED)
+            data = ray.data.from_pandas(sampled_df)
         data = data.repartition(get_num_actors() * PARTITION_MULTIPLIER).materialize()
     return data
 

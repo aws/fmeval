@@ -13,9 +13,10 @@ def test_get_sagemaker_session():
     def mock_boto3_session_client(*_, **kwargs):
         if kwargs.get("service_name") == "sagemaker":
             client = mock_sagemaker_client
+            assert kwargs["config"].retries == {"mode": "adaptive", "max_attempts": 10}
         elif kwargs.get("service_name") == "sagemaker-runtime":
             client = mock_sagemaker_runtime_client
-            assert kwargs["config"].retries == {"mode": "standard", "max_attempts": 0}
+            assert kwargs["config"].retries == {"mode": "adaptive", "max_attempts": 10}
         else:
             client = mock_other_client  # we don't care which it is
         client.service_name = kwargs.get("service_name")
@@ -36,7 +37,7 @@ def test_get_bedrock_runtime_client():
     def mock_boto3_session_client(*_, **kwargs):
         if kwargs.get("service_name") == "bedrock-runtime":
             client = mock_bedrock_runtime_client
-            assert kwargs["config"].retries == {"mode": "standard", "max_attempts": 0}
+            assert kwargs["config"].retries == {"mode": "adaptive", "max_attempts": 10}
         else:
             client = mock_other_client  # we don't care which it is
         client.service_name = kwargs.get("service_name")

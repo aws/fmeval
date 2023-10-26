@@ -49,7 +49,7 @@ SUPPORTED_MIME_TYPES = [MIME_TYPE_JSON, MIME_TYPE_JSONLINES]
 MEAN = "mean"
 
 # Configures `save_dataset` behavior regarding how many
-# `EvalOutputRecord`s to accumulate  before writing them
+# EvalOutputRecords to accumulate before writing them
 # to the output JSON Lines file.
 EVAL_OUTPUT_RECORDS_BATCH_SIZE = 1024
 
@@ -62,3 +62,11 @@ RANDOM_UPPER_CASE = "random_upper_case"
 WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
 
 PREFIX_FOR_DELTA_SCORES = "delta_"
+
+# Check if model is deterministic for first NUM_ROWS_DETERMINISTIC rows of dataset
+NUM_ROWS_DETERMINISTIC = 5
+
+MAX_ROWS_TO_TAKE = 100000
+
+# The absolute tolerance used when performing approximate numerical comparisons
+ABS_TOL = 1e-4

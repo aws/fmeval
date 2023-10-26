@@ -12,9 +12,18 @@ from amazon_fmeval.constants import (
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
     TARGET_OUTPUT_COLUMN_NAME,
+    MODEL_OUTPUT_COLUMN_NAME,
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore
+from amazon_fmeval.eval_algorithms import (
+    EvalScore,
+    EvalOutput,
+    CategoryScore,
+    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
+    CNN_DAILY_MAIL,
+    XSUM,
+    DEFAULT_PROMPT_TEMPLATE,
+)
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
@@ -36,6 +45,7 @@ DATASET_WITH_SCORES = ray.data.from_items(
             MODEL_INPUT_COLUMN_NAME: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
             TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
+            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
             DELTA_ROUGE_SCORE: 0.0,
             DELTA_METEOR_SCORE: 0.0,
             DELTA_BERT_SCORE: 0.0,
@@ -47,6 +57,7 @@ DATASET_WITH_SCORES = ray.data.from_items(
             "You will find a selection of current and upcoming exhibitions here.",
             TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
+            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
             DELTA_ROUGE_SCORE: 0.0,
             DELTA_METEOR_SCORE: 0.0,
             DELTA_BERT_SCORE: 0.0,
@@ -54,11 +65,15 @@ DATASET_WITH_SCORES = ray.data.from_items(
     ]
 )
 
-DATASET = DATASET_WITH_SCORES.drop_columns(cols=[DELTA_ROUGE_SCORE, DELTA_METEOR_SCORE, DELTA_BERT_SCORE])
+DATASET_WITH_MODEL_OUTPUT = DATASET_WITH_SCORES.drop_columns(
+    cols=[DELTA_ROUGE_SCORE, DELTA_METEOR_SCORE, DELTA_BERT_SCORE]
+)
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[MODEL_OUTPUT_COLUMN_NAME])
 
-EVAL_RESULTS_PATH = "/tmp/eval_results/"
+DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[CATEGORY_COLUMN_NAME])
+
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[CATEGORY_COLUMN_NAME])
 
 
 class MockModelRunner(ModelRunner):
@@ -218,6 +233,140 @@ class TestSummarizationAccuracySemanticRobustness:
     @pytest.mark.parametrize(
         "test_case",
         [
+            TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
+                model_input="Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+                target_output="I like cake.",
+                original_model_output="Some model output.",
+                perturbed_model_output_1="Some model output.",
+                perturbed_model_output_2="Some model output.",
+                sa_eval_score_original=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
+                ],
+                sa_eval_score_perturbed_1=[
+                    EvalScore(name=METEOR_SCORE, value=1.0),
+                    EvalScore(name=ROUGE_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=1.0),
+                ],
+                sa_eval_score_perturbed_2=[
+                    EvalScore(name=METEOR_SCORE, value=0.5),
+                    EvalScore(name=ROUGE_SCORE, value=2.0),
+                    EvalScore(name=BERT_SCORE, value=2.5),
+                ],
+                expected_response=[
+                    EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
+                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                ],
+                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
+            ),
+        ],
+    )
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    def test_semantic_robustness_evaluate_sample_with_model_output(self, summarization_accuracy, test_case):
+        """
+        GIVEN valid inputs with model_output
+        WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
+        THEN correct List of EvalScores is returned
+        """
+        model = MagicMock()
+        model.predict.side_effect = [
+            (test_case.original_model_output,),
+            (test_case.perturbed_model_output_1,),
+            (test_case.perturbed_model_output_2,),
+        ]
+
+        summarization_accuracy_instance = MagicMock()
+        summarization_accuracy_instance.evaluate_sample.side_effect = [
+            test_case.sa_eval_score_original,
+            test_case.sa_eval_score_perturbed_1,
+            test_case.sa_eval_score_perturbed_2,
+        ]
+        summarization_accuracy.return_value = summarization_accuracy_instance
+
+        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
+        assert (
+            eval_algorithm.evaluate_sample(
+                model_input=test_case.model_input,
+                model=model,
+                target_output=test_case.target_output,
+                model_output=test_case.original_model_output,
+            )
+            == test_case.expected_response
+        )
+        assert model.predict.call_count == 3
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
+                model_input="Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+                target_output="I like cake.",
+                original_model_output="Some model output.",
+                perturbed_model_output_1="Some model output.",
+                perturbed_model_output_2="Some model output.",
+                sa_eval_score_original=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
+                ],
+                sa_eval_score_perturbed_1=[
+                    EvalScore(name=METEOR_SCORE, value=1.0),
+                    EvalScore(name=ROUGE_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=1.0),
+                ],
+                sa_eval_score_perturbed_2=[
+                    EvalScore(name=METEOR_SCORE, value=0.5),
+                    EvalScore(name=ROUGE_SCORE, value=2.0),
+                    EvalScore(name=BERT_SCORE, value=2.5),
+                ],
+                expected_response=[
+                    EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
+                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                ],
+                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
+            ),
+        ],
+    )
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, summarization_accuracy, test_case):
+        """
+        GIVEN valid inputs with model_output and a deterministic model
+        WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
+        THEN correct List of EvalScores is returned
+        """
+        model = MagicMock()
+        model.predict.side_effect = [
+            (test_case.perturbed_model_output_1,),
+            (test_case.perturbed_model_output_2,),
+        ]
+
+        summarization_accuracy_instance = MagicMock()
+        summarization_accuracy_instance.evaluate_sample.side_effect = [
+            test_case.sa_eval_score_original,
+            test_case.sa_eval_score_perturbed_1,
+            test_case.sa_eval_score_perturbed_2,
+        ]
+        summarization_accuracy.return_value = summarization_accuracy_instance
+
+        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
+        eval_algorithm._is_model_deterministic = True
+        assert (
+            eval_algorithm.evaluate_sample(
+                model_input=test_case.model_input,
+                model=model,
+                model_output=test_case.original_model_output,
+                target_output=test_case.target_output,
+            )
+            == test_case.expected_response
+        )
+        assert model.predict.call_count == 2
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateSampleInvalid(
                 model_input="I like cake.",
                 target_output="I like cake.",
@@ -287,7 +436,7 @@ class TestSummarizationAccuracySemanticRobustness:
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
         with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be " "deterministic."
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
         ):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, model)
 
@@ -334,6 +483,7 @@ class TestSummarizationAccuracySemanticRobustness:
 
     class TestCaseSummarizationAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
+        input_dataset_with_generated_model_output: Dataset
         prompt_template: Optional[str]
         dataset_config: Optional[DataConfig]
         expected_response: List[EvalOutput]
@@ -346,6 +496,7 @@ class TestSummarizationAccuracySemanticRobustness:
             # Built-in datasets evaluate for dataset without category
             TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
                 input_dataset=DATASET_NO_CATEGORY,
+                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT,
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
@@ -353,33 +504,34 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="cnn_daily_mail",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="xsum",
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_xsum.jsonl",
                     ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
                 input_dataset=DATASET,
+                input_dataset_with_generated_model_output=DATASET_WITH_MODEL_OUTPUT,
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
@@ -387,13 +539,13 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="cnn_daily_mail",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
@@ -412,17 +564,17 @@ class TestSummarizationAccuracySemanticRobustness:
                                 ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name="xsum",
+                        dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="Summarise: $feature",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=[
                             CategoryScore(
                                 name="dummy_category_1",
@@ -441,13 +593,14 @@ class TestSummarizationAccuracySemanticRobustness:
                                 ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_xsum.jsonl",
                     ),
                 ],
             ),
-            # Custom dataset evaluate
+            # Custom dataset evaluate with input prompt template
             TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
                 input_dataset=DATASET_NO_CATEGORY,
+                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT,
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -471,7 +624,38 @@ class TestSummarizationAccuracySemanticRobustness:
                         ],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/",
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_my_custom_dataset.jsonl",
+                    ),
+                ],
+            ),
+            # Custom dataset evaluate without input prompt template
+            TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
+                input_dataset=DATASET_NO_CATEGORY,
+                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="summarization_accuracy_semantic_robustness",
+                        dataset_name="my_custom_dataset",
+                        dataset_scores=[
+                            EvalScore(name="delta_rouge", value=0.0),
+                            EvalScore(name="delta_bertscore", value=0.0),
+                            EvalScore(name="delta_meteor", value=0.0),
+                        ],
+                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
+                        category_scores=None,
+                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_my_custom_dataset.jsonl",
                     ),
                 ],
             ),
@@ -509,6 +693,48 @@ class TestSummarizationAccuracySemanticRobustness:
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
+                input_dataset=DATASET_NO_CATEGORY,
+                input_dataset_with_generated_model_output=None,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template="$feature",
+                save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                expected_response=None,
+            ),
+        ],
+    )
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
+    def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
+        """
+        GIVEN a non-deterministic model
+        WHEN SummarizationAccuracySemanticRobustness.evaluate is called
+        THEN correct exception with proper message is raised
+        """
+        model = MagicMock()
+        original_model_output = "some model output"
+        model.predict.side_effect = [
+            (original_model_output,),
+            (original_model_output + "1",),
+        ]
+        get_dataset.return_value = test_case.input_dataset
+        eval_algorithm = SummarizationAccuracySemanticRobustness(config)
+        with pytest.raises(
+            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
+        ):
+            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 
     class TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
         input_dataset: Dataset
@@ -557,21 +783,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 prompt_template=None,
                 model_provided=True,
                 expected_error_message="Missing required column: target_output, for evaluate() method",
-            ),
-            TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=True,
-                prompt_template=None,
-                expected_error_message="Missing required input: prompt_template for evaluating custom dataset :",
             ),
         ],
     )

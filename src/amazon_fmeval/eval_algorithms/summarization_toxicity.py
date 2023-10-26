@@ -9,15 +9,15 @@ DETOXIFY_MODEL = "detoxify"
 
 TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
 
-QA_TOXICITY = EvalAlgorithm.QA_TOXICITY.value
+SUMMARIZATION_TOXICITY = EvalAlgorithm.SUMMARIZATION_TOXICITY.value
 
 
-class QAToxicity(Toxicity):
+class SummarizationToxicity(Toxicity):
     """
-    QA Toxicity eval algorithm
+    Summarization Toxicity eval algorithm
 
-    Note: This separate eval algo implementation is for mapping QA Toxicity specific built-in datasets. For consuming
-    toxicity eval algo with your custom dataset please refer and use Toxicity eval algo
+    Note: This separate eval algo implementation is for mapping Summarization Toxicity specific built-in datasets.
+    For consuming toxicity eval algo with your custom dataset please refer and use Toxicity eval algo
     """
 
     def __init__(self, eval_algorithm_config: ToxicityConfig):
@@ -26,6 +26,6 @@ class QAToxicity(Toxicity):
         :param eval_algorithm_config: Toxicity eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = QA_TOXICITY
+        self.eval_name = SUMMARIZATION_TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
         self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()

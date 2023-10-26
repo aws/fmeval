@@ -18,10 +18,9 @@ from amazon_fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
     CategoryScore,
-    NATURAL_QUESTIONS,
+    CNN_DAILY_MAIL,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    TRIVIA_QA,
-    BOOLQ,
+    XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
 from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
@@ -35,7 +34,7 @@ from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_SEXUAL_EXPLICIT,
     DETOXIFY_SCORE_NAMES,
 )
-from amazon_fmeval.eval_algorithms.qa_toxicity import QAToxicity
+from amazon_fmeval.eval_algorithms.summarization_toxicity import SummarizationToxicity
 from amazon_fmeval.eval_algorithms.toxicity import (
     ToxicityConfig,
     TOXIGEN_MODEL,
@@ -48,14 +47,14 @@ DATASET_TOXIGEN = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "sample model input",
-            PROMPT_COLUMN_NAME: "sample model input",
+            PROMPT_COLUMN_NAME: "Summarize: sample model input",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
             MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
         },
         {
             MODEL_INPUT_COLUMN_NAME: "sample model input",
-            PROMPT_COLUMN_NAME: "sample model input",
+            PROMPT_COLUMN_NAME: "Summarize: sample model input",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
             MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
@@ -67,6 +66,7 @@ DATASET_DETOXIFY = ray.data.from_items(
     [
         {
             MODEL_INPUT_COLUMN_NAME: "sample model input",
+            PROMPT_COLUMN_NAME: "Summarize: sample model input",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
             MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
@@ -79,6 +79,7 @@ DATASET_DETOXIFY = ray.data.from_items(
         },
         {
             MODEL_INPUT_COLUMN_NAME: "sample model input",
+            PROMPT_COLUMN_NAME: "Summarize: sample model input",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
             MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
@@ -95,7 +96,7 @@ DATASET_DETOXIFY = ray.data.from_items(
 EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
 
-class TestQAToxicity:
+class TestSummarizationToxicityToxicity:
     @fixture(scope="module")
     def config(self) -> ToxicityConfig:
         return ToxicityConfig(model_type=TOXIGEN_MODEL)
@@ -140,15 +141,16 @@ class TestQAToxicity:
         ],
     )
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+        "amazon_fmeval.eval_algorithms.summarization_toxicity.TOXICITY_HELPER_MODEL_MAPPING",
+        {TOXIGEN_MODEL: get_toxigen_mock()},
     )
     def test_toxicity_evaluate_sample_toxigen(self, test_case, config):
         """
         GIVEN valid inputs
-        WHEN QAToxicity.evaluate_sample with toxigen model_type is called
+        WHEN SummarizationToxicity.evaluate_sample with toxigen model_type is called
         THEN correct List of EvalScores is returned
         """
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
     @pytest.mark.parametrize(
@@ -169,28 +171,30 @@ class TestQAToxicity:
         ],
     )
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {DETOXIFY_MODEL: get_detoxify_mock()}
+        "amazon_fmeval.eval_algorithms.summarization_toxicity.TOXICITY_HELPER_MODEL_MAPPING",
+        {DETOXIFY_MODEL: get_detoxify_mock()},
     )
     def test_toxicity_evaluate_sample_detoxify(self, test_case):
         """
         GIVEN valid inputs
-        WHEN QAToxicity.evaluate_sample with detoxify model_type is called
+        WHEN SummarizationToxicity.evaluate_sample with detoxify model_type is called
         THEN correct List of EvalScores is returned
         """
         config = ToxicityConfig()
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+        "amazon_fmeval.eval_algorithms.summarization_toxicity.TOXICITY_HELPER_MODEL_MAPPING",
+        {TOXIGEN_MODEL: get_toxigen_mock()},
     )
     def test_toxicity_evaluate_sample_invalid_input(self, config):
         """
         GIVEN invalid inputs
-        WHEN QAToxicity.evaluate_sample is called
+        WHEN SummarizationToxicity.evaluate_sample is called
         THEN expected error is raised
         """
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         expected_error_message = "Missing required input: target_output, for Toxicity evaluate_sample"
         with pytest.raises(EvalAlgorithmClientError, match=expected_error_message):
             eval_algorithm.evaluate_sample(None)
@@ -219,28 +223,20 @@ class TestQAToxicity:
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
                     EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=BOOLQ,
+                        eval_name="summarization_toxicity",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_boolq.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=TRIVIA_QA,
+                        eval_name="summarization_toxicity",
+                        dataset_name=XSUM,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_trivia_qa.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=NATURAL_QUESTIONS,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_natural_questions.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
                     ),
                 ],
             ),
@@ -255,37 +251,26 @@ class TestQAToxicity:
                 dataset_with_scores=DATASET_TOXIGEN,
                 expected_response=[
                     EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=BOOLQ,
+                        eval_name="summarization_toxicity",
+                        dataset_name=CNN_DAILY_MAIL,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
                         category_scores=[
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/qa_toxicity_boolq.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
                     ),
                     EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=TRIVIA_QA,
+                        eval_name="summarization_toxicity",
+                        dataset_name=XSUM,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         category_scores=[
                             CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
-                        output_path="/tmp/eval_results/qa_toxicity_trivia_qa.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="qa_toxicity",
-                        dataset_name=NATURAL_QUESTIONS,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/qa_toxicity_natural_questions.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
                     ),
                 ],
             ),
@@ -310,12 +295,12 @@ class TestQAToxicity:
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
                     EvalOutput(
-                        eval_name="qa_toxicity",
+                        eval_name="summarization_toxicity",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template="$feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl/",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -340,12 +325,12 @@ class TestQAToxicity:
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
                     EvalOutput(
-                        eval_name="qa_toxicity",
+                        eval_name="summarization_toxicity",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -355,7 +340,7 @@ class TestQAToxicity:
     @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
-    @patch.object(QAToxicity, "_Toxicity__add_scores")
+    @patch.object(SummarizationToxicity, "_Toxicity__add_scores")
     @patch.dict(
         "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
     )
@@ -372,13 +357,13 @@ class TestQAToxicity:
         """
         GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
             and request to save records with scores
-        WHEN QAToxicity evaluate() method is called
+        WHEN SummarizationToxicity evaluate() method is called
         THEN correct EvalOutput is returned
         """
         add_score_to_dataset.return_value = test_case.dataset_with_scores
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         actual_response = eval_algorithm.evaluate(
             model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
         )
@@ -406,12 +391,12 @@ class TestQAToxicity:
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
                 expected_response=[
                     EvalOutput(
-                        eval_name="qa_toxicity",
+                        eval_name="summarization_toxicity",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=None,
                         category_scores=None,
-                        output_path="/tmp/eval_results/qa_toxicity_my_custom_dataset.jsonl",
+                        output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
                 ],
             ),
@@ -420,9 +405,10 @@ class TestQAToxicity:
     @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
     @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
-    @patch.object(QAToxicity, "_Toxicity__add_scores")
+    @patch.object(SummarizationToxicity, "_Toxicity__add_scores")
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+        "amazon_fmeval.eval_algorithms.summarization_toxicity.TOXICITY_HELPER_MODEL_MAPPING",
+        {TOXIGEN_MODEL: get_toxigen_mock()},
     )
     def test_toxicity_evaluate_no_model(
         self,
@@ -436,12 +422,12 @@ class TestQAToxicity:
         """
         GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
             and request to save records with scores
-        WHEN QAToxicity evaluate() method is called
+        WHEN SummarizationToxicity evaluate() method is called
         THEN correct EvalOutput is returned
         """
         add_score_to_dataset.return_value = test_case.dataset_with_scores
         get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         actual_response = eval_algorithm.evaluate(
             model=None, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=False
         )
@@ -513,15 +499,16 @@ class TestQAToxicity:
     @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
     @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
+        "amazon_fmeval.eval_algorithms.summarization_toxicity.TOXICITY_HELPER_MODEL_MAPPING",
+        {TOXIGEN_MODEL: get_toxigen_mock()},
     )
     def test_toxicity_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs
-        WHEN QAToxicity evaluate() method is called
+        WHEN SummarizationToxicity evaluate() method is called
         THEN correct exception with proper message is raised
         """
-        eval_algorithm = QAToxicity(config)
+        eval_algorithm = SummarizationToxicity(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
             model = None
