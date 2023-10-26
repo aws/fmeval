@@ -2,10 +2,11 @@ import re
 from typing import NamedTuple, Union, List, Dict
 
 import pytest
+
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import (
     JsonContentComposer,
     PromptComposer,
-    EvalAlgorithmClientError,
 )
 
 

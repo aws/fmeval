@@ -1,13 +1,25 @@
+import json
 from typing import Union, List, Dict, Optional
+from urllib import request
 
+from functional import seq
 from sagemaker import Session
-from sagemaker.jumpstart.payload_utils import _extract_generated_text_from_response
 
+from amazon_fmeval import util
+from amazon_fmeval.constants import (
+    MODEL_ID,
+    SPEC_KEY,
+    GENERATED_TEXT_JMESPATH_EXPRESSION,
+    SDK_MANIFEST_FILE,
+    JUMPSTART_BUCKET_BASE_URL,
+    DEFAULT_PAYLOADS,
+)
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.data_loaders.jmespath_util import compile_jmespath
 from amazon_fmeval.model_runners.extractors.extractor import Extractor
 
-JS_LOG_PROB_JMESPATH = "details.prefill[*].logprob"
+# The expected model response location for Jumpstart that do produce the log probabilities
+JS_LOG_PROB_JMESPATH = "[0].details.prefill[*].logprob"
 
 
 class JumpStartExtractor(Extractor):
@@ -31,7 +43,21 @@ class JumpStartExtractor(Extractor):
         self._sagemaker_session = sagemaker_session
         self._log_prob_compiler = compile_jmespath(JS_LOG_PROB_JMESPATH)
 
-    def extract_log_probability(self, data: Union[List, Dict], num_records: int = 1) -> Optional[float]:
+        model_spec_key = self.get_jumpstart_sdk_spec(
+            seq(self.get_jumpstart_sdk_manifest()).find(lambda x: x[MODEL_ID] == jumpstart_model_id)[SPEC_KEY]
+        )
+        util.require(DEFAULT_PAYLOADS in model_spec_key, f"Model: {jumpstart_model_id} is not supported at this time")
+        output_jmespath_expressions = compile_jmespath(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
+            model_spec_key[DEFAULT_PAYLOADS]
+        )
+        util.require(
+            output_jmespath_expressions,
+            f"Jumpstart model {jumpstart_model_id} is likely not supported. If you know it is generates text, "
+            f"please provide output and log_probability jmespaths to the JumpStartModelRunner",
+        )
+        self._output_jmespath_compiler = compile_jmespath(output_jmespath_expressions[0])
+
+    def extract_log_probability(self, data: Union[List, Dict], num_records: int = 1) -> float:
         """
         Extracts the log probability from the JumpStartModel response. This value is not provided by all JS text models.
 
@@ -47,7 +73,7 @@ class JumpStartExtractor(Extractor):
         except ValueError as e:
             raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
 
-    def extract_output(self, data: Union[List, Dict], num_records: int = 1) -> Optional[str]:
+    def extract_output(self, data: Union[List, Dict], num_records: int = 1) -> str:
         """
         Extracts the output string from the JumpStartModel response. This value is provided by all JS text models, but
         not all JS FM models. This only supported for text-to-text models.
@@ -57,13 +83,23 @@ class JumpStartExtractor(Extractor):
         """
         assert num_records == 1, "Jumpstart extractor does not support batch requests"
         try:
-            return _extract_generated_text_from_response(
-                response=data,
-                model_id=self._model_id,
-                model_version=self._model_version,
-                sagemaker_session=self._sagemaker_session,
-                tolerate_vulnerable_model=True,
-                tolerate_deprecated_model=True,
-            )
+            output = self._output_jmespath_compiler.search(data)
+            if output is None and not isinstance(output, str):
+                raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}")
+            return output
         except ValueError as e:
             raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
+
+    @staticmethod
+    def get_jumpstart_sdk_manifest() -> Dict:
+        url = "{}/{}".format(JUMPSTART_BUCKET_BASE_URL, SDK_MANIFEST_FILE)
+        with request.urlopen(url) as f:
+            models_manifest = f.read().decode("utf-8")
+        return json.loads(models_manifest)
+
+    @staticmethod
+    def get_jumpstart_sdk_spec(key) -> Dict:
+        url = "{}/{}".format(JUMPSTART_BUCKET_BASE_URL, key)
+        with request.urlopen(url) as f:
+            model_spec = f.read().decode("utf-8")
+        return json.loads(model_spec)

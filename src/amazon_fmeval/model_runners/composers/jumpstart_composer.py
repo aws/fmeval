@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sagemaker.jumpstart.payload_utils import _construct_payload
 from sagemaker.jumpstart.types import JumpStartSerializablePayload
 
@@ -19,7 +17,7 @@ class JumpStartComposer(Composer):
         self._model_id = jumpstart_model_id
         self._model_version = jumpstart_model_version
 
-    def compose(self, prompt: str) -> Optional[JumpStartSerializablePayload]:
+    def compose(self, prompt: str) -> JumpStartSerializablePayload:
         """
         Composes the payload for the given JumpStartModel from the provided prompt.
         """
@@ -30,7 +28,5 @@ class JumpStartComposer(Composer):
             tolerate_deprecated_model=True,
             tolerate_vulnerable_model=True,
         )
-        util.require(
-            payload is not None, f"Unable to fetch default model payload for JumpStart model: {self._model_id}"
-        )
+        util.require(payload, f"Unable to fetch default model payload for JumpStart model: {self._model_id}")
         return payload

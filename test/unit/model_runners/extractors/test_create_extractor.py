@@ -1,7 +1,7 @@
 import pytest
 
-from amazon_fmeval import EvalAlgorithmClientError
 from amazon_fmeval.constants import MIME_TYPE_JSON
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.extractors import create_extractor, JsonExtractor, JumpStartExtractor
 
 
@@ -11,7 +11,8 @@ def test_create_extractor():
 
 def test_create_extractor_jumpstart():
     assert isinstance(
-        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="model_id"), JumpStartExtractor
+        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="huggingface-llm-falcon-7b-bf16"),
+        JumpStartExtractor,
     )
 
 

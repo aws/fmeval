@@ -167,7 +167,6 @@ install_poetry() {
 install_deps() {
     install_poetry
     poetry install
-    pip install git+https://github.com/aws/sagemaker-python-sdk@master
 }
 
 install_deps_dev() {
