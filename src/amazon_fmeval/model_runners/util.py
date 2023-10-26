@@ -8,6 +8,8 @@ import boto3
 import botocore
 import sagemaker
 
+from amazon_fmeval.constants import SAGEMAKER_SERVICE_ENDPOINT_URL, SAGEMAKER_RUNTIME_ENDPOINT_URL
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,10 +41,10 @@ def get_sagemaker_session(
     boto_session = get_boto_session()
     boto_config = botocore.client.Config(retries={"mode": boto_retry_mode, "max_attempts": retry_attempts})
     sagemaker_service_endpoint_url = os.getenv(
-        "SAGEMAKER_SERVICE_ENDPOINT_URL", "https://api.sagemaker.us-west-2.amazonaws.com"
+        SAGEMAKER_SERVICE_ENDPOINT_URL, "https://api.sagemaker.us-west-2.amazonaws.com"
     )
     sagemaker_runtime_endpoint_url = os.getenv(
-        "SAGEMAKER_RUNTIME_ENDPOINT_URL", "https://runtime.sagemaker.us-west-2.amazonaws.com"
+        SAGEMAKER_RUNTIME_ENDPOINT_URL, "https://runtime.sagemaker.us-west-2.amazonaws.com"
     )
     sagemaker_client = boto_session.client(
         service_name="sagemaker",
