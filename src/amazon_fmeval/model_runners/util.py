@@ -40,12 +40,8 @@ def get_sagemaker_session(
     """
     boto_session = get_boto_session()
     boto_config = botocore.client.Config(retries={"mode": boto_retry_mode, "max_attempts": retry_attempts})
-    sagemaker_service_endpoint_url = os.getenv(
-        SAGEMAKER_SERVICE_ENDPOINT_URL, "https://api.sagemaker.us-west-2.amazonaws.com"
-    )
-    sagemaker_runtime_endpoint_url = os.getenv(
-        SAGEMAKER_RUNTIME_ENDPOINT_URL, "https://runtime.sagemaker.us-west-2.amazonaws.com"
-    )
+    sagemaker_service_endpoint_url = os.getenv(SAGEMAKER_SERVICE_ENDPOINT_URL)
+    sagemaker_runtime_endpoint_url = os.getenv(SAGEMAKER_RUNTIME_ENDPOINT_URL)
     sagemaker_client = boto_session.client(
         service_name="sagemaker",
         endpoint_url=sagemaker_service_endpoint_url,
