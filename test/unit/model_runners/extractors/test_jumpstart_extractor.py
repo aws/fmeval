@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 from _pytest.fixtures import fixture
@@ -60,8 +61,14 @@ EXAMPLE_JUMPSTART_RESPONSE = [
 
 class TestJumpStartExtractor:
     @fixture(scope="module")
-    def extractor(self):
-        yield JumpStartExtractor(jumpstart_model_id="huggingface-llm-falcon-7b-bf16", jumpstart_model_version="*")
+    @patch("sagemaker.session.Session")
+    def extractor(self, sagemaker_session):
+        sagemaker_session.boto_region_name = "us-west-2"
+        return JumpStartExtractor(
+            jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+            jumpstart_model_version="*",
+            sagemaker_session=sagemaker_session,
+        )
 
     def test_log_probability_fails_for_batch_request(self, extractor):
         with pytest.raises(AssertionError, match="Jumpstart extractor does not support batch requests"):

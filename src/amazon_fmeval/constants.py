@@ -1,5 +1,4 @@
 # Output results path
-import os
 
 EVAL_RESULTS_PATH = "EVAL_RESULTS_PATH"
 DEFAULT_EVAL_RESULTS_PATH = "/tmp/eval_results/"
@@ -83,9 +82,6 @@ JUMPSTART_MODEL_VERSION = "jumpstart_model_version"
 MODEL_ID = "model_id"
 SPEC_KEY = "spec_key"
 DEFAULT_PAYLOADS = "default_payloads"
-JUMPSTART_REGION = os.environ.get("AWS_REGION", "us-east-2")
 SDK_MANIFEST_FILE = "models_manifest.json"
-JUMPSTART_BUCKET_BASE_URL = "https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com".format(
-    JUMPSTART_REGION, JUMPSTART_REGION
-)
+JUMPSTART_BUCKET_BASE_URL_FORMAT = "https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com"
 GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"

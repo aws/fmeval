@@ -30,12 +30,12 @@ class ModelRunner(ABC):
         :param content_type: The content type of the request sent to the model for inference
         :param accept_type: The accept type of the request sent to the model for inference
         """
-        self._composer = create_content_composer(content_type=content_type, template=content_template, kwargs=kwargs)
+        self._composer = create_content_composer(content_type=content_type, template=content_template, **kwargs)
         self._extractor = create_extractor(
             model_accept_type=accept_type,
             output_location=output,
             log_probability_location=log_probability,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     @abstractmethod
