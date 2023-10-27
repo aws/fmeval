@@ -1,4 +1,5 @@
 # Output results path
+
 EVAL_RESULTS_PATH = "EVAL_RESULTS_PATH"
 DEFAULT_EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
@@ -74,3 +75,13 @@ MAX_ROWS_TO_TAKE = 100000
 
 # The absolute tolerance used when performing approximate numerical comparisons
 ABS_TOL = 1e-4
+
+# Jumpstart
+JUMPSTART_MODEL_ID = "jumpstart_model_id"
+JUMPSTART_MODEL_VERSION = "jumpstart_model_version"
+MODEL_ID = "model_id"
+SPEC_KEY = "spec_key"
+DEFAULT_PAYLOADS = "default_payloads"
+SDK_MANIFEST_FILE = "models_manifest.json"
+JUMPSTART_BUCKET_BASE_URL_FORMAT = "https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com"
+GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"

@@ -32,7 +32,7 @@ class JsonExtractor(Extractor):
         self.output_jmespath_expression = output_jmespath_expression
         self.output_jmespath = compile_jmespath(output_jmespath_expression) if output_jmespath_expression else None
 
-    def extract_log_probability(self, data: Union[List, Dict], num_records: int) -> List:
+    def extract_log_probability(self, data: Union[List, Dict], num_records: int) -> Union[List[float], float]:
         """
         Extract log probability from model response.
 
@@ -59,7 +59,7 @@ class JsonExtractor(Extractor):
 
         return probabilities
 
-    def extract_output(self, data: Union[List, Dict], num_records: int) -> Union[List, str, float]:
+    def extract_output(self, data: Union[List, Dict], num_records: int) -> Union[List[str], str]:
         """
         Extract output from JSON model output
 

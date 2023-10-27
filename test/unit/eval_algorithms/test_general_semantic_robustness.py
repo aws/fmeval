@@ -51,7 +51,7 @@ DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(c
 
 class ConstantModel(ModelRunner):
     def __init__(self):
-        super().__init__('{"data": $prompt}')
+        super().__init__('{"data": $prompt}', output="output")
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
         return "Some model output.", None

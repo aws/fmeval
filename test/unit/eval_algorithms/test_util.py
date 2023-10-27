@@ -26,12 +26,11 @@ from amazon_fmeval.eval_algorithms.util import (
     save_dataset,
     EvalOutputRecord,
     generate_output_dataset_path,
-    get_num_actors,
     generate_mean_delta_score,
     verify_model_determinism,
 )
 from amazon_fmeval.exceptions import EvalAlgorithmInternalError
-from amazon_fmeval.util import camel_to_snake
+from amazon_fmeval.util import camel_to_snake, get_num_actors
 
 MODEL_INPUT_COLUMN_NAME = "model_input"
 MODEL_OUTPUT_COLUMN_NAME = "model_output"

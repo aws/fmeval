@@ -3,7 +3,12 @@ import pytest
 from typing import NamedTuple
 
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers import create_content_composer, Composer, JsonContentComposer
+from amazon_fmeval.model_runners.composers import (
+    create_content_composer,
+    Composer,
+    JsonContentComposer,
+    JumpStartComposer,
+)
 
 
 class TestCreateContentComposer:
@@ -21,6 +26,9 @@ class TestCreateContentComposer:
     def test_create_content_composer(self, test_case):
         composer = create_content_composer(test_case.template)
         assert isinstance(composer, test_case.expected_composer_type)
+
+    def test_create_content_composer_jumpstart(self):
+        assert isinstance(create_content_composer(jumpstart_model_id="model_id"), JumpStartComposer)
 
     # Test case to verify that create_content_composer raises CustomerError for an invalid template
     def test_invalid_template(self):

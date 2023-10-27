@@ -7,7 +7,7 @@ These model runners get used by each of the integration tests.
 """
 
 # JumpStart model runner
-js_endpoint_name = "meta-textgeneration-llama-2-7b-f"
+js_endpoint_name = "meta-textgeneration-llama-2-7b-f-integration-test-endpoint"
 js_model_id, js_model_version = "meta-textgeneration-llama-2-7b-f", "*"
 js_model_runner = JumpStartModelRunner(
     endpoint_name=js_endpoint_name,
@@ -24,7 +24,7 @@ js_model_runner_prompt_template = """
     """
 
 # SageMaker model runner
-sm_endpoint_name = "meta-textgeneration-llama-2-7b-f"
+sm_endpoint_name = "meta-textgeneration-llama-2-7b-f-integration-test-endpoint"
 sm_model_runner = SageMakerModelRunner(
     endpoint_name=sm_endpoint_name,
     output="[0].generation.content",

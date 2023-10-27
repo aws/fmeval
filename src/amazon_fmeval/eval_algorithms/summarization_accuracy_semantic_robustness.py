@@ -56,11 +56,11 @@ from amazon_fmeval.eval_algorithms.util import (
     aggregate_evaluation_scores,
     generate_output_dataset_path,
     generate_prompt_column_for_dataset,
-    get_num_actors,
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
     verify_model_determinism,
 )
+from amazon_fmeval.util import get_num_actors
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.composers.composers import PromptComposer
 from amazon_fmeval.model_runners.model_runner import ModelRunner

@@ -11,7 +11,7 @@ from amazon_fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S
 from amazon_fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from amazon_fmeval.data_loaders.json_parser import JsonParser
 from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms.util import get_num_actors
+from amazon_fmeval.util import get_num_actors
 from amazon_fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from amazon_fmeval.perf_util import timed_block
 
