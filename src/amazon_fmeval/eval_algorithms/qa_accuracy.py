@@ -157,7 +157,7 @@ class QAAccuracy(EvalAlgorithmInterface):
 
     eval_name = EvalAlgorithm.QA_ACCURACY.value
 
-    def __init__(self, eval_algorithm_config: QAAccuracyConfig):
+    def __init__(self, eval_algorithm_config: QAAccuracyConfig = QAAccuracyConfig()):
         """Default constructor
 
         :param eval_algorithm_config: QA Accuracy eval algorithm config.

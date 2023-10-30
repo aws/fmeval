@@ -146,7 +146,10 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     scores.
     """
 
-    def __init__(self, eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig):
+    def __init__(
+        self,
+        eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig = SummarizationAccuracySemanticRobustnessConfig(),
+    ):
         """Default constructor
 
         :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.

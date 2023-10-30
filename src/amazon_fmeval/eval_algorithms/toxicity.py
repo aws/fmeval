@@ -70,7 +70,7 @@ class Toxicity(EvalAlgorithmInterface):
     Toxicity eval algorithm
     """
 
-    def __init__(self, eval_algorithm_config: ToxicityConfig):
+    def __init__(self, eval_algorithm_config: ToxicityConfig = ToxicityConfig()):
         """Default constructor
 
         :param eval_algorithm_config: Toxicity eval algorithm config.
