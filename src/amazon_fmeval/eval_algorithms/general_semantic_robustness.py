@@ -109,7 +109,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     https://huggingface.co/spaces/evaluate-metric/wer
     """
 
-    def __init__(self, eval_algorithm_config: GeneralSemanticRobustnessConfig):
+    def __init__(self, eval_algorithm_config: GeneralSemanticRobustnessConfig = GeneralSemanticRobustnessConfig()):
         """Default constructor
 
         :param eval_algorithm_config: General Semantic Robustness eval algorithm config.

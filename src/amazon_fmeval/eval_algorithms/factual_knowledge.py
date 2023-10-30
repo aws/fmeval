@@ -68,7 +68,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
     Factual Knowledge Eval algorithm
     """
 
-    def __init__(self, eval_algorithm_config: FactualKnowledgeConfig):
+    def __init__(self, eval_algorithm_config: FactualKnowledgeConfig = FactualKnowledgeConfig()):
         """Default constructor
 
         :param eval_algorithm_config: Factual knowledge eval algorithm config.

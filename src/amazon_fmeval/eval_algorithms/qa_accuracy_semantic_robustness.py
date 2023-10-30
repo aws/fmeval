@@ -128,7 +128,9 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
     QA Accuracy Semantic Robustness Eval algorithm
     """
 
-    def __init__(self, eval_algorithm_config: QAAccuracySemanticRobustnessConfig):
+    def __init__(
+        self, eval_algorithm_config: QAAccuracySemanticRobustnessConfig = QAAccuracySemanticRobustnessConfig()
+    ):
         """Default constructor
 
         :param eval_algorithm_config: QA Accuracy Semantic Robustness eval algorithm config.
