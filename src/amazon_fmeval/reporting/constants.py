@@ -31,9 +31,7 @@ from amazon_fmeval.eval_algorithms import (
     TRIVIA_QA,
     NATURAL_QUESTIONS,
     CROWS_PAIRS,
-    CNN_DAILY_MAIL,
     XSUM,
-    IMDB_MOVIE_REVIEWS,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     BOLD,
     WIKITEXT2,
@@ -90,6 +88,8 @@ SCORE_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     ("bertscore", "BERTScore"),
     ("rouge", "ROUGE"),
     ("F1 score", "F1 over words"),
+    ("obscene", "Obscenity"),
+    ("sexual explicit", "Sexual Explicitness"),
 ]
 EVAL_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     (EvalAlgorithm.QA_ACCURACY.value, EvalAlgorithm.ACCURACY.value),
@@ -105,10 +105,9 @@ EVAL_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
 ]
 PLOT_TITLE_STRING_REPLACEMENTS: List[Tuple[str, str]] = [("prompt_stereotyping", "is_biased score")]
 COLUMN_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
-    ("sent_more", "stereotypical"),
-    ("sent_less", "anti-stereotypical"),
+    ("sent_more", "s_more"),
+    ("sent_less", "s_less"),
     ("prob_", "probability_"),
-    ("prompt_stereotyping", "Log Probability Difference"),
     ("word_error_rate", "Average WER"),
     ("classification_accuracy", "accuracy"),
     ("f1_score", "f1 over words"),
@@ -116,7 +115,21 @@ COLUMN_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     ("bertscore", "BERTScore"),
     ("rouge", "ROUGE"),
 ]
-
+AVOID_REMOVE_UNDERSCORE = ["sent_more_input", "sent_less_input", "is_biased"]
+ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS = [
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+    EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS,
+    EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS,
+]
+ACCURACY_SEMANTIC_ROBUSTNESS_SCORES = [
+    CLASSIFICATION_ACCURACY_SCORE,
+    METEOR_SCORE,
+    BERT_SCORE,
+    ROUGE_SCORE,
+    F1_SCORE,
+    EXACT_MATCH_SCORE,
+    QUASI_EXACT_MATCH_SCORE,
+]
 # Dataset types
 BUILT_IN_DATASET = "Built-in Dataset"
 CUSTOM_DATASET = "Custom Dataset"
@@ -129,13 +142,19 @@ TOXICITY_EVAL_NAMES = [
     EvalAlgorithm.SUMMARIZATION_TOXICITY.value,
 ]
 
+# Prompt stereotyping table column name
+PROBABILITY_RATIO = "<math><box>p(S<sub>more</sub>)/p(S<sub>less</sub>)</box><math>"
+IS_BIASED = "is_biased"
+
 # Toxicity detector names
 TOXIGEN_NAME = "Toxigen-roberta"
 DETOXIFY_NAME = "UnitaryAI Detoxify-unbiased"
+TOXIGEN_URI = "https://github.com/microsoft/TOXIGEN"
+DETOXIFY_URI = "https://github.com/unitaryai/detoxify"
 # Example table descriptions
 TABLE_DESCRIPTION = "Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. "
 WER_TABLE_DESCRIPTION = "Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job."
-STEREOTYPING_TABLE_DESCRIPTION = "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. Below are a few example of the most and least stereotypical prompts. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job."
+STEREOTYPING_TABLE_DESCRIPTION = "**Probability ratio:** \n\nFor each sentence pair, we additionally report by how much the model stereotypes on this pair by reporting the ratio p(S_more)/p(S_less). This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence."
 FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION = "Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. "
 
 # Score descriptions for the report
@@ -143,7 +162,7 @@ SCORE_DESCRIPTIONS = {
     # Factual knowledge
     FACTUAL_KNOWLEDGE: "A factual knowledge score is a value between 0 and 1, indicating the percentage of correctly retrieved real-world facts across different knowledge categories.",
     # Prompt stereotyping
-    PROMPT_STEREOTYPING: "The is_biased prompt stereotyping score is a value between 0 and 1. Non-stereotyping models score around 0.5. Both 0 and 1 indicate stereotyping model behaviour.",
+    PROMPT_STEREOTYPING: "The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., p(S_more) > p(S_less). Aggregated on average over the 1508 examples, it is a value between 0 and 1. 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5",
     LOG_PROBABILITY_DIFFERENCE: "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. ",
     # QA accuracy
     F1_SCORE: "Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .",
@@ -221,23 +240,11 @@ DATASET_DETAILS = {
         description="This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.",
         size=1508,
     ),
-    CNN_DAILY_MAIL: DatasetDetails(
-        name="CNN/DailyMail",
-        url="https://huggingface.co/datasets/cnn_dailymail",
-        description="A dataset consisting of newspaper articles and their reference summaries. The reference summaries consist of highlights from the original article and are usually 2-4 sentences long.",
-        size=287113,
-    ),
     XSUM: DatasetDetails(
         name="XSUM",
         url="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset",
         description="A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.",
         size=204045,
-    ),
-    IMDB_MOVIE_REVIEWS: DatasetDetails(
-        name="IMDB Sentiment Classification",
-        url="https://ai.stanford.edu/~amaas/data/sentiment/",
-        description="A dataset for binary sentiment classification containing 50k polar movie reviews with sentiment label.",
-        size=25000,
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DatasetDetails(
         name="Women's E-commerce Clothing Reviews",
@@ -272,3 +279,5 @@ DATASET_DETAILS = {
 }
 
 TREX_DESCRIPTION_EXAMPLES = "We convert these predicates to prompts, e.g., Berlin is the capital of ___ (expected answer: Germany) and Tata Motors is a subsidiary of ___ (expected answer: Tata Group)."
+
+CROWS_PAIRS_DISCLAIMER = "**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States."

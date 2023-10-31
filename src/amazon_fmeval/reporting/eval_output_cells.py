@@ -1,15 +1,11 @@
 from typing import List, Optional, Any
 import ray.data
 from textwrap import shorten
-
-from amazon_fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, TREX
+import numpy as np
+from amazon_fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, TREX, CROWS_PAIRS
 from amazon_fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
 from amazon_fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
-    SENT_LESS_LOG_PROB_COLUMN_NAME,
-    SENT_MORE_LOG_PROB_COLUMN_NAME,
-    LOG_PROBABILITY_DIFFERENCE,
-)
+from amazon_fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
 from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, COLUMN_NAMES
 from amazon_fmeval.reporting.cells import MarkdownCell, BarPlotCell, TableCell, BoldCell, HeadingCell
 from amazon_fmeval.reporting.constants import (
@@ -29,20 +25,21 @@ from amazon_fmeval.reporting.constants import (
     CUSTOM_DATASET,
     AGGREGATE_ONLY_SCORES,
     MAX_CHAR,
-    PROMPT_COLUMN_NAME,
     TOXICITY_EVAL_NAMES,
     TOXIGEN_NAME,
     DETOXIFY_NAME,
+    CROWS_PAIRS_DISCLAIMER,
+    PROBABILITY_RATIO,
+    IS_BIASED,
+    ACCURACY_SEMANTIC_ROBUSTNESS_SCORES,
+    ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS,
+    DETOXIFY_URI,
+    TOXIGEN_URI,
 )
-from amazon_fmeval.reporting.util import format_dataset_name, format_string
+from amazon_fmeval.reporting.util import format_dataset_name, format_string, add_hyperlink
 
 
-TABLE_COLUMNS = (
-    list(set(COLUMN_NAMES))
-    + [PROMPT_COLUMN_NAME]
-    + list(set(SCORE_DESCRIPTIONS.keys()))
-    + [SENT_LESS_LOG_PROB_COLUMN_NAME, SENT_MORE_LOG_PROB_COLUMN_NAME]
-)
+TABLE_COLUMNS = list(set(COLUMN_NAMES)) + list(set(SCORE_DESCRIPTIONS.keys())) + [PROBABILITY_RATIO, IS_BIASED]
 
 
 class CategoryBarPlotCell(BarPlotCell):
@@ -59,6 +56,7 @@ class CategoryBarPlotCell(BarPlotCell):
         height: Optional[str] = None,
         width: Optional[str] = None,
         center: bool = True,
+        origin: float = 0,
     ):
         """
         :param categories: The names of the categories.
@@ -79,6 +77,7 @@ class CategoryBarPlotCell(BarPlotCell):
             plot_height=height,
             plot_width=width,
             center=center,
+            origin=origin,
         )
 
     @staticmethod
@@ -154,7 +153,11 @@ class RayDatasetTableCell(TableCell):
         :return: Table row with strings longer than MAX_CHAR truncated.
         """
         truncated_samples = [
-            shorten(sample, MAX_CHAR) if isinstance(sample, str) and len(sample) > MAX_CHAR else sample
+            shorten(sample, MAX_CHAR)
+            if isinstance(sample, str) and len(sample) > MAX_CHAR
+            else np.round(sample, decimals=6)
+            if isinstance(sample, float)
+            else sample
             for sample in samples
         ]
         return truncated_samples
@@ -181,19 +184,38 @@ class CategoryScoreCell(MarkdownCell):
             else ""
         )
         sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories), reverse=True)))
+        bar_plot_origin = 0.5 if score_name == PROMPT_STEREOTYPING else 0
         bar_plot = CategoryBarPlotCell(
-            sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height="70%", width="70%"
+            sorted_categories[:n],
+            sorted_scores[:n],
+            score_name,
+            dataset_score,
+            height="70%",
+            width="70%",
+            origin=bar_plot_origin,
         )
-        lowest_category = CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
+
+        lowest_category = (
+            CategoryScoreCell._get_kth_category_score(categories, scores, reverse=True, origin=0.5, k=0)
+            if score_name == PROMPT_STEREOTYPING
+            else CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
+        )
+        lowest_score_description = (
+            "The model stereotypes the most in the category"
+            if score_name == PROMPT_STEREOTYPING
+            else "The model scores lowest in the category"
+        )
         super().__init__(
             f"The plot shows the score breakdown into individual categories.",
             note,
             bar_plot,
-            f"The model scores lowest in the category **{lowest_category}**. ",
+            f"{lowest_score_description} **{lowest_category}**. ",
         )
 
     @staticmethod
-    def _get_kth_category_score(categories: List[str], scores: List[float], k: int = 0, reverse: bool = False) -> str:
+    def _get_kth_category_score(
+        categories: List[str], scores: List[float], k: int = 0, reverse: bool = False, origin: float = 0
+    ) -> str:
         """
         Sorts `category_scores` by their `score` attribute and returns the kth element in the sorted list.
 
@@ -201,8 +223,10 @@ class CategoryScoreCell(MarkdownCell):
         :param scores: The values of the category scores.
         :param k: The index of the CategoryScore to return
         :param reverse: Whether to sort in descending order
+        :param origin: The origin of the score values.
         """
         assert 0 <= k < len(categories), "The provided `k` argument is outside of the valid range"
+        scores = [abs(score - origin) for score in scores] if origin != 0 else scores
         sorted_categories = [cat for score, cat in sorted(zip(scores, categories), reverse=reverse)]
         return sorted_categories[k]
 
@@ -222,7 +246,7 @@ class ScoreTableCell(MarkdownCell):
             WER_TABLE_DESCRIPTION
             if score_column_name == WER_SCORE
             else STEREOTYPING_TABLE_DESCRIPTION
-            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            if score_column_name == PROBABILITY_RATIO
             else FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
             if binary
             else TABLE_DESCRIPTION
@@ -231,19 +255,19 @@ class ScoreTableCell(MarkdownCell):
         n_samples = min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())
         top_description = (
             (f"Top {n_samples} most stereotypical examples:")
-            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            if score_column_name == PROBABILITY_RATIO
             else f"{n_samples} correct examples:"
             if binary
-            else f"Top {n_samples} highest-scoring examples:"
+            else f"Top {n_samples} examples with highest scores:"
         )
         bottom_description = (
             (f"Top {n_samples} least stereotypical examples:")
-            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            if score_column_name == PROBABILITY_RATIO
             else f"{n_samples} incorrect examples:"
             if binary
-            else f"Bottom {n_samples} lowest-scoring examples:"
+            else f"Bottom {n_samples} examples with lowest scores:"
         )
-        abs_val = True if score_column_name == LOG_PROBABILITY_DIFFERENCE else False
+        abs_val = True if score_column_name == PROBABILITY_RATIO else False
 
         cells = [
             MarkdownCell(description),
@@ -290,10 +314,16 @@ class ScoreCell(MarkdownCell):
         :param categories: The names of the categories.
         :param category_scores: The values of the category scores.
         """
+        score_wording = "Average Score:" if score_name == WER_SCORE else "Overall Score"
+        score_name_display = (
+            format_string(score_name, as_title=True)
+            if score_name == WER_SCORE
+            else format_string(score_name, as_title=True, as_score=True)
+        )
         cells = [
-            HeadingCell(text=f"{format_string(score_name, as_title=True, as_score=True)}", level=5),
+            HeadingCell(text=score_name_display, level=5),
             MarkdownCell(SCORE_DESCRIPTIONS[score_name]),
-            BoldCell(f"Overall Score: {dataset_score}"),
+            BoldCell(f"{score_wording} {dataset_score}"),
         ]
         if categories and category_scores:  # pragma: no branch
             cells.append(CategoryScoreCell(categories, category_scores, score_name, dataset_score))
@@ -328,9 +358,9 @@ class EvalOutputCell(MarkdownCell):
             eval_name=eval_output.eval_name,
         )
         toxicity_detector_name = (
-            f"Toxicity detector model: {DETOXIFY_NAME}"
+            f"Toxicity detector model: {add_hyperlink(DETOXIFY_NAME, DETOXIFY_URI)}"
             if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) > 1
-            else f"Toxicity detector model: {TOXIGEN_NAME}"
+            else f"Toxicity detector model: {add_hyperlink(TOXIGEN_NAME, TOXIGEN_URI)}"
             if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) == 1
             else ""
         )
@@ -345,30 +375,36 @@ class EvalOutputCell(MarkdownCell):
             eval_cells.append(error_cell)
         else:
             dataset_scores = {dataset_score.name: dataset_score.value for dataset_score in eval_output.dataset_scores}
-            for score_name, dataset_score_value in dataset_scores.items():
-                categories = (
-                    {
-                        category_score.name: score.value
-                        for category_score in eval_output.category_scores
-                        for score in category_score.scores
-                        if score.name == score_name
-                    }
-                    if eval_output.category_scores
-                    else None
-                )
-                score_column_name = (
-                    LOG_PROBABILITY_DIFFERENCE if score_name == EvalAlgorithm.PROMPT_STEREOTYPING.value else score_name
-                )
-                if score_name not in AGGREGATE_ONLY_SCORES:  # pragma: no branch
-                    score_cell = ScoreCell(
-                        dataset=dataset,
-                        score_name=score_name,
-                        score_column_name=score_column_name,
-                        dataset_score=dataset_score_value,
-                        categories=list(categories.keys()) if categories else None,
-                        category_scores=list(categories.values()) if categories else None,
+            for score_name, dataset_score_value in dataset_scores.items():  # pragma: no cover
+                if (
+                    eval_output.eval_name in ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS
+                    and score_name in ACCURACY_SEMANTIC_ROBUSTNESS_SCORES
+                ):
+                    continue
+                else:
+                    categories = (
+                        {
+                            category_score.name: score.value
+                            for category_score in eval_output.category_scores
+                            for score in category_score.scores
+                            if score.name == score_name
+                        }
+                        if eval_output.category_scores
+                        else None
                     )
-                    eval_cells.append(score_cell)
+                    score_column_name = (
+                        PROBABILITY_RATIO if score_name == EvalAlgorithm.PROMPT_STEREOTYPING.value else score_name
+                    )
+                    if score_name not in AGGREGATE_ONLY_SCORES:  # pragma: no branch
+                        score_cell = ScoreCell(
+                            dataset=dataset,
+                            score_name=score_name,
+                            score_column_name=score_column_name,
+                            dataset_score=dataset_score_value,
+                            categories=list(categories.keys()) if categories else None,
+                            category_scores=list(categories.values()) if categories else None,
+                        )
+                        eval_cells.append(score_cell)
 
         super().__init__(*eval_cells)
 
@@ -405,6 +441,8 @@ class EvalOutputCell(MarkdownCell):
             dataset_description = (
                 DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
                 if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+                else DATASET_DETAILS[dataset_name].description + "\n\n" + CROWS_PAIRS_DISCLAIMER
+                if dataset_name == CROWS_PAIRS
                 else DATASET_DETAILS[dataset_name].description
             )
             return dataset_description + " " + dataset_sampling_description
