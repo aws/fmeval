@@ -31,7 +31,6 @@ from amazon_fmeval.eval_algorithms import (
     TRIVIA_QA,
     NATURAL_QUESTIONS,
     CROWS_PAIRS,
-    CNN_DAILY_MAIL,
     XSUM,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     BOLD,
@@ -219,12 +218,6 @@ DATASET_DETAILS = {
         url="https://github.com/nyu-mll/crows-pairs",
         description="This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.",
         size=1508,
-    ),
-    CNN_DAILY_MAIL: DatasetDetails(
-        name="CNN/DailyMail",
-        url="https://huggingface.co/datasets/cnn_dailymail",
-        description="A dataset consisting of newspaper articles and their reference summaries. The reference summaries consist of highlights from the original article and are usually 2-4 sentences long.",
-        size=287113,
     ),
     XSUM: DatasetDetails(
         name="XSUM",
