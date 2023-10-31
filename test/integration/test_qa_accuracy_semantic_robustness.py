@@ -15,7 +15,6 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import sm_model_runner, sm_model_runner_prompt_template
 
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
@@ -54,7 +53,7 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    def test_evaluate_sample(self, config, expected_scores):
+    def test_evaluate_sample(self, config, expected_scores, sm_model_runner, sm_model_runner_prompt_template):
         eval_algo = QAAccuracySemanticRobustness(config)
         model_input = "London is the capital of"
         eval_scores = eval_algo.evaluate_sample(
@@ -110,7 +109,9 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    def test_evaluate(self, integration_tests_dir, config, expected_scores):
+    def test_evaluate(
+        self, integration_tests_dir, config, expected_scores, sm_model_runner, sm_model_runner_prompt_template
+    ):
         eval_algo = QAAccuracySemanticRobustness(config)
         dataset_config = DataConfig(
             dataset_name="triviaQA_sample",

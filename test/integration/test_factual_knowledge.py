@@ -3,9 +3,8 @@ from pytest import approx
 from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import hf_model_runner
 
-ABS_TOL = 1e-4
+ABS_TOL = 1e-4  # scores are deterministic, so the tolerance should be small to reflect this
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 config = FactualKnowledgeConfig("<OR>")
@@ -13,14 +12,14 @@ eval_algo = FactualKnowledge(config)
 
 
 class TestFactualKnowledge:
-    def test_evaluate_sample(self):
+    def test_evaluate_sample(self, hf_model_runner):
         model_output = hf_model_runner.predict("London is the capital of")[0]
         eval_score = eval_algo.evaluate_sample(
             target_output="UK<OR>England<OR>United Kingdom", model_output=model_output
         )[0]
-        assert eval_score.value == 1  # the model produces deterministic output
+        assert eval_score.value == 1
 
-    def test_evaluate(self, integration_tests_dir):
+    def test_evaluate(self, integration_tests_dir, hf_model_runner):
         dataset_config = DataConfig(
             dataset_name="TREX",
             dataset_uri=os.path.join(integration_tests_dir, "datasets", "trex_sample.jsonl"),

@@ -9,7 +9,6 @@ from amazon_fmeval.eval_algorithms.qa_accuracy import (
 )
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import js_model_runner, js_model_runner_prompt_template
 
 ABS_TOL = 1e-6  # scores and model are deterministic, so approx() should be used purely to handle floating point error
 os.environ["PARALLELIZATION_FACTOR"] = "2"
@@ -19,7 +18,7 @@ eval_algo = QAAccuracy(config)
 
 
 class TestQAAccuracy:
-    def test_evaluate_sample(self):
+    def test_evaluate_sample(self, js_model_runner):
         model_input = """
             <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
             Do not repeat the question. Do not answer in complete sentences.<</SYS>>
@@ -32,7 +31,7 @@ class TestQAAccuracy:
         for eval_score in eval_scores:
             assert eval_score.value == 1.0
 
-    def test_evaluate(self, integration_tests_dir):
+    def test_evaluate(self, integration_tests_dir, js_model_runner, js_model_runner_prompt_template):
         dataset_config = DataConfig(
             dataset_name="triviaQA_sample",
             dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample.jsonl"),
