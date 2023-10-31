@@ -187,7 +187,6 @@ NATURAL_QUESTIONS = "natural_questions"
 CROWS_PAIRS = "crows-pairs"
 CNN_DAILY_MAIL = "cnn_daily_mail"
 XSUM = "xsum"
-IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
 WIKITEXT2 = "wikitext2"
@@ -202,9 +201,8 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
     EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
-    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS, WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
-        IMDB_MOVIE_REVIEWS,
         WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     ],
     EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
@@ -224,8 +222,6 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     XSUM: "Summarise the following text in one sentence: $feature",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
     "or 1 (positive sentiment). Review: $feature. Classification:",
-    IMDB_MOVIE_REVIEWS: "Classify the sentiment of the following review with negative or "
-    "positive sentiment. Review: $feature. Classification:",
 }
 
 
@@ -290,13 +286,6 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="document",
         target_output_location="summary",
-    ),
-    IMDB_MOVIE_REVIEWS: DataConfig(
-        dataset_name=IMDB_MOVIE_REVIEWS,
-        dataset_uri="s3://amazon-fmeval/datasets/imdb_reviews/imdb_movie_reviews.json",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="text",
-        target_output_location="sentiment",
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,

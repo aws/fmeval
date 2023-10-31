@@ -33,7 +33,6 @@ from amazon_fmeval.eval_algorithms import (
     CROWS_PAIRS,
     CNN_DAILY_MAIL,
     XSUM,
-    IMDB_MOVIE_REVIEWS,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     BOLD,
     WIKITEXT2,
@@ -232,12 +231,6 @@ DATASET_DETAILS = {
         url="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset",
         description="A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.",
         size=204045,
-    ),
-    IMDB_MOVIE_REVIEWS: DatasetDetails(
-        name="IMDB Sentiment Classification",
-        url="https://ai.stanford.edu/~amaas/data/sentiment/",
-        description="A dataset for binary sentiment classification containing 50k polar movie reviews with sentiment label.",
-        size=25000,
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DatasetDetails(
         name="Women's E-commerce Clothing Reviews",
