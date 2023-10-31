@@ -22,11 +22,10 @@ from amazon_fmeval.exceptions import EvalAlgorithmInternalError
 class JsonDataLoaderConfig:
     """Configures a JsonDataLoader or JsonLinesDataLoader.
 
-    Attributes:
-        parser: The JsonParser object used to parse the dataset.
-        data_file: The DataFile object representing the dataset.
-        dataset_name: The name of the dataset for logging purposes.
-        dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSONLINES
+    :param parser: The JsonParser object used to parse the dataset.
+    :param data_file: The DataFile object representing the dataset.
+    :param dataset_name: The name of the dataset for logging purposes.
+    :param dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSONLINES
     """
 
     parser: JsonParser
@@ -51,7 +50,7 @@ class JsonDataLoader:
 class CustomJSONDatasource(FileBasedDatasource):
     """Custom datasource class for reading and writing JSON or JSON Lines files.
 
-    See https://docs.ray.io/en/latest/data/examples/custom-datasource.html#custom-datasources
+    See [Ray documentation](https://docs.ray.io/en/latest/data/examples/custom-datasource.html#custom-datasources)
     for details on creating custom data sources.
 
     We use this class instead of Ray's own JSONDatasource class because
@@ -60,18 +59,24 @@ class CustomJSONDatasource(FileBasedDatasource):
     (lists with elements of different data types).
 
     Example JSON dataset that pyarrow._json.read_json cannot handle:
+    ```
     {
        "key": [20, "hello"]
     }
-
-    Attributes:
-          config: The config used by _read_file to determine whether to treat the
-            input file as a JSON or JSON Lines file.
+    ```
     """
 
     _FILE_EXTENSION = "json"  # configures the extension for files written by _write_block
 
     def __init__(self, config: Optional[JsonDataLoaderConfig] = None):
+        """
+        Initializes an object of JsonDataLoaderConfig.
+
+
+
+        :param config: The config used by _read_file to determine whether to treat the input file as a JSON or JSONLines
+                       file.
+        """
         super().__init__()
         if config:
             self.config = config

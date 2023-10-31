@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>src.amazon_fmeval.reporting.eval_output_cells API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.amazon_fmeval.reporting.eval_output_cells</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from typing import List, Optional, Any
+import ray.data
+from textwrap import shorten
+
+from amazon_fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, TREX
+from amazon_fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
+from amazon_fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
+from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
+    SENT_LESS_LOG_PROB_COLUMN_NAME,
+    SENT_MORE_LOG_PROB_COLUMN_NAME,
+    LOG_PROBABILITY_DIFFERENCE,
+)
+from amazon_fmeval.constants import CATEGORY_COLUMN_NAME, COLUMN_NAMES
+from amazon_fmeval.reporting.cells import MarkdownCell, BarPlotCell, TableCell, BoldCell, HeadingCell
+from amazon_fmeval.reporting.constants import (
+    LEFT,
+    CATEGORY_BAR_COLOR,
+    OVERALL_BAR_COLOR,
+    NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
+    DATASET_SCORE_LABEL,
+    SCORE_DESCRIPTIONS,
+    DATASET_DETAILS,
+    TABLE_DESCRIPTION,
+    WER_TABLE_DESCRIPTION,
+    STEREOTYPING_TABLE_DESCRIPTION,
+    FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION,
+    TREX_DESCRIPTION_EXAMPLES,
+    BUILT_IN_DATASET,
+    CUSTOM_DATASET,
+    AGGREGATE_ONLY_SCORES,
+    MAX_CHAR,
+    PROMPT_COLUMN_NAME,
+    TOXICITY_EVAL_NAMES,
+    TOXIGEN_NAME,
+    DETOXIFY_NAME,
+)
+from amazon_fmeval.reporting.util import format_dataset_name, format_string
+
+
+TABLE_COLUMNS = (
+    list(set(COLUMN_NAMES))
+    + [PROMPT_COLUMN_NAME]
+    + list(set(SCORE_DESCRIPTIONS.keys()))
+    + [SENT_LESS_LOG_PROB_COLUMN_NAME, SENT_MORE_LOG_PROB_COLUMN_NAME]
+)
+
+
+class CategoryBarPlotCell(BarPlotCell):
+    &#34;&#34;&#34;
+    This class represents a bar plot that displays category-level and overall evaluation scores.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        categories: List[str],
+        scores: List[float],
+        score_name: str,
+        dataset_score: float,
+        height: Optional[str] = None,
+        width: Optional[str] = None,
+        center: bool = True,
+    ):
+        &#34;&#34;&#34;
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param dataset_score: The overall score for the dataset.
+        :param height: Height of the plot as a string
+        :param width: Width the plot as a string
+        :param center: Boolean indicating if the plot should be center aligned in the page
+        &#34;&#34;&#34;
+        labels = categories + [DATASET_SCORE_LABEL]
+        heights = scores + [dataset_score]
+        super().__init__(
+            labels=labels,
+            heights=heights,
+            color=CategoryBarPlotCell._create_bar_plot_colors(labels),
+            title=CategoryBarPlotCell._create_bar_plot_title(score_name),
+            plot_height=height,
+            plot_width=width,
+            center=center,
+        )
+
+    @staticmethod
+    def _create_bar_plot_colors(category_names: List[str]) -&gt; List[str]:
+        &#34;&#34;&#34;
+        Returns a list of colors corresponding to the bars for each of the categories.
+
+        :param category_names: Includes &#34;Overall&#34; as the last category name
+        :returns: A list of colors, where the kth element is the color
+            of the bar corresponding to category_names[k]
+        &#34;&#34;&#34;
+        return [CATEGORY_BAR_COLOR for _ in range(len(category_names) - 1)] + [OVERALL_BAR_COLOR]
+
+    @staticmethod
+    def _create_bar_plot_title(evaluation_type: str) -&gt; str:
+        &#34;&#34;&#34;
+        Generates a bar plot title from the evaluation type.
+
+        :param evaluation_type: Ex - &#34;Stereotyping&#34;
+        :returns: A title to be used in the bar plot for category scores
+        &#34;&#34;&#34;
+        return format_string(f&#34;{evaluation_type}&#34;, as_title=True, as_score=True, as_plot_title=True)
+
+
+class RayDatasetTableCell(TableCell):
+    &#34;&#34;&#34;
+    This class represents a table that displays data from a Ray Dataset object.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        dataset: ray.data.Dataset,
+        col_to_sort: Optional[str] = None,
+        k: Optional[int] = None,
+        descending: bool = False,
+        abs_val: bool = False,
+        caption: Optional[str] = None,
+        cell_align: str = LEFT,
+    ):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset that we create a TableCell out of
+        :param col_to_sort: The name of the column in the dataset to sort by
+        :param k: The number of samples from the dataset to display in the table
+        :param descending: Whether to sort in descending order.
+        :param abs_val: Whether to sort by absolute value when sorting is enabled.
+        :param caption: The caption text before the table.
+        :param cell_align: The text alignment within cells.
+        &#34;&#34;&#34;
+        if col_to_sort:
+            assert (
+                col_to_sort in dataset.columns()
+            ), f&#34;Column to be sorted `{col_to_sort}` is not present in dataset columns: {dataset.columns()}&#34;
+            if abs_val:
+                pd_dataset = dataset.to_pandas()
+                pd_dataset = pd_dataset.sort_values(by=col_to_sort, key=abs, ascending=not descending)
+                dataset = ray.data.from_pandas(pd_dataset)
+            else:
+                dataset = dataset.sort(col_to_sort, descending=descending)
+        samples = dataset.take(k) if k else dataset.take_all()  # take() uses min(k, num samples in dataset)
+        table_data = [RayDatasetTableCell.truncate_samples(list(sample.values())) for sample in samples]
+        headers = dataset.columns()
+        if CATEGORY_COLUMN_NAME in headers:  # pragma: no branch
+            category_idx = headers.index(CATEGORY_COLUMN_NAME)
+            table_data = [[row[category_idx]] + row[:category_idx] + row[category_idx + 1 :] for row in table_data]
+            headers = [headers[category_idx]] + headers[:category_idx] + headers[category_idx + 1 :]
+        headers = [format_string(header, as_column_name=True, as_title=True) for header in headers]
+        super().__init__(data=table_data, headers=headers, cell_align=cell_align, caption=caption)
+
+    @staticmethod
+    def truncate_samples(samples: List[Any]) -&gt; List[Any]:
+        &#34;&#34;&#34;
+        :param samples: List of items representing one row in the table.
+        :return: Table row with strings longer than MAX_CHAR truncated.
+        &#34;&#34;&#34;
+        truncated_samples = [
+            shorten(sample, MAX_CHAR) if isinstance(sample, str) and len(sample) &gt; MAX_CHAR else sample
+            for sample in samples
+        ]
+        return truncated_samples
+
+
+class CategoryScoreCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class displays a bar plot for the different category scores from an evaluation, and outlines the lowest
+        scoring category.
+    &#34;&#34;&#34;
+
+    def __init__(self, categories: List[str], scores: List[float], score_name: str, dataset_score: float, n: int = 10):
+        &#34;&#34;&#34;
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param dataset_score: The overall score for the dataset.
+        :param n: Max number of categories to display.
+        &#34;&#34;&#34;
+
+        note = (
+            f&#34;The top {n} categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location.&#34;
+            if len(categories) &gt; n
+            else &#34;&#34;
+        )
+        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories), reverse=True)))
+        bar_plot = CategoryBarPlotCell(
+            sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height=&#34;70%&#34;, width=&#34;70%&#34;
+        )
+        lowest_category = CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
+        super().__init__(
+            f&#34;The plot shows the score breakdown into individual categories.&#34;,
+            note,
+            bar_plot,
+            f&#34;The model scores lowest in the category **{lowest_category}**. &#34;,
+        )
+
+    @staticmethod
+    def _get_kth_category_score(categories: List[str], scores: List[float], k: int = 0, reverse: bool = False) -&gt; str:
+        &#34;&#34;&#34;
+        Sorts `category_scores` by their `score` attribute and returns the kth element in the sorted list.
+
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param k: The index of the CategoryScore to return
+        :param reverse: Whether to sort in descending order
+        &#34;&#34;&#34;
+        assert 0 &lt;= k &lt; len(categories), &#34;The provided `k` argument is outside of the valid range&#34;
+        sorted_categories = [cat for score, cat in sorted(zip(scores, categories), reverse=reverse)]
+        return sorted_categories[k]
+
+
+class ScoreTableCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class generates two tables displaying the highest and lowest-scoring examples from a particular score.
+    &#34;&#34;&#34;
+
+    def __init__(self, dataset: ray.data.Dataset, score_column_name: str, binary: Optional[bool] = False):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset used in the evaluation task.
+        :param score_column_name: The name of the score column in the dataset.
+        :param binary: Boolean indicating if the score is binary.
+        &#34;&#34;&#34;
+        description = (
+            WER_TABLE_DESCRIPTION
+            if score_column_name == WER_SCORE
+            else STEREOTYPING_TABLE_DESCRIPTION
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
+            if binary
+            else TABLE_DESCRIPTION
+        )
+
+        n_samples = min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())
+        top_description = (
+            (f&#34;Top {n_samples} most stereotypical examples:&#34;)
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f&#34;{n_samples} correct examples:&#34;
+            if binary
+            else f&#34;Top {n_samples} highest-scoring examples:&#34;
+        )
+        bottom_description = (
+            (f&#34;Top {n_samples} least stereotypical examples:&#34;)
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f&#34;{n_samples} incorrect examples:&#34;
+            if binary
+            else f&#34;Bottom {n_samples} lowest-scoring examples:&#34;
+        )
+        abs_val = True if score_column_name == LOG_PROBABILITY_DIFFERENCE else False
+
+        cells = [
+            MarkdownCell(description),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=True,
+                abs_val=abs_val,
+                caption=top_description,
+            ),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=False,
+                abs_val=abs_val,
+                caption=bottom_description,
+            ),
+        ]
+        super().__init__(*cells)
+
+
+class ScoreCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class generates visualizations for an evaluation score, including the overall dataset score, a bar plot
+        displaying category-level scores if provided, and tables displaying highest and lowest scoring examples.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        dataset: Optional[ray.data.Dataset],
+        score_name: str,
+        score_column_name: str,
+        dataset_score: float,
+        categories: Optional[List[str]],
+        category_scores: Optional[List[float]],
+    ):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset used in the evaluation task.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param score_column_name: The name of the score column in the dataset.
+        :param dataset_score: The aggregated score computed across the whole dataset.
+        :param categories: The names of the categories.
+        :param category_scores: The values of the category scores.
+        &#34;&#34;&#34;
+        cells = [
+            HeadingCell(text=f&#34;{format_string(score_name, as_title=True, as_score=True)}&#34;, level=5),
+            MarkdownCell(SCORE_DESCRIPTIONS[score_name]),
+            BoldCell(f&#34;Overall Score: {dataset_score}&#34;),
+        ]
+        if categories and category_scores:  # pragma: no branch
+            cells.append(CategoryScoreCell(categories, category_scores, score_name, dataset_score))
+        if dataset:  # pragma: no cover
+            columns = [i for i in TABLE_COLUMNS if i != &#34;target_output&#34;] if score_name == WER_SCORE else TABLE_COLUMNS
+            present_columns = [col for col in dataset.columns() if col in columns]
+            dataset = dataset.select_columns(present_columns)
+            is_binary_score = (
+                True if score_name in [EvalAlgorithm.FACTUAL_KNOWLEDGE.value, CLASSIFICATION_ACCURACY_SCORE] else False
+            )
+            cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))
+        super().__init__(*cells)
+
+
+class EvalOutputCell(MarkdownCell):
+    def __init__(
+        self,
+        eval_output: EvalOutput,
+        dataset: Optional[ray.data.Dataset] = None,
+        score_column_names: Optional[dict] = None,
+    ):
+        &#34;&#34;&#34;
+        :param eval_output: A EvalOutput object from an evaluation.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :param score_column_names: A dict mapping the score names and score column names for the evaluation.
+        &#34;&#34;&#34;
+        dataset_type = BUILT_IN_DATASET if eval_output.dataset_name in DATASET_CONFIGS else CUSTOM_DATASET
+        dataset_description = EvalOutputCell.get_dataset_description(
+            dataset_name=eval_output.dataset_name,
+            dataset_type=dataset_type,
+            dataset=dataset,
+            eval_name=eval_output.eval_name,
+        )
+        toxicity_detector_name = (
+            f&#34;Toxicity detector model: {DETOXIFY_NAME}&#34;
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) &gt; 1
+            else f&#34;Toxicity detector model: {TOXIGEN_NAME}&#34;
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) == 1
+            else &#34;&#34;
+        )
+
+        eval_cells = [
+            HeadingCell(f&#34;{dataset_type}: {format_dataset_name(eval_output.dataset_name, hyperlink=True)}&#34;, level=4),
+            MarkdownCell(dataset_description),
+            MarkdownCell(toxicity_detector_name),
+        ]
+        if eval_output.error:
+            error_cell = BoldCell(f&#34;This evaluation failed with the error message: {eval_output.error}&#34;)
+            eval_cells.append(error_cell)
+        else:
+            dataset_scores = {dataset_score.name: dataset_score.value for dataset_score in eval_output.dataset_scores}
+            for score_name, dataset_score_value in dataset_scores.items():
+                categories = (
+                    {
+                        category_score.name: score.value
+                        for category_score in eval_output.category_scores
+                        for score in category_score.scores
+                        if score.name == score_name
+                    }
+                    if eval_output.category_scores
+                    else None
+                )
+                score_column_name = (
+                    LOG_PROBABILITY_DIFFERENCE if score_name == EvalAlgorithm.PROMPT_STEREOTYPING.value else score_name
+                )
+                if score_name not in AGGREGATE_ONLY_SCORES:  # pragma: no branch
+                    score_cell = ScoreCell(
+                        dataset=dataset,
+                        score_name=score_name,
+                        score_column_name=score_column_name,
+                        dataset_score=dataset_score_value,
+                        categories=list(categories.keys()) if categories else None,
+                        category_scores=list(categories.values()) if categories else None,
+                    )
+                    eval_cells.append(score_cell)
+
+        super().__init__(*eval_cells)
+
+    @staticmethod
+    def get_dataset_sampling_description(dataset_name: str, dataset: ray.data.Dataset) -&gt; str:
+        &#34;&#34;&#34;
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :return: String describing the number of samples used in the evaluation.
+        &#34;&#34;&#34;
+        num_records = dataset.count()
+        total_records = DATASET_DETAILS[dataset_name].size if dataset_name in DATASET_DETAILS else num_records
+
+        return f&#34;We sampled {num_records} records out of {total_records} in the full dataset.&#34;
+
+    @staticmethod
+    def get_dataset_description(
+        dataset_name: str, dataset_type: str, dataset: Optional[ray.data.Dataset], eval_name: Optional[str] = None
+    ) -&gt; str:
+        &#34;&#34;&#34;
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset_type: Whether the dataset is a built-in or custom dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :param eval_name: The name of the selected evaluation.
+        :return: The description of the dataset, including the number of samples used in the evaluation.
+        &#34;&#34;&#34;
+
+        dataset_sampling_description = (
+            EvalOutputCell.get_dataset_sampling_description(dataset_name, dataset) if dataset else &#34;&#34;
+        )
+        if dataset_type == CUSTOM_DATASET:
+            return dataset_sampling_description
+        else:
+            dataset_description = (
+                DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
+                if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+                else DATASET_DETAILS[dataset_name].description
+            )
+            return dataset_description + &#34; &#34; + dataset_sampling_description</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell"><code class="flex name class">
+<span>class <span class="ident">CategoryBarPlotCell</span></span>
+<span>(</span><span>categories: List[str], scores: List[float], score_name: str, dataset_score: float, height: Optional[str] = None, width: Optional[str] = None, center: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class represents a bar plot that displays category-level and overall evaluation scores.</p>
+<p>:param categories: The names of the categories.
+:param scores: The values of the category scores.
+:param score_name: The name of the score that was computed in the evaluation.
+:param dataset_score: The overall score for the dataset.
+:param height: Height of the plot as a string
+:param width: Width the plot as a string
+:param center: Boolean indicating if the plot should be center aligned in the page</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CategoryBarPlotCell(BarPlotCell):
+    &#34;&#34;&#34;
+    This class represents a bar plot that displays category-level and overall evaluation scores.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        categories: List[str],
+        scores: List[float],
+        score_name: str,
+        dataset_score: float,
+        height: Optional[str] = None,
+        width: Optional[str] = None,
+        center: bool = True,
+    ):
+        &#34;&#34;&#34;
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param dataset_score: The overall score for the dataset.
+        :param height: Height of the plot as a string
+        :param width: Width the plot as a string
+        :param center: Boolean indicating if the plot should be center aligned in the page
+        &#34;&#34;&#34;
+        labels = categories + [DATASET_SCORE_LABEL]
+        heights = scores + [dataset_score]
+        super().__init__(
+            labels=labels,
+            heights=heights,
+            color=CategoryBarPlotCell._create_bar_plot_colors(labels),
+            title=CategoryBarPlotCell._create_bar_plot_title(score_name),
+            plot_height=height,
+            plot_width=width,
+            center=center,
+        )
+
+    @staticmethod
+    def _create_bar_plot_colors(category_names: List[str]) -&gt; List[str]:
+        &#34;&#34;&#34;
+        Returns a list of colors corresponding to the bars for each of the categories.
+
+        :param category_names: Includes &#34;Overall&#34; as the last category name
+        :returns: A list of colors, where the kth element is the color
+            of the bar corresponding to category_names[k]
+        &#34;&#34;&#34;
+        return [CATEGORY_BAR_COLOR for _ in range(len(category_names) - 1)] + [OVERALL_BAR_COLOR]
+
+    @staticmethod
+    def _create_bar_plot_title(evaluation_type: str) -&gt; str:
+        &#34;&#34;&#34;
+        Generates a bar plot title from the evaluation type.
+
+        :param evaluation_type: Ex - &#34;Stereotyping&#34;
+        :returns: A title to be used in the bar plot for category scores
+        &#34;&#34;&#34;
+        return format_string(f&#34;{evaluation_type}&#34;, as_title=True, as_score=True, as_plot_title=True)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.BarPlotCell</li>
+<li>amazon_fmeval.reporting.cells.FigureCell</li>
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.CategoryScoreCell"><code class="flex name class">
+<span>class <span class="ident">CategoryScoreCell</span></span>
+<span>(</span><span>categories: List[str], scores: List[float], score_name: str, dataset_score: float, n: int = 10)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class displays a bar plot for the different category scores from an evaluation, and outlines the lowest
+scoring category.</p>
+<p>:param categories: The names of the categories.
+:param scores: The values of the category scores.
+:param score_name: The name of the score that was computed in the evaluation.
+:param dataset_score: The overall score for the dataset.
+:param n: Max number of categories to display.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CategoryScoreCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class displays a bar plot for the different category scores from an evaluation, and outlines the lowest
+        scoring category.
+    &#34;&#34;&#34;
+
+    def __init__(self, categories: List[str], scores: List[float], score_name: str, dataset_score: float, n: int = 10):
+        &#34;&#34;&#34;
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param dataset_score: The overall score for the dataset.
+        :param n: Max number of categories to display.
+        &#34;&#34;&#34;
+
+        note = (
+            f&#34;The top {n} categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location.&#34;
+            if len(categories) &gt; n
+            else &#34;&#34;
+        )
+        sorted_scores, sorted_categories = (list(l) for l in zip(*sorted(zip(scores, categories), reverse=True)))
+        bar_plot = CategoryBarPlotCell(
+            sorted_categories[:n], sorted_scores[:n], score_name, dataset_score, height=&#34;70%&#34;, width=&#34;70%&#34;
+        )
+        lowest_category = CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
+        super().__init__(
+            f&#34;The plot shows the score breakdown into individual categories.&#34;,
+            note,
+            bar_plot,
+            f&#34;The model scores lowest in the category **{lowest_category}**. &#34;,
+        )
+
+    @staticmethod
+    def _get_kth_category_score(categories: List[str], scores: List[float], k: int = 0, reverse: bool = False) -&gt; str:
+        &#34;&#34;&#34;
+        Sorts `category_scores` by their `score` attribute and returns the kth element in the sorted list.
+
+        :param categories: The names of the categories.
+        :param scores: The values of the category scores.
+        :param k: The index of the CategoryScore to return
+        :param reverse: Whether to sort in descending order
+        &#34;&#34;&#34;
+        assert 0 &lt;= k &lt; len(categories), &#34;The provided `k` argument is outside of the valid range&#34;
+        sorted_categories = [cat for score, cat in sorted(zip(scores, categories), reverse=reverse)]
+        return sorted_categories[k]</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell"><code class="flex name class">
+<span>class <span class="ident">EvalOutputCell</span></span>
+<span>(</span><span>eval_output: amazon_fmeval.eval_algorithms.EvalOutput, dataset: Optional[ray.data.dataset.Dataset] = None, score_column_names: Optional[dict] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class representing a markdown cell.</p>
+<p>:param eval_output: A EvalOutput object from an evaluation.
+:param dataset: The Ray dataset containing the evaluation scores.
+:param score_column_names: A dict mapping the score names and score column names for the evaluation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class EvalOutputCell(MarkdownCell):
+    def __init__(
+        self,
+        eval_output: EvalOutput,
+        dataset: Optional[ray.data.Dataset] = None,
+        score_column_names: Optional[dict] = None,
+    ):
+        &#34;&#34;&#34;
+        :param eval_output: A EvalOutput object from an evaluation.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :param score_column_names: A dict mapping the score names and score column names for the evaluation.
+        &#34;&#34;&#34;
+        dataset_type = BUILT_IN_DATASET if eval_output.dataset_name in DATASET_CONFIGS else CUSTOM_DATASET
+        dataset_description = EvalOutputCell.get_dataset_description(
+            dataset_name=eval_output.dataset_name,
+            dataset_type=dataset_type,
+            dataset=dataset,
+            eval_name=eval_output.eval_name,
+        )
+        toxicity_detector_name = (
+            f&#34;Toxicity detector model: {DETOXIFY_NAME}&#34;
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) &gt; 1
+            else f&#34;Toxicity detector model: {TOXIGEN_NAME}&#34;
+            if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) == 1
+            else &#34;&#34;
+        )
+
+        eval_cells = [
+            HeadingCell(f&#34;{dataset_type}: {format_dataset_name(eval_output.dataset_name, hyperlink=True)}&#34;, level=4),
+            MarkdownCell(dataset_description),
+            MarkdownCell(toxicity_detector_name),
+        ]
+        if eval_output.error:
+            error_cell = BoldCell(f&#34;This evaluation failed with the error message: {eval_output.error}&#34;)
+            eval_cells.append(error_cell)
+        else:
+            dataset_scores = {dataset_score.name: dataset_score.value for dataset_score in eval_output.dataset_scores}
+            for score_name, dataset_score_value in dataset_scores.items():
+                categories = (
+                    {
+                        category_score.name: score.value
+                        for category_score in eval_output.category_scores
+                        for score in category_score.scores
+                        if score.name == score_name
+                    }
+                    if eval_output.category_scores
+                    else None
+                )
+                score_column_name = (
+                    LOG_PROBABILITY_DIFFERENCE if score_name == EvalAlgorithm.PROMPT_STEREOTYPING.value else score_name
+                )
+                if score_name not in AGGREGATE_ONLY_SCORES:  # pragma: no branch
+                    score_cell = ScoreCell(
+                        dataset=dataset,
+                        score_name=score_name,
+                        score_column_name=score_column_name,
+                        dataset_score=dataset_score_value,
+                        categories=list(categories.keys()) if categories else None,
+                        category_scores=list(categories.values()) if categories else None,
+                    )
+                    eval_cells.append(score_cell)
+
+        super().__init__(*eval_cells)
+
+    @staticmethod
+    def get_dataset_sampling_description(dataset_name: str, dataset: ray.data.Dataset) -&gt; str:
+        &#34;&#34;&#34;
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :return: String describing the number of samples used in the evaluation.
+        &#34;&#34;&#34;
+        num_records = dataset.count()
+        total_records = DATASET_DETAILS[dataset_name].size if dataset_name in DATASET_DETAILS else num_records
+
+        return f&#34;We sampled {num_records} records out of {total_records} in the full dataset.&#34;
+
+    @staticmethod
+    def get_dataset_description(
+        dataset_name: str, dataset_type: str, dataset: Optional[ray.data.Dataset], eval_name: Optional[str] = None
+    ) -&gt; str:
+        &#34;&#34;&#34;
+        :param dataset_name: The name of the Ray dataset.
+        :param dataset_type: Whether the dataset is a built-in or custom dataset.
+        :param dataset: The Ray dataset containing the evaluation scores.
+        :param eval_name: The name of the selected evaluation.
+        :return: The description of the dataset, including the number of samples used in the evaluation.
+        &#34;&#34;&#34;
+
+        dataset_sampling_description = (
+            EvalOutputCell.get_dataset_sampling_description(dataset_name, dataset) if dataset else &#34;&#34;
+        )
+        if dataset_type == CUSTOM_DATASET:
+            return dataset_sampling_description
+        else:
+            dataset_description = (
+                DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
+                if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+                else DATASET_DETAILS[dataset_name].description
+            )
+            return dataset_description + &#34; &#34; + dataset_sampling_description</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_description"><code class="name flex">
+<span>def <span class="ident">get_dataset_description</span></span>(<span>dataset_name: str, dataset_type: str, dataset: Optional[ray.data.dataset.Dataset], eval_name: Optional[str] = None) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>:param dataset_name: The name of the Ray dataset.
+:param dataset_type: Whether the dataset is a built-in or custom dataset.
+:param dataset: The Ray dataset containing the evaluation scores.
+:param eval_name: The name of the selected evaluation.
+:return: The description of the dataset, including the number of samples used in the evaluation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_dataset_description(
+    dataset_name: str, dataset_type: str, dataset: Optional[ray.data.Dataset], eval_name: Optional[str] = None
+) -&gt; str:
+    &#34;&#34;&#34;
+    :param dataset_name: The name of the Ray dataset.
+    :param dataset_type: Whether the dataset is a built-in or custom dataset.
+    :param dataset: The Ray dataset containing the evaluation scores.
+    :param eval_name: The name of the selected evaluation.
+    :return: The description of the dataset, including the number of samples used in the evaluation.
+    &#34;&#34;&#34;
+
+    dataset_sampling_description = (
+        EvalOutputCell.get_dataset_sampling_description(dataset_name, dataset) if dataset else &#34;&#34;
+    )
+    if dataset_type == CUSTOM_DATASET:
+        return dataset_sampling_description
+    else:
+        dataset_description = (
+            DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
+            if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+            else DATASET_DETAILS[dataset_name].description
+        )
+        return dataset_description + &#34; &#34; + dataset_sampling_description</code></pre>
+</details>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_sampling_description"><code class="name flex">
+<span>def <span class="ident">get_dataset_sampling_description</span></span>(<span>dataset_name: str, dataset: ray.data.dataset.Dataset) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>:param dataset_name: The name of the Ray dataset.
+:param dataset: The Ray dataset containing the evaluation scores.
+:return: String describing the number of samples used in the evaluation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_dataset_sampling_description(dataset_name: str, dataset: ray.data.Dataset) -&gt; str:
+    &#34;&#34;&#34;
+    :param dataset_name: The name of the Ray dataset.
+    :param dataset: The Ray dataset containing the evaluation scores.
+    :return: String describing the number of samples used in the evaluation.
+    &#34;&#34;&#34;
+    num_records = dataset.count()
+    total_records = DATASET_DETAILS[dataset_name].size if dataset_name in DATASET_DETAILS else num_records
+
+    return f&#34;We sampled {num_records} records out of {total_records} in the full dataset.&#34;</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell"><code class="flex name class">
+<span>class <span class="ident">RayDatasetTableCell</span></span>
+<span>(</span><span>dataset: ray.data.dataset.Dataset, col_to_sort: Optional[str] = None, k: Optional[int] = None, descending: bool = False, abs_val: bool = False, caption: Optional[str] = None, cell_align: str = 'left')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class represents a table that displays data from a Ray Dataset object.</p>
+<p>:param dataset: The Ray Dataset that we create a TableCell out of
+:param col_to_sort: The name of the column in the dataset to sort by
+:param k: The number of samples from the dataset to display in the table
+:param descending: Whether to sort in descending order.
+:param abs_val: Whether to sort by absolute value when sorting is enabled.
+:param caption: The caption text before the table.
+:param cell_align: The text alignment within cells.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RayDatasetTableCell(TableCell):
+    &#34;&#34;&#34;
+    This class represents a table that displays data from a Ray Dataset object.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        dataset: ray.data.Dataset,
+        col_to_sort: Optional[str] = None,
+        k: Optional[int] = None,
+        descending: bool = False,
+        abs_val: bool = False,
+        caption: Optional[str] = None,
+        cell_align: str = LEFT,
+    ):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset that we create a TableCell out of
+        :param col_to_sort: The name of the column in the dataset to sort by
+        :param k: The number of samples from the dataset to display in the table
+        :param descending: Whether to sort in descending order.
+        :param abs_val: Whether to sort by absolute value when sorting is enabled.
+        :param caption: The caption text before the table.
+        :param cell_align: The text alignment within cells.
+        &#34;&#34;&#34;
+        if col_to_sort:
+            assert (
+                col_to_sort in dataset.columns()
+            ), f&#34;Column to be sorted `{col_to_sort}` is not present in dataset columns: {dataset.columns()}&#34;
+            if abs_val:
+                pd_dataset = dataset.to_pandas()
+                pd_dataset = pd_dataset.sort_values(by=col_to_sort, key=abs, ascending=not descending)
+                dataset = ray.data.from_pandas(pd_dataset)
+            else:
+                dataset = dataset.sort(col_to_sort, descending=descending)
+        samples = dataset.take(k) if k else dataset.take_all()  # take() uses min(k, num samples in dataset)
+        table_data = [RayDatasetTableCell.truncate_samples(list(sample.values())) for sample in samples]
+        headers = dataset.columns()
+        if CATEGORY_COLUMN_NAME in headers:  # pragma: no branch
+            category_idx = headers.index(CATEGORY_COLUMN_NAME)
+            table_data = [[row[category_idx]] + row[:category_idx] + row[category_idx + 1 :] for row in table_data]
+            headers = [headers[category_idx]] + headers[:category_idx] + headers[category_idx + 1 :]
+        headers = [format_string(header, as_column_name=True, as_title=True) for header in headers]
+        super().__init__(data=table_data, headers=headers, cell_align=cell_align, caption=caption)
+
+    @staticmethod
+    def truncate_samples(samples: List[Any]) -&gt; List[Any]:
+        &#34;&#34;&#34;
+        :param samples: List of items representing one row in the table.
+        :return: Table row with strings longer than MAX_CHAR truncated.
+        &#34;&#34;&#34;
+        truncated_samples = [
+            shorten(sample, MAX_CHAR) if isinstance(sample, str) and len(sample) &gt; MAX_CHAR else sample
+            for sample in samples
+        ]
+        return truncated_samples</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.TableCell</li>
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell.truncate_samples"><code class="name flex">
+<span>def <span class="ident">truncate_samples</span></span>(<span>samples: List[Any]) ‑> List[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>:param samples: List of items representing one row in the table.
+:return: Table row with strings longer than MAX_CHAR truncated.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def truncate_samples(samples: List[Any]) -&gt; List[Any]:
+    &#34;&#34;&#34;
+    :param samples: List of items representing one row in the table.
+    :return: Table row with strings longer than MAX_CHAR truncated.
+    &#34;&#34;&#34;
+    truncated_samples = [
+        shorten(sample, MAX_CHAR) if isinstance(sample, str) and len(sample) &gt; MAX_CHAR else sample
+        for sample in samples
+    ]
+    return truncated_samples</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.ScoreCell"><code class="flex name class">
+<span>class <span class="ident">ScoreCell</span></span>
+<span>(</span><span>dataset: Optional[ray.data.dataset.Dataset], score_name: str, score_column_name: str, dataset_score: float, categories: Optional[List[str]], category_scores: Optional[List[float]])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class generates visualizations for an evaluation score, including the overall dataset score, a bar plot
+displaying category-level scores if provided, and tables displaying highest and lowest scoring examples.</p>
+<p>:param dataset: The Ray Dataset used in the evaluation task.
+:param score_name: The name of the score that was computed in the evaluation.
+:param score_column_name: The name of the score column in the dataset.
+:param dataset_score: The aggregated score computed across the whole dataset.
+:param categories: The names of the categories.
+:param category_scores: The values of the category scores.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ScoreCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class generates visualizations for an evaluation score, including the overall dataset score, a bar plot
+        displaying category-level scores if provided, and tables displaying highest and lowest scoring examples.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        dataset: Optional[ray.data.Dataset],
+        score_name: str,
+        score_column_name: str,
+        dataset_score: float,
+        categories: Optional[List[str]],
+        category_scores: Optional[List[float]],
+    ):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset used in the evaluation task.
+        :param score_name: The name of the score that was computed in the evaluation.
+        :param score_column_name: The name of the score column in the dataset.
+        :param dataset_score: The aggregated score computed across the whole dataset.
+        :param categories: The names of the categories.
+        :param category_scores: The values of the category scores.
+        &#34;&#34;&#34;
+        cells = [
+            HeadingCell(text=f&#34;{format_string(score_name, as_title=True, as_score=True)}&#34;, level=5),
+            MarkdownCell(SCORE_DESCRIPTIONS[score_name]),
+            BoldCell(f&#34;Overall Score: {dataset_score}&#34;),
+        ]
+        if categories and category_scores:  # pragma: no branch
+            cells.append(CategoryScoreCell(categories, category_scores, score_name, dataset_score))
+        if dataset:  # pragma: no cover
+            columns = [i for i in TABLE_COLUMNS if i != &#34;target_output&#34;] if score_name == WER_SCORE else TABLE_COLUMNS
+            present_columns = [col for col in dataset.columns() if col in columns]
+            dataset = dataset.select_columns(present_columns)
+            is_binary_score = (
+                True if score_name in [EvalAlgorithm.FACTUAL_KNOWLEDGE.value, CLASSIFICATION_ACCURACY_SCORE] else False
+            )
+            cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))
+        super().__init__(*cells)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.reporting.eval_output_cells.ScoreTableCell"><code class="flex name class">
+<span>class <span class="ident">ScoreTableCell</span></span>
+<span>(</span><span>dataset: ray.data.dataset.Dataset, score_column_name: str, binary: Optional[bool] = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class generates two tables displaying the highest and lowest-scoring examples from a particular score.</p>
+<p>:param dataset: The Ray Dataset used in the evaluation task.
+:param score_column_name: The name of the score column in the dataset.
+:param binary: Boolean indicating if the score is binary.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ScoreTableCell(MarkdownCell):
+    &#34;&#34;&#34;
+    This class generates two tables displaying the highest and lowest-scoring examples from a particular score.
+    &#34;&#34;&#34;
+
+    def __init__(self, dataset: ray.data.Dataset, score_column_name: str, binary: Optional[bool] = False):
+        &#34;&#34;&#34;
+        :param dataset: The Ray Dataset used in the evaluation task.
+        :param score_column_name: The name of the score column in the dataset.
+        :param binary: Boolean indicating if the score is binary.
+        &#34;&#34;&#34;
+        description = (
+            WER_TABLE_DESCRIPTION
+            if score_column_name == WER_SCORE
+            else STEREOTYPING_TABLE_DESCRIPTION
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION
+            if binary
+            else TABLE_DESCRIPTION
+        )
+
+        n_samples = min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())
+        top_description = (
+            (f&#34;Top {n_samples} most stereotypical examples:&#34;)
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f&#34;{n_samples} correct examples:&#34;
+            if binary
+            else f&#34;Top {n_samples} highest-scoring examples:&#34;
+        )
+        bottom_description = (
+            (f&#34;Top {n_samples} least stereotypical examples:&#34;)
+            if score_column_name == LOG_PROBABILITY_DIFFERENCE
+            else f&#34;{n_samples} incorrect examples:&#34;
+            if binary
+            else f&#34;Bottom {n_samples} lowest-scoring examples:&#34;
+        )
+        abs_val = True if score_column_name == LOG_PROBABILITY_DIFFERENCE else False
+
+        cells = [
+            MarkdownCell(description),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=True,
+                abs_val=abs_val,
+                caption=top_description,
+            ),
+            RayDatasetTableCell(
+                dataset,
+                score_column_name,
+                k=n_samples,
+                descending=False,
+                abs_val=abs_val,
+                caption=bottom_description,
+            ),
+        ]
+        super().__init__(*cells)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.reporting.cells.MarkdownCell</li>
+<li>amazon_fmeval.reporting.cells.Cell</li>
+<li>abc.ABC</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src.amazon_fmeval.reporting" href="index.html">src.amazon_fmeval.reporting</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell" href="#src.amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell">CategoryBarPlotCell</a></code></h4>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.CategoryScoreCell" href="#src.amazon_fmeval.reporting.eval_output_cells.CategoryScoreCell">CategoryScoreCell</a></code></h4>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell" href="#src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell">EvalOutputCell</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_description" href="#src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_description">get_dataset_description</a></code></li>
+<li><code><a title="src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_sampling_description" href="#src.amazon_fmeval.reporting.eval_output_cells.EvalOutputCell.get_dataset_sampling_description">get_dataset_sampling_description</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell" href="#src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell">RayDatasetTableCell</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell.truncate_samples" href="#src.amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell.truncate_samples">truncate_samples</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.ScoreCell" href="#src.amazon_fmeval.reporting.eval_output_cells.ScoreCell">ScoreCell</a></code></h4>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.reporting.eval_output_cells.ScoreTableCell" href="#src.amazon_fmeval.reporting.eval_output_cells.ScoreTableCell">ScoreTableCell</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

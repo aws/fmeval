@@ -172,18 +172,17 @@ class EvalOutputRecord:
     The schema used to define the records that get written
     to a JSON Lines file when `save_dataset` is called.
 
-    Attributes:
-        model_input: the model input
-        model_output: the model output
-        model_log_probability: the model log probability
-        target_output: the target output
-        category: the category
-        sent_more_input: the "sent more" input (used by Prompt stereotyping)
-        sent_less_input: the "sent less" input (used by Prompt stereotyping)
-        sent_more_input_prob: the "sent more" input probability (used by Prompt stereotyping)
-        sent_less_input_prob: the "sent less" input probability (used by Prompt stereotyping)
-        sent_more_output: the "sent more" output (used by Prompt stereotyping)
-        sent_less_output: the "sent less" output (used by Prompt stereotyping)
+    :param model_input: the model input
+    :param model_output: the model output
+    :param model_log_probability: the model log probability
+    :param target_output: the target output
+    :param category: the category
+    :param sent_more_input: the "sent more" input (used by Prompt stereotyping)
+    :param sent_less_input: the "sent less" input (used by Prompt stereotyping)
+    :param sent_more_input_prob: the "sent more" input probability (used by Prompt stereotyping)
+    :param sent_less_input_prob: the "sent less" input probability (used by Prompt stereotyping)
+    :param sent_more_output: the "sent more" output (used by Prompt stereotyping)
+    :param sent_less_output: the "sent less" output (used by Prompt stereotyping)
 
     IMPORTANT:
         The attributes of this class MUST match the values of the

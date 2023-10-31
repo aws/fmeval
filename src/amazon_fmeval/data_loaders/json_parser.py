@@ -13,16 +13,13 @@ from amazon_fmeval.constants import COLUMN_NAMES, DATA_CONFIG_LOCATION_SUFFIX, M
 class ColumnParseArguments:
     """Data that is shared by various JsonParser methods.
 
-    Attributes:
-        jmespath_parser: The JMESPath parser that parses columns from the dataset
-            using JMESPath queries.
-        jmespath_query_type: Used for error logging. Will always be one of the *_COLUMN_NAME
-            constants (ex: MODEL_INPUT_COLUMN_NAME).
-        dataset: The data to be searched, already deserialized into a dict/list.
-        dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSON_LINES.
-            Used to determine whether the result parsed by `jmespath_parser`
-            is expected to be a list or a single value.
-        dataset_name: The name associated with the dataset being parsed.
+    :param jmespath_parser: The JMESPath parser that parses columns from the dataset using JMESPath queries.
+    :param jmespath_query_type: Used for error logging. Will always be one of the *_COLUMN_NAME constants
+                                (ex: MODEL_INPUT_COLUMN_NAME).
+    :param dataset: The data to be searched, already deserialized into a dict/list.
+    :param dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSON_LINES. Used to determine whether the result parsed
+                              by `jmespath_parser` is expected to be a list or a single value.
+    :param dataset_name: The name associated with the dataset being parsed.
     """
 
     jmespath_parser: ParsedResult
@@ -36,6 +33,7 @@ class JsonParser:
     """Parser for JSON and JSON Lines datasets using JMESPath queries supplied by the DataConfig class.
 
     Attributes:
+
         _parsers: A dict that maps keys (which must be one of the *_COLUMN_NAME constants)
         to ParsedResult objects. These ParsedResult objects (from the jmespath library)
         perform the JMESPath searching in the `search_jmespath` util function.

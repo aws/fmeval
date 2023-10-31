@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils API documentation</title>
+<meta name="description" content="This module contains several semantic perturbations from the NL-Augmenter package. The
+goals of having this module are twofolds: …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils</code></h1>
+</header>
+<section id="section-intro">
+<p>This module contains several semantic perturbations from the NL-Augmenter package. The
+goals of having this module are twofolds:</p>
+<ol>
+<li>NL-Augmenter has old dependencies which makes it difficult to install it in our env. We anyways
+do not need all of NL-Augmenter, so we copy over the perturbations we need over here.</li>
+<li>We might add more perturbations from other packages like <code>nlaug</code>, or even have our own custom
+ones, in the future, so we want to have a uniform API for these perturbations.</li>
+</ol>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+This module contains several semantic perturbations from the NL-Augmenter package. The
+goals of having this module are twofolds:
+
+1. NL-Augmenter has old dependencies which makes it difficult to install it in our env. We anyways
+do not need all of NL-Augmenter, so we copy over the perturbations we need over here.
+2. We might add more perturbations from other packages like `nlaug`, or even have our own custom
+ones, in the future, so we want to have a uniform API for these perturbations.
+&#34;&#34;&#34;
+from abc import ABC, abstractmethod
+import random
+import itertools
+from typing import Dict, List, Union
+from dataclasses import dataclass
+import functools
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class ButterFingerConfig:
+    &#34;&#34;&#34;
+    Config for the Butter Finger perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param perturbation_prob: The probability that a given character will be perturbed.
+    &#34;&#34;&#34;
+
+    perturbation_prob: float = 0.1
+
+
+@dataclass(frozen=True)
+class RandomUpperCaseConfig:
+    &#34;&#34;&#34;
+    Config for the RandomUpperCase perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param corrupt_proportion: Fraction of characters to be changed to uppercase.
+    &#34;&#34;&#34;
+
+    corrupt_proportion: float = 0.1
+
+
+@dataclass(frozen=True)
+class WhitespaceAddRemoveConfig:
+    &#34;&#34;&#34;
+    Config for WhitespaceAddRemove perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param remove_prob: Given a whitespace, remove it with this much probability.
+    :param add_prob: Given a non-whitespace, add a whitespace before it with this probability.
+    &#34;&#34;&#34;
+
+    remove_prob: float = 0.1
+    add_prob: float = 0.05
+
+
+class SemanticPerturbationUtil(ABC):
+    &#34;&#34;&#34;
+    The interface that each perturbation should implement.
+    &#34;&#34;&#34;
+
+    def __init__(self, seed: int = 5):
+        self.set_seed(seed)
+
+    @abstractmethod
+    def perturb(
+        self,
+        text: str,
+        config: Union[ButterFingerConfig, RandomUpperCaseConfig, WhitespaceAddRemoveConfig],
+        num_perturbations: int = 5,
+    ) -&gt; List[str]:
+        &#34;&#34;&#34;
+        Given an input text, generates one or more perturbed versions of it. Some perturbations can
+        only generate a single perturbed version, e.g., converting all numbers to numerics (eight -&gt; 8).
+
+        :param text: The input text that needs to be perturbed.
+        :param config: The configuration containing parameters for the perturbation.
+        :param num_perturbations: Number of perturbed versions to generate. Some perturbations can
+        only generate a single perturbed versions and will ignore this parameter.
+        :returns: A list of perturbed texts.
+        &#34;&#34;&#34;
+
+    @staticmethod
+    def set_seed(seed: int):
+        random.seed(seed)
+        np.random.seed(seed)
+
+
+class ButterFinger(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Given a text, add keyboard induced typos in randomly selected words.
+    Keyboard induced typos are ones where a character is replaced by adjacent characters on the keyboard.
+
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: W quick brmwn fox jumps over the lazy dig 10 times.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/butter_fingers_perturbation/transformation.py
+    &#34;&#34;&#34;
+
+    # Setting default values from NL-Augmenter
+    QUERTY_KEY_APPROX: Dict[str, str] = dict()
+    QUERTY_KEY_APPROX[&#34;q&#34;] = &#34;qwasedzx&#34;
+    QUERTY_KEY_APPROX[&#34;w&#34;] = &#34;wqesadrfcx&#34;
+    QUERTY_KEY_APPROX[&#34;e&#34;] = &#34;ewrsfdqazxcvgt&#34;
+    QUERTY_KEY_APPROX[&#34;r&#34;] = &#34;retdgfwsxcvgt&#34;
+    QUERTY_KEY_APPROX[&#34;t&#34;] = &#34;tryfhgedcvbnju&#34;
+    QUERTY_KEY_APPROX[&#34;y&#34;] = &#34;ytugjhrfvbnji&#34;
+    QUERTY_KEY_APPROX[&#34;u&#34;] = &#34;uyihkjtgbnmlo&#34;
+    QUERTY_KEY_APPROX[&#34;i&#34;] = &#34;iuojlkyhnmlp&#34;
+    QUERTY_KEY_APPROX[&#34;o&#34;] = &#34;oipklujm&#34;
+    QUERTY_KEY_APPROX[&#34;p&#34;] = &#34;plo[&#39;ik&#34;
+
+    QUERTY_KEY_APPROX[&#34;a&#34;] = &#34;aqszwxwdce&#34;
+    QUERTY_KEY_APPROX[&#34;s&#34;] = &#34;swxadrfv&#34;
+    QUERTY_KEY_APPROX[&#34;d&#34;] = &#34;decsfaqgbv&#34;
+    QUERTY_KEY_APPROX[&#34;f&#34;] = &#34;fdgrvwsxyhn&#34;
+    QUERTY_KEY_APPROX[&#34;g&#34;] = &#34;gtbfhedcyjn&#34;
+    QUERTY_KEY_APPROX[&#34;h&#34;] = &#34;hyngjfrvkim&#34;
+    QUERTY_KEY_APPROX[&#34;j&#34;] = &#34;jhknugtblom&#34;
+    QUERTY_KEY_APPROX[&#34;k&#34;] = &#34;kjlinyhn&#34;
+    QUERTY_KEY_APPROX[&#34;l&#34;] = &#34;lokmpujn&#34;
+
+    QUERTY_KEY_APPROX[&#34;z&#34;] = &#34;zaxsvde&#34;
+    QUERTY_KEY_APPROX[&#34;x&#34;] = &#34;xzcsdbvfrewq&#34;
+    QUERTY_KEY_APPROX[&#34;c&#34;] = &#34;cxvdfzswergb&#34;
+    QUERTY_KEY_APPROX[&#34;v&#34;] = &#34;vcfbgxdertyn&#34;
+    QUERTY_KEY_APPROX[&#34;b&#34;] = &#34;bvnghcftyun&#34;
+    QUERTY_KEY_APPROX[&#34;n&#34;] = &#34;nbmhjvgtuik&#34;
+    QUERTY_KEY_APPROX[&#34;m&#34;] = &#34;mnkjloik&#34;
+    QUERTY_KEY_APPROX[&#34; &#34;] = &#34; &#34;
+
+    def perturb(
+        self, text: str, config: ButterFingerConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        prob_of_typo = int(config.perturbation_prob * 100)
+        perturbed_texts = []
+        for _ in itertools.repeat(None, num_perturbations):
+            butter_text = []
+            for letter in text:
+                lcletter = letter.lower()
+                if lcletter not in self.QUERTY_KEY_APPROX.keys():
+                    new_letter = lcletter
+                else:
+                    if random.choice(range(0, 100)) &lt;= prob_of_typo:
+                        new_letter = random.choice(self.QUERTY_KEY_APPROX[lcletter])
+                    else:
+                        new_letter = lcletter
+                # go back to original case
+                if not lcletter == letter:
+                    new_letter = new_letter.upper()
+                butter_text.append(new_letter)
+            perturbed_texts.append(&#34;&#34;.join(butter_text))
+        return perturbed_texts
+
+
+class RandomUpperCase(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Convert random characters in the text to uppercase.
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: A qUick brOwn fox jumps over the lazY dog 10 timEs.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/random_upper_transformation/transformation.py#L1
+    &#34;&#34;&#34;
+
+    def perturb(
+        self, text: str, config: RandomUpperCaseConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        return list(map(functools.partial(self.random_upper, config=config), itertools.repeat(text, num_perturbations)))
+
+    @staticmethod
+    def random_upper(text: str, config: RandomUpperCaseConfig):
+        positions = np.random.choice(
+            range(len(text)),
+            int(len(text) * config.corrupt_proportion),
+            False,
+        )
+
+        new_sentence = [letter if index not in positions else letter.upper() for index, letter in enumerate(text)]
+        return &#34;&#34;.join(new_sentence)
+
+
+class WhitespaceAddRemove(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Add and remove whitespaces at random.
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: A q uick bro wn fox ju mps overthe lazy dog 10 times.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/whitespace_perturbation/transformation.py
+    &#34;&#34;&#34;
+
+    def perturb(
+        self, text: str, config: WhitespaceAddRemoveConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        perturbed_texts = []
+        for _ in range(num_perturbations):
+            perturbed_text = []
+            for char in text:
+                random_num = random.random()
+                perturbed_text += WhitespaceAddRemove.whitespace(char, random_num, config.remove_prob, config.add_prob)
+            perturbed_texts.append(&#34;&#34;.join(perturbed_text))
+        return perturbed_texts
+
+    @staticmethod
+    def whitespace(char, random_num, remove_prob, add_prob):
+        if char.isspace() and random_num &lt; remove_prob:
+            return []
+        perturbed_char = [char]
+        if (not char.isspace()) and random_num &lt; add_prob:
+            perturbed_char.append(&#34; &#34;)
+
+        return perturbed_char</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger"><code class="flex name class">
+<span>class <span class="ident">ButterFinger</span></span>
+<span>(</span><span>seed: int = 5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Given a text, add keyboard induced typos in randomly selected words.
+Keyboard induced typos are ones where a character is replaced by adjacent characters on the keyboard.</p>
+<h2 id="example">Example</h2>
+<p>Original: A quick brown fox jumps over the lazy dog 10 times.
+Perturbed: W quick brmwn fox jumps over the lazy dig 10 times.</p>
+<p>Adopted from: <a href="https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/butter_fingers_perturbation/transformation.py">https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/butter_fingers_perturbation/transformation.py</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ButterFinger(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Given a text, add keyboard induced typos in randomly selected words.
+    Keyboard induced typos are ones where a character is replaced by adjacent characters on the keyboard.
+
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: W quick brmwn fox jumps over the lazy dig 10 times.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/butter_fingers_perturbation/transformation.py
+    &#34;&#34;&#34;
+
+    # Setting default values from NL-Augmenter
+    QUERTY_KEY_APPROX: Dict[str, str] = dict()
+    QUERTY_KEY_APPROX[&#34;q&#34;] = &#34;qwasedzx&#34;
+    QUERTY_KEY_APPROX[&#34;w&#34;] = &#34;wqesadrfcx&#34;
+    QUERTY_KEY_APPROX[&#34;e&#34;] = &#34;ewrsfdqazxcvgt&#34;
+    QUERTY_KEY_APPROX[&#34;r&#34;] = &#34;retdgfwsxcvgt&#34;
+    QUERTY_KEY_APPROX[&#34;t&#34;] = &#34;tryfhgedcvbnju&#34;
+    QUERTY_KEY_APPROX[&#34;y&#34;] = &#34;ytugjhrfvbnji&#34;
+    QUERTY_KEY_APPROX[&#34;u&#34;] = &#34;uyihkjtgbnmlo&#34;
+    QUERTY_KEY_APPROX[&#34;i&#34;] = &#34;iuojlkyhnmlp&#34;
+    QUERTY_KEY_APPROX[&#34;o&#34;] = &#34;oipklujm&#34;
+    QUERTY_KEY_APPROX[&#34;p&#34;] = &#34;plo[&#39;ik&#34;
+
+    QUERTY_KEY_APPROX[&#34;a&#34;] = &#34;aqszwxwdce&#34;
+    QUERTY_KEY_APPROX[&#34;s&#34;] = &#34;swxadrfv&#34;
+    QUERTY_KEY_APPROX[&#34;d&#34;] = &#34;decsfaqgbv&#34;
+    QUERTY_KEY_APPROX[&#34;f&#34;] = &#34;fdgrvwsxyhn&#34;
+    QUERTY_KEY_APPROX[&#34;g&#34;] = &#34;gtbfhedcyjn&#34;
+    QUERTY_KEY_APPROX[&#34;h&#34;] = &#34;hyngjfrvkim&#34;
+    QUERTY_KEY_APPROX[&#34;j&#34;] = &#34;jhknugtblom&#34;
+    QUERTY_KEY_APPROX[&#34;k&#34;] = &#34;kjlinyhn&#34;
+    QUERTY_KEY_APPROX[&#34;l&#34;] = &#34;lokmpujn&#34;
+
+    QUERTY_KEY_APPROX[&#34;z&#34;] = &#34;zaxsvde&#34;
+    QUERTY_KEY_APPROX[&#34;x&#34;] = &#34;xzcsdbvfrewq&#34;
+    QUERTY_KEY_APPROX[&#34;c&#34;] = &#34;cxvdfzswergb&#34;
+    QUERTY_KEY_APPROX[&#34;v&#34;] = &#34;vcfbgxdertyn&#34;
+    QUERTY_KEY_APPROX[&#34;b&#34;] = &#34;bvnghcftyun&#34;
+    QUERTY_KEY_APPROX[&#34;n&#34;] = &#34;nbmhjvgtuik&#34;
+    QUERTY_KEY_APPROX[&#34;m&#34;] = &#34;mnkjloik&#34;
+    QUERTY_KEY_APPROX[&#34; &#34;] = &#34; &#34;
+
+    def perturb(
+        self, text: str, config: ButterFingerConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        prob_of_typo = int(config.perturbation_prob * 100)
+        perturbed_texts = []
+        for _ in itertools.repeat(None, num_perturbations):
+            butter_text = []
+            for letter in text:
+                lcletter = letter.lower()
+                if lcletter not in self.QUERTY_KEY_APPROX.keys():
+                    new_letter = lcletter
+                else:
+                    if random.choice(range(0, 100)) &lt;= prob_of_typo:
+                        new_letter = random.choice(self.QUERTY_KEY_APPROX[lcletter])
+                    else:
+                        new_letter = lcletter
+                # go back to original case
+                if not lcletter == letter:
+                    new_letter = new_letter.upper()
+                butter_text.append(new_letter)
+            perturbed_texts.append(&#34;&#34;.join(butter_text))
+        return perturbed_texts</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger.QUERTY_KEY_APPROX"><code class="name">var <span class="ident">QUERTY_KEY_APPROX</span> : Dict[str, str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></b></code>:
+<ul class="hlist">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb">perturb</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig"><code class="flex name class">
+<span>class <span class="ident">ButterFingerConfig</span></span>
+<span>(</span><span>perturbation_prob: float = 0.1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Config for the Butter Finger perturbation.
+Defaults set to match those in NL-Augmenter.</p>
+<p>:param perturbation_prob: The probability that a given character will be perturbed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class ButterFingerConfig:
+    &#34;&#34;&#34;
+    Config for the Butter Finger perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param perturbation_prob: The probability that a given character will be perturbed.
+    &#34;&#34;&#34;
+
+    perturbation_prob: float = 0.1</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig.perturbation_prob"><code class="name">var <span class="ident">perturbation_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase"><code class="flex name class">
+<span>class <span class="ident">RandomUpperCase</span></span>
+<span>(</span><span>seed: int = 5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert random characters in the text to uppercase.</p>
+<h2 id="example">Example</h2>
+<p>Original: A quick brown fox jumps over the lazy dog 10 times.
+Perturbed: A qUick brOwn fox jumps over the lazY dog 10 timEs.</p>
+<p>Adopted from: <a href="https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/random_upper_transformation/transformation.py#L1">https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/random_upper_transformation/transformation.py#L1</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RandomUpperCase(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Convert random characters in the text to uppercase.
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: A qUick brOwn fox jumps over the lazY dog 10 timEs.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/random_upper_transformation/transformation.py#L1
+    &#34;&#34;&#34;
+
+    def perturb(
+        self, text: str, config: RandomUpperCaseConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        return list(map(functools.partial(self.random_upper, config=config), itertools.repeat(text, num_perturbations)))
+
+    @staticmethod
+    def random_upper(text: str, config: RandomUpperCaseConfig):
+        positions = np.random.choice(
+            range(len(text)),
+            int(len(text) * config.corrupt_proportion),
+            False,
+        )
+
+        new_sentence = [letter if index not in positions else letter.upper() for index, letter in enumerate(text)]
+        return &#34;&#34;.join(new_sentence)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase.random_upper"><code class="name flex">
+<span>def <span class="ident">random_upper</span></span>(<span>text: str, config: <a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig">RandomUpperCaseConfig</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def random_upper(text: str, config: RandomUpperCaseConfig):
+    positions = np.random.choice(
+        range(len(text)),
+        int(len(text) * config.corrupt_proportion),
+        False,
+    )
+
+    new_sentence = [letter if index not in positions else letter.upper() for index, letter in enumerate(text)]
+    return &#34;&#34;.join(new_sentence)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></b></code>:
+<ul class="hlist">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb">perturb</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig"><code class="flex name class">
+<span>class <span class="ident">RandomUpperCaseConfig</span></span>
+<span>(</span><span>corrupt_proportion: float = 0.1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Config for the RandomUpperCase perturbation.
+Defaults set to match those in NL-Augmenter.</p>
+<p>:param corrupt_proportion: Fraction of characters to be changed to uppercase.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class RandomUpperCaseConfig:
+    &#34;&#34;&#34;
+    Config for the RandomUpperCase perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param corrupt_proportion: Fraction of characters to be changed to uppercase.
+    &#34;&#34;&#34;
+
+    corrupt_proportion: float = 0.1</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig.corrupt_proportion"><code class="name">var <span class="ident">corrupt_proportion</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil"><code class="flex name class">
+<span>class <span class="ident">SemanticPerturbationUtil</span></span>
+<span>(</span><span>seed: int = 5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The interface that each perturbation should implement.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SemanticPerturbationUtil(ABC):
+    &#34;&#34;&#34;
+    The interface that each perturbation should implement.
+    &#34;&#34;&#34;
+
+    def __init__(self, seed: int = 5):
+        self.set_seed(seed)
+
+    @abstractmethod
+    def perturb(
+        self,
+        text: str,
+        config: Union[ButterFingerConfig, RandomUpperCaseConfig, WhitespaceAddRemoveConfig],
+        num_perturbations: int = 5,
+    ) -&gt; List[str]:
+        &#34;&#34;&#34;
+        Given an input text, generates one or more perturbed versions of it. Some perturbations can
+        only generate a single perturbed version, e.g., converting all numbers to numerics (eight -&gt; 8).
+
+        :param text: The input text that needs to be perturbed.
+        :param config: The configuration containing parameters for the perturbation.
+        :param num_perturbations: Number of perturbed versions to generate. Some perturbations can
+        only generate a single perturbed versions and will ignore this parameter.
+        :returns: A list of perturbed texts.
+        &#34;&#34;&#34;
+
+    @staticmethod
+    def set_seed(seed: int):
+        random.seed(seed)
+        np.random.seed(seed)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger">ButterFinger</a></li>
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase">RandomUpperCase</a></li>
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove">WhitespaceAddRemove</a></li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.set_seed"><code class="name flex">
+<span>def <span class="ident">set_seed</span></span>(<span>seed: int)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb"><code class="name flex">
+<span>def <span class="ident">perturb</span></span>(<span>self, text: str, config: Union[<a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig">ButterFingerConfig</a>, <a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig">RandomUpperCaseConfig</a>, <a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig">WhitespaceAddRemoveConfig</a>], num_perturbations: int = 5) ‑> List[str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Given an input text, generates one or more perturbed versions of it. Some perturbations can
+only generate a single perturbed version, e.g., converting all numbers to numerics (eight -&gt; 8).</p>
+<p>:param text: The input text that needs to be perturbed.
+:param config: The configuration containing parameters for the perturbation.
+:param num_perturbations: Number of perturbed versions to generate. Some perturbations can
+only generate a single perturbed versions and will ignore this parameter.
+:returns: A list of perturbed texts.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def perturb(
+    self,
+    text: str,
+    config: Union[ButterFingerConfig, RandomUpperCaseConfig, WhitespaceAddRemoveConfig],
+    num_perturbations: int = 5,
+) -&gt; List[str]:
+    &#34;&#34;&#34;
+    Given an input text, generates one or more perturbed versions of it. Some perturbations can
+    only generate a single perturbed version, e.g., converting all numbers to numerics (eight -&gt; 8).
+
+    :param text: The input text that needs to be perturbed.
+    :param config: The configuration containing parameters for the perturbation.
+    :param num_perturbations: Number of perturbed versions to generate. Some perturbations can
+    only generate a single perturbed versions and will ignore this parameter.
+    :returns: A list of perturbed texts.
+    &#34;&#34;&#34;</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove"><code class="flex name class">
+<span>class <span class="ident">WhitespaceAddRemove</span></span>
+<span>(</span><span>seed: int = 5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add and remove whitespaces at random.</p>
+<h2 id="example">Example</h2>
+<p>Original: A quick brown fox jumps over the lazy dog 10 times.
+Perturbed: A q uick bro wn fox ju mps overthe lazy dog 10 times.</p>
+<p>Adopted from: <a href="https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/whitespace_perturbation/transformation.py">https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/whitespace_perturbation/transformation.py</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WhitespaceAddRemove(SemanticPerturbationUtil):
+    &#34;&#34;&#34;
+    Add and remove whitespaces at random.
+    Example:
+        Original: A quick brown fox jumps over the lazy dog 10 times.
+        Perturbed: A q uick bro wn fox ju mps overthe lazy dog 10 times.
+
+    Adopted from: https://github.com/GEM-benchmark/NL-Augmenter/blob/c591130760b453b3ad09516849dfc26e721eeb24/nlaugmenter/transformations/whitespace_perturbation/transformation.py
+    &#34;&#34;&#34;
+
+    def perturb(
+        self, text: str, config: WhitespaceAddRemoveConfig, num_perturbations: int = 5  # type: ignore[override]
+    ) -&gt; List[str]:
+        perturbed_texts = []
+        for _ in range(num_perturbations):
+            perturbed_text = []
+            for char in text:
+                random_num = random.random()
+                perturbed_text += WhitespaceAddRemove.whitespace(char, random_num, config.remove_prob, config.add_prob)
+            perturbed_texts.append(&#34;&#34;.join(perturbed_text))
+        return perturbed_texts
+
+    @staticmethod
+    def whitespace(char, random_num, remove_prob, add_prob):
+        if char.isspace() and random_num &lt; remove_prob:
+            return []
+        perturbed_char = [char]
+        if (not char.isspace()) and random_num &lt; add_prob:
+            perturbed_char.append(&#34; &#34;)
+
+        return perturbed_char</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove.whitespace"><code class="name flex">
+<span>def <span class="ident">whitespace</span></span>(<span>char, random_num, remove_prob, add_prob)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def whitespace(char, random_num, remove_prob, add_prob):
+    if char.isspace() and random_num &lt; remove_prob:
+        return []
+    perturbed_char = [char]
+    if (not char.isspace()) and random_num &lt; add_prob:
+        perturbed_char.append(&#34; &#34;)
+
+    return perturbed_char</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></b></code>:
+<ul class="hlist">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb">perturb</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig"><code class="flex name class">
+<span>class <span class="ident">WhitespaceAddRemoveConfig</span></span>
+<span>(</span><span>remove_prob: float = 0.1, add_prob: float = 0.05)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Config for WhitespaceAddRemove perturbation.
+Defaults set to match those in NL-Augmenter.</p>
+<p>:param remove_prob: Given a whitespace, remove it with this much probability.
+:param add_prob: Given a non-whitespace, add a whitespace before it with this probability.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class WhitespaceAddRemoveConfig:
+    &#34;&#34;&#34;
+    Config for WhitespaceAddRemove perturbation.
+    Defaults set to match those in NL-Augmenter.
+
+    :param remove_prob: Given a whitespace, remove it with this much probability.
+    :param add_prob: Given a non-whitespace, add a whitespace before it with this probability.
+    &#34;&#34;&#34;
+
+    remove_prob: float = 0.1
+    add_prob: float = 0.05</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.add_prob"><code class="name">var <span class="ident">add_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.remove_prob"><code class="name">var <span class="ident">remove_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src.amazon_fmeval.eval_algorithms" href="index.html">src.amazon_fmeval.eval_algorithms</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger">ButterFinger</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger.QUERTY_KEY_APPROX" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFinger.QUERTY_KEY_APPROX">QUERTY_KEY_APPROX</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig">ButterFingerConfig</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig.perturbation_prob" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.ButterFingerConfig.perturbation_prob">perturbation_prob</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase">RandomUpperCase</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase.random_upper" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCase.random_upper">random_upper</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig">RandomUpperCaseConfig</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig.corrupt_proportion" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.RandomUpperCaseConfig.corrupt_proportion">corrupt_proportion</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil">SemanticPerturbationUtil</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.perturb">perturb</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.set_seed" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.SemanticPerturbationUtil.set_seed">set_seed</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove">WhitespaceAddRemove</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove.whitespace" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemove.whitespace">whitespace</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig">WhitespaceAddRemoveConfig</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.add_prob" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.add_prob">add_prob</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.remove_prob" href="#src.amazon_fmeval.eval_algorithms.semantic_perturbation_utils.WhitespaceAddRemoveConfig.remove_prob">remove_prob</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

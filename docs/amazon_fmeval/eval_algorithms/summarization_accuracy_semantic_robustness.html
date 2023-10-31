@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import logging
+from collections import defaultdict
+
+from dataclasses import dataclass
+from typing import Optional, List, Dict, Any
+
+import ray.data
+from ray.data import Dataset
+
+from amazon_fmeval import util
+from amazon_fmeval.constants import (
+    MODEL_INPUT_COLUMN_NAME,
+    TARGET_OUTPUT_COLUMN_NAME,
+    MEAN,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    PREFIX_FOR_DELTA_SCORES,
+    MODEL_OUTPUT_COLUMN_NAME,
+    NUM_ROWS_DETERMINISTIC,
+)
+from amazon_fmeval.data_loaders.data_config import DataConfig
+from amazon_fmeval.data_loaders.util import get_dataset
+from amazon_fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    EvalScore,
+    EvalOutput,
+    DATASET_CONFIGS,
+    EVAL_DATASETS,
+    DEFAULT_PROMPT_TEMPLATE,
+    get_default_prompt_template,
+)
+from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
+from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
+    ButterFinger,
+    RandomUpperCase,
+    WhitespaceAddRemove,
+    ButterFingerConfig,
+    RandomUpperCaseConfig,
+    WhitespaceAddRemoveConfig,
+)
+from amazon_fmeval.eval_algorithms.summarization_accuracy import (
+    ROUGE_2,
+    DEFAULT_MODEL_TYPE,
+    SummarizationAccuracyConfig,
+    ROUGE_TYPES,
+    MODEL_TYPES_SUPPORTED,
+    SummarizationAccuracy,
+    ROUGE_SCORE,
+    METEOR_SCORE,
+    BERT_SCORE,
+)
+from amazon_fmeval.eval_algorithms.util import (
+    validate_dataset,
+    save_dataset,
+    aggregate_evaluation_scores,
+    generate_output_dataset_path,
+    generate_prompt_column_for_dataset,
+    get_num_actors,
+    generate_mean_delta_score,
+    generate_model_predict_response_for_dataset,
+    verify_model_determinism,
+)
+from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from amazon_fmeval.model_runners.composers.composers import PromptComposer
+from amazon_fmeval.model_runners.model_runner import ModelRunner
+from amazon_fmeval.perf_util import timed_block
+
+logger = logging.getLogger(__name__)
+
+# All the perturbation types supported by this eval algo
+PERTURBATION_TYPE_TO_HELPER_CLASS = {
+    BUTTER_FINGER: ButterFinger,
+    RANDOM_UPPER_CASE: RandomUpperCase,
+    WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
+}
+
+PROMPT_COLUMN_NAME = &#34;prompt&#34;
+
+DELTA_ROUGE_SCORE = PREFIX_FOR_DELTA_SCORES + ROUGE_SCORE
+DELTA_METEOR_SCORE = PREFIX_FOR_DELTA_SCORES + METEOR_SCORE
+DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
+
+
+@dataclass(frozen=True)
+class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
+    &#34;&#34;&#34;
+    Configuration for the summarization accuracy semantic robustness eval algorithm.
+
+    :param perturbation_type: perturbation type for generating perturbed inputs
+    :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
+    :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
+        butter_finger perturbation_type
+    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
+        random_upper_case perturbation_type
+    :param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
+        whitespace_add_remove perturbation_type
+    :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
+        whitespace_add_remove perturbation_type
+    :param rouge_type: Type of rouge metric in eval results
+    :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
+    :param model_type_for_bertscore: model to use for bert score
+    &#34;&#34;&#34;
+
+    perturbation_type: str = BUTTER_FINGER
+    num_perturbations: int = 5
+    butter_finger_perturbation_prob: float = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
+    whitespace_remove_prob: float = 0.1
+    whitespace_add_prob: float = 0.05
+    rouge_type: str = ROUGE_2
+    use_stemmer_for_rouge: bool = True
+    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
+
+    def __post_init__(self):
+        if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid perturbation type &#39;{self.perturbation_type} requested, please &#34;
+                f&#34;choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}&#34;
+            )
+
+        if not self.rouge_type in ROUGE_TYPES:
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig, &#34;
+                f&#34;please choose from acceptable values: {ROUGE_TYPES}&#34;
+            )
+
+        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in &#34;
+                f&#34;SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}&#34;
+            )
+
+
+class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
+    &#34;&#34;&#34;
+    Semantic Robustness Eval algorithm for Summarization Accuracy task LLMs
+
+    This evaluation measures how much the model output changes as a result of semantic preserving
+    perturbations. Given the input, e.g., &#34;A quick brown fox jumps over the lazy dog&#34;, the
+    evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
+    whitespace perturbation that changes the input text to &#34;A q uick bro wn fox ju mps overthe lazy
+    dog&#34;. The evaluation then measures how much the model output changes when prompted with the
+    original vs. perturbed input. The algo compares summarization accuracy of model output for original model output
+    and model output for perturbed inputs, returns delta between rouge, meteor and bert
+    scores.
+    &#34;&#34;&#34;
+
+    def __init__(self, eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig):
+        &#34;&#34;&#34;Default constructor
+
+        :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
+        &#34;&#34;&#34;
+        super().__init__(eval_algorithm_config)
+        self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
+        self._eval_algorithm_config = eval_algorithm_config
+        self._is_model_deterministic: Optional[bool] = None
+
+        if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
+            self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
+        elif self._eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
+            self._perturbation_config = RandomUpperCaseConfig(
+                self._eval_algorithm_config.random_uppercase_corrupt_proportion
+            )
+        else:
+            self._perturbation_config = WhitespaceAddRemoveConfig(
+                self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
+            )
+
+        self._summarization_accuracy_eval_algo = SummarizationAccuracy(
+            SummarizationAccuracyConfig(
+                rouge_type=eval_algorithm_config.rouge_type,
+                use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+                model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+            )
+        )
+
+    def __reduce__(self):  # pragma: no cover
+        &#34;&#34;&#34;
+        Custom serializer method used by Ray when it serializes instances of this
+        class during dataset.map() operations.
+        &#34;&#34;&#34;
+        serialized_data = (self._eval_algorithm_config,)
+        return SummarizationAccuracySemanticRobustness, serialized_data
+
+    def evaluate_sample(
+        self,
+        model_input: str,
+        target_output: str,
+        model: ModelRunner,
+        model_output: Optional[str] = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+    ) -&gt; List[EvalScore]:  # type: ignore[override]
+        &#34;&#34;&#34;
+        Summarization Accuracy Semantic Robustness evaluate sample.
+
+        :param model_input: text input for model
+        :param target_output: The expected responses from the model
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param model_output: The output of a model that we want to evaluate.
+        :param prompt_template: A template which can be used to compose prompt using model_input
+        :return: list of EvalScore object
+        &#34;&#34;&#34;
+        util.require(
+            model_input,
+            &#34;Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+        util.require(
+            model,
+            &#34;Missing required input: model i.e. ModelRunner, for &#34;
+            &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+        util.require(
+            target_output,
+            &#34;Missing required input: target_output, for &#34; &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+
+        prompt_composer = PromptComposer(prompt_template)
+        original_prompt = prompt_composer.compose(model_input)
+        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
+
+        if self._is_model_deterministic is None:
+            if model.predict(original_prompt)[0] != original_model_output:
+                raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+        perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
+        perturbed_inputs = perturbation.perturb(
+            text=model_input,
+            config=self._perturbation_config,
+            num_perturbations=self._eval_algorithm_config.num_perturbations,
+        )
+        perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
+        perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
+
+        original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+            target_output=target_output, model_output=original_model_output
+        )
+
+        perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
+        for perturbed_input_output in perturbed_input_outputs:
+            accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+                target_output=target_output, model_output=perturbed_input_output
+            )
+            for accuracy_score in accuracy_scores:
+                perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
+
+        return [
+            EvalScore(
+                name=PREFIX_FOR_DELTA_SCORES + original_score.name,
+                value=generate_mean_delta_score(
+                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
+                ),
+            )
+            for original_score in original_summarization_accuracy_scores
+        ]
+
+    def evaluate(  # type: ignore[override]
+        self,
+        model: ModelRunner,
+        dataset_config: Optional[DataConfig] = None,
+        prompt_template: Optional[str] = None,
+        save: bool = False,
+        num_records: int = 100,
+    ) -&gt; List[EvalOutput]:
+        &#34;&#34;&#34;
+        Semantic Robustness evaluate.
+
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param dataset_config: Configures the single dataset used for evaluation. If not provided,
+            evaluation will use all of it&#39;s supported built-in datasets
+        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+            will be used.
+        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
+        :return: List of EvalOutput objects.
+        &#34;&#34;&#34;
+        util.require(
+            model,
+            &#34;Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness &#34;
+            &#34;evaluate method&#34;,
+        )
+        if dataset_config:
+            dataset_configs = [dataset_config]
+        else:
+            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+
+        eval_outputs = []
+        for dataset_config in dataset_configs:
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
+            dataset_prompt_template = (
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+            )
+            dataset = generate_prompt_column_for_dataset(
+                dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+            )
+
+            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            if not self._is_model_deterministic:
+                raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+            dataset = generate_model_predict_response_for_dataset(
+                model=model,
+                data=dataset,
+                model_input_column_name=PROMPT_COLUMN_NAME,
+                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+            )
+            with timed_block(f&#34;Computing score and aggregation on dataset {dataset_config.dataset_name}&#34;, logger):
+                dataset = self.__add_scores(model, dataset_prompt_template, dataset)
+
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+                )
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=dataset_prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=generate_output_dataset_path(
+                            path_to_parent_dir=self._eval_results_path,
+                            eval_name=self.eval_name,
+                            dataset_name=dataset_config.dataset_name,
+                        ),
+                    )
+                )
+            self._is_model_deterministic = None
+            if save:
+                save_dataset(
+                    dataset=dataset,
+                    score_names=[DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
+                    path=generate_output_dataset_path(
+                        path_to_parent_dir=self._eval_results_path,
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                    ),
+                )
+
+        return eval_outputs
+
+    def __add_scores(self, model: ModelRunner, prompt_template: str, dataset: Dataset) -&gt; Dataset:  # pragma: no cover
+        &#34;&#34;&#34;
+        Private method to encapsulate map call on evaluate sample. Specifically created for cleaner mocking in
+        unit tests.
+        :param model: model to be used for evaluation
+        :param prompt_template: prompt template
+        :param dataset: input ray dataset
+        :returns: ray dataset with added score columns
+        &#34;&#34;&#34;
+        evaluate_sample_fn = self.evaluate_sample
+
+        class GenerateEvalScoresActor:  # pragma: no cover
+            &#34;&#34;&#34;
+            This class represents the Ray Actor that gets eval scores for every row in ray dataset by
+            calling evaluate_sample of the same class.
+
+            We use Ray Actors instead of Tasks because the Actor approach minimizes
+            the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
+            With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
+            class gets deserialized once per Actor when the Actor gets initialized.
+            &#34;&#34;&#34;
+
+            def __call__(self, row: Dict[str, Any]) -&gt; Dict[str, Any]:
+                assert prompt_template  # to satisfy mypy
+                scores = evaluate_sample_fn(
+                    model_input=row[MODEL_INPUT_COLUMN_NAME],
+                    target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                    model=model,
+                    model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                    prompt_template=prompt_template,
+                )
+                for score in scores:
+                    row[score.name] = score.value
+                return row
+
+        return dataset.map(
+            GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
+        ).materialize()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness"><code class="flex name class">
+<span>class <span class="ident">SummarizationAccuracySemanticRobustness</span></span>
+<span>(</span><span>eval_algorithm_config: <a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig">SummarizationAccuracySemanticRobustnessConfig</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Semantic Robustness Eval algorithm for Summarization Accuracy task LLMs</p>
+<p>This evaluation measures how much the model output changes as a result of semantic preserving
+perturbations. Given the input, e.g., "A quick brown fox jumps over the lazy dog", the
+evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
+whitespace perturbation that changes the input text to "A q uick bro wn fox ju mps overthe lazy
+dog". The evaluation then measures how much the model output changes when prompted with the
+original vs. perturbed input. The algo compares summarization accuracy of model output for original model output
+and model output for perturbed inputs, returns delta between rouge, meteor and bert
+scores.</p>
+<p>Default constructor</p>
+<p>:param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
+    &#34;&#34;&#34;
+    Semantic Robustness Eval algorithm for Summarization Accuracy task LLMs
+
+    This evaluation measures how much the model output changes as a result of semantic preserving
+    perturbations. Given the input, e.g., &#34;A quick brown fox jumps over the lazy dog&#34;, the
+    evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
+    whitespace perturbation that changes the input text to &#34;A q uick bro wn fox ju mps overthe lazy
+    dog&#34;. The evaluation then measures how much the model output changes when prompted with the
+    original vs. perturbed input. The algo compares summarization accuracy of model output for original model output
+    and model output for perturbed inputs, returns delta between rouge, meteor and bert
+    scores.
+    &#34;&#34;&#34;
+
+    def __init__(self, eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig):
+        &#34;&#34;&#34;Default constructor
+
+        :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
+        &#34;&#34;&#34;
+        super().__init__(eval_algorithm_config)
+        self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
+        self._eval_algorithm_config = eval_algorithm_config
+        self._is_model_deterministic: Optional[bool] = None
+
+        if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
+            self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
+        elif self._eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
+            self._perturbation_config = RandomUpperCaseConfig(
+                self._eval_algorithm_config.random_uppercase_corrupt_proportion
+            )
+        else:
+            self._perturbation_config = WhitespaceAddRemoveConfig(
+                self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
+            )
+
+        self._summarization_accuracy_eval_algo = SummarizationAccuracy(
+            SummarizationAccuracyConfig(
+                rouge_type=eval_algorithm_config.rouge_type,
+                use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+                model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+            )
+        )
+
+    def __reduce__(self):  # pragma: no cover
+        &#34;&#34;&#34;
+        Custom serializer method used by Ray when it serializes instances of this
+        class during dataset.map() operations.
+        &#34;&#34;&#34;
+        serialized_data = (self._eval_algorithm_config,)
+        return SummarizationAccuracySemanticRobustness, serialized_data
+
+    def evaluate_sample(
+        self,
+        model_input: str,
+        target_output: str,
+        model: ModelRunner,
+        model_output: Optional[str] = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+    ) -&gt; List[EvalScore]:  # type: ignore[override]
+        &#34;&#34;&#34;
+        Summarization Accuracy Semantic Robustness evaluate sample.
+
+        :param model_input: text input for model
+        :param target_output: The expected responses from the model
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param model_output: The output of a model that we want to evaluate.
+        :param prompt_template: A template which can be used to compose prompt using model_input
+        :return: list of EvalScore object
+        &#34;&#34;&#34;
+        util.require(
+            model_input,
+            &#34;Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+        util.require(
+            model,
+            &#34;Missing required input: model i.e. ModelRunner, for &#34;
+            &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+        util.require(
+            target_output,
+            &#34;Missing required input: target_output, for &#34; &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+        )
+
+        prompt_composer = PromptComposer(prompt_template)
+        original_prompt = prompt_composer.compose(model_input)
+        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
+
+        if self._is_model_deterministic is None:
+            if model.predict(original_prompt)[0] != original_model_output:
+                raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+        perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
+        perturbed_inputs = perturbation.perturb(
+            text=model_input,
+            config=self._perturbation_config,
+            num_perturbations=self._eval_algorithm_config.num_perturbations,
+        )
+        perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
+        perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
+
+        original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+            target_output=target_output, model_output=original_model_output
+        )
+
+        perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
+        for perturbed_input_output in perturbed_input_outputs:
+            accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+                target_output=target_output, model_output=perturbed_input_output
+            )
+            for accuracy_score in accuracy_scores:
+                perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
+
+        return [
+            EvalScore(
+                name=PREFIX_FOR_DELTA_SCORES + original_score.name,
+                value=generate_mean_delta_score(
+                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
+                ),
+            )
+            for original_score in original_summarization_accuracy_scores
+        ]
+
+    def evaluate(  # type: ignore[override]
+        self,
+        model: ModelRunner,
+        dataset_config: Optional[DataConfig] = None,
+        prompt_template: Optional[str] = None,
+        save: bool = False,
+        num_records: int = 100,
+    ) -&gt; List[EvalOutput]:
+        &#34;&#34;&#34;
+        Semantic Robustness evaluate.
+
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param dataset_config: Configures the single dataset used for evaluation. If not provided,
+            evaluation will use all of it&#39;s supported built-in datasets
+        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+            will be used.
+        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                            evaluation
+        :return: List of EvalOutput objects.
+        &#34;&#34;&#34;
+        util.require(
+            model,
+            &#34;Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness &#34;
+            &#34;evaluate method&#34;,
+        )
+        if dataset_config:
+            dataset_configs = [dataset_config]
+        else:
+            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+
+        eval_outputs = []
+        for dataset_config in dataset_configs:
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
+            dataset_prompt_template = (
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+            )
+            dataset = generate_prompt_column_for_dataset(
+                dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+            )
+
+            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+            if not self._is_model_deterministic:
+                raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+            dataset = generate_model_predict_response_for_dataset(
+                model=model,
+                data=dataset,
+                model_input_column_name=PROMPT_COLUMN_NAME,
+                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+            )
+            with timed_block(f&#34;Computing score and aggregation on dataset {dataset_config.dataset_name}&#34;, logger):
+                dataset = self.__add_scores(model, dataset_prompt_template, dataset)
+
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+                )
+                eval_outputs.append(
+                    EvalOutput(
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                        prompt_template=dataset_prompt_template,
+                        dataset_scores=dataset_scores,
+                        category_scores=category_scores,
+                        output_path=generate_output_dataset_path(
+                            path_to_parent_dir=self._eval_results_path,
+                            eval_name=self.eval_name,
+                            dataset_name=dataset_config.dataset_name,
+                        ),
+                    )
+                )
+            self._is_model_deterministic = None
+            if save:
+                save_dataset(
+                    dataset=dataset,
+                    score_names=[DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
+                    path=generate_output_dataset_path(
+                        path_to_parent_dir=self._eval_results_path,
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                    ),
+                )
+
+        return eval_outputs
+
+    def __add_scores(self, model: ModelRunner, prompt_template: str, dataset: Dataset) -&gt; Dataset:  # pragma: no cover
+        &#34;&#34;&#34;
+        Private method to encapsulate map call on evaluate sample. Specifically created for cleaner mocking in
+        unit tests.
+        :param model: model to be used for evaluation
+        :param prompt_template: prompt template
+        :param dataset: input ray dataset
+        :returns: ray dataset with added score columns
+        &#34;&#34;&#34;
+        evaluate_sample_fn = self.evaluate_sample
+
+        class GenerateEvalScoresActor:  # pragma: no cover
+            &#34;&#34;&#34;
+            This class represents the Ray Actor that gets eval scores for every row in ray dataset by
+            calling evaluate_sample of the same class.
+
+            We use Ray Actors instead of Tasks because the Actor approach minimizes
+            the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
+            With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
+            class gets deserialized once per Actor when the Actor gets initialized.
+            &#34;&#34;&#34;
+
+            def __call__(self, row: Dict[str, Any]) -&gt; Dict[str, Any]:
+                assert prompt_template  # to satisfy mypy
+                scores = evaluate_sample_fn(
+                    model_input=row[MODEL_INPUT_COLUMN_NAME],
+                    target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                    model=model,
+                    model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                    prompt_template=prompt_template,
+                )
+                for score in scores:
+                    row[score.name] = score.value
+                return row
+
+        return dataset.map(
+            GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
+        ).materialize()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.eval_algorithms.eval_algorithm.EvalAlgorithmInterface</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate"><code class="name flex">
+<span>def <span class="ident">evaluate</span></span>(<span>self, model: amazon_fmeval.model_runners.model_runner.ModelRunner, dataset_config: Optional[amazon_fmeval.data_loaders.data_config.DataConfig] = None, prompt_template: Optional[str] = None, save: bool = False, num_records: int = 100) ‑> List[amazon_fmeval.eval_algorithms.EvalOutput]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Semantic Robustness evaluate.</p>
+<p>:param model: An instance of ModelRunner which is the model under evaluation
+:param dataset_config: Configures the single dataset used for evaluation. If not provided,
+evaluation will use all of it's supported built-in datasets
+:param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+will be used.
+:param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+EvalAlgorithmInterface.EVAL_RESULTS_PATH
+:param num_records: The number of records to be sampled randomly from the input dataset to perform the
+evaluation
+:return: List of EvalOutput objects.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate(  # type: ignore[override]
+    self,
+    model: ModelRunner,
+    dataset_config: Optional[DataConfig] = None,
+    prompt_template: Optional[str] = None,
+    save: bool = False,
+    num_records: int = 100,
+) -&gt; List[EvalOutput]:
+    &#34;&#34;&#34;
+    Semantic Robustness evaluate.
+
+    :param model: An instance of ModelRunner which is the model under evaluation
+    :param dataset_config: Configures the single dataset used for evaluation. If not provided,
+        evaluation will use all of it&#39;s supported built-in datasets
+    :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
+        will be used.
+    :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                 EvalAlgorithmInterface.EVAL_RESULTS_PATH
+    :param num_records: The number of records to be sampled randomly from the input dataset to perform the
+                        evaluation
+    :return: List of EvalOutput objects.
+    &#34;&#34;&#34;
+    util.require(
+        model,
+        &#34;Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness &#34;
+        &#34;evaluate method&#34;,
+    )
+    if dataset_config:
+        dataset_configs = [dataset_config]
+    else:
+        dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+
+    eval_outputs = []
+    for dataset_config in dataset_configs:
+        dataset = get_dataset(dataset_config, num_records)
+        validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
+        dataset_prompt_template = (
+            get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+        )
+        dataset = generate_prompt_column_for_dataset(
+            dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+        )
+
+        self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
+        if not self._is_model_deterministic:
+            raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+        dataset = generate_model_predict_response_for_dataset(
+            model=model,
+            data=dataset,
+            model_input_column_name=PROMPT_COLUMN_NAME,
+            model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+        )
+        with timed_block(f&#34;Computing score and aggregation on dataset {dataset_config.dataset_name}&#34;, logger):
+            dataset = self.__add_scores(model, dataset_prompt_template, dataset)
+
+            dataset_scores, category_scores = aggregate_evaluation_scores(
+                dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+            )
+            eval_outputs.append(
+                EvalOutput(
+                    eval_name=self.eval_name,
+                    dataset_name=dataset_config.dataset_name,
+                    prompt_template=dataset_prompt_template,
+                    dataset_scores=dataset_scores,
+                    category_scores=category_scores,
+                    output_path=generate_output_dataset_path(
+                        path_to_parent_dir=self._eval_results_path,
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                    ),
+                )
+            )
+        self._is_model_deterministic = None
+        if save:
+            save_dataset(
+                dataset=dataset,
+                score_names=[DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
+                path=generate_output_dataset_path(
+                    path_to_parent_dir=self._eval_results_path,
+                    eval_name=self.eval_name,
+                    dataset_name=dataset_config.dataset_name,
+                ),
+            )
+
+    return eval_outputs</code></pre>
+</details>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate_sample"><code class="name flex">
+<span>def <span class="ident">evaluate_sample</span></span>(<span>self, model_input: str, target_output: str, model: amazon_fmeval.model_runners.model_runner.ModelRunner, model_output: Optional[str] = None, prompt_template: str = '$feature') ‑> List[amazon_fmeval.eval_algorithms.EvalScore]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Summarization Accuracy Semantic Robustness evaluate sample.</p>
+<p>:param model_input: text input for model
+:param target_output: The expected responses from the model
+:param model: An instance of ModelRunner which is the model under evaluation
+:param model_output: The output of a model that we want to evaluate.
+:param prompt_template: A template which can be used to compose prompt using model_input
+:return: list of EvalScore object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate_sample(
+    self,
+    model_input: str,
+    target_output: str,
+    model: ModelRunner,
+    model_output: Optional[str] = None,
+    prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+) -&gt; List[EvalScore]:  # type: ignore[override]
+    &#34;&#34;&#34;
+    Summarization Accuracy Semantic Robustness evaluate sample.
+
+    :param model_input: text input for model
+    :param target_output: The expected responses from the model
+    :param model: An instance of ModelRunner which is the model under evaluation
+    :param model_output: The output of a model that we want to evaluate.
+    :param prompt_template: A template which can be used to compose prompt using model_input
+    :return: list of EvalScore object
+    &#34;&#34;&#34;
+    util.require(
+        model_input,
+        &#34;Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+    )
+    util.require(
+        model,
+        &#34;Missing required input: model i.e. ModelRunner, for &#34;
+        &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+    )
+    util.require(
+        target_output,
+        &#34;Missing required input: target_output, for &#34; &#34;SummarizationAccuracySemanticRobustness evaluate_sample&#34;,
+    )
+
+    prompt_composer = PromptComposer(prompt_template)
+    original_prompt = prompt_composer.compose(model_input)
+    original_model_output = model_output if model_output else model.predict(original_prompt)[0]
+
+    if self._is_model_deterministic is None:
+        if model.predict(original_prompt)[0] != original_model_output:
+            raise EvalAlgorithmClientError(&#34;For evaluating semantic robustness, the model should be deterministic.&#34;)
+
+    perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
+    perturbed_inputs = perturbation.perturb(
+        text=model_input,
+        config=self._perturbation_config,
+        num_perturbations=self._eval_algorithm_config.num_perturbations,
+    )
+    perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
+    perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
+
+    original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+        target_output=target_output, model_output=original_model_output
+    )
+
+    perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
+    for perturbed_input_output in perturbed_input_outputs:
+        accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
+            target_output=target_output, model_output=perturbed_input_output
+        )
+        for accuracy_score in accuracy_scores:
+            perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
+
+    return [
+        EvalScore(
+            name=PREFIX_FOR_DELTA_SCORES + original_score.name,
+            value=generate_mean_delta_score(
+                original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
+            ),
+        )
+        for original_score in original_summarization_accuracy_scores
+    ]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig"><code class="flex name class">
+<span>class <span class="ident">SummarizationAccuracySemanticRobustnessConfig</span></span>
+<span>(</span><span>perturbation_type: str = 'butter_finger', num_perturbations: int = 5, butter_finger_perturbation_prob: float = 0.1, random_uppercase_corrupt_proportion: float = 0.1, whitespace_remove_prob: float = 0.1, whitespace_add_prob: float = 0.05, rouge_type: str = 'rouge2', use_stemmer_for_rouge: bool = True, model_type_for_bertscore: str = 'microsoft/deberta-xlarge-mnli')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Configuration for the summarization accuracy semantic robustness eval algorithm.</p>
+<p>:param perturbation_type: perturbation type for generating perturbed inputs
+:param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
+:param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
+butter_finger perturbation_type
+:param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
+random_upper_case perturbation_type
+:param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
+whitespace_add_remove perturbation_type
+:param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
+whitespace_add_remove perturbation_type
+:param rouge_type: Type of rouge metric in eval results
+:param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
+:param model_type_for_bertscore: model to use for bert score</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
+    &#34;&#34;&#34;
+    Configuration for the summarization accuracy semantic robustness eval algorithm.
+
+    :param perturbation_type: perturbation type for generating perturbed inputs
+    :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
+    :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
+        butter_finger perturbation_type
+    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
+        random_upper_case perturbation_type
+    :param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
+        whitespace_add_remove perturbation_type
+    :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
+        whitespace_add_remove perturbation_type
+    :param rouge_type: Type of rouge metric in eval results
+    :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
+    :param model_type_for_bertscore: model to use for bert score
+    &#34;&#34;&#34;
+
+    perturbation_type: str = BUTTER_FINGER
+    num_perturbations: int = 5
+    butter_finger_perturbation_prob: float = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
+    whitespace_remove_prob: float = 0.1
+    whitespace_add_prob: float = 0.05
+    rouge_type: str = ROUGE_2
+    use_stemmer_for_rouge: bool = True
+    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
+
+    def __post_init__(self):
+        if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid perturbation type &#39;{self.perturbation_type} requested, please &#34;
+                f&#34;choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}&#34;
+            )
+
+        if not self.rouge_type in ROUGE_TYPES:
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig, &#34;
+                f&#34;please choose from acceptable values: {ROUGE_TYPES}&#34;
+            )
+
+        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+            raise EvalAlgorithmClientError(
+                f&#34;Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in &#34;
+                f&#34;SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}&#34;
+            )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>amazon_fmeval.eval_algorithms.eval_algorithm.EvalAlgorithmConfig</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.butter_finger_perturbation_prob"><code class="name">var <span class="ident">butter_finger_perturbation_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.model_type_for_bertscore"><code class="name">var <span class="ident">model_type_for_bertscore</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.num_perturbations"><code class="name">var <span class="ident">num_perturbations</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.perturbation_type"><code class="name">var <span class="ident">perturbation_type</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.random_uppercase_corrupt_proportion"><code class="name">var <span class="ident">random_uppercase_corrupt_proportion</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.rouge_type"><code class="name">var <span class="ident">rouge_type</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.use_stemmer_for_rouge"><code class="name">var <span class="ident">use_stemmer_for_rouge</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_add_prob"><code class="name">var <span class="ident">whitespace_add_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_remove_prob"><code class="name">var <span class="ident">whitespace_remove_prob</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src.amazon_fmeval.eval_algorithms" href="index.html">src.amazon_fmeval.eval_algorithms</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness">SummarizationAccuracySemanticRobustness</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate">evaluate</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate_sample" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustness.evaluate_sample">evaluate_sample</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig">SummarizationAccuracySemanticRobustnessConfig</a></code></h4>
+<ul class="">
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.butter_finger_perturbation_prob" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.butter_finger_perturbation_prob">butter_finger_perturbation_prob</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.model_type_for_bertscore" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.model_type_for_bertscore">model_type_for_bertscore</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.num_perturbations" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.num_perturbations">num_perturbations</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.perturbation_type" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.perturbation_type">perturbation_type</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.random_uppercase_corrupt_proportion" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.random_uppercase_corrupt_proportion">random_uppercase_corrupt_proportion</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.rouge_type" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.rouge_type">rouge_type</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.use_stemmer_for_rouge" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.use_stemmer_for_rouge">use_stemmer_for_rouge</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_add_prob" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_add_prob">whitespace_add_prob</a></code></li>
+<li><code><a title="src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_remove_prob" href="#src.amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySemanticRobustnessConfig.whitespace_remove_prob">whitespace_remove_prob</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
