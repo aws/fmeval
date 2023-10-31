@@ -234,7 +234,16 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 dataset = dataset.map(_generate_score_columns).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [DELTA_F1_SCORE, DELTA_EXACT_MATCH_SCORE, DELTA_QUASI_EXACT_MATCH_SCORE], agg_method=MEAN
+                    dataset,
+                    [
+                        F1_SCORE,
+                        EXACT_MATCH_SCORE,
+                        QUASI_EXACT_MATCH_SCORE,
+                        DELTA_F1_SCORE,
+                        DELTA_EXACT_MATCH_SCORE,
+                        DELTA_QUASI_EXACT_MATCH_SCORE,
+                    ],
+                    agg_method=MEAN,
                 )
 
                 eval_outputs.append(
@@ -255,7 +264,8 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
+                    score_names=[F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE]
+                    + list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -324,7 +334,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             for accuracy_score in accuracy_scores:
                 perturbed_outputs_qa_accuracy_scores[accuracy_score.name].append(accuracy_score)
 
-        return [
+        delta_scores = [
             EvalScore(
                 name=PREFIX_FOR_DELTA_SCORES + original_score.name,
                 value=generate_mean_delta_score(
@@ -333,3 +343,4 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
             for original_score in original_qa_accuracy_scores
         ]
+        return original_qa_accuracy_scores + delta_scores
