@@ -264,8 +264,14 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE]
-                    + list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
+                    score_names=[
+                        F1_SCORE,
+                        EXACT_MATCH_SCORE,
+                        QUASI_EXACT_MATCH_SCORE,
+                        DELTA_F1_SCORE,
+                        DELTA_EXACT_MATCH_SCORE,
+                        DELTA_QUASI_EXACT_MATCH_SCORE,
+                    ],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,

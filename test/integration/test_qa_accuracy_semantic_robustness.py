@@ -34,7 +34,14 @@ class TestQAAccuracySemanticRobustness:
                 config=QAAccuracySemanticRobustnessConfig(
                     perturbation_type=BUTTER_FINGER, num_perturbations=5, butter_finger_perturbation_prob=0.1
                 ),
-                expected_scores={F1_SCORE: 1.0, EXACT_MATCH_SCORE: 1.0, QUASI_EXACT_MATCH_SCORE: 1.0, DELTA_F1_SCORE: 0.8, DELTA_EXACT_MATCH_SCORE: 0.8, DELTA_QUASI_EXACT_MATCH_SCORE: 0.8},
+                expected_scores={
+                    F1_SCORE: 1.0,
+                    EXACT_MATCH_SCORE: 1.0,
+                    QUASI_EXACT_MATCH_SCORE: 1.0,
+                    DELTA_F1_SCORE: 0.8,
+                    DELTA_EXACT_MATCH_SCORE: 0.8,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.8,
+                },
             ),
             TestCaseEvaluateSample(
                 config=QAAccuracySemanticRobustnessConfig(
@@ -42,7 +49,14 @@ class TestQAAccuracySemanticRobustness:
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
-                expected_scores={F1_SCORE: 1.0, EXACT_MATCH_SCORE: 1.0, QUASI_EXACT_MATCH_SCORE: 1.0, DELTA_F1_SCORE: 1.0, DELTA_EXACT_MATCH_SCORE: 1.0, DELTA_QUASI_EXACT_MATCH_SCORE: 1.0},
+                expected_scores={
+                    F1_SCORE: 1.0,
+                    EXACT_MATCH_SCORE: 1.0,
+                    QUASI_EXACT_MATCH_SCORE: 1.0,
+                    DELTA_F1_SCORE: 1.0,
+                    DELTA_EXACT_MATCH_SCORE: 1.0,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 1.0,
+                },
             ),
             TestCaseEvaluateSample(
                 config=QAAccuracySemanticRobustnessConfig(
@@ -51,7 +65,14 @@ class TestQAAccuracySemanticRobustness:
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
                 ),
-                expected_scores={F1_SCORE: 1.0, EXACT_MATCH_SCORE: 1.0, QUASI_EXACT_MATCH_SCORE: 1.0, DELTA_F1_SCORE: 0.8, DELTA_EXACT_MATCH_SCORE: 0.8, DELTA_QUASI_EXACT_MATCH_SCORE: 0.8},
+                expected_scores={
+                    F1_SCORE: 1.0,
+                    EXACT_MATCH_SCORE: 1.0,
+                    QUASI_EXACT_MATCH_SCORE: 1.0,
+                    DELTA_F1_SCORE: 0.8,
+                    DELTA_EXACT_MATCH_SCORE: 0.8,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.8,
+                },
             ),
         ],
     )
