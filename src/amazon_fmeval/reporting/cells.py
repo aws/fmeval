@@ -182,6 +182,7 @@ class BarPlotCell(FigureCell):
         plot_height: Optional[str] = None,
         plot_width: Optional[str] = None,
         center: Optional[bool] = True,
+        origin: float = 0,
     ):
         """
         Initializes a BarPlotCell.
@@ -196,7 +197,7 @@ class BarPlotCell(FigureCell):
         assert len(labels) == len(
             heights
         ), f"Number of labels in {labels} does not match number of bar heights in {heights}"
-        fig = BarPlotCell._create_bar_plot_fig(labels, heights, color=color, title=title)
+        fig = BarPlotCell._create_bar_plot_fig(labels, heights, color=color, title=title, origin=origin)
         super().__init__(fig, height=plot_height, width=plot_width, center=center)
 
     @staticmethod
@@ -209,9 +210,24 @@ class BarPlotCell(FigureCell):
         set_ticks_visible: bool = False,
         set_horizontal_grid_lines: bool = True,
         max_bar_width: float = 0.3,
+        origin: float = 0,
     ) -> plt.Figure:
         fig, ax = plt.subplots()
+        heights = [height - origin for height in heights]
         ax.bar(labels, heights, width=max_bar_width, color=color)
+        locs = ax.get_yticks()
+        ax.set_yticks(locs, [round(loc + origin, ndigits=3) for loc in locs])
+        if origin != 0:  # pragma: no cover
+            ax.axhline(0, color="gray")
+            ax.text(
+                x=1.02,
+                y=0,
+                s="unbiased model",
+                va="center",
+                ha="left",
+                bbox=dict(facecolor="w", alpha=0.5),
+                transform=ax.get_yaxis_transform(),
+            )
         ax.set_title(title)
 
         # auto-format bar labels to not overlap
