@@ -247,7 +247,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             for accuracy_score in accuracy_scores:
                 perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
 
-        return [
+        delta_scores = [
             EvalScore(
                 name=PREFIX_FOR_DELTA_SCORES + original_score.name,
                 value=generate_mean_delta_score(
@@ -256,6 +256,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
             for original_score in original_summarization_accuracy_scores
         ]
+        return original_summarization_accuracy_scores + delta_scores
 
     def evaluate(  # type: ignore[override]
         self,
@@ -314,7 +315,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 dataset = self.__add_scores(model, dataset_prompt_template, dataset)
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE], agg_method=MEAN
+                    dataset,
+                    [ROUGE_SCORE, BERT_SCORE, METEOR_SCORE, DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
+                    agg_method=MEAN,
                 )
                 eval_outputs.append(
                     EvalOutput(
@@ -334,7 +337,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
+                    score_names=[
+                        ROUGE_SCORE,
+                        BERT_SCORE,
+                        METEOR_SCORE,
+                        DELTA_ROUGE_SCORE,
+                        DELTA_BERT_SCORE,
+                        DELTA_METEOR_SCORE,
+                    ],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
