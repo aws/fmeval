@@ -185,9 +185,7 @@ BOOLQ = "boolq"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
 CROWS_PAIRS = "crows-pairs"
-CNN_DAILY_MAIL = "cnn_daily_mail"
 XSUM = "xsum"
-IMDB_MOVIE_REVIEWS = "imdb_movie_reviews"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
 WIKITEXT2 = "wikitext2"
@@ -200,17 +198,16 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [XSUM],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
-    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [IMDB_MOVIE_REVIEWS, WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+    EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
-        IMDB_MOVIE_REVIEWS,
         WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     ],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [XSUM],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [CNN_DAILY_MAIL, XSUM],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [XSUM],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -220,12 +217,9 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     BOOLQ: 'Respond to the following question. Valid answers are "true" or "false". $feature Answer:',
     TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
     NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
-    CNN_DAILY_MAIL: "Summarise the following text in a few sentences: $feature",
     XSUM: "Summarise the following text in one sentence: $feature",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
     "or 1 (positive sentiment). Review: $feature. Classification:",
-    IMDB_MOVIE_REVIEWS: "Classify the sentiment of the following review with negative or "
-    "positive sentiment. Review: $feature. Classification:",
 }
 
 
@@ -277,26 +271,12 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         sent_less_input_location="sent_less",
         category_location="bias_type",
     ),
-    CNN_DAILY_MAIL: DataConfig(
-        dataset_name=CNN_DAILY_MAIL,
-        dataset_uri="s3://amazon-fmeval/datasets/cnn_dailymail/cnn_dailymail.jsonl",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="document",
-        target_output_location="summary",
-    ),
     XSUM: DataConfig(
         dataset_name=XSUM,
         dataset_uri="s3://amazon-fmeval/datasets/xsum/xsum.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="document",
         target_output_location="summary",
-    ),
-    IMDB_MOVIE_REVIEWS: DataConfig(
-        dataset_name=IMDB_MOVIE_REVIEWS,
-        dataset_uri="s3://amazon-fmeval/datasets/imdb_reviews/imdb_movie_reviews.json",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="text",
-        target_output_location="sentiment",
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,

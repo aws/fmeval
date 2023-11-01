@@ -20,7 +20,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    CNN_DAILY_MAIL,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -525,21 +524,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="rouge", value=0.0),
-                            EvalScore(name="bertscore", value=0.0),
-                            EvalScore(name="meteor", value=0.0),
-                            EvalScore(name="delta_rouge", value=0.0),
-                            EvalScore(name="delta_bertscore", value=0.0),
-                            EvalScore(name="delta_meteor", value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name=XSUM,
                         dataset_scores=[
                             EvalScore(name="rouge", value=0.0),
@@ -564,44 +548,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 save_data=True,
                 dataset_with_scores=DATASET_WITH_SCORES,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="rouge", value=0.0),
-                            EvalScore(name="bertscore", value=0.0),
-                            EvalScore(name="meteor", value=0.0),
-                            EvalScore(name="delta_rouge", value=0.0),
-                            EvalScore(name="delta_bertscore", value=0.0),
-                            EvalScore(name="delta_meteor", value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="rouge", value=0.0),
-                                    EvalScore(name="bertscore", value=0.0),
-                                    EvalScore(name="meteor", value=0.0),
-                                    EvalScore(name="delta_rouge", value=0.0),
-                                    EvalScore(name="delta_bertscore", value=0.0),
-                                    EvalScore(name="delta_meteor", value=0.0),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="rouge", value=0.0),
-                                    EvalScore(name="bertscore", value=0.0),
-                                    EvalScore(name="meteor", value=0.0),
-                                    EvalScore(name="delta_rouge", value=0.0),
-                                    EvalScore(name="delta_bertscore", value=0.0),
-                                    EvalScore(name="delta_meteor", value=0.0),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name=XSUM,

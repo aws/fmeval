@@ -21,7 +21,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    CNN_DAILY_MAIL,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -301,18 +300,6 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         dataset_name=XSUM,
                         dataset_scores=[
@@ -332,35 +319,6 @@ class TestSummarizationAccuracy:
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],

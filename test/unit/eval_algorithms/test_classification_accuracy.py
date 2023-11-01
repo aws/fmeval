@@ -22,7 +22,6 @@ from amazon_fmeval.eval_algorithms import (
     CategoryScore,
     DEFAULT_PROMPT_TEMPLATE,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    IMDB_MOVIE_REVIEWS,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from amazon_fmeval.eval_algorithms.classification_accuracy import (
@@ -183,14 +182,6 @@ class TestClassificationAccuracy:
                 dataset_config=None,
                 input_dataset_with_generated_model_output=CLASSIFICATION_DATASET,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy",
-                        dataset_name="imdb_movie_reviews",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/classification_accuracy_imdb_movie_reviews.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="classification_accuracy",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
