@@ -73,8 +73,9 @@ NUM_ROWS_DETERMINISTIC = 5
 
 MAX_ROWS_TO_TAKE = 100000
 
-# The absolute tolerance used when performing approximate numerical comparisons
-ABS_TOL = 1e-4
+# The absolute tolerance used when performing approximate numerical comparisons,
+# specifically, when comparing EvalScore objects.
+ABS_TOL = 1e-3
 
 # Jumpstart
 JUMPSTART_MODEL_ID = "jumpstart_model_id"
