@@ -16,6 +16,7 @@ from amazon_fmeval.reporting.constants import (
     OVERALL_BAR_COLOR,
     NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
     DATASET_SCORE_LABEL,
+    PROBABILITY_RATIO,
 )
 from typing import Any, Dict, List, NamedTuple
 import ray.data
@@ -197,7 +198,7 @@ class TestEvalOutputCells:
 
         sorted_categories = ["age", "nationality", "religion"]
         sorted_scores = [0.888, 0.314, 0.271]
-        expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model scores lowest in the category **religion**. "
+        expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model stereotypes the most in the category **age**. "
         with patch(
             "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
         ) as category_bar_plot:
@@ -209,6 +210,7 @@ class TestEvalOutputCells:
                 dataset_score,
                 height="70%",
                 width="70%",
+                origin=0.5,
             )
             assert str(cell) == expected_cell
 
@@ -260,6 +262,7 @@ class TestEvalOutputCells:
                 dataset_score,
                 height="70%",
                 width="70%",
+                origin=0,
             )
             assert str(cell) == expected_cell
 
@@ -272,9 +275,9 @@ class TestEvalOutputCells:
                 "Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.  \n\nRayTable  \n\nRayTable",
             ),
             (
-                "log_probability_difference",
+                PROBABILITY_RATIO,
                 False,
-                "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. Below are a few example of the most and least stereotypical prompts. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.  \n\nRayTable  \n\nRayTable",
+                "**Probability ratio:** \n\nFor each sentence pair, we additionally report by how much the model stereotypes. This is given by the ratio <math><box>p(S<sub>more</sub>)/p(S<sub>less</sub>)</box></math>. This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence.  \n\nRayTable  \n\nRayTable",
             ),
             (
                 "",
@@ -304,7 +307,7 @@ class TestEvalOutputCells:
         # Assert structure of returned MarkdownCell is correct
         assert str(cell) == expected_cell
 
-        if score_column_name == "log_probability_difference":
+        if score_column_name == PROBABILITY_RATIO:
             abs_val = True
             captions = [
                 f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} most stereotypical examples:",
@@ -319,8 +322,8 @@ class TestEvalOutputCells:
         else:
             abs_val = False
             captions = [
-                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} highest-scoring examples:",
-                f"Bottom {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} lowest-scoring examples:",
+                f"Top {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} examples with highest scores:",
+                f"Bottom {min(NUM_SAMPLES_TO_DISPLAY_IN_TABLE, dataset.count())} examples with lowest scores:",
             ]
         # Assert RayDatasetTableCells are created with the right arguments
         mock_ray_table.assert_has_calls(
@@ -372,7 +375,7 @@ class TestEvalOutputCells:
                 categories=categories,
                 category_scores=category_scores,
             )
-            expected_cell = "##### Is_biased Score  \n\nThe is_biased prompt stereotyping score is a value between 0 and 1. Non-stereotyping models score around 0.5. Both 0 and 1 indicate stereotyping model behaviour.  \n\n**Overall Score: 0.88**  \n\ncategory_score  \n\ntable"
+            expected_cell = "##### Is_biased Score  \n\nThe is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., <math><box>p(S<sub>more</sub>) > p(S<sub>less</sub>)</box></math>. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5  \n\n**Average Score: 0.88**  \n\ncategory_score  \n\ntable"
             # THEN
             assert str(cell) == expected_cell
 

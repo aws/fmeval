@@ -20,7 +20,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    IMDB_MOVIE_REVIEWS,
     DEFAULT_PROMPT_TEMPLATE,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
@@ -420,17 +419,6 @@ class TestClassificationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name="imdb_movie_reviews",
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_imdb_movie_reviews.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
                         dataset_scores=[
                             EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
@@ -450,17 +438,6 @@ class TestClassificationAccuracySemanticRobustness:
                 prompt_template=None,
                 save_data=True,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name=IMDB_MOVIE_REVIEWS,
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_imdb_movie_reviews.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="classification_accuracy_semantic_robustness",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
