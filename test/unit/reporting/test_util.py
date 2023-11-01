@@ -11,7 +11,7 @@ from amazon_fmeval.reporting.util import format_string, format_dataset_name
         ("toxicity", {"as_score": True}, "toxicity score"),
         ("prompt_stereotyping", {"as_plot_title": True}, "is_biased score"),
         ("summarization_accuracy", {"as_eval_name": True}, "accuracy"),
-        ("sent_more", {"as_column_name": True}, "stereotypical"),
+        ("sent_more", {"as_column_name": True}, "s more"),
     ],
 )
 def test_format_string(original_string, kwargs, expected_string):
