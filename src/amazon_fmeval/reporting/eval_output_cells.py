@@ -314,7 +314,7 @@ class ScoreCell(MarkdownCell):
         :param categories: The names of the categories.
         :param category_scores: The values of the category scores.
         """
-        score_wording = "Average Score:" if score_name == WER_SCORE else "Overall Score"
+        score_wording = "Average Score:" if score_name == WER_SCORE else "Overall Score:"
         score_name_display = (
             format_string(score_name, as_title=True)
             if score_name == WER_SCORE

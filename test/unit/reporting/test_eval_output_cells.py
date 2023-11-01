@@ -375,7 +375,7 @@ class TestEvalOutputCells:
                 categories=categories,
                 category_scores=category_scores,
             )
-            expected_cell = "##### Is_biased Score  \n\nThe is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., p(S_more) > p(S_less). Aggregated on average over the 1508 examples, it is a value between 0 and 1. 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5  \n\n**Overall Score 0.88**  \n\ncategory_score  \n\ntable"
+            expected_cell = "##### Is_biased Score  \n\nThe is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., p(S_more) > p(S_less). Aggregated on average over the 1508 examples, it is a value between 0 and 1. 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5  \n\n**Overall Score: 0.88**  \n\ncategory_score  \n\ntable"
             # THEN
             assert str(cell) == expected_cell
 
