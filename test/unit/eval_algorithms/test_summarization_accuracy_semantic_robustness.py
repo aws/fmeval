@@ -20,7 +20,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    CNN_DAILY_MAIL,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -46,6 +45,9 @@ DATASET_WITH_SCORES = ray.data.from_items(
             TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
             CATEGORY_COLUMN_NAME: "dummy_category_1",
             MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ROUGE_SCORE: 0.0,
+            METEOR_SCORE: 0.0,
+            BERT_SCORE: 0.0,
             DELTA_ROUGE_SCORE: 0.0,
             DELTA_METEOR_SCORE: 0.0,
             DELTA_BERT_SCORE: 0.0,
@@ -58,6 +60,9 @@ DATASET_WITH_SCORES = ray.data.from_items(
             TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
             CATEGORY_COLUMN_NAME: "dummy_category_2",
             MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ROUGE_SCORE: 0.0,
+            METEOR_SCORE: 0.0,
+            BERT_SCORE: 0.0,
             DELTA_ROUGE_SCORE: 0.0,
             DELTA_METEOR_SCORE: 0.0,
             DELTA_BERT_SCORE: 0.0,
@@ -133,6 +138,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=BERT_SCORE, value=2.5),
                 ],
                 expected_response=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
@@ -161,6 +169,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=BERT_SCORE, value=2.5),
                 ],
                 expected_response=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
@@ -191,6 +202,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=BERT_SCORE, value=2.5),
                 ],
                 expected_response=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
@@ -255,6 +269,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=BERT_SCORE, value=2.5),
                 ],
                 expected_response=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
@@ -322,6 +339,9 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=BERT_SCORE, value=2.5),
                 ],
                 expected_response=[
+                    EvalScore(name=METEOR_SCORE, value=2.0),
+                    EvalScore(name=ROUGE_SCORE, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
                     EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
                     EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
@@ -504,20 +524,11 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="delta_rouge", value=0.0),
-                            EvalScore(name="delta_bertscore", value=0.0),
-                            EvalScore(name="delta_meteor", value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name=XSUM,
                         dataset_scores=[
+                            EvalScore(name="rouge", value=0.0),
+                            EvalScore(name="bertscore", value=0.0),
+                            EvalScore(name="meteor", value=0.0),
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
@@ -539,37 +550,11 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="delta_rouge", value=0.0),
-                            EvalScore(name="delta_bertscore", value=0.0),
-                            EvalScore(name="delta_meteor", value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="delta_rouge", value=0.0),
-                                    EvalScore(name="delta_bertscore", value=0.0),
-                                    EvalScore(name="delta_meteor", value=0.0),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="delta_rouge", value=0.0),
-                                    EvalScore(name="delta_bertscore", value=0.0),
-                                    EvalScore(name="delta_meteor", value=0.0),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_cnn_dailymail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name=XSUM,
                         dataset_scores=[
+                            EvalScore(name="rouge", value=0.0),
+                            EvalScore(name="bertscore", value=0.0),
+                            EvalScore(name="meteor", value=0.0),
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
@@ -579,6 +564,9 @@ class TestSummarizationAccuracySemanticRobustness:
                             CategoryScore(
                                 name="dummy_category_1",
                                 scores=[
+                                    EvalScore(name="rouge", value=0.0),
+                                    EvalScore(name="bertscore", value=0.0),
+                                    EvalScore(name="meteor", value=0.0),
                                     EvalScore(name="delta_rouge", value=0.0),
                                     EvalScore(name="delta_bertscore", value=0.0),
                                     EvalScore(name="delta_meteor", value=0.0),
@@ -587,6 +575,9 @@ class TestSummarizationAccuracySemanticRobustness:
                             CategoryScore(
                                 name="dummy_category_2",
                                 scores=[
+                                    EvalScore(name="rouge", value=0.0),
+                                    EvalScore(name="bertscore", value=0.0),
+                                    EvalScore(name="meteor", value=0.0),
                                     EvalScore(name="delta_rouge", value=0.0),
                                     EvalScore(name="delta_bertscore", value=0.0),
                                     EvalScore(name="delta_meteor", value=0.0),
@@ -618,6 +609,9 @@ class TestSummarizationAccuracySemanticRobustness:
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
+                            EvalScore(name="rouge", value=0.0),
+                            EvalScore(name="bertscore", value=0.0),
+                            EvalScore(name="meteor", value=0.0),
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
@@ -649,6 +643,9 @@ class TestSummarizationAccuracySemanticRobustness:
                         eval_name="summarization_accuracy_semantic_robustness",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
+                            EvalScore(name="rouge", value=0.0),
+                            EvalScore(name="bertscore", value=0.0),
+                            EvalScore(name="meteor", value=0.0),
                             EvalScore(name="delta_rouge", value=0.0),
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),

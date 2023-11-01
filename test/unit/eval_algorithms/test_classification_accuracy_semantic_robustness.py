@@ -20,7 +20,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    IMDB_MOVIE_REVIEWS,
     DEFAULT_PROMPT_TEMPLATE,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
@@ -32,6 +31,7 @@ from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness i
     BUTTER_FINGER,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
 )
+from amazon_fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
 from amazon_fmeval.exceptions import EvalAlgorithmClientError
 from amazon_fmeval.model_runners.model_runner import ModelRunner
 
@@ -69,12 +69,14 @@ CATEGORY_SCORES = [
     CategoryScore(
         name="brownie",
         scores=[
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
         ],
     ),
     CategoryScore(
         name="vanilla cake",
         scores=[
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
         ],
     ),
@@ -155,6 +157,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Some model output.",
                 target_output="3",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -169,6 +172,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Some model output.",
                 target_output="4",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -182,6 +186,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Some model output.",
                 target_output="2",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -195,6 +200,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Another model output.",
                 target_output="1",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -236,6 +242,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Some model output.",
                 target_output="3",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -280,6 +287,7 @@ class TestClassificationAccuracySemanticRobustness:
                 perturbed_model_output_2="Some model output.",
                 target_output="3",
                 expected_response=[
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
@@ -411,18 +419,9 @@ class TestClassificationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name="imdb_movie_reviews",
-                        dataset_scores=[
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_imdb_movie_reviews.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
                         dataset_scores=[
+                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
@@ -441,18 +440,9 @@ class TestClassificationAccuracySemanticRobustness:
                 expected_response=[
                     EvalOutput(
                         eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name=IMDB_MOVIE_REVIEWS,
-                        dataset_scores=[
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[IMDB_MOVIE_REVIEWS],
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_imdb_movie_reviews.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
                         dataset_scores=[
+                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
@@ -481,6 +471,7 @@ class TestClassificationAccuracySemanticRobustness:
                         eval_name="classification_accuracy_semantic_robustness",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
+                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
                         prompt_template="$feature",
@@ -509,6 +500,7 @@ class TestClassificationAccuracySemanticRobustness:
                         eval_name="classification_accuracy_semantic_robustness",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[
+                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
