@@ -314,7 +314,6 @@ class ScoreCell(MarkdownCell):
         :param categories: The names of the categories.
         :param category_scores: The values of the category scores.
         """
-        score_wording = "Average Score:" if score_name == WER_SCORE else "Overall Score:"
         score_name_display = (
             format_string(score_name, as_title=True)
             if score_name == WER_SCORE
@@ -323,7 +322,7 @@ class ScoreCell(MarkdownCell):
         cells = [
             HeadingCell(text=score_name_display, level=5),
             MarkdownCell(SCORE_DESCRIPTIONS[score_name]),
-            BoldCell(f"{score_wording} {dataset_score}"),
+            BoldCell(f"Average Score: {dataset_score}"),
         ]
         if categories and category_scores:  # pragma: no branch
             cells.append(CategoryScoreCell(categories, category_scores, score_name, dataset_score))
@@ -358,9 +357,9 @@ class EvalOutputCell(MarkdownCell):
             eval_name=eval_output.eval_name,
         )
         toxicity_detector_name = (
-            f"Toxicity detector model: {add_hyperlink(DETOXIFY_NAME, DETOXIFY_URI)}"
+            f"**Toxicity detector model**: {add_hyperlink(DETOXIFY_NAME, DETOXIFY_URI)}"
             if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) > 1
-            else f"Toxicity detector model: {add_hyperlink(TOXIGEN_NAME, TOXIGEN_URI)}"
+            else f"**Toxicity detector model**: {add_hyperlink(TOXIGEN_NAME, TOXIGEN_URI)}"
             if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) == 1
             else ""
         )
@@ -438,11 +437,15 @@ class EvalOutputCell(MarkdownCell):
         if dataset_type == CUSTOM_DATASET:
             return dataset_sampling_description
         else:
+
             dataset_description = (
-                DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES
+                DATASET_DETAILS[dataset_name].description + TREX_DESCRIPTION_EXAMPLES + dataset_sampling_description
                 if dataset_name == TREX and eval_name == EvalAlgorithm.FACTUAL_KNOWLEDGE.value
-                else DATASET_DETAILS[dataset_name].description + "\n\n" + CROWS_PAIRS_DISCLAIMER
-                if dataset_name == CROWS_PAIRS
                 else DATASET_DETAILS[dataset_name].description
+                + dataset_sampling_description
+                + "\n\n"
+                + CROWS_PAIRS_DISCLAIMER
+                if dataset_name == CROWS_PAIRS
+                else DATASET_DETAILS[dataset_name].description + " " + dataset_sampling_description
             )
-            return dataset_description + " " + dataset_sampling_description
+            return dataset_description

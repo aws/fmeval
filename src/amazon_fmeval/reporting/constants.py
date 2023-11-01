@@ -96,9 +96,7 @@ EVAL_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     (EvalAlgorithm.SUMMARIZATION_ACCURACY.value, EvalAlgorithm.ACCURACY.value),
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, EvalAlgorithm.ACCURACY.value),
     (EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value, "semantic_robustness"),
-    (EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value, "semantic_robustness"),
-    (EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, "semantic_robustness"),
-    (EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value, "semantic_robustness"),
+    ("accuracy_semantic_robustness", "semantic_robustness"),
     (EvalAlgorithm.QA_ACCURACY.value, EvalAlgorithm.TOXICITY.value),
     (EvalAlgorithm.SUMMARIZATION_TOXICITY.value, EvalAlgorithm.TOXICITY.value),
     (EvalAlgorithm.CLASSIFICATION_ACCURACY.value, EvalAlgorithm.TOXICITY.value),
@@ -106,7 +104,9 @@ EVAL_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
 PLOT_TITLE_STRING_REPLACEMENTS: List[Tuple[str, str]] = [("prompt_stereotyping", "is_biased score")]
 COLUMN_NAME_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     ("sent_more", "s_more"),
+    ("s_more_input", "<math>S<sub>more</sub></math>"),
     ("sent_less", "s_less"),
+    ("s_less_input", "<math>S<sub>less</sub></math>"),
     ("prob_", "probability_"),
     ("word_error_rate", "Average WER"),
     ("classification_accuracy", "accuracy"),
@@ -143,7 +143,7 @@ TOXICITY_EVAL_NAMES = [
 ]
 
 # Prompt stereotyping table column name
-PROBABILITY_RATIO = "<math><box>p(S<sub>more</sub>)/p(S<sub>less</sub>)</box><math>"
+PROBABILITY_RATIO = "<math><box>p(S<sub>more</sub>)/p(S<sub>less</sub>)</box></math>"
 IS_BIASED = "is_biased"
 
 # Toxicity detector names
@@ -154,7 +154,7 @@ DETOXIFY_URI = "https://github.com/unitaryai/detoxify"
 # Example table descriptions
 TABLE_DESCRIPTION = "Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. "
 WER_TABLE_DESCRIPTION = "Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job."
-STEREOTYPING_TABLE_DESCRIPTION = "**Probability ratio:** \n\nFor each sentence pair, we additionally report by how much the model stereotypes on this pair by reporting the ratio p(S_more)/p(S_less). This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence."
+STEREOTYPING_TABLE_DESCRIPTION = "**Probability ratio:** \n\nFor each sentence pair, we additionally report by how much the model stereotypes. This is given by the ratio <math><box>p(S<sub>more</sub>)/p(S<sub>less</sub>)</box></math>. This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence."
 FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION = "Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. "
 
 # Score descriptions for the report
@@ -162,7 +162,7 @@ SCORE_DESCRIPTIONS = {
     # Factual knowledge
     FACTUAL_KNOWLEDGE: "A factual knowledge score is a value between 0 and 1, indicating the percentage of correctly retrieved real-world facts across different knowledge categories.",
     # Prompt stereotyping
-    PROMPT_STEREOTYPING: "The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., p(S_more) > p(S_less). Aggregated on average over the 1508 examples, it is a value between 0 and 1. 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5",
+    PROMPT_STEREOTYPING: "The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., <math><box>p(S<sub>more</sub>) > p(S<sub>less</sub>)</box></math>. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5",
     LOG_PROBABILITY_DIFFERENCE: "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. ",
     # QA accuracy
     F1_SCORE: "Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .",
