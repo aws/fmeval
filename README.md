@@ -1,18 +1,20 @@
 ## Foundation Model Evaluations Library
-Library to evaluate Large Language Models(LLMs), to help evaluate and select the best large language models (LLMs) 
+Library to evaluate Large Language Models (LLMs), to help evaluate and select the best large language models (LLMs)
 for your use case.  The library can help evaluate LLMs for the following tasks:
-* Open-ended generation - the production of natural human responses to general questions that do not have a 
-  pre-defined structure. 
-* Text summarization - the verbatim extraction of a few pieces of highly relevant text (extraction) or the condensed 
+* Open-ended generation - the production of natural human responses to general questions that do not have a
+  pre-defined structure.
+* Text summarization - the verbatim extraction of a few pieces of highly relevant text (extraction) or the condensed
   summarization of the original text (abstraction).
 * Question Answering - the generation of a relevant and accurate response to a question.
 * Classification - assigning a category, such as a label or score, to text based on its content.
 
 The library contains the following:
-* Implementation of popular metrics(eval algorithms) for evaluating LLMs across tasks ex: Accuracy, Toxicity, Semantic Robustness and 
-  Prompt Stereotyping. 
-* Implementation of ModeRunner interface. ModelRunner encapsulates LLM for interaction inside eval algorithms. 
-  We have Built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
+* Implementation of popular metrics (eval algorithms) for evaluating LLMs across tasks, such as Accuracy, Toxicity,
+  Semantic Robustness and Prompt Stereotyping.
+* Implementation of ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
+  method that greatly simplifies interactions with LLMs within eval algorithm code. The interface can be extended by
+  the user for their LLMs.
+  We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
 
 ## Installation
 To install the package from PIP you can simply do:
@@ -20,30 +22,30 @@ To install the package from PIP you can simply do:
 ```
 pip install fmeval
 ```
-*Note: PyPi package is currently not available, please reach out to the team for beta preview whl distribution*
+*Note: A PyPi package is currently not available. Please reach out to the team for beta preview whl distribution*
 
 ## Usage
-You can see examples of running evaluations on your LLMs with built-in or custom datasets in 
+You can see examples of running evaluations on your LLMs with built-in or custom datasets in
 the [examples folder](https://github.com/aws/amazon-fmeval/tree/main/examples).
 
 Main steps for using fmeval are:
 1. Create a [ModelRuner](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/model_runner.py)
-   which can can perform invocations on your LLM. We have Built-in support for 
-   [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_jumpstart_model_runner.py), 
-   [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_model_runner.py) 
+   which can can perform invocations on your LLM. We have built-in support for
+   [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_jumpstart_model_runner.py),
+   [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_model_runner.py)
    and [AWS Bedrock Models](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/bedrock_model_runner.py).
-   You can also extend the ModeRunner interface for your externally hosted LLM endpoint.
+   You can also extend the ModeRunner interface for your externally-hosted LLM endpoint.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/amazon-fmeval/tree/main/src/amazon_fmeval/eval_algorithms).
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner)
 ```
-*Note: You can choose to update the default eval config parameters too for your usage.*
+*Note: You can update the default eval config parameters for your specific use case.*
 
-### Using Custom Dataset for evaluations
-We have our built-in datasets configured, which are consumed for computing metrics in eval_algorithms. 
-You can choose to use a custom dataset too in the following manner.
-1. Create a [DataConfig](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/data_loaders/data_config.py) 
+### Using a custom dataset for an evaluation
+We have our built-in datasets configured, which are consumed for computing metrics in eval_algorithms.
+You can choose to use a custom dataset in the following manner.
+1. Create a [DataConfig](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/data_loaders/data_config.py)
    for your custom dataset
 ```
 config = DataConfig(
@@ -55,15 +57,15 @@ config = DataConfig(
 )
 ```
 
-2. Use eval_algorithm with custom dataset
+2. Use eval algorithm with custom dataset
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
-*Please refer [code documentation](https://fantastic-waddle-n8nvqmv.pages.github.io/src/amazon_fmeval.html) and 
-[examples]((https://github.com/aws/amazon-fmeval/tree/main/examples)) for understanding other details, around usage of 
-eval_algorithms*
+*Please refer to [code documentation](https://fantastic-waddle-n8nvqmv.pages.github.io/src/amazon_fmeval.html) and
+[examples]((https://github.com/aws/amazon-fmeval/tree/main/examples)) for understanding other details around usage of
+eval algorithms*
 
 ## Development
 
@@ -72,12 +74,12 @@ Once a virtual environment is set up with python3.10, run the following command 
 ```
 ./devtool all
 ```
- 
+
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
 dependency, please update the [pyproject.toml](./pyproject.toml) file, and run `poetry update` command to update the
 `poetry.lock` file (which is checked-in).
- 
+
 Other than this step above to add dependencies, everything else should be managed with devtool commands.
 
 ### Adding your own Eval Algorithm
