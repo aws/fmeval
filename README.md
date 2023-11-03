@@ -1,5 +1,5 @@
 ## Foundation Model Evaluations Library
-Library to evaluate Large Language Models (LLMs), to help evaluate and select the best large language models (LLMs)
+FMEval is a library to evaluate Large Language Models (LLMs), to help evaluate and select the best large language models (LLMs)
 for your use case.  The library can help evaluate LLMs for the following tasks:
 * Open-ended generation - the production of natural human responses to general questions that do not have a
   pre-defined structure.
@@ -9,8 +9,8 @@ for your use case.  The library can help evaluate LLMs for the following tasks:
 * Classification - assigning a category, such as a label or score, to text based on its content.
 
 The library contains the following:
-* Implementation of popular metrics (eval algorithms) for evaluating LLMs across tasks, such as Accuracy, Toxicity,
-  Semantic Robustness and Prompt Stereotyping.
+* Implementation of popular metrics (eval algorithms) such as Accuracy, Toxicity, Semantic Robustness and
+  Prompt Stereotyping or evaluating LLMs across different tasks.
 * Implementation of ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
   method that greatly simplifies interactions with LLMs within eval algorithm code. The interface can be extended by
   the user for their LLMs.
@@ -29,12 +29,12 @@ You can see examples of running evaluations on your LLMs with built-in or custom
 the [examples folder](https://github.com/aws/amazon-fmeval/tree/main/examples).
 
 Main steps for using fmeval are:
-1. Create a [ModelRuner](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/model_runner.py)
+1. Create a [ModelRunner](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/model_runner.py)
    which can can perform invocations on your LLM. We have built-in support for
    [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_jumpstart_model_runner.py),
    [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_model_runner.py)
    and [AWS Bedrock Models](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/bedrock_model_runner.py).
-   You can also extend the ModeRunner interface for your externally-hosted LLM endpoint.
+   You can also extend the ModelRunner interface for any LLMs hosted anywhere..
 2. Use any of the supported [eval_algorithms](https://github.com/aws/amazon-fmeval/tree/main/src/amazon_fmeval/eval_algorithms).
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
@@ -43,7 +43,7 @@ eval_output = eval_algo.evaluate(model=model_runner)
 *Note: You can update the default eval config parameters for your specific use case.*
 
 ### Using a custom dataset for an evaluation
-We have our built-in datasets configured, which are consumed for computing metrics in eval_algorithms.
+We have our built-in datasets configured, which are consumed for computing the scores in eval algorithms.
 You can choose to use a custom dataset in the following manner.
 1. Create a [DataConfig](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/data_loaders/data_config.py)
    for your custom dataset
