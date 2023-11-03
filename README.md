@@ -34,7 +34,7 @@ Main steps for using fmeval are:
    [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_jumpstart_model_runner.py),
    [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_model_runner.py)
    and [AWS Bedrock Models](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/bedrock_model_runner.py).
-   You can also extend the ModelRunner interface for any LLMs hosted anywhere..
+   You can also extend the ModelRunner interface for any LLMs hosted anywhere.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/amazon-fmeval/tree/main/src/amazon_fmeval/eval_algorithms).
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
@@ -65,7 +65,7 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 
 *Please refer to [code documentation](https://fantastic-waddle-n8nvqmv.pages.github.io/src/amazon_fmeval.html) and
 [examples]((https://github.com/aws/amazon-fmeval/tree/main/examples)) for understanding other details around usage of
-eval algorithms*
+eval algorithms.*
 
 ## Development
 
@@ -77,8 +77,8 @@ Once a virtual environment is set up with python3.10, run the following command 
 
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
-dependency, please update the [pyproject.toml](./pyproject.toml) file, and run `poetry update` command to update the
-`poetry.lock` file (which is checked-in).
+dependency, please update the [pyproject.toml](./pyproject.toml) file, and run the `poetry update` command to update the
+`poetry.lock` file (which is checked in).
 
 Other than this step above to add dependencies, everything else should be managed with devtool commands.
 
