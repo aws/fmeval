@@ -30,7 +30,7 @@ the [examples folder](https://github.com/aws/amazon-fmeval/tree/main/examples).
 
 Main steps for using fmeval are:
 1. Create a [ModelRunner](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/model_runner.py)
-   which can can perform invocations on your LLM. We have built-in support for
+   which can perform invocations on your LLM. We have built-in support for
    [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_jumpstart_model_runner.py),
    [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/sm_model_runner.py)
    and [AWS Bedrock Models](https://github.com/aws/amazon-fmeval/blob/main/src/amazon_fmeval/model_runners/bedrock_model_runner.py).
