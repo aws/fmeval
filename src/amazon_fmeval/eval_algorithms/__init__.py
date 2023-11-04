@@ -282,8 +282,8 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
         dataset_uri="s3://amazon-fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="Review Text",
-        target_output_location="Recommended IND",
+        model_input_location="\"Review Text\"",
+        target_output_location="\"Recommended IND\"",
         category_location="Class Name",
     ),
     BOLD: DataConfig(
