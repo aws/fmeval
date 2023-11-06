@@ -5,6 +5,7 @@ from typing import Optional, List, Callable
 import evaluate as hf_evaluate
 import nltk
 import pandas as pd
+import ray
 from datasets import Dataset
 from nltk import word_tokenize
 from nltk.translate import meteor_score
@@ -124,8 +125,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         nltk.download("punkt")
         nltk.download("omw-1.4")
 
-        # load HelperMode for bertscore
-        BertscoreHelperModel(model_type=self._eval_algorithm_config.model_type_for_bertscore)
+        # initialize the BertscoreHelperModel singleton
+        self._bertscore_helper_model_singleton = BertscoreHelperModel.remote(
+            model_type=self._eval_algorithm_config.model_type_for_bertscore
+        )
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """
@@ -148,7 +151,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             EvalScore(
                 name=eval_score,
                 value=eval_fn(
-                    target_output=target_output, model_output=model_output, config=self._eval_algorithm_config
+                    target_output=target_output,
+                    model_output=model_output,
+                    config=self._eval_algorithm_config,
+                    helper_model=self._bertscore_helper_model_singleton,  # only used by get_bert_score
                 ),
             )
             for eval_score, eval_fn in self._score_eval_func_mapping.items()
@@ -206,6 +212,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                         eval_func=eval_func,
                         score_column_name=eval_score,
                         config=self._eval_algorithm_config,
+                        helper_model=self._bertscore_helper_model_singleton,
                     )
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
@@ -239,7 +246,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         return eval_outputs
 
 
-def get_meteor_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+def get_meteor_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
     """
     METEOR, an automatic metric for machine translation evaluation
     that is based on a generalized concept of unigram matching between the
@@ -260,6 +267,7 @@ def get_meteor_score(target_output: str, model_output: str, config: Summarizatio
 
     :param target_output: The expected responses from the model
     :param model_output: The output of a model that we want to evaluate.
+    :param config: Eval algo config
     :returns: meteor score
     """
     return meteor_score.single_meteor_score(
@@ -267,7 +275,7 @@ def get_meteor_score(target_output: str, model_output: str, config: Summarizatio
     )
 
 
-def get_rouge_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+def get_rouge_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
     """
     The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
     It computes the word overlap between the reference and model summary. Given that this metric is based on simple
@@ -290,7 +298,7 @@ def get_rouge_score(target_output: str, model_output: str, config: Summarization
     )[config.rouge_type]
 
 
-def get_bert_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig) -> float:
+def get_bert_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
     """
     BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
     under a (learned) model, typically, from the BERT family.
@@ -302,14 +310,20 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
     :param target_output: The expected responses from the model
     :param model_output: The output of a model that we want to evaluate.
     :param config: Eval algo config
+    :param helper_model: The BertscoreHelperModel singleton belonging to an instance of SummarizationAccuracy.
     :returns: rouge score: boolean indicating using stemmer for rouge
     """
-    bertscore = BertscoreHelperModel(model_type=config.model_type_for_bertscore)
-    return bertscore.get_helper_scores(target_output, model_output)
+    assert "helper_model" in kwargs
+    helper_model = kwargs["helper_model"]
+    return ray.get(helper_model.get_helper_scores.remote(target_output, model_output))
 
 
 def add_score_to_dataset(
-    dataset: Dataset, eval_func: Callable, score_column_name: str, config: SummarizationAccuracyConfig
+    dataset: Dataset,
+    eval_func: Callable,
+    score_column_name: str,
+    config: SummarizationAccuracyConfig,
+    helper_model: BertscoreHelperModel,
 ):
     """
     Util method to add a score column to a ray dataset.
@@ -318,6 +332,8 @@ def add_score_to_dataset(
     :param eval_func: eval function callable method
     :param score_column_name: column name for score to be added
     :param config: Eval algo config
+    :param helper_model: The BertscoreHelperModel singleton belonging to an
+        instance of SummarizationAccuracy. Used only by get_bert_score.
     :returns: ray Dataset with score column
     """
 
@@ -327,7 +343,9 @@ def add_score_to_dataset(
         """
         return pd.Series(
             data=[
-                eval_func(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config)
+                eval_func(
+                    row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config, helper_model=helper_model
+                )
                 for index, row in df.iterrows()
             ]
         )
