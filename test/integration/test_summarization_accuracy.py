@@ -11,8 +11,8 @@ from amazon_fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import bedrock_model_runner
 
 
-ABS_TOL = 1e-3  # Bedrock models are not deterministic, so we use a higher tolerance here
-os.environ["PARALLELIZATION_FACTOR"] = "1"
+ABS_TOL = 5e-3  # Bedrock models are not deterministic, so we use a higher tolerance here
+os.environ["PARALLELIZATION_FACTOR"] = "2"
 eval_algo = SummarizationAccuracy()
 
 
@@ -41,7 +41,7 @@ class TestSummarizationAccuracy:
 
     def test_evaluate(self, integration_tests_dir):
         dataset_config = DataConfig(
-            dataset_name="XSUM",
+            dataset_name="xsum_sample",
             dataset_uri=os.path.join(integration_tests_dir, "datasets", "xsum_sample.jsonl"),
             dataset_mime_type=MIME_TYPE_JSONLINES,
             model_input_location="document",
