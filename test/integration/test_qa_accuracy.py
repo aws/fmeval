@@ -23,6 +23,7 @@ js_model_runner_prompt_template = """
     Question: $feature [/INST]
     """
 
+
 class TestQAAccuracy:
     def test_evaluate_sample(self):
         model_input = """
