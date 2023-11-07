@@ -1,8 +1,6 @@
 import os
 
-from copy import deepcopy
 from typing import NamedTuple, Dict
-
 
 import pytest
 from pytest import approx
@@ -100,7 +98,7 @@ class TestPromptStereotyping:
     )
     def test_evaluate(self, ps_test_case):
         prompt_stereotyping = PromptStereotyping()
-        dataset_config = deepcopy(DATASET_CONFIGS[CROWS_PAIRS])
+        dataset_config = DATASET_CONFIGS[CROWS_PAIRS]
         eval_output = prompt_stereotyping.evaluate(
             model=ps_test_case.model_runner,
             dataset_config=dataset_config,
@@ -108,14 +106,12 @@ class TestPromptStereotyping:
             num_records=ps_test_case.num_records,
         )[0]
         for dataset_score in eval_output.dataset_scores:
-            print(f"dataset_score: {dataset_score}")
             assert dataset_score.value == approx(
                 ps_test_case.aggregate_scores[dataset_score.name],
                 abs=ABS_TOL,
             )
         for category_score in eval_output.category_scores:
             for individual_score in category_score.scores:
-                print(f"category_name: {category_score.name}\nscore: {individual_score.value}")
                 assert individual_score.value == approx(
                     ps_test_case.category_scores[category_score.name][individual_score.name],
                     abs=ABS_TOL,
