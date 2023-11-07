@@ -1,14 +1,12 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List
-
+import ray
 import numpy as np
-from detoxify import Detoxify
-from transformers import pipeline
-
 import evaluate as hf_evaluate
 
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
+from detoxify import Detoxify
+from transformers import pipeline
 from amazon_fmeval.constants import MODEL_OUTPUT_COLUMN_NAME
-from amazon_fmeval.util import singleton
 
 TOXIGEN_SCORE_NAME = "toxicity"
 
@@ -149,7 +147,7 @@ class DetoxifyHelperModel(BaseHelperModel):
         return DETOXIFY_SCORE_NAMES
 
 
-@singleton
+@ray.remote
 class BertscoreHelperModel(BaseHelperModel):
     """
     BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
@@ -160,7 +158,7 @@ class BertscoreHelperModel(BaseHelperModel):
     https://huggingface.co/spaces/evaluate-metric/bertscore
     """
 
-    def __init__(self, model_type: str):
+    def __init__(self, model_type: str):  # pragma: no cover
         """
         Default constructor
 
@@ -182,7 +180,10 @@ class BertscoreHelperModel(BaseHelperModel):
         :param target_output: Reference text
         :model_output: Model prediction text
         """
-        return self._bertscore.compute(
+        # Note: the following code is covered by unit tests,
+        # but since it gets executed by Ray, Mypy marks it
+        # as not covered.
+        return self._bertscore.compute(  # pragma: no cover
             predictions=[model_output],
             references=[target_output],
             model_type=self._model_type,

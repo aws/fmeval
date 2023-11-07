@@ -18,7 +18,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
     CategoryScore,
-    CNN_DAILY_MAIL,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
@@ -224,14 +223,6 @@ class TestSummarizationToxicityToxicity:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_toxicity",
                         dataset_name=XSUM,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
@@ -250,17 +241,6 @@ class TestSummarizationToxicityToxicity:
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(cols=[TOXIGEN_SCORE_NAME]),
                 dataset_with_scores=DATASET_TOXIGEN,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_toxicity",
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/summarization_toxicity_cnn_dailymail.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_toxicity",
                         dataset_name=XSUM,

@@ -8,6 +8,7 @@ from amazon_fmeval.reporting.constants import (
     EVAL_NAME_STRING_REPLACEMENTS,
     COLUMN_NAME_STRING_REPLACEMENTS,
     PLOT_TITLE_STRING_REPLACEMENTS,
+    AVOID_REMOVE_UNDERSCORE,
 )
 
 
@@ -39,7 +40,8 @@ def format_string(
     if as_eval_name:
         formatted_text = _replace_strings(formatted_text, EVAL_NAME_STRING_REPLACEMENTS)
     if remove_underscore:
-        formatted_text = formatted_text.replace("_", " ")
+        if text not in AVOID_REMOVE_UNDERSCORE:  # pragma: no branch
+            formatted_text = formatted_text.replace("_", " ")
     if as_score:
         formatted_text = _replace_strings(formatted_text, SCORE_STRING_REPLACEMENTS)
         formatted_text = formatted_text if "score" in formatted_text.lower() else f"{formatted_text} score"
@@ -73,21 +75,15 @@ def format_dataset_name(dataset_name: str, hyperlink: bool = False, html: bool =
     proper_dataset_name = DATASET_DETAILS[dataset_name].name
     if hyperlink:
         dataset_link = DATASET_DETAILS[dataset_name].url
-        proper_dataset_name = _add_hyperlink(proper_dataset_name, dataset_link, html, color)
+        proper_dataset_name = add_hyperlink(proper_dataset_name, dataset_link, html, color)
     return proper_dataset_name
 
 
-def _add_hyperlink(text: str, link: str, html: bool = True, color: str = "#006DAA") -> str:
+def add_hyperlink(text: str, link: str, html: bool = True, color: str = "#006DAA") -> str:
     """
     :param text: The text to add the hyperlink to.
     :param link: The URL to link to the text.
     :param html: Boolean indicating if hyperlink should be added in HTML format.
     :param color: The color of the text.
     """
-    return (
-        f'<a style="color:{color};" href="{link}">{text}</a>'
-        if html
-        else f"[{text}]({link})"
-        if html
-        else f"[{text}]({link})"
-    )
+    return f'<a style="color:{color};" href="{link}">{text}</a>' if html else f"[{text}]({link})"

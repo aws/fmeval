@@ -20,12 +20,16 @@ class TestDataClasses:
             ),
             TestCaseEvalScore(
                 eval_score_1=EvalScore(name="my_score", value=0.42),
-                eval_score_2=EvalScore(name="my_score", value=0.42 + ABS_TOL),
+                # In theory, the math.isclose formula should accept
+                # 0.42 + ABS_TOL as valid, but floating point error
+                # causes this to fail for particular values of ABS_TOL,
+                # so we use a 0.999 multiplier.
+                eval_score_2=EvalScore(name="my_score", value=0.42 + 0.999 * ABS_TOL),
                 expected=True,
             ),
             TestCaseEvalScore(
                 eval_score_1=EvalScore(name="my_score", value=0.42),
-                eval_score_2=EvalScore(name="my_score", value=0.42 - ABS_TOL),
+                eval_score_2=EvalScore(name="my_score", value=0.42 - 0.999 * ABS_TOL),
                 expected=True,
             ),
             TestCaseEvalScore(
@@ -100,8 +104,8 @@ class TestDataClasses:
                 category_score_2=CategoryScore(
                     name="category_name",
                     scores=[
-                        EvalScore(name="eval_1", value=0.42 + ABS_TOL),
-                        EvalScore(name="eval_2", value=0.162 - ABS_TOL),
+                        EvalScore(name="eval_1", value=0.42 + 0.999 * ABS_TOL),
+                        EvalScore(name="eval_2", value=0.162 - 0.999 * ABS_TOL),
                     ],
                 ),
                 expected=True,

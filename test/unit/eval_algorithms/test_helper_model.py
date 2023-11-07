@@ -1,5 +1,5 @@
 from unittest.mock import patch, PropertyMock
-
+import ray
 import numpy as np
 import pytest
 
@@ -156,9 +156,7 @@ class TestHelperModel:
         """
         Test bertscore helper model
         """
-        test_bertscore_1 = BertscoreHelperModel("distilbert-base-uncased")
-        test_bertscore_2 = BertscoreHelperModel("distilbert-base-uncased")
-        assert pytest.approx(test_bertscore_1) == pytest.approx(test_bertscore_2)
-        assert test_bertscore_1.get_helper_scores("sample text reference", "sample text prediction") == pytest.approx(
-            0.902793288230896
-        )
+        bertscore = BertscoreHelperModel.remote("distilbert-base-uncased")
+        assert ray.get(
+            bertscore.get_helper_scores.remote("sample text reference", "sample text prediction")
+        ) == pytest.approx(0.902793288230896)

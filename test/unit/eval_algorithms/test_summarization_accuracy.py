@@ -21,7 +21,6 @@ from amazon_fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    CNN_DAILY_MAIL,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -210,17 +209,14 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    def test_summarization_accuracy_evaluate_sample(self, bertscore_helper_model, test_case):
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
+    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, test_case):
         """
         GIVEN valid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_scores.return_value = 0.5
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
-
+        mock_get_bert_score.return_value = 0.5
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -301,18 +297,6 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
                         dataset_name=XSUM,
                         dataset_scores=[
@@ -332,35 +316,6 @@ class TestSummarizationAccuracy:
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[CNN_DAILY_MAIL],
-                        dataset_name=CNN_DAILY_MAIL,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_cnn_daily_mail.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
@@ -727,12 +682,12 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    def test_get_bert_score(self, bertscore_helper_model, test_case, config):
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_scores.return_value = 0.500000
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
-        assert test_case.expected_score == get_bert_score(test_case.target_output, test_case.model_output, config)
+    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.ray.get")
+    def test_get_bert_score(self, mock_ray_get, test_case, config):
+        mock_ray_get.return_value = 0.500000
+        assert test_case.expected_score == get_bert_score(
+            test_case.target_output, test_case.model_output, config, helper_model=MagicMock()
+        )
 
     @pytest.mark.parametrize(
         "input_dataset",
@@ -740,7 +695,11 @@ class TestSummarizationAccuracy:
     )
     def test_add_score_to_dataset(self, input_dataset, config):
         response_dataset = add_score_to_dataset(
-            dataset=input_dataset, eval_func=get_rouge_score, score_column_name=ROUGE_SCORE, config=config
+            dataset=input_dataset,
+            eval_func=get_rouge_score,
+            score_column_name=ROUGE_SCORE,
+            config=config,
+            helper_model=MagicMock(),
         )
         assert response_dataset.count() == input_dataset.count()
         response_dataset_df = response_dataset.to_pandas()
