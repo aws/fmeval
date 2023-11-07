@@ -104,7 +104,7 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    def test_evaluate_full(self, gsr_test_case):
+    def test_evaluate(self, gsr_test_case):
         gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config)
         dataset_config = deepcopy(DATASET_CONFIGS[WIKITEXT2])
         eval_output = gen_semantic_robustness.evaluate(
