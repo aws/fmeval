@@ -1,5 +1,5 @@
 import pytest
-from amazon_fmeval.reporting.util import format_string, format_dataset_name
+from fmeval.reporting.util import format_string, format_dataset_name
 
 
 @pytest.mark.parametrize(

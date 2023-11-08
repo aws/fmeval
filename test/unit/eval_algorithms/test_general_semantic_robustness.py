@@ -7,16 +7,16 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
     DEFAULT_EVAL_RESULTS_PATH,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
-from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
+from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
@@ -24,8 +24,8 @@ from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
     WHITESPACE_ADD_REMOVE,
     BUTTER_FINGER,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.model_runner import ModelRunner
 
 DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
@@ -318,7 +318,7 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
         """
         GIVEN a non-deterministic model
@@ -487,9 +487,9 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
     def test_semantic_robustness_evaluate(
         self,
         generate_model_predict_response_for_dataset,
@@ -551,8 +551,8 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
         get_dataset,

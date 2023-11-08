@@ -3,12 +3,12 @@ from typing import NamedTuple, Optional, Union, Dict, Type
 
 import pytest
 
-from amazon_fmeval.eval_algorithms import EvalAlgorithm
-from amazon_fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.fmeval import get_eval_algorithm
-from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
+from fmeval.eval_algorithms import EvalAlgorithm
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
+from fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.fmeval import get_eval_algorithm
+from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 
 
 class TestCaseGetEvalAlgo(NamedTuple):

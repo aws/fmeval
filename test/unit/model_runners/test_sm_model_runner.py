@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 import pytest
 import sagemaker
 
-from amazon_fmeval.constants import MIME_TYPE_JSON
-from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
+from fmeval.constants import MIME_TYPE_JSON
+from fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
