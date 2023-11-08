@@ -1,5 +1,5 @@
 from typing import Any, List, NamedTuple, Optional, Union
-from amazon_fmeval.reporting.cells import (
+from fmeval.reporting.cells import (
     MarkdownCell,
     FigureCell,
     TableCell,
@@ -10,7 +10,7 @@ from amazon_fmeval.reporting.cells import (
     ListType,
     ColumnsLayoutCell,
 )
-from amazon_fmeval.reporting.constants import CENTER, LEFT, RIGHT
+from fmeval.reporting.constants import CENTER, LEFT, RIGHT
 
 import matplotlib.pyplot as plt
 import pytest

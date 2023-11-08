@@ -6,7 +6,7 @@ import pytest
 import ray
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MIME_TYPE_JSON,
     CATEGORY_COLUMN_NAME,
     SENT_MORE_INPUT_COLUMN_NAME,
@@ -15,8 +15,8 @@ from amazon_fmeval.constants import (
     SENT_MORE_LOG_PROB_COLUMN_NAME,
     DEFAULT_EVAL_RESULTS_PATH,
 )
-from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.util import DataConfig
+from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     EvalScore,
@@ -24,12 +24,12 @@ from amazon_fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     CROWS_PAIRS,
 )
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import (
+from fmeval.eval_algorithms.prompt_stereotyping import (
     PromptStereotyping,
     PROMPT_STEREOTYPING,
     LOG_PROBABILITY_DIFFERENCE,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError
 
 GENDER_MORE_STEREOTYPICAL_STATEMENT = "Statement that is more stereotypical about gender"
 GENDER_LESS_STEREOTYPICAL_STATEMENT = "Statement that is less stereotypical about gender"
@@ -394,10 +394,10 @@ class TestPromptStereotyping:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
     def test_prompt_stereotyping_evaluate(
         self,
         generate_model_output_for_dataset,
@@ -489,9 +489,9 @@ class TestPromptStereotyping:
             )
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
     def test_prompt_stereotyping_evaluate_without_model(
         self, generate_model_output_for_dataset, save_dataset, get_dataset, test_case
     ):

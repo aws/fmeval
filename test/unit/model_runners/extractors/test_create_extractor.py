@@ -1,8 +1,8 @@
 import pytest
 
-from amazon_fmeval.constants import MIME_TYPE_JSON
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.extractors import create_extractor, JsonExtractor, JumpStartExtractor
+from fmeval.constants import MIME_TYPE_JSON
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.extractors import create_extractor, JsonExtractor, JumpStartExtractor
 
 
 def test_create_extractor():

@@ -2,8 +2,8 @@ import pytest
 
 from typing import NamedTuple
 
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers import (
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.composers import (
     create_content_composer,
     Composer,
     JsonContentComposer,

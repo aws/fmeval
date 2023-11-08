@@ -1,21 +1,28 @@
 import os
 from pytest import approx
-from amazon_fmeval.eval_algorithms.qa_accuracy import (
+from fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
     QAAccuracyConfig,
     F1_SCORE,
     EXACT_MATCH_SCORE,
     QUASI_EXACT_MATCH_SCORE,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import js_model_runner, js_model_runner_prompt_template
+
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.constants import MIME_TYPE_JSONLINES
+from test.integration.models.model_runners import js_model_runner
 
 ABS_TOL = 1e-6  # scores and model are deterministic, so approx() should be used purely to handle floating point error
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 config = QAAccuracyConfig("<OR>")
 eval_algo = QAAccuracy(config)
+
+js_model_runner_prompt_template = """
+    <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
+    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
+    Question: $feature [/INST]
+    """
 
 
 class TestQAAccuracy:

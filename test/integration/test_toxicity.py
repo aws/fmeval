@@ -2,13 +2,13 @@ import os
 import pytest
 from pytest import approx
 from typing import Dict, NamedTuple
-from amazon_fmeval.eval_algorithms.toxicity import (
+from fmeval.eval_algorithms.toxicity import (
     Toxicity,
     ToxicityConfig,
     TOXIGEN_MODEL,
     DETOXIFY_MODEL,
 )
-from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
+from fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_TOXICITY,
     DETOXIFY_SCORE_SEVERE_TOXICITY,
     DETOXIFY_SCORE_OBSCENE,
@@ -18,8 +18,8 @@ from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_SEXUAL_EXPLICIT,
     TOXIGEN_SCORE_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import hf_model_runner
 
 ABS_TOL = 1e-6
