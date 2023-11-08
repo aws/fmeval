@@ -42,3 +42,10 @@ class TestFactualKnowledge:
                 assert category_score.scores[0].value == approx(0.09, abs=ABS_TOL)
             elif category_score.name == "Subsidiary":
                 assert category_score.scores[0].value == approx(0.0198, abs=ABS_TOL)
+
+    def test_ray_shutdown(self):
+        """
+        Forcefully shut down the Ray session to ensure that resources
+        consumed by this session get freed.
+        """
+        ray.shutdown()
