@@ -1,9 +1,9 @@
 from unittest.mock import patch, Mock, call, MagicMock
 
-from amazon_fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore, EvalAlgorithm
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
-from amazon_fmeval.reporting.cells import BarPlotCell, TableCell
-from amazon_fmeval.reporting.eval_output_cells import (
+from fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore, EvalAlgorithm
+from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
+from fmeval.reporting.cells import BarPlotCell, TableCell
+from fmeval.reporting.eval_output_cells import (
     CategoryBarPlotCell,
     RayDatasetTableCell,
     CategoryScoreCell,
@@ -11,7 +11,7 @@ from amazon_fmeval.reporting.eval_output_cells import (
     ScoreCell,
     EvalOutputCell,
 )
-from amazon_fmeval.reporting.constants import (
+from fmeval.reporting.constants import (
     CATEGORY_BAR_COLOR,
     OVERALL_BAR_COLOR,
     NUM_SAMPLES_TO_DISPLAY_IN_TABLE,
@@ -200,7 +200,7 @@ class TestEvalOutputCells:
         sorted_scores = [0.888, 0.314, 0.271]
         expected_cell = "The plot shows the score breakdown into individual categories.  \n\n  \n\nAggBPCell  \n\nThe model stereotypes the most in the category **age**. "
         with patch(
-            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
+            "fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
         ) as category_bar_plot:
             cell = CategoryScoreCell(categories, scores, EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_score)
             category_bar_plot.assert_called_with(
@@ -252,7 +252,7 @@ class TestEvalOutputCells:
         sorted_top_scores = [1, 1, 0.888, 0.642, 0.5, 0.411, 0.333, 0.314, 0.296, 0.271]
         expected_cell = "The plot shows the score breakdown into individual categories.  \n\nThe top 10 categories are displayed here. To view the remaining category scores, see the `output.json` file at your S3 output location.  \n\nAggBPCell  \n\nThe model scores lowest in the category **manufacturer**. "
         with patch(
-            "amazon_fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
+            "fmeval.reporting.eval_output_cells.CategoryBarPlotCell", return_value="AggBPCell"
         ) as category_bar_plot:
             cell = CategoryScoreCell(categories, scores, EvalAlgorithm.FACTUAL_KNOWLEDGE.value, dataset_score)
             category_bar_plot.assert_called_with(
@@ -291,7 +291,7 @@ class TestEvalOutputCells:
             ),
         ],
     )
-    @patch("amazon_fmeval.reporting.eval_output_cells.RayDatasetTableCell", return_value="RayTable")
+    @patch("fmeval.reporting.eval_output_cells.RayDatasetTableCell", return_value="RayTable")
     def test_score_table_cell(self, mock_ray_table, score_column_name, binary, expected_cell):
         """
         GIVEN a valid dataset and score column name
@@ -353,8 +353,8 @@ class TestEvalOutputCells:
         WHEN a ScoreCell is created
         THEN the string representation of the ScoreCell matches what is expected
         """
-        with patch("amazon_fmeval.reporting.eval_output_cells.CategoryScoreCell", return_value="category_score"), patch(
-            "amazon_fmeval.reporting.eval_output_cells.ScoreTableCell", return_value="table"
+        with patch("fmeval.reporting.eval_output_cells.CategoryScoreCell", return_value="category_score"), patch(
+            "fmeval.reporting.eval_output_cells.ScoreTableCell", return_value="table"
         ):
             # GIVEN
             dataset = MagicMock()
@@ -420,7 +420,7 @@ class TestEvalOutputCells:
         dataset.count = Mock(return_value=10)
         dataset.columns = Mock(return_value=["col1", "col2", "col3"])
         dataset.select_columns = Mock()
-        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+        with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
             expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
             assert str(cell) == expected_cell
@@ -465,7 +465,7 @@ class TestEvalOutputCells:
         dataset.count = Mock(return_value=10)
         dataset.columns = Mock(return_value=["col1", "col2", "col3"])
         dataset.select_columns = Mock()
-        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+        with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
             expected_cell = '#### Built-in Dataset: <a style="color:#006DAA;" href="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset">XSUM</a>  \n\nA dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors. We sampled 10 records out of 204045 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
             assert str(cell) == expected_cell
@@ -482,7 +482,7 @@ class TestEvalOutputCells:
             prompt_template="prompt",
             error="The summarization accuracy evaluation failed.",
         )
-        with patch("amazon_fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
+        with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output)
             expected_cell = "#### Custom Dataset: Dataset 1  \n\n  \n\n  \n\n**This evaluation failed with the error message: The summarization accuracy evaluation failed.**"
             assert str(cell) == expected_cell

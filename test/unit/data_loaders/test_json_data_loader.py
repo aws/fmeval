@@ -5,16 +5,16 @@ import pytest
 import pathlib
 import ray.data
 
-from amazon_fmeval.data_loaders.data_sources import LocalDataFile
-from amazon_fmeval.data_loaders.json_parser import JsonParser
-from amazon_fmeval.data_loaders.json_data_loader import (
+from fmeval.data_loaders.data_sources import LocalDataFile
+from fmeval.data_loaders.json_parser import JsonParser
+from fmeval.data_loaders.json_data_loader import (
     JsonDataLoader,
     JsonDataLoaderConfig,
     CustomJSONDatasource,
 )
-from amazon_fmeval.data_loaders.util import DataConfig
+from fmeval.data_loaders.util import DataConfig
 from typing import Any, Dict, List, NamedTuple, Optional
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,

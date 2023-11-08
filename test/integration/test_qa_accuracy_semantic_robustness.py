@@ -3,7 +3,7 @@ from typing import NamedTuple, Dict
 
 import pytest
 from pytest import approx
-from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
+from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustness,
     QAAccuracySemanticRobustnessConfig,
     BUTTER_FINGER,
@@ -13,9 +13,9 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
 )
-from amazon_fmeval.eval_algorithms.qa_accuracy import F1_SCORE, QUASI_EXACT_MATCH_SCORE, EXACT_MATCH_SCORE
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from fmeval.eval_algorithms.qa_accuracy import F1_SCORE, QUASI_EXACT_MATCH_SCORE, EXACT_MATCH_SCORE
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import sm_model_runner
 
 ABS_TOL = 1e-4

@@ -3,7 +3,7 @@ import sys
 import logging
 
 from pytest import fixture
-from amazon_fmeval.util import project_root
+from fmeval.util import project_root
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

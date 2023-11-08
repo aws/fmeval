@@ -7,15 +7,15 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MIME_TYPE_JSON,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
     CategoryScore,
@@ -23,7 +23,7 @@ from amazon_fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
-from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
+from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,
     ClassificationAccuracySemanticRobustness,
     RANDOM_UPPER_CASE,
@@ -31,9 +31,9 @@ from amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness i
     BUTTER_FINGER,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
 )
-from amazon_fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.model_runner import ModelRunner
 
 DATASET = ray.data.from_items(
     [
@@ -386,7 +386,7 @@ class TestClassificationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
     def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
         """
         GIVEN a non-deterministic model
@@ -511,12 +511,12 @@ class TestClassificationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.save_dataset")
     @patch(
-        "amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.generate_model_predict_response_for_dataset"
+        "fmeval.eval_algorithms.classification_accuracy_semantic_robustness.generate_model_predict_response_for_dataset"
     )
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
     def test_classification_accuracy_semantic_robustness_evaluate(
         self,
         classification_accuracy,
@@ -596,9 +596,9 @@ class TestClassificationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
     def test_classification_accuracy_semantic_robustness_evaluate_invalid_input(
         self,
         classification_accuracy,

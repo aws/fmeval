@@ -8,15 +8,15 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MIME_TYPE_JSON,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import (
     CategoryScore,
     EvalOutput,
     EvalScore,
@@ -24,7 +24,7 @@ from amazon_fmeval.eval_algorithms import (
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
-from amazon_fmeval.eval_algorithms.summarization_accuracy import (
+from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
     SummarizationAccuracy,
     METEOR_SCORE,
@@ -39,7 +39,7 @@ from amazon_fmeval.eval_algorithms.summarization_accuracy import (
     get_bert_score,
     add_score_to_dataset,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET_WITH_SCORES = ray.data.from_items(
     [
@@ -209,7 +209,7 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
     def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, test_case):
         """
         GIVEN valid inputs
@@ -241,7 +241,7 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_summarization_accuracy_evaluate_sample_invalid_input(self, bertscore_helper_model, test_case, config):
         """
         GIVEN invalid inputs
@@ -407,12 +407,12 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
     def test_summarization_accuracy_evaluate(
         self,
         add_score_to_dataset,
@@ -479,11 +479,11 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
     def test_summarization_accuracy_evaluate_without_model(
         self,
         add_score_to_dataset,
@@ -583,9 +583,9 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_summarization_accuracy_evaluate_invalid_input(
         self, bertscore_helper_model, get_dataset, model, test_case, config
     ):
@@ -682,7 +682,7 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy.ray.get")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.ray.get")
     def test_get_bert_score(self, mock_ray_get, test_case, config):
         mock_ray_get.return_value = 0.500000
         assert test_case.expected_score == get_bert_score(

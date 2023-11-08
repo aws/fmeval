@@ -1,5 +1,5 @@
-from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
-from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
+from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
+from fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 from test.integration.models.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
 
 """

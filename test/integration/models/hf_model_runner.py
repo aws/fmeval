@@ -4,7 +4,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.model_runners.model_runner import ModelRunner
 
 
 @dataclass(frozen=True)

@@ -148,16 +148,16 @@ unit_test_with_coverage() {
 
 create_commit_hash_file(){
   if [[ -z "${CODEBUILD_RESOLVED_SOURCE_VERSION:-}" ]]; then
-    echo $(git rev-parse HEAD) > src/amazon_fmeval/COMMIT_HASH
+    echo $(git rev-parse HEAD) > src/fmeval/COMMIT_HASH
   else
-    echo "${CODEBUILD_RESOLVED_SOURCE_VERSION}" > src/amazon_fmeval/COMMIT_HASH
+    echo "${CODEBUILD_RESOLVED_SOURCE_VERSION}" > src/fmeval/COMMIT_HASH
   fi
 }
 
  build_package() {
     create_commit_hash_file
     poetry build
-    rm src/amazon_fmeval/COMMIT_HASH
+    rm src/fmeval/COMMIT_HASH
 }
 
 install_poetry() {

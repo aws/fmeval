@@ -6,7 +6,7 @@ import pytest
 import ray
 from _pytest.fixtures import fixture
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MIME_TYPE_JSON,
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
@@ -15,8 +15,8 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
 )
 
-from amazon_fmeval.data_loaders.util import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.util import DataConfig
+from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     CategoryScore,
@@ -24,7 +24,7 @@ from amazon_fmeval.eval_algorithms import (
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
-from amazon_fmeval.eval_algorithms.classification_accuracy import (
+from fmeval.eval_algorithms.classification_accuracy import (
     ClassificationAccuracyConfig,
     ClassificationAccuracy,
     convert_model_output_to_label,
@@ -35,7 +35,7 @@ from amazon_fmeval.eval_algorithms.classification_accuracy import (
 )
 from ray.data import Dataset
 
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError
 
 CLASSIFICATION_DATASET = ray.data.from_items(
     [
@@ -153,9 +153,9 @@ class TestClassificationAccuracy:
             )
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.save_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
     def test_classification_accuracy_evaluate_without_model(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
     ):
@@ -266,10 +266,10 @@ class TestClassificationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.save_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
     def test_classification_accuracy_evaluate(
         self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
     ):
@@ -352,8 +352,8 @@ class TestClassificationAccuracy:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.classification_accuracy.get_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
     def test_classification_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs

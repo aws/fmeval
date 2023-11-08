@@ -2,7 +2,7 @@ import os
 
 from _pytest.fixtures import fixture
 
-from amazon_fmeval.util import project_root
+from fmeval.util import project_root
 
 
 @fixture(scope="session")
