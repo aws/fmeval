@@ -17,11 +17,6 @@ js_model_runner = JumpStartModelRunner(
     content_template='{"inputs": [[{"role":"user", "content": $prompt}]], "parameters": {"max_new_tokens": 10, "top_p": 0.9, "temperature": 1e-20, "do_sample" : false}}',
     custom_attributes="accept_eula=true",
 )
-js_model_runner_prompt_template = """
-    <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
-    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
-    Question: $feature [/INST]
-    """
 
 # SageMaker model runner
 sm_endpoint_name = "meta-textgeneration-llama-2-7b-f-integration-test-endpoint"
@@ -31,11 +26,6 @@ sm_model_runner = SageMakerModelRunner(
     content_template='{"inputs": [[{"role":"user", "content": $prompt}]], "parameters": {"max_new_tokens": 10, "top_p": 0.9, "temperature": 1e-20, "do_sample" : false}}',
     custom_attributes="accept_eula=true",
 )
-sm_model_runner_prompt_template = """
-    <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
-    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
-    Question: $feature [/INST]
-    """
 
 # Huggingface model runner
 hf_config = HFModelConfig(model_name="gpt2", max_new_tokens=10)
