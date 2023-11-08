@@ -1,5 +1,6 @@
 import os
 import json
+import ray
 from pytest import approx
 from amazon_fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracy,
@@ -14,6 +15,7 @@ from test.integration.models.model_runners import bedrock_model_runner
 
 ABS_TOL = 1e-2  # Bedrock models are not deterministic, so we use a higher tolerance here
 os.environ["PARALLELIZATION_FACTOR"] = "2"
+
 eval_algo = SummarizationAccuracy()
 
 
@@ -64,3 +66,10 @@ class TestSummarizationAccuracy:
                 assert eval_score.value == approx(0.084, abs=ABS_TOL)
             elif eval_score.name == BERT_SCORE:
                 assert eval_score.value == approx(0.677, abs=ABS_TOL)
+
+    def test_kill_ray_actor(self):
+        """
+        Forcefully kill the BertscoreHelperModel singleton Ray Actor
+        to ensure that resources used by the Actor don't get leaked.
+        """
+        ray.kill(eval_algo._bertscore_helper_model_singleton)
