@@ -101,10 +101,3 @@ class TestToxicity:
         eval_output = eval_outputs[0]
         for eval_score in eval_output.dataset_scores:  # pragma: no branch
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down the Ray session to ensure that resources
-        consumed by this session get freed.
-        """
-        ray.shutdown()

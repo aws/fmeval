@@ -1,4 +1,5 @@
 import os
+import ray
 from pytest import approx
 from fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,

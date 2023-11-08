@@ -1,4 +1,5 @@
 import os
+import ray
 from pytest import approx
 from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from fmeval.data_loaders.data_config import DataConfig
