@@ -67,9 +67,10 @@ class TestSummarizationAccuracy:
             elif eval_score.name == BERT_SCORE:
                 assert eval_score.value == approx(0.677, abs=ABS_TOL)
 
-    def test_kill_ray_actor(self):
+    def test_ray_shutdown(self):
         """
-        Forcefully kill the BertscoreHelperModel singleton Ray Actor
-        to ensure that resources used by the Actor don't get leaked.
+        Forcefully shut down the Ray session to ensure that resources
+        consumed by this session (most importantly, the BertscoreHelperModel
+        Actor, which consumes a lot of memory) get freed.
         """
-        ray.kill(eval_algo._bertscore_helper_model_singleton)
+        ray.shutdown()
