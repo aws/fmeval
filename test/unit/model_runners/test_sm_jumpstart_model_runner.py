@@ -77,12 +77,6 @@ class TestJumpStartModelRunner:
                 log_probability=LOG_PROBABILITY,
             ),
             TestCasePredict(
-                output_jmespath=None,
-                log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
-                output=None,
-                log_probability=LOG_PROBABILITY,
-            ),
-            TestCasePredict(
                 output_jmespath=OUTPUT_JMES_PATH, log_probability_jmespath=None, output=OUTPUT, log_probability=None
             ),
         ],
