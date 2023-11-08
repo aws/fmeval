@@ -16,10 +16,16 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
 from amazon_fmeval.eval_algorithms.qa_accuracy import F1_SCORE, QUASI_EXACT_MATCH_SCORE, EXACT_MATCH_SCORE
 from amazon_fmeval.data_loaders.data_config import DataConfig
 from amazon_fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import sm_model_runner, sm_model_runner_prompt_template
+from test.integration.models.model_runners import sm_model_runner
 
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
+
+sm_model_runner_prompt_template = """
+    <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
+    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
+    Question: $feature [/INST]
+    """
 
 
 class TestQAAccuracySemanticRobustness:
