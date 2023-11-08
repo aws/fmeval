@@ -1,7 +1,7 @@
 import pytest
 from typing import NamedTuple
-from amazon_fmeval.eval_algorithms import EvalScore, CategoryScore
-from amazon_fmeval.constants import ABS_TOL
+from fmeval.eval_algorithms import EvalScore, CategoryScore
+from fmeval.constants import ABS_TOL
 
 
 class TestDataClasses:

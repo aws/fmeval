@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 from sagemaker.jumpstart.types import JumpStartSerializablePayload
 
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.composers.jumpstart_composer import JumpStartComposer
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.composers.jumpstart_composer import JumpStartComposer
 
 
 class TestJumpStartComposer:
@@ -32,7 +32,7 @@ class TestJumpStartComposer:
         ],
     )
     @patch(
-        "amazon_fmeval.model_runners.composers.jumpstart_composer._construct_payload",
+        "fmeval.model_runners.composers.jumpstart_composer._construct_payload",
         return_value=JumpStartSerializablePayload(
             {
                 "content_type": "application/json",
@@ -48,7 +48,7 @@ class TestJumpStartComposer:
         assert js_composer.compose(test_case.prompt) == test_case.expected_payload
 
     @patch(
-        "amazon_fmeval.model_runners.composers.jumpstart_composer._construct_payload",
+        "fmeval.model_runners.composers.jumpstart_composer._construct_payload",
         return_value=None,
     )
     def test_compose_failure(self, construct_payload):

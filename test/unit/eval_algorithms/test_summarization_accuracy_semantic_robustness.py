@@ -7,15 +7,15 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
     TARGET_OUTPUT_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
     CategoryScore,
@@ -23,20 +23,20 @@ from amazon_fmeval.eval_algorithms import (
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
 )
-from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
+from fmeval.eval_algorithms.general_semantic_robustness import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
 )
-from amazon_fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, ROUGE_SCORE, BERT_SCORE
-from amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
+from fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, ROUGE_SCORE, BERT_SCORE
+from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     SummarizationAccuracySemanticRobustnessConfig,
     SummarizationAccuracySemanticRobustness,
     DELTA_METEOR_SCORE,
     DELTA_ROUGE_SCORE,
     DELTA_BERT_SCORE,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.model_runner import ModelRunner
 
 DATASET_WITH_SCORES = ray.data.from_items(
     [
@@ -215,7 +215,7 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
     def test_semantic_robustness_evaluate_sample(self, summarization_accuracy, test_case):
         """
         GIVEN valid inputs
@@ -280,7 +280,7 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
     def test_semantic_robustness_evaluate_sample_with_model_output(self, summarization_accuracy, test_case):
         """
         GIVEN valid inputs with model_output
@@ -350,7 +350,7 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
     def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, summarization_accuracy, test_case):
         """
         GIVEN valid inputs with model_output and a deterministic model
@@ -658,9 +658,9 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
     @patch.object(SummarizationAccuracySemanticRobustness, "_SummarizationAccuracySemanticRobustness__add_scores")
     def test_semantic_robustness_evaluate(
         self,
@@ -713,7 +713,7 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
     def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
         """
         GIVEN a non-deterministic model
@@ -783,9 +783,9 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
         summarization_accuracy,

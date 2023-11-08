@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "amazon_fmeval"
+name = "fmeval"
 version = "0.1.0"
 description = "Amazon Foundation Model Evaluations"
 license = "Proprietary"
 authors = ["Amazon FMEval Team <amazon-fmeval-team@amazon.com>"]
 packages = [
-    { include = "amazon_fmeval", from = "src" },
+    { include = "fmeval", from = "src" },
 ]
 readme = "README.md"
 classifiers=[

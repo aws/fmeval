@@ -2,7 +2,7 @@ from typing import NamedTuple, List, Union
 
 import pytest
 
-from amazon_fmeval.eval_algorithms.semantic_perturbation_utils import (
+from fmeval.eval_algorithms.semantic_perturbation_utils import (
     ButterFinger,
     ButterFingerConfig,
     RandomUpperCaseConfig,

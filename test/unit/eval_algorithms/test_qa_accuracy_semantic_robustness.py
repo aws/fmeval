@@ -7,7 +7,7 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MIME_TYPE_JSON,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
@@ -15,8 +15,8 @@ from amazon_fmeval.constants import (
     DEFAULT_EVAL_RESULTS_PATH,
     MODEL_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     CategoryScore,
@@ -26,7 +26,7 @@ from amazon_fmeval.eval_algorithms import (
     NATURAL_QUESTIONS,
     DEFAULT_PROMPT_TEMPLATE,
 )
-from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
+from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustnessConfig,
     QAAccuracySemanticRobustness,
     RANDOM_UPPER_CASE,
@@ -36,9 +36,9 @@ from amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_QUASI_EXACT_MATCH_SCORE,
     DELTA_EXACT_MATCH_SCORE,
 )
-from amazon_fmeval.eval_algorithms.qa_accuracy import F1_SCORE, QUASI_EXACT_MATCH_SCORE, EXACT_MATCH_SCORE
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.eval_algorithms.qa_accuracy import F1_SCORE, QUASI_EXACT_MATCH_SCORE, EXACT_MATCH_SCORE
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.model_runner import ModelRunner
 
 QA_DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
@@ -604,10 +604,10 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
     def test_qa_accuracy_semantic_robustness_evaluate(
         self, qa_accuracy, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
     ):
@@ -652,7 +652,7 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     def test_qa_accuracy_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
         """
         GIVEN a non-deterministic model
@@ -722,9 +722,9 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
     def test_qa_accuracy_semantic_robustness_evaluate_invalid_input(
         self,
         qa_accuracy,

@@ -5,8 +5,8 @@ import pytest
 from _pytest.fixtures import fixture
 from _pytest.python_api import approx
 
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.extractors.jumpstart_extractor import JumpStartExtractor
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.extractors.jumpstart_extractor import JumpStartExtractor
 
 EXAMPLE_JUMPSTART_RESPONSE = [
     {

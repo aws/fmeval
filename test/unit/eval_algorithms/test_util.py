@@ -11,14 +11,14 @@ import pytest
 import ray
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     CATEGORY_COLUMN_NAME,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
     TARGET_OUTPUT_COLUMN_NAME,
 )
-from amazon_fmeval.eval_algorithms.eval_algorithm import EvalScore
-from amazon_fmeval.eval_algorithms.util import (
+from fmeval.eval_algorithms.eval_algorithm import EvalScore
+from fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
     category_wise_aggregation,
@@ -29,8 +29,8 @@ from amazon_fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     verify_model_determinism,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmInternalError
-from amazon_fmeval.util import camel_to_snake, get_num_actors
+from fmeval.exceptions import EvalAlgorithmInternalError
+from fmeval.util import camel_to_snake, get_num_actors
 
 MODEL_INPUT_COLUMN_NAME = "model_input"
 MODEL_OUTPUT_COLUMN_NAME = "model_output"

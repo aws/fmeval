@@ -1,7 +1,7 @@
 import os
 from testbook import testbook
 
-from amazon_fmeval.util import project_root
+from fmeval.util import project_root
 
 
 bedrock_example_notebook_path = os.path.join(project_root(__file__), "examples", "run_evaluation_bedrock_model.ipynb")
@@ -22,7 +22,7 @@ def test_bedrock_model_notebook(tb):
         p1.start()
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p2 = patch('amazon_fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
+        p2 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
         p2.start()
         """
     )
@@ -51,11 +51,11 @@ def test_js_model_notebook(tb):
         p1 = patch('sagemaker.jumpstart.model.JumpStartModel', return_value=js_model)
         p1.start()
         mock_js_model_runner = MagicMock()
-        p2 = patch('amazon_fmeval.model_runners.sm_jumpstart_model_runner.JumpStartModelRunner', return_value=mock_js_model_runner)
+        p2 = patch('fmeval.model_runners.sm_jumpstart_model_runner.JumpStartModelRunner', return_value=mock_js_model_runner)
         p2.start()
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p3 = patch('amazon_fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
+        p3 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
         p3.start()
         """
     )
@@ -87,7 +87,7 @@ def test_custom_model_chat_gpt_notebook(tb):
         p1.start()
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p2 = patch('amazon_fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
+        p2 = patch('fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
         p2.start()
         p3 = patch('__main__.open', mock_open(read_data=None))
         p3.start()
@@ -119,7 +119,7 @@ def test_custom_model_hf_notebook(tb):
         import torch
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p1 = patch('amazon_fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
+        p1 = patch('fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
         p1.start()
 
         mock_model = MagicMock()
