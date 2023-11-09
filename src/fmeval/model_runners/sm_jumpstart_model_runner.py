@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 
 import fmeval.util as util
 from fmeval.constants import MIME_TYPE_JSON
+from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
 
@@ -77,10 +78,14 @@ class JumpStartModelRunner(ModelRunner):
         """
         composed_data = self._composer.compose(prompt)
         model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
-        output = self._extractor.extract_output(data=model_output, num_records=1) if self._output else None
-        log_probability = (
-            self._extractor.extract_log_probability(data=model_output, num_records=1) if self._log_probability else None
-        )
+        # expect output from all model responses in JS
+        output = self._extractor.extract_output(data=model_output, num_records=1)
+        log_probability = None
+        try:
+            log_probability = self._extractor.extract_log_probability(data=model_output, num_records=1)
+        except EvalAlgorithmClientError as e:
+            # log_probability may be missing
+            logger.warning(f"Unable to fetch log_probability from model response: {e}")
         return output, log_probability
 
     def __reduce__(self):
