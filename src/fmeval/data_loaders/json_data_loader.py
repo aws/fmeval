@@ -22,11 +22,10 @@ from fmeval.exceptions import EvalAlgorithmInternalError
 class JsonDataLoaderConfig:
     """Configures a JsonDataLoader or JsonLinesDataLoader.
 
-    Attributes:
-        parser: The JsonParser object used to parse the dataset.
-        data_file: The DataFile object representing the dataset.
-        dataset_name: The name of the dataset for logging purposes.
-        dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSONLINES
+    :param parser: The JsonParser object used to parse the dataset.
+    :param data_file: The DataFile object representing the dataset.
+    :param dataset_name: The name of the dataset for logging purposes.
+    :param dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSONLINES
     """
 
     parser: JsonParser
@@ -64,8 +63,7 @@ class CustomJSONDatasource(FileBasedDatasource):
        "key": [20, "hello"]
     }
 
-    Attributes:
-          config: The config used by _read_file to determine whether to treat the
+    :param config: The config used by _read_file to determine whether to treat the
             input file as a JSON or JSON Lines file.
     """
 

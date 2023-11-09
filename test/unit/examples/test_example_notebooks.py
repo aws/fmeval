@@ -87,7 +87,7 @@ def test_custom_model_chat_gpt_notebook(tb):
         p1.start()
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p2 = patch('fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
+        p2 = patch('fmeval.eval.get_eval_algorithm', return_value=mock_algo)
         p2.start()
         p3 = patch('__main__.open', mock_open(read_data=None))
         p3.start()
@@ -119,7 +119,7 @@ def test_custom_model_hf_notebook(tb):
         import torch
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p1 = patch('fmeval.fmeval.get_eval_algorithm', return_value=mock_algo)
+        p1 = patch('fmeval.eval.get_eval_algorithm', return_value=mock_algo)
         p1.start()
 
         mock_model = MagicMock()
