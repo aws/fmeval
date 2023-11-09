@@ -5,12 +5,12 @@ from typing import NamedTuple, Dict
 import pytest
 from pytest import approx
 
-from amazon_fmeval.eval_algorithms import (
+from fmeval.eval_algorithms import (
     CROWS_PAIRS,
     DATASET_CONFIGS,
 )
-from amazon_fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
-from amazon_fmeval.model_runners.model_runner import ModelRunner
+from fmeval.eval_algorithms.prompt_stereotyping import PromptStereotyping
+from fmeval.model_runners.model_runner import ModelRunner
 
 
 from test.integration.models.model_runners import (
