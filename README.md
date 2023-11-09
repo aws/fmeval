@@ -26,16 +26,16 @@ pip install fmeval
 
 ## Usage
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
-the [examples folder](https://github.com/aws/amazon-fmeval/tree/main/examples).
+the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
 
 Main steps for using fmeval are:
-1. Create a [ModelRunner](https://github.com/aws/amazon-fmeval/blob/main/src/fmeval/model_runners/model_runner.py)
+1. Create a [ModelRunner](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/model_runner.py)
    which can perform invocations on your LLM. We have built-in support for
-   [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/fmeval/model_runners/sm_jumpstart_model_runner.py),
-   [AWS SageMaker Endpoints](https://github.com/aws/amazon-fmeval/blob/main/src/fmeval/model_runners/sm_model_runner.py)
-   and [AWS Bedrock Models](https://github.com/aws/amazon-fmeval/blob/main/src/fmeval/model_runners/bedrock_model_runner.py).
+   [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_jumpstart_model_runner.py),
+   [AWS SageMaker Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_model_runner.py)
+   and [AWS Bedrock Models](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/bedrock_model_runner.py).
    You can also extend the ModelRunner interface for any LLMs hosted anywhere.
-2. Use any of the supported [eval_algorithms](https://github.com/aws/amazon-fmeval/tree/main/src/fmeval/eval_algorithms).
+2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner)
@@ -45,7 +45,7 @@ eval_output = eval_algo.evaluate(model=model_runner)
 ### Using a custom dataset for an evaluation
 We have our built-in datasets configured, which are consumed for computing the scores in eval algorithms.
 You can choose to use a custom dataset in the following manner.
-1. Create a [DataConfig](https://github.com/aws/amazon-fmeval/blob/main/src/fmeval/data_loaders/data_config.py)
+1. Create a [DataConfig](https://github.com/aws/fmeval/blob/main/src/fmeval/data_loaders/data_config.py)
    for your custom dataset
 ```
 config = DataConfig(
@@ -64,7 +64,7 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
 *Please refer to [code documentation](https://fantastic-waddle-n8nvqmv.pages.github.io/src/amazon_fmeval.html) and
-[examples]((https://github.com/aws/amazon-fmeval/tree/main/examples)) for understanding other details around usage of
+[examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around usage of
 eval algorithms.*
 
 ## Development
