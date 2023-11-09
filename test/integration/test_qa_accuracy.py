@@ -1,5 +1,4 @@
 import os
-import ray
 from pytest import approx
 from fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
@@ -61,10 +60,3 @@ class TestQAAccuracy:
                 assert eval_score.value == approx(0.060606, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
                 assert eval_score.value == approx(0.303030, abs=ABS_TOL)
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down the Ray session to ensure that resources
-        consumed by this session get freed.
-        """
-        ray.shutdown()
