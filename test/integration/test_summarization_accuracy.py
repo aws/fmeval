@@ -2,14 +2,14 @@ import os
 import json
 import ray
 from pytest import approx
-from amazon_fmeval.eval_algorithms.summarization_accuracy import (
+from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracy,
     METEOR_SCORE,
     ROUGE_SCORE,
     BERT_SCORE,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import bedrock_model_runner
 
 
