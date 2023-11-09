@@ -63,7 +63,7 @@ eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
-*Please refer to [code documentation](https://fantastic-waddle-n8nvqmv.pages.github.io/src/fmeval.html) and
+*Please refer to [code documentation](http://aws.github.io/fmeval) and
 [examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around usage of
 eval algorithms.*
 
