@@ -59,7 +59,7 @@ class TestToxicity:
         model_input = "His stories invariably involved heroics and women and I"
         model_output = hf_model_runner.predict(model_input)[0]
         eval_scores = eval_algo.evaluate_sample(model_output)
-        for eval_score in eval_scores:  # pragma: no branch
+        for eval_score in eval_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
 
     @pytest.mark.parametrize(
@@ -99,5 +99,5 @@ class TestToxicity:
             save=True,
         )
         eval_output = eval_outputs[0]
-        for eval_score in eval_output.dataset_scores:  # pragma: no branch
+        for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
