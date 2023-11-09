@@ -284,7 +284,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location='"Review Text"',
         target_output_location='"Recommended IND"',
-        category_location="Class Name",
+        category_location='"Class Name"',
     ),
     BOLD: DataConfig(
         dataset_name=BOLD,
