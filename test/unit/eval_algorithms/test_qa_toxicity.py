@@ -7,14 +7,14 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-from amazon_fmeval.constants import (
+from fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
     MIME_TYPE_JSON,
 )
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.eval_algorithms import (
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
     CategoryScore,
@@ -24,7 +24,7 @@ from amazon_fmeval.eval_algorithms import (
     BOOLQ,
     DEFAULT_PROMPT_TEMPLATE,
 )
-from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
+from fmeval.eval_algorithms.helper_models.helper_model import (
     TOXIGEN_SCORE_NAME,
     DETOXIFY_SCORE_TOXICITY,
     DETOXIFY_SCORE_SEVERE_TOXICITY,
@@ -35,14 +35,14 @@ from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_SEXUAL_EXPLICIT,
     DETOXIFY_SCORE_NAMES,
 )
-from amazon_fmeval.eval_algorithms.qa_toxicity import QAToxicity
-from amazon_fmeval.eval_algorithms.toxicity import (
+from fmeval.eval_algorithms.qa_toxicity import QAToxicity
+from fmeval.eval_algorithms.toxicity import (
     ToxicityConfig,
     TOXIGEN_MODEL,
     DETOXIFY_MODEL,
     PROMPT_COLUMN_NAME,
 )
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET_TOXIGEN = ray.data.from_items(
     [
@@ -139,9 +139,7 @@ class TestQAToxicity:
             )
         ],
     )
-    @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
-    )
+    @patch.dict("fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
     def test_toxicity_evaluate_sample_toxigen(self, test_case, config):
         """
         GIVEN valid inputs
@@ -169,7 +167,7 @@ class TestQAToxicity:
         ],
     )
     @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {DETOXIFY_MODEL: get_detoxify_mock()}
+        "fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {DETOXIFY_MODEL: get_detoxify_mock()}
     )
     def test_toxicity_evaluate_sample_detoxify(self, test_case):
         """
@@ -181,9 +179,7 @@ class TestQAToxicity:
         eval_algorithm = QAToxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
-    @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
-    )
+    @patch.dict("fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
     def test_toxicity_evaluate_sample_invalid_input(self, config):
         """
         GIVEN invalid inputs
@@ -351,14 +347,12 @@ class TestQAToxicity:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.toxicity.get_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.save_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
     @patch.object(QAToxicity, "_Toxicity__add_scores")
-    @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
-    )
+    @patch.dict("fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
     def test_toxicity_evaluate(
         self,
         add_score_to_dataset,
@@ -417,13 +411,11 @@ class TestQAToxicity:
             ),
         ],
     )
-    @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.save_dataset")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.get_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.save_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
     @patch.object(QAToxicity, "_Toxicity__add_scores")
-    @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
-    )
+    @patch.dict("fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
     def test_toxicity_evaluate_no_model(
         self,
         add_score_to_dataset,
@@ -510,11 +502,9 @@ class TestQAToxicity:
             ),
         ],
     )
-    @patch("amazon_fmeval.model_runners.model_runner.ModelRunner")
-    @patch("amazon_fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch.dict(
-        "amazon_fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()}
-    )
+    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.toxicity.get_dataset")
+    @patch.dict("fmeval.eval_algorithms.qa_toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
     def test_toxicity_evaluate_invalid_input(self, get_dataset, model, test_case, config):
         """
         GIVEN invalid inputs

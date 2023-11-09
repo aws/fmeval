@@ -6,9 +6,9 @@ import pickle
 import pytest
 from botocore.response import StreamingBody
 
-from amazon_fmeval.constants import MIME_TYPE_JSON
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
+from fmeval.constants import MIME_TYPE_JSON
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 
 MODEL_ID = "AwesomeModel"
 

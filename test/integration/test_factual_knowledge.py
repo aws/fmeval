@@ -1,8 +1,8 @@
 import os
 from pytest import approx
-from amazon_fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.constants import MIME_TYPE_JSONLINES
+from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import hf_model_runner
 
 ABS_TOL = 1e-4

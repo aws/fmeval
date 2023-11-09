@@ -1,6 +1,6 @@
 import pytest
-from amazon_fmeval.data_loaders.data_config import DataConfig
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.exceptions import EvalAlgorithmClientError
 
 
 class TestDataConfig:

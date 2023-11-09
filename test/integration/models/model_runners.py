@@ -1,5 +1,6 @@
-from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
-from amazon_fmeval.model_runners.sm_model_runner import SageMakerModelRunner
+from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
+from fmeval.model_runners.sm_model_runner import SageMakerModelRunner
+from fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 from test.integration.models.hf_model_runner import HFModelConfig, HuggingFaceCausalLLMModelRunner
 
 """
@@ -30,3 +31,12 @@ sm_model_runner = SageMakerModelRunner(
 # Huggingface model runner
 hf_config = HFModelConfig(model_name="gpt2", max_new_tokens=10)
 hf_model_runner = HuggingFaceCausalLLMModelRunner(model_config=hf_config)
+
+
+# Note that setting temperature to 0 does not make the model outputs deterministic.
+# See https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters.html#model-parameters-claude
+bedrock_model_runner = BedrockModelRunner(
+    model_id="anthropic.claude-v2",
+    content_template='{"prompt": $prompt, "max_tokens_to_sample": 100, "temperature" : 0}',
+    output="completion",
+)

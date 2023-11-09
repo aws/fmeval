@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from amazon_fmeval.exceptions import EvalAlgorithmClientError
-from amazon_fmeval.util import require, project_root, singleton
+from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.util import require, project_root, singleton
 
 
 def test_require():

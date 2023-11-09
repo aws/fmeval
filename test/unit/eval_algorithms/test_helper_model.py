@@ -3,7 +3,7 @@ import ray
 import numpy as np
 import pytest
 
-from amazon_fmeval.eval_algorithms.helper_models.helper_model import (
+from fmeval.eval_algorithms.helper_models.helper_model import (
     ToxigenHelperModel,
     BertscoreHelperModel,
     TOXIGEN_SCORE_NAME,

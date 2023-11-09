@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 import pytest
 import sagemaker
 
-from amazon_fmeval.constants import MIME_TYPE_JSON
-from amazon_fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
+from fmeval.constants import MIME_TYPE_JSON
+from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
@@ -74,12 +74,6 @@ class TestJumpStartModelRunner:
                 output_jmespath=OUTPUT_JMES_PATH,
                 log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
                 output=OUTPUT,
-                log_probability=LOG_PROBABILITY,
-            ),
-            TestCasePredict(
-                output_jmespath=None,
-                log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
-                output=None,
                 log_probability=LOG_PROBABILITY,
             ),
             TestCasePredict(

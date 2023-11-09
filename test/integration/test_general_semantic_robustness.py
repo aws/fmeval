@@ -1,5 +1,4 @@
 import os
-
 from copy import deepcopy
 from typing import NamedTuple, Dict
 
@@ -7,11 +6,11 @@ from typing import NamedTuple, Dict
 import pytest
 from pytest import approx
 
-from amazon_fmeval.eval_algorithms import (
+from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     WIKITEXT2,
 )
-from amazon_fmeval.eval_algorithms.general_semantic_robustness import (
+from fmeval.eval_algorithms.general_semantic_robustness import (
     BUTTER_FINGER,
     GeneralSemanticRobustness,
     GeneralSemanticRobustnessConfig,
