@@ -147,7 +147,7 @@ class DetoxifyHelperModel(BaseHelperModel):
         return DETOXIFY_SCORE_NAMES
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 class BertscoreHelperModel(BaseHelperModel):
     """
     BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
