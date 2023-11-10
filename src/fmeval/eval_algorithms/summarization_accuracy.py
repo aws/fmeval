@@ -125,8 +125,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         nltk.download("punkt")
         nltk.download("omw-1.4")
 
-        # initialize the BertscoreHelperModel singleton
-        self._bertscore_helper_model_singleton = BertscoreHelperModel.remote(
+        # Initialize the shared BertscoreHelperModel actor that will be shared
+        # by every get_bert_score task.
+        self._bertscore_helper_model = BertscoreHelperModel.remote(
             model_type=self._eval_algorithm_config.model_type_for_bertscore
         )
 
@@ -154,7 +155,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     target_output=target_output,
                     model_output=model_output,
                     config=self._eval_algorithm_config,
-                    helper_model=self._bertscore_helper_model_singleton,  # only used by get_bert_score
+                    helper_model=self._bertscore_helper_model,  # only used by get_bert_score
                 ),
             )
             for eval_score, eval_fn in self._score_eval_func_mapping.items()
@@ -212,7 +213,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                         eval_func=eval_func,
                         score_column_name=eval_score,
                         config=self._eval_algorithm_config,
-                        helper_model=self._bertscore_helper_model_singleton,
+                        helper_model=self._bertscore_helper_model,
                     )
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
@@ -310,7 +311,7 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
     :param target_output: The expected responses from the model
     :param model_output: The output of a model that we want to evaluate.
     :param config: Eval algo config
-    :param helper_model: The BertscoreHelperModel singleton belonging to an instance of SummarizationAccuracy.
+    :param helper_model: The BertscoreHelperModel belonging to an instance of SummarizationAccuracy.
     :returns: rouge score: boolean indicating using stemmer for rouge
     """
     assert "helper_model" in kwargs
@@ -332,7 +333,7 @@ def add_score_to_dataset(
     :param eval_func: eval function callable method
     :param score_column_name: column name for score to be added
     :param config: Eval algo config
-    :param helper_model: The BertscoreHelperModel singleton belonging to an
+    :param helper_model: The BertscoreHelperModel belonging to an
         instance of SummarizationAccuracy. Used only by get_bert_score.
     :returns: ray Dataset with score column
     """

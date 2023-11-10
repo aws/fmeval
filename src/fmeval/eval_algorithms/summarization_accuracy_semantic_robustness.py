@@ -83,7 +83,7 @@ DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
 
 
 @ray.remote(num_cpus=0)
-class SummarizationAccuracySingleton:
+class SummarizationAccuracyActor:
     """
     This class represents the SummarizationAccuracy eval algo instance
     that is tied to a SummarizationAccuracySemanticRobustness instance.
@@ -92,16 +92,25 @@ class SummarizationAccuracySingleton:
     by each of the K GenerateEvalScoresActors spun up by __add_scores, if we
     initialize a SummarizationAccuracy instance inside of the __init__ method of
     SummarizationAccuracySemanticRobustness, we will create K BertscoreHelperModel
-    actors, which is not the intended behavior.
+    actors (since each SummarizationAccuracy has a corresponding BertscoreHelperModel),
+    which is not the intended behavior.
 
-    By using this class, a single SummarizationAccuracy instance is created
-    upon instantiation of a SummarizationAccuracySemanticRobustness instance,
-    and reused every time the SummarizationAccuracySemanticRobustness instance
-    gets deserialized by a GenerateEvalScoresActor.
+    By using this class, when we explicitly instantiate a SummarizationAccuracySemanticRobustness,
+    a single SummarizationAccuracy gets instantiated (and stored in self.eval_algo), and this
+    SummarizationAccuracy instance gets reused every time a SummarizationAccuracySemanticRobustness
+    instance gets deserialized by a GenerateEvalScoresActor.
 
-    Note: we set num_cpus=0 for this actor b/c it is simply a wrapper around
-    a SummarizationAccuracy instance, whose BertScoreHelperModel singleton
-    already has num_cpus=1.
+    Note: we set num_cpus=0 for this actor because it is simply a wrapper around
+    a SummarizationAccuracy instance, whose BertscoreHelperModel already
+    has num_cpus=1. By setting num_cpus=0, we indicate that this actor
+    doesn't actually use up any logical resources (again, the actor
+    that's *actually* consuming resources is the BertscoreHelperModel).
+
+    See the following Ray documentation about Ray resources in general:
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
+
+    Details on specifying resource requirements (as we do with num_cpus=0):
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html#specifying-task-or-actor-resource-requirements
     """
 
     def __init__(self, config: SummarizationAccuracyConfig):
@@ -178,7 +187,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     def __init__(
         self,
         eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig = SummarizationAccuracySemanticRobustnessConfig(),
-        summ_acc_singleton: Optional[SummarizationAccuracySingleton] = None,
+        summ_acc_actor: Optional[SummarizationAccuracyActor] = None,
     ):
         """Default constructor
 
@@ -201,15 +210,15 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
 
         self._summarization_accuracy_eval_algo = (
-            SummarizationAccuracySingleton.remote(  # type: ignore[attr-defined]
+            SummarizationAccuracyActor.remote(  # type: ignore[attr-defined]
                 SummarizationAccuracyConfig(
                     rouge_type=eval_algorithm_config.rouge_type,
                     use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
                     model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
                 )
             )
-            if summ_acc_singleton is None
-            else summ_acc_singleton
+            if summ_acc_actor is None
+            else summ_acc_actor
         )
 
     def __reduce__(self):  # pragma: no cover
