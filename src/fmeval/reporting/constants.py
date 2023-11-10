@@ -280,7 +280,7 @@ DATASET_DETAILS = {
     ),
     GIGAWORD: DatasetDetails(
         name="Gigaword",
-        url="https://huggingface.co/datasets/gigaword?row=3",
+        url="https://huggingface.co/datasets/gigaword",
         description="A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.",
         size=189651,
     ),
