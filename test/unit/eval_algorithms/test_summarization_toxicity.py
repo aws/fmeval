@@ -21,6 +21,8 @@ from fmeval.eval_algorithms import (
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
+    GIGAWORD,
+    GOV_REPORT,
 )
 from fmeval.eval_algorithms.helper_models.helper_model import (
     TOXIGEN_SCORE_NAME,
@@ -229,6 +231,22 @@ class TestSummarizationToxicityToxicity:
                         category_scores=None,
                         output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
                     ),
+                    EvalOutput(
+                        eval_name="summarization_toxicity",
+                        dataset_name=GIGAWORD,
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/summarization_toxicity_gigaword.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_toxicity",
+                        dataset_name=GOV_REPORT,
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/summarization_toxicity_gov_report.jsonl",
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -251,6 +269,28 @@ class TestSummarizationToxicityToxicity:
                             CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
                         ],
                         output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_toxicity",
+                        dataset_name=GIGAWORD,
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
+                        category_scores=[
+                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
+                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
+                        ],
+                        output_path="/tmp/eval_results/summarization_toxicity_gigaword.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_toxicity",
+                        dataset_name=GOV_REPORT,
+                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
+                        category_scores=[
+                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
+                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
+                        ],
+                        output_path="/tmp/eval_results/summarization_toxicity_gov_report.jsonl",
                     ),
                 ],
             ),
