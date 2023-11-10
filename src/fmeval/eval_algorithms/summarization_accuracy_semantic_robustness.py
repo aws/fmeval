@@ -108,7 +108,7 @@ class SummarizationAccuracySingleton:
         self.eval_algo = SummarizationAccuracy(config)  # pragma: no cover
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
-        return self.eval_algo.evaluate_sample(target_output, model_output  # pragma: no cover
+        return self.eval_algo.evaluate_sample(target_output, model_output)  # pragma: no cover
 
 
 @dataclass(frozen=True)
