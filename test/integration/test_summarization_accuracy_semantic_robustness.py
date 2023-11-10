@@ -1,4 +1,5 @@
 import os
+import ray
 import json
 import pytest
 
@@ -22,7 +23,7 @@ from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import sm_model_runner
 
 ABS_TOL = 1e-6
-os.environ["PARALLELIZATION_FACTOR"] = "1"
+os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 BUTTER_FINGER_CONFIG = SummarizationAccuracySemanticRobustnessConfig(
     perturbation_type=BUTTER_FINGER, num_perturbations=5, butter_finger_perturbation_prob=0.1
@@ -150,3 +151,7 @@ class TestSummarizationAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_evaluate_scores[eval_score.name], abs=ABS_TOL)
+        # Calling ray.shutdown() would be overkill since there are still other test cases.
+        # Thus, we kill only the SummarizationAccuracySingleton ray actor used by the
+        # current test case, to make sure that resources are cleaned up between test cases.
+        ray.kill(eval_algo._summarization_accuracy_eval_algo)
