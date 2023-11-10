@@ -87,11 +87,8 @@ class TestClassificationAccuracySemanticRobustness:
         model_input = "Absolutely wonderful - silky and sexy and comfortable"
         prompt_template = "Classify the sentiment of the following review with 0 (negative sentiment) "
         "or 1 (positive sentiment). Review: $feature. Classification:"
-        # model_output = sm_model_runner.predict(model_input)
-        # print(model_output)
         eval_scores = ca_semantic_robustness.evaluate_sample(
             model_input=model_input,
-            # model_output=model_output,
             model=hf_model_runner,
             target_output="1",
             prompt_template=prompt_template,
