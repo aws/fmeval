@@ -217,8 +217,9 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
-    def test_semantic_robustness_evaluate_sample(self, summarization_accuracy, test_case):
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.ray.get")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySingleton")
+    def test_semantic_robustness_evaluate_sample(self, summarization_accuracy_singleton_class, ray_get, test_case):
         """
         GIVEN valid inputs
         WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
@@ -232,13 +233,15 @@ class TestSummarizationAccuracySemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        summarization_accuracy_instance = MagicMock()
-        summarization_accuracy_instance.evaluate_sample.side_effect = [
+        evaluate_sample_invocation_results = [
             test_case.sa_eval_score_original,
             test_case.sa_eval_score_perturbed_1,
             test_case.sa_eval_score_perturbed_2,
         ]
-        summarization_accuracy.return_value = summarization_accuracy_instance
+
+        ray_get.side_effect = evaluate_sample_invocation_results
+        summarization_accuracy_singleton = MagicMock()
+        summarization_accuracy_singleton_class.return_value = summarization_accuracy_singleton
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
         assert (
@@ -282,8 +285,11 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
-    def test_semantic_robustness_evaluate_sample_with_model_output(self, summarization_accuracy, test_case):
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.ray.get")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySingleton")
+    def test_semantic_robustness_evaluate_sample_with_model_output(
+        self, summarization_accuracy_singleton_class, ray_get, test_case
+    ):
         """
         GIVEN valid inputs with model_output
         WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
@@ -296,13 +302,14 @@ class TestSummarizationAccuracySemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        summarization_accuracy_instance = MagicMock()
-        summarization_accuracy_instance.evaluate_sample.side_effect = [
+        evaluate_sample_invocation_results = [
             test_case.sa_eval_score_original,
             test_case.sa_eval_score_perturbed_1,
             test_case.sa_eval_score_perturbed_2,
         ]
-        summarization_accuracy.return_value = summarization_accuracy_instance
+        ray_get.side_effect = evaluate_sample_invocation_results
+        summarization_accuracy_singleton = MagicMock()
+        summarization_accuracy_singleton_class.return_value = summarization_accuracy_singleton
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
         assert (
@@ -352,8 +359,11 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
-    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, summarization_accuracy, test_case):
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.ray.get")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySingleton")
+    def test_semantic_robustness_evaluate_sample_with_deterministic_model(
+        self, summarization_accuracy_singleton_class, ray_get, test_case
+    ):
         """
         GIVEN valid inputs with model_output and a deterministic model
         WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
@@ -365,13 +375,14 @@ class TestSummarizationAccuracySemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        summarization_accuracy_instance = MagicMock()
-        summarization_accuracy_instance.evaluate_sample.side_effect = [
+        evaluate_sample_invocation_results = [
             test_case.sa_eval_score_original,
             test_case.sa_eval_score_perturbed_1,
             test_case.sa_eval_score_perturbed_2,
         ]
-        summarization_accuracy.return_value = summarization_accuracy_instance
+        ray_get.side_effect = evaluate_sample_invocation_results
+        summarization_accuracy_singleton = MagicMock()
+        summarization_accuracy_singleton_class.return_value = summarization_accuracy_singleton
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
         eval_algorithm._is_model_deterministic = True
@@ -421,7 +432,8 @@ class TestSummarizationAccuracySemanticRobustness:
         WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
-        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
+
+        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config, summ_acc_singleton=MagicMock())
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, test_case.model)
 
@@ -456,7 +468,7 @@ class TestSummarizationAccuracySemanticRobustness:
             (test_case.perturbed_model_output_2,),
         ]
 
-        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
+        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config, summ_acc_singleton=MagicMock())
         with pytest.raises(
             EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
         ):
@@ -768,12 +780,12 @@ class TestSummarizationAccuracySemanticRobustness:
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.save_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySingleton")
     @patch.object(SummarizationAccuracySemanticRobustness, "_SummarizationAccuracySemanticRobustness__add_scores")
     def test_semantic_robustness_evaluate(
         self,
         add_scores,
-        summarization_accuracy,
+        summarization_accuracy_singleton_class,
         save_dataset,
         get_dataset,
         test_case,
@@ -787,7 +799,7 @@ class TestSummarizationAccuracySemanticRobustness:
         """
         add_scores.return_value = test_case.dataset_with_scores
         get_dataset.return_value = test_case.input_dataset
-        summarization_accuracy.return_value = MagicMock()
+        summarization_accuracy_singleton_class.return_value = MagicMock()
 
         eval_algorithm = SummarizationAccuracySemanticRobustness(config)
         actual_response = eval_algorithm.evaluate(
@@ -835,7 +847,7 @@ class TestSummarizationAccuracySemanticRobustness:
             (original_model_output + "1",),
         ]
         get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = SummarizationAccuracySemanticRobustness(config)
+        eval_algorithm = SummarizationAccuracySemanticRobustness(config, summ_acc_singleton=MagicMock())
         with pytest.raises(
             EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
         ):
@@ -893,10 +905,10 @@ class TestSummarizationAccuracySemanticRobustness:
     )
     @patch("fmeval.model_runners.model_runner.ModelRunner")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracy")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracySingleton")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
-        summarization_accuracy,
+        summarization_accuracy_singleton_class,
         get_dataset,
         model,
         test_case,
@@ -907,7 +919,7 @@ class TestSummarizationAccuracySemanticRobustness:
         WHEN SummarizationAccuracySemanticRobustness evaluate is called
         THEN correct exception with proper message is raised
         """
-        summarization_accuracy.return_value = MagicMock()
+        summarization_accuracy_singleton_class.return_value = MagicMock()
         eval_algorithm = SummarizationAccuracySemanticRobustness(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
