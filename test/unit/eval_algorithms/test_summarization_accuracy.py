@@ -209,13 +209,17 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
-    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, test_case):
+    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, bertscore_helper_model, test_case):
         """
         GIVEN valid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
         mock_get_bert_score.return_value = 0.5
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
@@ -248,8 +252,8 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
 
         eval_algorithm = SummarizationAccuracy(config)
@@ -430,9 +434,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
@@ -500,9 +505,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         eval_algorithm = SummarizationAccuracy(config)
@@ -594,9 +600,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         eval_algorithm = SummarizationAccuracy(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
