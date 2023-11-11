@@ -51,6 +51,6 @@ class TestJsonExtractor:
         )
         with pytest.raises(
             EvalAlgorithmClientError,
-            match="Extractor found: Model response valid which does not match expected list of <class 'float'>",
+            match="Extractor found: Model response valid which does not match expected <class 'float'> or list of <class 'float'>",
         ):
             json_extractor.extract_log_probability(self.valid_model_responses[0], 1)

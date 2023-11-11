@@ -58,7 +58,7 @@ class JsonExtractor(Extractor):
             return log_probs
         util.require(
             isinstance(log_probs, List) and all(isinstance(value, float) for value in log_probs),
-            f"Extractor found: {log_probs} which does not match expected list of {float}",
+            f"Extractor found: {log_probs} which does not match expected {float} or list of {float}",
         )
         return sum(log_probs)
 
