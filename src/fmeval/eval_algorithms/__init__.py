@@ -255,7 +255,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     ),
     TRIVIA_QA: DataConfig(
         dataset_name=TRIVIA_QA,
-        dataset_uri="s3://fmeval/datasets/triviaQA/triviaQA.json",
+        dataset_uri="s3://fmeval/datasets/triviaQA/triviaQA.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
