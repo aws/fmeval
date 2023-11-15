@@ -1,9 +1,8 @@
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Any
 
-import pandas as pd
 from ray.data import Dataset
 from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score
 
@@ -170,30 +169,20 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
 
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-                def _generate_classified_model_output_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                    return pd.Series(
-                        data=[
-                            self._eval_algorithm_config.converter_fn(
-                                row[MODEL_OUTPUT_COLUMN_NAME], self._eval_algorithm_config.valid_labels
-                            )
-                            for index, row in df.iterrows()
-                        ]
+                def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
+                    """
+                    Map function for generating classified model output and classification accuracy
+                    columns for dataset.
+                    """
+                    row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
+                        row[MODEL_OUTPUT_COLUMN_NAME], self._eval_algorithm_config.valid_labels
                     )
-
-                dataset = dataset.add_column(
-                    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME, _generate_classified_model_output_column
-                )
-                dataset = dataset.materialize()
-
-                def _generate_classification_accuracy_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                    return pd.Series(
-                        data=[
-                            int(row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME]))
-                            for index, row in df.iterrows()
-                        ]
+                    row[CLASSIFICATION_ACCURACY_SCORE] = int(
+                        row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME])
                     )
+                    return row
 
-                dataset = dataset.add_column(CLASSIFICATION_ACCURACY_SCORE, _generate_classification_accuracy_column)
+                dataset = dataset.map(_generate_columns)
                 dataset = dataset.materialize()
 
                 df = dataset.to_pandas()

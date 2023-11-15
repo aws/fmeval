@@ -3,9 +3,8 @@ import logging
 
 import evaluate as hf_evaluate
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-import pandas as pd
 
 from fmeval import util
 from fmeval.constants import (
@@ -235,23 +234,21 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-                def _generate_general_semantic_robustness_score(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                def _generate_general_semantic_robustness_score(
+                    row: Dict[str, Any]
+                ) -> Dict[str, Any]:  # pragma: no cover
                     """
                     Map function generating the scores for every input record in input dataset
                     """
-                    return pd.Series(
-                        data=[
-                            self.evaluate_sample(
-                                model_input=row[MODEL_INPUT_COLUMN_NAME],
-                                model=model,
-                                model_output=row[MODEL_OUTPUT_COLUMN_NAME],
-                                prompt_template=dataset_prompt_template,
-                            )[0].value
-                            for index, row in df.iterrows()
-                        ]
-                    )
+                    row[WER_SCORE] = self.evaluate_sample(
+                        model_input=row[MODEL_INPUT_COLUMN_NAME],
+                        model=model,
+                        model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                        prompt_template=dataset_prompt_template,
+                    )[0].value
+                    return row
 
-                dataset = dataset.add_column(WER_SCORE, _generate_general_semantic_robustness_score).materialize()
+                dataset = dataset.map(_generate_general_semantic_robustness_score).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(dataset, [WER_SCORE], agg_method=MEAN)
                 eval_outputs.append(

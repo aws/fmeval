@@ -1,8 +1,7 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-import pandas as pd
 
 from fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
@@ -160,18 +159,16 @@ class FactualKnowledge(EvalAlgorithmInterface):
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-                def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                def _generate_eval_scores(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     """
                     Map function generating the scores for every input record in input dataset
                     """
-                    return pd.Series(
-                        data=[
-                            self._get_score(row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME])
-                            for index, row in df.iterrows()
-                        ]
+                    row[FACTUAL_KNOWLEDGE] = self._get_score(
+                        row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME]
                     )
+                    return row
 
-                dataset = dataset.add_column(FACTUAL_KNOWLEDGE, _generate_eval_scores)
+                dataset = dataset.map(_generate_eval_scores)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [FACTUAL_KNOWLEDGE], agg_method=MEAN
                 )

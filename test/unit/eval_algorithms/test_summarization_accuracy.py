@@ -787,8 +787,7 @@ class TestSummarizationAccuracy:
     def test_add_score_to_dataset(self, input_dataset, config):
         response_dataset = add_score_to_dataset(
             dataset=input_dataset,
-            eval_func=get_rouge_score,
-            score_column_name=ROUGE_SCORE,
+            score_name_to_func={ROUGE_SCORE: get_rouge_score},
             config=config,
             helper_model=MagicMock(),
         )

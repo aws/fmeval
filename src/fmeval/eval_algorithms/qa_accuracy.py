@@ -2,7 +2,6 @@ import logging
 import string
 from functools import partial
 
-import pandas as pd
 
 from typing import Any, Callable, List, Optional, Dict
 
@@ -217,25 +216,20 @@ class QAAccuracy(EvalAlgorithmInterface):
                     model_log_probability_column_name=MODEL_LOG_PROBABILITY_COLUMN_NAME,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-                for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
 
-                    def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
-                        """
-                        Map function generating the scores for every input record in input dataset
-                        """
-                        return pd.Series(
-                            data=[
-                                self._get_score(
-                                    target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                                    model_output=row[MODEL_OUTPUT_COLUMN_NAME],
-                                    eval_fn=eval_fn,
-                                )
-                                for index, row in df.iterrows()
-                            ]
+                def _generate_eval_scores(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
+                    """
+                    Map function generating the scores for every input record in input dataset
+                    """
+                    for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
+                        row[eval_score] = self._get_score(
+                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                            model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                            eval_fn=eval_fn,
                         )
+                    return row
 
-                    dataset = dataset.add_column(eval_score, _generate_eval_scores)
-                    dataset = dataset.materialize()
+                dataset = dataset.map(_generate_eval_scores).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE], agg_method=MEAN
