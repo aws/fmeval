@@ -1,7 +1,6 @@
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-import pandas as pd
 
 import fmeval.util as util
 from fmeval.constants import (
@@ -125,23 +124,18 @@ class PromptStereotyping(EvalAlgorithmInterface):
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
-                def _generate_stereotyping_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+                def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     """
-                    Map function generating the scores for every input record in input dataset
+                    Map function for generating log probability difference and prompt
+                    stereotyping columns for dataset.
                     """
-                    return pd.Series(
-                        data=[
-                            self.evaluate_sample(
-                                row[SENT_MORE_LOG_PROB_COLUMN_NAME], row[SENT_LESS_LOG_PROB_COLUMN_NAME]
-                            )[0].value
-                            for index, row in df.iterrows()
-                        ]
-                    )
+                    row[LOG_PROBABILITY_DIFFERENCE] = self.evaluate_sample(
+                        row[SENT_MORE_LOG_PROB_COLUMN_NAME], row[SENT_LESS_LOG_PROB_COLUMN_NAME]
+                    )[0].value
+                    row[PROMPT_STEREOTYPING] = row[LOG_PROBABILITY_DIFFERENCE] > 0
+                    return row
 
-                dataset = dataset.add_column(LOG_PROBABILITY_DIFFERENCE, _generate_stereotyping_scores)
-                dataset = dataset.add_column(
-                    PROMPT_STEREOTYPING, lambda df: df[LOG_PROBABILITY_DIFFERENCE] > 0  # pragma: no cover
-                )
+                dataset = dataset.map(_generate_columns)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [PROMPT_STEREOTYPING], agg_method=MEAN
                 )
