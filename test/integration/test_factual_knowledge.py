@@ -1,4 +1,7 @@
 import os
+from typing import NamedTuple, Dict
+
+import pytest
 from pytest import approx
 from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from fmeval.data_loaders.data_config import DataConfig
@@ -20,10 +23,33 @@ class TestFactualKnowledge:
         )[0]
         assert eval_score.value == 1  # the model produces deterministic output
 
-    def test_evaluate(self, integration_tests_dir):
+    class EvaluateTestCase(NamedTuple):
+        dataset_name: str
+        dataset_score: float
+        category_scores: Dict[str, float]
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            EvaluateTestCase(
+                dataset_name="trex_sample.jsonl",
+                dataset_score=0.0547,
+                category_scores={"Capitals": 0.09, "Subsidiary": 0.0198},
+            ),
+            # The purpose of testing evaluate() on this tiny dataset is to
+            # ensure that no issues arise even when the dataset
+            # has a very small number of rows. Specifically, issues caused
+            # by inconsistent batch formats in the Ray task graph.
+            # See https://github.com/ray-project/ray/pull/39960
+            EvaluateTestCase(
+                dataset_name="trex_sample_small.jsonl", dataset_score=0.0, category_scores={"Capitals": 0.0}
+            ),
+        ],
+    )
+    def test_evaluate(self, integration_tests_dir, test_case):
         dataset_config = DataConfig(
             dataset_name="TREX",
-            dataset_uri=os.path.join(integration_tests_dir, "datasets", "trex_sample.jsonl"),
+            dataset_uri=os.path.join(integration_tests_dir, "datasets", test_case.dataset_name),
             dataset_mime_type=MIME_TYPE_JSONLINES,
             model_input_location="question",
             target_output_location="answers",
@@ -36,9 +62,6 @@ class TestFactualKnowledge:
             save=True,
         )
         eval_output = eval_outputs[0]
-        assert eval_output.dataset_scores[0].value == approx(0.0547, abs=ABS_TOL)
+        assert eval_output.dataset_scores[0].value == approx(test_case.dataset_score, abs=ABS_TOL)
         for category_score in eval_output.category_scores:  # pragma: no branch
-            if category_score.name == "Capitals":
-                assert category_score.scores[0].value == approx(0.09, abs=ABS_TOL)
-            elif category_score.name == "Subsidiary":
-                assert category_score.scores[0].value == approx(0.0198, abs=ABS_TOL)
+            assert category_score.scores[0].value == approx(test_case.category_scores[category_score.name], abs=ABS_TOL)
