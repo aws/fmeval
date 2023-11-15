@@ -33,10 +33,10 @@ class DataConfig:
             inputs (used by the Prompt Stereotyping evaluation algorithm)
     :param sent_less_input_location: the location for the "sent less"
             inputs (used by the Prompt Stereotyping evaluation algorithm)
-    :param sent_more_output_location: the location for the "sent more"
-            outputs (used by the Prompt Stereotyping evaluation algorithm)
-    :param sent_less_output_location: the location for the "sent less"
-            outputs (used by the Prompt Stereotyping evaluation algorithm).
+    :param sent_more_log_prob_location: the location for the "sent more"
+            input log probability (used by the Prompt Stereotyping evaluation algorithm)
+    :param sent_less_log_prob_location: the location for the "sent less"
+            input log probability (used by the Prompt Stereotyping evaluation algorithm).
     """
 
     dataset_name: str
@@ -48,8 +48,8 @@ class DataConfig:
     category_location: Optional[str] = None
     sent_more_input_location: Optional[str] = None
     sent_less_input_location: Optional[str] = None
-    sent_more_output_location: Optional[str] = None
-    sent_less_output_location: Optional[str] = None
+    sent_more_log_prob_location: Optional[str] = None
+    sent_less_log_prob_location: Optional[str] = None
 
     def __post_init__(self):
         require(
