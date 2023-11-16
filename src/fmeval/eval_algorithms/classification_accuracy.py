@@ -28,6 +28,7 @@ from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     CategoryScore,
     get_default_prompt_template,
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
@@ -58,6 +59,9 @@ CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     PRECISION_SCORE: precision_score,
     RECALL_SCORE: recall_score,
 }
+VALID_LABELS_MAP: Dict[str, List] = {WOMENS_CLOTHING_ECOMMERCE_REVIEWS: ["0", "1"]}
+UNIQUENESS_FACTOR = 0.05
+
 logger = logging.getLogger(__name__)
 
 
@@ -88,34 +92,37 @@ class ClassificationAccuracyConfig(EvalAlgorithmConfig):
     """
     Configuration for the Classification Accuracy Evaluation
 
+    :param valid_labels: The labels of the classes predicted from the model.
+    :param converter_fn: Function to process model output to labels, defaults to simple integer conversion.
     :param multiclass_average_strategy: `average` to be passed to sklearn's precision and recall scores.
         This determines how scores are aggregated in the multiclass classification setting
         (see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html).
         Options are {'micro', 'macro', 'samples', 'weighted', 'binary'} or None, default='micro'.
-    :param converter_fn: Function to process model output to labels, defaults to simple integer conversion.
     """
 
-    valid_labels: List[str]
+    valid_labels: Optional[List[str]] = None
     converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label
     multiclass_average_strategy: Optional[str] = "micro"
 
     def __post_init__(self):
-        for i, label in enumerate(self.valid_labels):
-            if not isinstance(label, str):
-                warnings.warn("Valid labels should be strings, casting.")
-                self.valid_labels[i] = str(label)
+        if self.valid_labels:
+            for i, label in enumerate(self.valid_labels):
+                if not isinstance(label, str):
+                    warnings.warn("Valid labels should be strings, casting.")
+                    self.valid_labels[i] = str(label)
 
 
 class ClassificationAccuracy(EvalAlgorithmInterface):
     eval_name = EvalAlgorithm.CLASSIFICATION_ACCURACY.value
 
-    def __init__(self, eval_algorithm_config: ClassificationAccuracyConfig):
+    def __init__(self, eval_algorithm_config: ClassificationAccuracyConfig = ClassificationAccuracyConfig()):
         """Default constructor
 
         :param eval_algorithm_config: Classification Accuracy eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
+        self._valid_labels = self._eval_algorithm_config.valid_labels
 
     def evaluate(
         self,
@@ -143,6 +150,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
             dataset_configs = [dataset_config]
         else:
             dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
@@ -167,6 +175,15 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
                 )
 
+            if not self._valid_labels:
+                self._valid_labels = dataset.unique(column=MODEL_OUTPUT_COLUMN_NAME)
+                row_count = dataset.count()
+                assert self._valid_labels is not None  # to satisfy mypy
+                util.require(
+                    len(self._valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR,
+                    f"The number of classes: {len(self._valid_labels)} is too large "
+                    f"for the number of rows in the dataset: {row_count}",
+                )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
@@ -175,7 +192,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     columns for dataset.
                     """
                     row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
-                        row[MODEL_OUTPUT_COLUMN_NAME], self._eval_algorithm_config.valid_labels
+                        row[MODEL_OUTPUT_COLUMN_NAME], self._valid_labels  # type: ignore
                     )
                     row[CLASSIFICATION_ACCURACY_SCORE] = int(
                         row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME])
@@ -247,6 +264,8 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         ),
                     )
                 )
+                # set it back to the same value as before the start of evaluating this dataset
+                self._valid_labels = self._eval_algorithm_config.valid_labels
             if save:
                 save_dataset(
                     dataset=dataset,
@@ -257,7 +276,6 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         dataset_name=dataset_config.dataset_name,
                     ),
                 )
-
         return eval_outputs
 
     def _get_score(self, y_true, y_pred, eval_fn: Callable[..., float]) -> float:
@@ -289,12 +307,12 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
             raise EvalAlgorithmClientError(
                 "Missing required input: model_output, for Classification Accuracy evaluate_sample"
             )
+        util.require(self._valid_labels, "`valid_labels` must be provided to `evaluate_sample`")
         return [
             EvalScore(
                 name=CLASSIFICATION_ACCURACY_SCORE,
                 value=int(
-                    self._eval_algorithm_config.converter_fn(model_output, self._eval_algorithm_config.valid_labels)
-                    == str(target_output)
+                    self._eval_algorithm_config.converter_fn(model_output, self._valid_labels) == str(target_output)  # type: ignore
                 ),
             )
         ]

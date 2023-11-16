@@ -12,7 +12,6 @@ from fmeval.constants import (
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
-    DEFAULT_EVAL_RESULTS_PATH,
 )
 
 from fmeval.data_loaders.util import DataConfig
