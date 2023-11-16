@@ -23,6 +23,8 @@ from fmeval.eval_algorithms import (
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
     XSUM,
     DEFAULT_PROMPT_TEMPLATE,
+    GIGAWORD,
+    GOV_REPORT,
 )
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
@@ -209,13 +211,17 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
-    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, test_case):
+    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, bertscore_helper_model, test_case):
         """
         GIVEN valid inputs
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
         mock_get_bert_score.return_value = 0.5
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
@@ -248,8 +254,8 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
 
         eval_algorithm = SummarizationAccuracy(config)
@@ -307,6 +313,30 @@ class TestSummarizationAccuracy:
                         category_scores=None,
                         output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
                     ),
+                    EvalOutput(
+                        eval_name="summarization_accuracy",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
+                        dataset_name=GIGAWORD,
+                        dataset_scores=[
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
+                        ],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/summarization_accuracy_gigaword.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_accuracy",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
+                        dataset_name=GOV_REPORT,
+                        dataset_scores=[
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
+                        ],
+                        category_scores=None,
+                        output_path="/tmp/eval_results/summarization_accuracy_gov_report.jsonl",
+                    ),
                 ],
             ),
             # Built-in datasets evaluate for dataset with category
@@ -344,6 +374,64 @@ class TestSummarizationAccuracy:
                             ),
                         ],
                         output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_accuracy",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
+                        dataset_name=GIGAWORD,
+                        dataset_scores=[
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
+                        ],
+                        category_scores=[
+                            CategoryScore(
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
+                                ],
+                            ),
+                            CategoryScore(
+                                name="dummy_category_2",
+                                scores=[
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
+                                ],
+                            ),
+                        ],
+                        output_path="/tmp/eval_results/summarization_accuracy_gigaword.jsonl",
+                    ),
+                    EvalOutput(
+                        eval_name="summarization_accuracy",
+                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
+                        dataset_name=GOV_REPORT,
+                        dataset_scores=[
+                            EvalScore(name="meteor", value=0.2),
+                            EvalScore(name="rouge", value=0.2),
+                            EvalScore(name="bertscore", value=0.2),
+                        ],
+                        category_scores=[
+                            CategoryScore(
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
+                                ],
+                            ),
+                            CategoryScore(
+                                name="dummy_category_2",
+                                scores=[
+                                    EvalScore(name="meteor", value=0.2),
+                                    EvalScore(name="rouge", value=0.2),
+                                    EvalScore(name="bertscore", value=0.2),
+                                ],
+                            ),
+                        ],
+                        output_path="/tmp/eval_results/summarization_accuracy_gov_report.jsonl",
                     ),
                 ],
             ),
@@ -430,9 +518,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
@@ -500,9 +589,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         add_score_to_dataset.return_value = DATASET_WITH_SCORES
         get_dataset.return_value = test_case.input_dataset
         eval_algorithm = SummarizationAccuracy(config)
@@ -594,9 +684,10 @@ class TestSummarizationAccuracy:
         WHEN SummarizationAccuracy.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model_instance.get_helper_score.return_value = 0.5
         bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         eval_algorithm = SummarizationAccuracy(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
@@ -696,8 +787,7 @@ class TestSummarizationAccuracy:
     def test_add_score_to_dataset(self, input_dataset, config):
         response_dataset = add_score_to_dataset(
             dataset=input_dataset,
-            eval_func=get_rouge_score,
-            score_column_name=ROUGE_SCORE,
+            score_name_to_func={ROUGE_SCORE: get_rouge_score},
             config=config,
             helper_model=MagicMock(),
         )

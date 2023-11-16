@@ -1,12 +1,12 @@
 import logging
-from dataclasses import dataclass
-from typing import Optional, List, Callable
 
-import evaluate as hf_evaluate
-import nltk
-import pandas as pd
 import ray
-from datasets import Dataset
+import nltk
+import evaluate as hf_evaluate
+
+from dataclasses import dataclass
+from typing import Optional, List, Callable, Dict, Any
+from ray.data import Dataset
 from nltk import word_tokenize
 from nltk.translate import meteor_score
 
@@ -125,8 +125,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         nltk.download("punkt")
         nltk.download("omw-1.4")
 
-        # initialize the BertscoreHelperModel singleton
-        self._bertscore_helper_model_singleton = BertscoreHelperModel.remote(
+        # Initialize the shared BertscoreHelperModel actor that will be shared
+        # by every get_bert_score task.
+        self._bertscore_helper_model = BertscoreHelperModel.remote(
             model_type=self._eval_algorithm_config.model_type_for_bertscore
         )
 
@@ -154,7 +155,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     target_output=target_output,
                     model_output=model_output,
                     config=self._eval_algorithm_config,
-                    helper_model=self._bertscore_helper_model_singleton,  # only used by get_bert_score
+                    helper_model=self._bertscore_helper_model,  # only used by get_bert_score
                 ),
             )
             for eval_score, eval_fn in self._score_eval_func_mapping.items()
@@ -206,15 +207,12 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     model, dataset, PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-                for eval_score, eval_func in self._score_eval_func_mapping.items():
-                    dataset = add_score_to_dataset(
-                        dataset=dataset,
-                        eval_func=eval_func,
-                        score_column_name=eval_score,
-                        config=self._eval_algorithm_config,
-                        helper_model=self._bertscore_helper_model_singleton,
-                    )
-
+                dataset = add_score_to_dataset(
+                    dataset=dataset,
+                    score_name_to_func=self._score_eval_func_mapping,
+                    config=self._eval_algorithm_config,
+                    helper_model=self._bertscore_helper_model,
+                )
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE], agg_method=MEAN
                 )
@@ -310,7 +308,7 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
     :param target_output: The expected responses from the model
     :param model_output: The output of a model that we want to evaluate.
     :param config: Eval algo config
-    :param helper_model: The BertscoreHelperModel singleton belonging to an instance of SummarizationAccuracy.
+    :param helper_model: The BertscoreHelperModel belonging to an instance of SummarizationAccuracy.
     :returns: rouge score: boolean indicating using stemmer for rouge
     """
     assert "helper_model" in kwargs
@@ -320,8 +318,7 @@ def get_bert_score(target_output: str, model_output: str, config: SummarizationA
 
 def add_score_to_dataset(
     dataset: Dataset,
-    eval_func: Callable,
-    score_column_name: str,
+    score_name_to_func: Dict[str, Callable],
     config: SummarizationAccuracyConfig,
     helper_model: BertscoreHelperModel,
 ):
@@ -329,25 +326,22 @@ def add_score_to_dataset(
     Util method to add a score column to a ray dataset.
 
     :param dataset: ray Dataset to be used for eval score generation
-    :param eval_func: eval function callable method
-    :param score_column_name: column name for score to be added
+    :param score_name_to_func: maps column names for scores to be added to the functions used to compute those scores
     :param config: Eval algo config
-    :param helper_model: The BertscoreHelperModel singleton belonging to an
+    :param helper_model: The BertscoreHelperModel belonging to an
         instance of SummarizationAccuracy. Used only by get_bert_score.
     :returns: ray Dataset with score column
     """
 
-    def _generate_eval_scores(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+    def _generate_eval_scores(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
         """
         Map function generating the scores for every input record in input dataset
         """
-        return pd.Series(
-            data=[
-                eval_func(
-                    row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config, helper_model=helper_model
-                )
-                for index, row in df.iterrows()
-            ]
-        )
+        for score_name in score_name_to_func:
+            eval_func = score_name_to_func[score_name]
+            row[score_name] = eval_func(
+                row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config, helper_model=helper_model
+            )
+        return row
 
-    return dataset.add_column(score_column_name, _generate_eval_scores).materialize()
+    return dataset.map(_generate_eval_scores).materialize()

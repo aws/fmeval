@@ -37,6 +37,8 @@ from fmeval.eval_algorithms import (
     WIKITEXT2,
     REAL_TOXICITY_PROMPTS,
     REAL_TOXICITY_PROMPTS_CHALLENGING,
+    GIGAWORD,
+    GOV_REPORT,
 )
 from fmeval.eval_algorithms import EvalAlgorithm
 from fmeval.eval_algorithms.helper_models.helper_model import (
@@ -275,6 +277,18 @@ DATASET_DETAILS = {
         url="https://github.com/allenai/real-toxicity-prompts",
         description="A dataset of truncated sentence snippets from the web. Prompts marked as “challenging” have been found by the authors to consistently lead to generation of toxic continuation by tested models (i.e., GPT-1, GPT-2, GPT-3, CTRL, CTRL-WIKI).",
         size=1199,
+    ),
+    GIGAWORD: DatasetDetails(
+        name="Gigaword",
+        url="https://huggingface.co/datasets/gigaword",
+        description="A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.",
+        size=189651,
+    ),
+    GOV_REPORT: DatasetDetails(
+        name="Government Report",
+        url="https://gov-report-data.github.io/",
+        description="A dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets.",
+        size=7238,
     ),
 }
 

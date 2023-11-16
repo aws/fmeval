@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Dict, List, Union, Type, Optional
+from typing import Dict, List, Optional, Union
 
 import fmeval.util as util
 from fmeval.data_loaders.jmespath_util import compile_jmespath
@@ -36,28 +36,31 @@ class JsonExtractor(Extractor):
         """
         Extract log probability from model response.
 
-        :param data: Model response. The probability_jmespath_expression is used to extract the predicted softmax
-                     probabilities. Each record in the extracted probabilities will be a list of list of floats.
+        :param data: Model response. The log_probability_jmespath_expression is used to extract the log probabilities
+                     of the input tokens. Each record in the extracted probabilities will be a float or list of floats.
                      Examples for the extracted probabilities:
-                        - data: [[0.6],[0.3],[0.1]], num_records: 1
-                        - data: [ [[0.6],[0.3],[0.1]] ], num_records: 1
-                        - data: [ [[0.6]], [[0.1]] ], num_records: 2
+                        - data: 0.1, num_records: 1, num tokens: 1 (or probabilities already summed up)
+                        - data: [0.1], num_records: 1, num tokens: 1 (or probabilities already summed up)
+                        - data: [0.1, 0.2], num_records: 1, num tokens: 2
         :param num_records: number of inference records in the model output
-        :return: list of a list, each element is a list of probabilities.
+        :return: float or list of float where each float is sum of log probabilities.
         """
+        assert num_records == 1, "JSON extractor does not support batch requests"
         util.require(
-            self.log_probability_jmespath,
+            self.log_probability_jmespath_expression,
             "Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided",
         )
-        probabilities = self.log_probability_jmespath.search(data)
-        self._validate_types(
-            values=probabilities,
-            type=float,
-            num_records=num_records,
-            jmespath_expression=self.log_probability_jmespath_expression,  # type: ignore
+        log_probs = self.log_probability_jmespath.search(data)
+        util.require(
+            log_probs is not None, f"JMESpath {self.log_probability_jmespath_expression} could not find any data"
         )
-
-        return probabilities
+        if isinstance(log_probs, float):
+            return log_probs
+        util.require(
+            isinstance(log_probs, List) and all(isinstance(value, float) for value in log_probs),
+            f"Extractor found: {log_probs} which does not match expected {float} or list of {float}",
+        )
+        return sum(log_probs)
 
     def extract_output(self, data: Union[List, Dict], num_records: int) -> Union[List[str], str]:
         """
@@ -68,28 +71,12 @@ class JsonExtractor(Extractor):
         :param num_records: number of inference records in the model output
         :return: model output
         """
+        assert num_records == 1, "JSON extractor does not support batch requests"
         util.require(
             self.output_jmespath_expression,
             "Extractor cannot extract output as output_jmespath_expression is not provided",
         )
         outputs = self.output_jmespath.search(data)
-        self._validate_types(
-            values=outputs, type=str, num_records=num_records, jmespath_expression=self.output_jmespath_expression  # type: ignore
-        )
-
+        util.require(outputs is not None, f"JMESpath {self.output_jmespath_expression} could not find any data")
+        util.require(isinstance(outputs, str), f"Extractor found: {outputs} which does not match expected type {str}")
         return outputs
-
-    @staticmethod
-    def _validate_types(values: Any, type: Type, num_records: int, jmespath_expression: str):
-        util.require(values is not None, f"JMESpath {jmespath_expression} could not find any data")
-        if num_records == 1:
-            util.require(
-                isinstance(values, type), f"Extractor found: {values} which does not match expected type {type}"
-            )
-        else:
-            util.require(
-                isinstance(values, List)
-                and len(values) == num_records
-                and all(isinstance(value, type) for value in values),
-                f"Extractor found: {values} which does not match expected list of {type}",
-            )

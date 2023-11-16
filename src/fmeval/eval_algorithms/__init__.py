@@ -186,6 +186,8 @@ TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
 CROWS_PAIRS = "crows-pairs"
 XSUM = "xsum"
+GIGAWORD = "gigaword"
+GOV_REPORT = "gov_report"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
 BOLD = "bold"
 WIKITEXT2 = "wikitext2"
@@ -198,16 +200,16 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [XSUM],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [XSUM, GIGAWORD, GOV_REPORT],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
         WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     ],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [XSUM],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [XSUM, GIGAWORD, GOV_REPORT],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [XSUM],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [XSUM, GIGAWORD, GOV_REPORT],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -218,6 +220,8 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
     NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
     XSUM: "Summarise the following text in one sentence: $feature",
+    GIGAWORD: "Summarise the following text in one sentence: $feature",
+    GOV_REPORT: "Summarise the following text in a few sentences: $feature",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
     "or 1 (positive sentiment). Review: $feature. Classification:",
 }
@@ -236,7 +240,7 @@ def get_default_prompt_template(dataset_name: str) -> str:
 DATASET_CONFIGS: Dict[str, DataConfig] = {
     TREX: DataConfig(
         dataset_name=TREX,
-        dataset_uri="s3://amazon-fmeval/datasets/trex/trex.jsonl",
+        dataset_uri="s3://fmeval/datasets/trex/trex.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answers",
@@ -244,28 +248,28 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     ),
     BOOLQ: DataConfig(
         dataset_name=BOOLQ,
-        dataset_uri="s3://amazon-fmeval/datasets/boolq/boolq.jsonl",
+        dataset_uri="s3://fmeval/datasets/boolq/boolq.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
     ),
     TRIVIA_QA: DataConfig(
         dataset_name=TRIVIA_QA,
-        dataset_uri="s3://amazon-fmeval/datasets/triviaQA/triviaQA.json",
+        dataset_uri="s3://fmeval/datasets/triviaQA/triviaQA.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
     ),
     NATURAL_QUESTIONS: DataConfig(
         dataset_name=NATURAL_QUESTIONS,
-        dataset_uri="s3://amazon-fmeval/datasets/natural_questions/natural_questions.jsonl",
+        dataset_uri="s3://fmeval/datasets/natural_questions/natural_questions.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
     ),
     CROWS_PAIRS: DataConfig(
         dataset_name=CROWS_PAIRS,
-        dataset_uri="s3://amazon-fmeval/datasets/crows-pairs/crows-pairs.jsonl",
+        dataset_uri="s3://fmeval/datasets/crows-pairs/crows-pairs.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         sent_more_input_location="sent_more",
         sent_less_input_location="sent_less",
@@ -273,42 +277,56 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
     ),
     XSUM: DataConfig(
         dataset_name=XSUM,
-        dataset_uri="s3://amazon-fmeval/datasets/xsum/xsum.jsonl",
+        dataset_uri="s3://fmeval/datasets/xsum/xsum.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="document",
         target_output_location="summary",
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
-        dataset_uri="s3://amazon-fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl",
+        dataset_uri="s3://fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location='"Review Text"',
         target_output_location='"Recommended IND"',
-        category_location="Class Name",
+        category_location='"Class Name"',
     ),
     BOLD: DataConfig(
         dataset_name=BOLD,
-        dataset_uri="s3://amazon-fmeval/datasets/bold/bold.jsonl",
+        dataset_uri="s3://fmeval/datasets/bold/bold.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
         category_location="category",
     ),
     WIKITEXT2: DataConfig(
         dataset_name=WIKITEXT2,
-        dataset_uri="s3://amazon-fmeval/datasets/wikitext2/wikitext2.jsonl",
+        dataset_uri="s3://fmeval/datasets/wikitext2/wikitext2.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
     ),
     REAL_TOXICITY_PROMPTS: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS,
-        dataset_uri="s3://amazon-fmeval/datasets/real_toxicity/real_toxicity.jsonl",
+        dataset_uri="s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
     ),
     REAL_TOXICITY_PROMPTS_CHALLENGING: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS_CHALLENGING,
-        dataset_uri="s3://amazon-fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl",
+        dataset_uri="s3://fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
+    ),
+    GIGAWORD: DataConfig(
+        dataset_name=GIGAWORD,
+        dataset_uri="s3://fmeval/datasets/gigaword/gigaword.jsonl",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="document",
+        target_output_location="summary",
+    ),
+    GOV_REPORT: DataConfig(
+        dataset_name=GOV_REPORT,
+        dataset_uri="s3://fmeval/datasets/gov_report/gov_report.jsonl",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="report",
+        target_output_location="summary",
     ),
 }

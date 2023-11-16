@@ -1,11 +1,11 @@
 import logging
-from collections import defaultdict
+import ray
+import ray.data
 
+from ray.data import Dataset
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any
-
-import ray.data
-from ray.data import Dataset
 
 from fmeval import util
 from fmeval.constants import (
@@ -82,6 +82,44 @@ DELTA_METEOR_SCORE = PREFIX_FOR_DELTA_SCORES + METEOR_SCORE
 DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
 
 
+@ray.remote(num_cpus=0)
+class SummarizationAccuracyActor:
+    """
+    This class represents the SummarizationAccuracy eval algo instance
+    that is tied to a SummarizationAccuracySemanticRobustness instance.
+
+    Since a SummarizationAccuracySemanticRobustness instance gets deserialized
+    by each of the K GenerateEvalScoresActors spun up by __add_scores, if we
+    initialize a SummarizationAccuracy instance inside of the __init__ method of
+    SummarizationAccuracySemanticRobustness, we will create K BertscoreHelperModel
+    actors (since each SummarizationAccuracy has a corresponding BertscoreHelperModel),
+    which is not the intended behavior.
+
+    By using this class, when we explicitly instantiate a SummarizationAccuracySemanticRobustness,
+    a single SummarizationAccuracy gets instantiated (and stored in self.eval_algo), and this
+    SummarizationAccuracy instance gets reused every time a SummarizationAccuracySemanticRobustness
+    instance gets deserialized by a GenerateEvalScoresActor.
+
+    Note: we set num_cpus=0 for this actor because it is simply a wrapper around
+    a SummarizationAccuracy instance, whose BertscoreHelperModel already
+    has num_cpus=1. By setting num_cpus=0, we indicate that this actor
+    doesn't actually use up any logical resources (again, the actor
+    that's *actually* consuming resources is the BertscoreHelperModel).
+
+    See the following Ray documentation about Ray resources in general:
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
+
+    Details on specifying resource requirements (as we do with num_cpus=0):
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html#specifying-task-or-actor-resource-requirements
+    """
+
+    def __init__(self, config: SummarizationAccuracyConfig):
+        self.eval_algo = SummarizationAccuracy(config)  # pragma: no cover
+
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
+        return self.eval_algo.evaluate_sample(target_output, model_output)  # pragma: no cover
+
+
 @dataclass(frozen=True)
 class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     """
@@ -149,6 +187,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     def __init__(
         self,
         eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig = SummarizationAccuracySemanticRobustnessConfig(),
+        summ_acc_actor: Optional[SummarizationAccuracyActor] = None,
     ):
         """Default constructor
 
@@ -170,12 +209,16 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
             )
 
-        self._summarization_accuracy_eval_algo = SummarizationAccuracy(
-            SummarizationAccuracyConfig(
-                rouge_type=eval_algorithm_config.rouge_type,
-                use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
-                model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+        self._summarization_accuracy_eval_algo = (
+            SummarizationAccuracyActor.remote(  # type: ignore[attr-defined]
+                SummarizationAccuracyConfig(
+                    rouge_type=eval_algorithm_config.rouge_type,
+                    use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+                    model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
+                )
             )
+            if summ_acc_actor is None
+            else summ_acc_actor
         )
 
     def __reduce__(self):  # pragma: no cover
@@ -183,7 +226,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         Custom serializer method used by Ray when it serializes instances of this
         class during dataset.map() operations.
         """
-        serialized_data = (self._eval_algorithm_config,)
+        serialized_data = (self._eval_algorithm_config, self._summarization_accuracy_eval_algo)
         return SummarizationAccuracySemanticRobustness, serialized_data
 
     def evaluate_sample(
@@ -235,14 +278,18 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
         perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
 
-        original_summarization_accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
-            target_output=target_output, model_output=original_model_output
+        original_summarization_accuracy_scores = ray.get(
+            self._summarization_accuracy_eval_algo.evaluate_sample.remote(
+                target_output=target_output, model_output=original_model_output
+            )
         )
 
         perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
         for perturbed_input_output in perturbed_input_outputs:
-            accuracy_scores = self._summarization_accuracy_eval_algo.evaluate_sample(
-                target_output=target_output, model_output=perturbed_input_output
+            accuracy_scores = ray.get(
+                self._summarization_accuracy_eval_algo.evaluate_sample.remote(
+                    target_output=target_output, model_output=perturbed_input_output
+                )
             )
             for accuracy_score in accuracy_scores:
                 perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)

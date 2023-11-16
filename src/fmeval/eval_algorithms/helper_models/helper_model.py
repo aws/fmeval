@@ -147,7 +147,7 @@ class DetoxifyHelperModel(BaseHelperModel):
         return DETOXIFY_SCORE_NAMES
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 class BertscoreHelperModel(BaseHelperModel):
     """
     BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
@@ -156,6 +156,11 @@ class BertscoreHelperModel(BaseHelperModel):
     semantically similar sentences are (typically) embedded similarly.
 
     https://huggingface.co/spaces/evaluate-metric/bertscore
+
+    Note: we specify that this Ray actor requires num_cpus=1 in order to limit the number of concurrently
+    running tasks or actors to avoid out of memory issues.
+    See https://docs.ray.io/en/latest/ray-core/patterns/limit-running-tasks.html#core-patterns-limit-running-tasks
+    for a detailed explanation.
     """
 
     def __init__(self, model_type: str):  # pragma: no cover
