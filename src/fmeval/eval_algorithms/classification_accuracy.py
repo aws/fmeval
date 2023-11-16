@@ -46,20 +46,14 @@ CLASSIFICATION_ACCURACY_SCORE = "classification_accuracy_score"
 BALANCED_ACCURACY_SCORE = "balanced_accuracy_score"
 PRECISION_SCORE = "precision_score"
 RECALL_SCORE = "recall_score"
-
 UNKNOWN_LABEL = "unknown"
-
 PROMPT_COLUMN_NAME = "prompt"
-
 CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME = "classified_model_output"
-
-
 CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     BALANCED_ACCURACY_SCORE: balanced_accuracy_score,
     PRECISION_SCORE: precision_score,
     RECALL_SCORE: recall_score,
 }
-VALID_LABELS_MAP: Dict[str, List] = {WOMENS_CLOTHING_ECOMMERCE_REVIEWS: ["0", "1"]}
 UNIQUENESS_FACTOR = 0.05
 
 logger = logging.getLogger(__name__)
@@ -176,14 +170,14 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                 )
 
             if not self._valid_labels:
-                self._valid_labels = dataset.unique(column=MODEL_OUTPUT_COLUMN_NAME)
+                self._valid_labels = dataset.unique(column=TARGET_OUTPUT_COLUMN_NAME)
                 row_count = dataset.count()
                 assert self._valid_labels is not None  # to satisfy mypy
-                util.require(
-                    len(self._valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR,
-                    f"The number of classes: {len(self._valid_labels)} is too large "
-                    f"for the number of rows in the dataset: {row_count}",
-                )
+                if len(self._valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR:  # pragma: no cover
+                    logger.warning(
+                        f"The number of classes: {len(self._valid_labels)} in the dataset is too large "
+                        f"for the number of rows in the dataset: {row_count}",
+                    )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
@@ -264,8 +258,8 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         ),
                     )
                 )
-                # set it back to the same value as before the start of evaluating this dataset
-                self._valid_labels = self._eval_algorithm_config.valid_labels
+            # set it back to the same value as before the start of evaluating this dataset
+            self._valid_labels = self._eval_algorithm_config.valid_labels
             if save:
                 save_dataset(
                     dataset=dataset,

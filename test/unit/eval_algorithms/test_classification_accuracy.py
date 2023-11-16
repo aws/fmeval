@@ -270,17 +270,17 @@ class TestClassificationAccuracy:
     @patch("fmeval.eval_algorithms.classification_accuracy.save_dataset")
     @patch("fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
     def test_classification_accuracy_evaluate(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
+        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case
     ):
         """
         GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
+            and request to save records with scores, without a ClassificationAccuracyConfig
         WHEN ClassificationAccuracy.evaluate is called
         THEN correct EvalOutput is returned
         """
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = ClassificationAccuracy(config)
+        eval_algorithm = ClassificationAccuracy()
         actual_response = eval_algorithm.evaluate(
             model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
         )
