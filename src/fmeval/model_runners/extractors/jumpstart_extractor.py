@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Union, List, Dict, Optional
 from urllib import request
 
@@ -13,6 +14,7 @@ from fmeval.constants import (
     SDK_MANIFEST_FILE,
     DEFAULT_PAYLOADS,
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
+    JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.data_loaders.jmespath_util import compile_jmespath
@@ -97,7 +99,9 @@ class JumpStartExtractor(Extractor):
 
     @staticmethod
     def get_jumpstart_sdk_manifest(region: str) -> Dict:
-        jumpstart_bucket_base_url = JUMPSTART_BUCKET_BASE_URL_FORMAT.format(region, region)
+        jumpstart_bucket_base_url = os.environ.get(
+            JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
+        ).format(region, region)
         url = "{}/{}".format(jumpstart_bucket_base_url, SDK_MANIFEST_FILE)
         with request.urlopen(url) as f:
             models_manifest = f.read().decode("utf-8")
@@ -105,7 +109,9 @@ class JumpStartExtractor(Extractor):
 
     @staticmethod
     def get_jumpstart_sdk_spec(key: str, region: str) -> Dict:
-        jumpstart_bucket_base_url = JUMPSTART_BUCKET_BASE_URL_FORMAT.format(region, region)
+        jumpstart_bucket_base_url = os.environ.get(
+            JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
+        ).format(region, region)
         url = "{}/{}".format(jumpstart_bucket_base_url, key)
         with request.urlopen(url) as f:
             model_spec = f.read().decode("utf-8")
