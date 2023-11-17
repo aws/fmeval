@@ -228,7 +228,6 @@ class TestSummarizationAccuracySemanticRobustness:
         model = MagicMock()
         model.predict.side_effect = [
             (test_case.original_model_output,),
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -297,7 +296,6 @@ class TestSummarizationAccuracySemanticRobustness:
         """
         model = MagicMock()
         model.predict.side_effect = [
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -318,80 +316,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 model=model,
                 target_output=test_case.target_output,
                 model_output=test_case.original_model_output,
-            )
-            == test_case.expected_response
-        )
-        assert model.predict.call_count == 3
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
-                model_input="Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-                target_output="I like cake.",
-                original_model_output="Some model output.",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                sa_eval_score_original=[
-                    EvalScore(name=METEOR_SCORE, value=2.0),
-                    EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
-                ],
-                sa_eval_score_perturbed_1=[
-                    EvalScore(name=METEOR_SCORE, value=1.0),
-                    EvalScore(name=ROUGE_SCORE, value=0.5),
-                    EvalScore(name=BERT_SCORE, value=1.0),
-                ],
-                sa_eval_score_perturbed_2=[
-                    EvalScore(name=METEOR_SCORE, value=0.5),
-                    EvalScore(name=ROUGE_SCORE, value=2.0),
-                    EvalScore(name=BERT_SCORE, value=2.5),
-                ],
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=2.0),
-                    EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
-                    EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
-                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
-                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
-                ],
-                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.ray.get")
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.SummarizationAccuracyActor")
-    def test_semantic_robustness_evaluate_sample_with_deterministic_model(
-        self, summarization_accuracy_actor_class, ray_get, test_case
-    ):
-        """
-        GIVEN valid inputs with model_output and a deterministic model
-        WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct List of EvalScores is returned
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-
-        evaluate_sample_invocation_results = [
-            test_case.sa_eval_score_original,
-            test_case.sa_eval_score_perturbed_1,
-            test_case.sa_eval_score_perturbed_2,
-        ]
-        ray_get.side_effect = evaluate_sample_invocation_results
-        summarization_accuracy_actor = MagicMock()
-        summarization_accuracy_actor_class.return_value = summarization_accuracy_actor
-
-        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config)
-        eval_algorithm._is_model_deterministic = True
-        assert (
-            eval_algorithm.evaluate_sample(
-                model_input=test_case.model_input,
-                model=model,
-                model_output=test_case.original_model_output,
-                target_output=test_case.target_output,
             )
             == test_case.expected_response
         )
@@ -436,43 +360,6 @@ class TestSummarizationAccuracySemanticRobustness:
         eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config, summ_acc_actor=MagicMock())
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, test_case.model)
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
-                model_input="What is the capital of England?",
-                target_output="London",
-                original_model_output="Some model output.",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                sa_eval_score_original=None,
-                sa_eval_score_perturbed_1=None,
-                sa_eval_score_perturbed_2=None,
-                expected_response=None,
-                config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
-            )
-        ],
-    )
-    def test_semantic_robustness_evaluate_sample_invalid_model(self, test_case):
-        """
-        GIVEN a non-deterministic model
-        WHEN SummarizationAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.original_model_output,),
-            (test_case.original_model_output + "1",),
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-
-        eval_algorithm = SummarizationAccuracySemanticRobustness(test_case.config, summ_acc_actor=MagicMock())
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate_sample(test_case.model_input, test_case.target_output, model)
 
     class TestCaseSemanticRobustnessInvalidConfig(NamedTuple):
         rouge_type: str
@@ -810,48 +697,6 @@ class TestSummarizationAccuracySemanticRobustness:
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_NO_CATEGORY,
-                input_dataset_with_generated_model_output=None,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$feature",
-                save_data=False,
-                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
-                expected_response=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
-    def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
-        """
-        GIVEN a non-deterministic model
-        WHEN SummarizationAccuracySemanticRobustness.evaluate is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        original_model_output = "some model output"
-        model.predict.side_effect = [
-            (original_model_output,),
-            (original_model_output + "1",),
-        ]
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = SummarizationAccuracySemanticRobustness(config, summ_acc_actor=MagicMock())
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 
     class TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
         input_dataset: Dataset
