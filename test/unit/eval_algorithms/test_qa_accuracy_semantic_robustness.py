@@ -327,7 +327,6 @@ class TestQAAccuracySemanticRobustness:
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.model, test_case.target_output)
 
-
     class TestCaseQAAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
         input_dataset_with_generated_model_output: Dataset
@@ -549,7 +548,6 @@ class TestQAAccuracySemanticRobustness:
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
-
 
     class TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
         input_dataset: Dataset
