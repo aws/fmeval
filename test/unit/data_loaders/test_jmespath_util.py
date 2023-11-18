@@ -37,39 +37,44 @@ class TestJmespathUtil:
         with pytest.raises(test_case.error_type, match=test_case.error_message):
             compile_jmespath(test_case.function_input)
 
-    def test_search_jmespath_no_result_found(self):
+    @patch("src.fmeval.data_loaders.jmespath_util.logging.Logger.warning")
+    def test_search_jmespath_no_result_found(self, mock_logger):
         """
         GIVEN a JMESPath query that finds an empty result when applied to a dataset
         WHEN search_jmespath is called
-        THEN search_jmespath raises an exception
+        THEN search_jmespath returns None and logs contain the appropriate warning
         """
-        with pytest.raises(
-            EvalAlgorithmClientError,
-            match="Failed to find model_input columns in dataset `my_dataset` using JMESPath query 'column_c'.",
-        ):
-            parser = compile_jmespath("column_c")
-            search_jmespath(
+        parser = compile_jmespath("column_c")
+        result = search_jmespath(
+            jmespath_parser=parser,
+            jmespath_query_type=MODEL_INPUT_COLUMN_NAME,
+            dataset={"column_a": "hello", "column_b": "world"},
+            dataset_name="my_dataset",
+        )
+        assert result is None
+        mock_logger.assert_called_with(
+            f"Failed to find {MODEL_INPUT_COLUMN_NAME} columns in dataset `my_dataset` "
+            f"using JMESPath query '{parser.expression}'."
+        )
+
+    @patch("src.fmeval.data_loaders.jmespath_util.logging.Logger.warning")
+    def test_search_jmespath_value_error(self, mock_logger):
+        """
+        GIVEN a ValueError is raised by the jmespath library function
+            (see https://github.com/jmespath/jmespath.py/issues/98)
+        WHEN search_jmespath is called
+        THEN search_jmespath returns None and logs contain the appropriate warning
+        """
+        with patch("jmespath.parser.ParsedResult.search", side_effect=ValueError):
+            parser = compile_jmespath("column_a")
+            result = search_jmespath(
                 jmespath_parser=parser,
                 jmespath_query_type=MODEL_INPUT_COLUMN_NAME,
                 dataset={"column_a": "hello", "column_b": "world"},
                 dataset_name="my_dataset",
             )
-
-    def test_search_jmespath_value_error(self):
-        """
-        GIVEN a ValueError is raised by the jmespath library function
-            (see https://github.com/jmespath/jmespath.py/issues/98)
-        WHEN search_jmespath is called
-        THEN search_jmespath raises an exception
-        """
-        with pytest.raises(
-            EvalAlgorithmClientError,
-            match="Failed to find model_input columns in dataset `my_dataset` using JMESPath query 'column_a'.",
-        ), patch("jmespath.parser.ParsedResult.search", side_effect=ValueError):
-            parser = compile_jmespath("column_a")
-            search_jmespath(
-                jmespath_parser=parser,
-                jmespath_query_type=MODEL_INPUT_COLUMN_NAME,
-                dataset={"column_a": "hello", "column_b": "world"},
-                dataset_name="my_dataset",
+            assert result is None
+            mock_logger.assert_called_with(
+                f"Failed to find {MODEL_INPUT_COLUMN_NAME} columns in dataset `my_dataset` "
+                f"using JMESPath query '{parser.expression}'."
             )
