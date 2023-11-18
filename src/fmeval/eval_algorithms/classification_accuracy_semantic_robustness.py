@@ -16,7 +16,6 @@ from fmeval.constants import (
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
     MODEL_OUTPUT_COLUMN_NAME,
-    NUM_ROWS_DETERMINISTIC,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
@@ -33,7 +32,6 @@ from fmeval.eval_algorithms.util import (
     generate_output_dataset_path,
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
-    verify_model_determinism,
 )
 from fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
@@ -56,7 +54,6 @@ from fmeval.eval_algorithms.classification_accuracy import (
     convert_model_output_to_label,
     ClassificationAccuracy,
     ClassificationAccuracyConfig,
-    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
     CLASSIFICATION_ACCURACY_SCORE,
 )
 from fmeval.eval_algorithms.general_semantic_robustness import ButterFinger, RandomUpperCase, WhitespaceAddRemove
@@ -133,7 +130,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
-        self._is_model_deterministic: Optional[bool] = None
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -205,10 +201,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_column_name=PROMPT_COLUMN_NAME,
             )
 
-            self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
-            if not self._is_model_deterministic:
-                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
-
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
@@ -249,7 +241,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         ),
                     )
                 )
-            self._is_model_deterministic = None
             if save:
                 save_dataset(
                     dataset=dataset,
@@ -297,10 +288,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         prompt_composer = PromptComposer(prompt_template)
         original_prompt = prompt_composer.compose(model_input)
         original_model_output = model_output if model_output else model.predict(original_prompt)[0]
-
-        if self._is_model_deterministic is None:
-            if model.predict(original_prompt)[0] != original_model_output:
-                raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
 
         perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
 
