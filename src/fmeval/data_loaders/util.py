@@ -26,6 +26,10 @@ def get_dataset(config: DataConfig, num_records: Optional[int] = None) -> ray.da
     :param config: Input DataConfig
     :param num_records: the number of records to sample from the dataset
     """
+    # The following setup is necessary to instruct Ray to preserve the
+    # order of records in the datasets
+    ctx = ray.data.DataContext.get_current()
+    ctx.execution_options.preserve_order = True
     with timed_block(f"Loading dataset {config.dataset_name}", logger):
         data_source = get_data_source(config.dataset_uri)
         data_loader_config = _get_data_loader_config(data_source, config)
