@@ -62,7 +62,7 @@ def get_sagemaker_session(
 
 def get_bedrock_runtime_client(
     boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "adaptive",
-    retry_attempts: int = 10,
+    retry_attempts: int = 20,
 ) -> boto3.session.Session.client:
     """
     Get Bedrock runtime client with adaptive retry config.
