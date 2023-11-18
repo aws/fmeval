@@ -222,8 +222,7 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     XSUM: "Summarise the following text in one sentence: $feature",
     GIGAWORD: "Summarise the following text in one sentence: $feature",
     GOV_REPORT: "Summarise the following text in a few sentences: $feature",
-    WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) "
-    "or 1 (positive sentiment). Review: $feature. Classification:",
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS: "Classify the sentiment of the following review with 0 (negative sentiment) or 1 (positive sentiment). Review: $feature. Classification:",
 }
 
 
