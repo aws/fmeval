@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 from jmespath.parser import ParsedResult
 from dataclasses import dataclass
 from fmeval.exceptions import EvalAlgorithmInternalError
@@ -110,16 +110,24 @@ class JsonParser:
             )
             for parser_name in self._parsers
         }
+
+        filtered_parsed_columns_dict: Dict[str, List[Any]] = {
+            parser_name: parsed_columns
+            for parser_name, parsed_columns in parsed_columns_dict.items()
+            if parsed_columns is not None
+        }
+
         if dataset_mime_type == MIME_TYPE_JSON:
-            JsonParser._validate_parsed_columns_lengths(parsed_columns_dict)
-        return parsed_columns_dict
+            JsonParser._validate_parsed_columns_lengths(filtered_parsed_columns_dict)
+        return filtered_parsed_columns_dict
 
     @staticmethod
-    def _parse_column(args: ColumnParseArguments) -> List[Any]:
+    def _parse_column(args: ColumnParseArguments) -> Optional[List[Any]]:
         """Parses a single column, specified by `args`, from a dataset.
 
         :param args: See ColumnParseArgs docstring.
-        :returns: If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value
+        :returns: If search_jmespath returns None, this function returns None.
+            Otherwise, If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value
             is a list representing the parsed column. This list is always a 1D array.
             If MIME_TYPE_JSON_LINES, then the dataset being parsed is assumed to be
             a single JSON Lines row, in which case the return value is a single scalar
@@ -131,7 +139,8 @@ class JsonParser:
             dataset=args.dataset,
             dataset_name=args.dataset_name,
         )
-        JsonParser._validate_jmespath_result(result, args)
+        if result is not None:
+            JsonParser._validate_jmespath_result(result, args)
         return result
 
     @staticmethod
