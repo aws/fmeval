@@ -1,9 +1,11 @@
-from typing import Any, List, Dict, Union
-
 import jmespath
+import logging
+from typing import Any, List, Dict, Union, Optional
 from jmespath.exceptions import JMESPathError
 from jmespath.parser import ParsedResult
 from fmeval.exceptions import EvalAlgorithmClientError
+
+logger = logging.getLogger(__name__)
 
 
 def compile_jmespath(jmespath_expression: str):
@@ -21,7 +23,7 @@ def search_jmespath(
     jmespath_query_type: str,
     dataset: Union[Dict, List],
     dataset_name: str,
-) -> List[Any]:
+) -> Optional[List[Any]]:
     """Searches a dataset using a JMESPath query.
 
     :param jmespath_parser: The JMESPath parser, used for parsing model inputs, model outputs,
@@ -36,13 +38,14 @@ def search_jmespath(
     try:
         result = jmespath_parser.search(dataset)
         if result is None:
-            raise EvalAlgorithmClientError(
+            logger.warning(
                 f"Failed to find {jmespath_query_type} columns in dataset `{dataset_name}` using JMESPath "
                 f"query '{jmespath_parser.expression}'."
             )
         return result
-    except ValueError as e:
-        raise EvalAlgorithmClientError(
+    except ValueError:
+        logger.warning(
             f"Failed to find {jmespath_query_type} columns in dataset `{dataset_name}` using JMESPath query "
             f"'{jmespath_parser.expression}'."
-        ) from e
+        )
+        return None

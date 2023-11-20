@@ -11,6 +11,7 @@ from fmeval.constants import (
     CATEGORY_COLUMN_NAME,
     MIME_TYPE_JSON,
     MIME_TYPE_JSONLINES,
+    SENT_MORE_INPUT_COLUMN_NAME,
 )
 
 
@@ -173,6 +174,8 @@ class TestJsonParser:
                     model_output_location="model_output.*",
                     target_output_location="targets_outer.targets_inner[*].sentiment",
                     category_location="category",
+                    # this JMESPath query will fail to find any results, and should effectively get ignored
+                    sent_more_input_location="invalid_jmespath_query",
                 ),
                 dataset={
                     "samples": [{"name": "A", "age": 1}, {"name": "B", "age": 2}],
@@ -196,6 +199,8 @@ class TestJsonParser:
                     model_output_location="[*].model_output_col",
                     target_output_location="[*].target_output_col",
                     category_location="[*].category_col",
+                    # this JMESPath query will fail to find any results, and should effectively get ignored
+                    sent_more_input_location="invalid_jmespath_query",
                 ),
                 dataset=[
                     {
@@ -214,7 +219,8 @@ class TestJsonParser:
             ),
         ],
     )
-    def test_json_parse_dataset_columns_success(self, config, dataset):
+    @patch("src.fmeval.data_loaders.jmespath_util.logging.Logger.warning")
+    def test_json_parse_dataset_columns_success_json(self, mock_logger, config, dataset):
         """
         GIVEN valid JMESPath queries that extract model inputs, model outputs,
             target outputs, and categories, and a JSON dataset that is represented
@@ -235,7 +241,23 @@ class TestJsonParser:
         assert cols[TARGET_OUTPUT_COLUMN_NAME] == expected_target_outputs
         assert cols[CATEGORY_COLUMN_NAME] == expected_categories
 
-    def test_parse_dataset_columns_success_jsonlines(self):
+        # ensure that SENT_MORE_INPUT_COLUMN_NAME does not show up in `cols`
+        assert set(cols.keys()) == {
+            MODEL_INPUT_COLUMN_NAME,
+            MODEL_OUTPUT_COLUMN_NAME,
+            TARGET_OUTPUT_COLUMN_NAME,
+            CATEGORY_COLUMN_NAME,
+        }
+
+        # ensure that logger generated a warning when search_jmespath
+        # was called on SENT_MORE_INPUT_COLUMN_NAME.
+        mock_logger.assert_called_with(
+            f"Failed to find {SENT_MORE_INPUT_COLUMN_NAME} columns in dataset `dataset` "
+            f"using JMESPath query '{config.sent_more_input_location}'."
+        )
+
+    @patch("src.fmeval.data_loaders.jmespath_util.logging.Logger.warning")
+    def test_parse_dataset_columns_success_jsonlines(self, mock_logger):
         """
         GIVEN valid JMESPath queries that extract model inputs, model outputs,
             target outputs, and categories, and a single line from a JSON Lines
@@ -251,6 +273,8 @@ class TestJsonParser:
             model_output_location="output",
             target_output_location="target",
             category_location="category",
+            # this JMESPath query will fail to find any results, and should effectively get ignored
+            sent_more_input_location="invalid_jmespath_query",
         )
         parser = JsonParser(config)
         expected_model_input = "A"
@@ -266,6 +290,21 @@ class TestJsonParser:
         assert cols[MODEL_OUTPUT_COLUMN_NAME] == expected_model_output
         assert cols[TARGET_OUTPUT_COLUMN_NAME] == expected_target_output
         assert cols[CATEGORY_COLUMN_NAME] == expected_category
+
+        # ensure that SENT_MORE_INPUT_COLUMN_NAME does not show up in `cols`
+        assert set(cols.keys()) == {
+            MODEL_INPUT_COLUMN_NAME,
+            MODEL_OUTPUT_COLUMN_NAME,
+            TARGET_OUTPUT_COLUMN_NAME,
+            CATEGORY_COLUMN_NAME,
+        }
+
+        # ensure that logger generated a warning when search_jmespath
+        # was called on SENT_MORE_INPUT_COLUMN_NAME.
+        mock_logger.assert_called_with(
+            f"Failed to find {SENT_MORE_INPUT_COLUMN_NAME} columns in dataset `dataset_line` "
+            f"using JMESPath query '{config.sent_more_input_location}'."
+        )
 
     def test_parse_dataset_columns_invalid_dataset(self):
         """
