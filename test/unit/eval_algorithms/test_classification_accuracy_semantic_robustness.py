@@ -218,7 +218,6 @@ class TestClassificationAccuracySemanticRobustness:
         model = MagicMock()
         model.predict.side_effect = [
             (test_case.original_model_output,),
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -230,7 +229,7 @@ class TestClassificationAccuracySemanticRobustness:
             )
             == test_case.expected_response
         )
-        assert model.predict.call_count == 4
+        assert model.predict.call_count == 3
 
     @pytest.mark.parametrize(
         "test_case",
@@ -260,56 +259,11 @@ class TestClassificationAccuracySemanticRobustness:
         """
         model = MagicMock()
         model.predict.side_effect = [
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
 
         eval_algorithm = ClassificationAccuracySemanticRobustness(test_case.config)
-        assert (
-            eval_algorithm.evaluate_sample(
-                model_input=test_case.model_input,
-                model=model,
-                model_output=test_case.original_model_output,
-                target_output=test_case.target_output,
-            )
-            == test_case.expected_response
-        )
-        assert model.predict.call_count == 3
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateSample(
-                model_input="Ok brownie.",
-                original_model_output="3",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                target_output="3",
-                expected_response=[
-                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
-                    EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
-                ],
-                config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=["1", "2", "3", "4", "5"],
-                    num_perturbations=2,
-                ),
-            )
-        ],
-    )
-    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, test_case):
-        """
-        GIVEN valid inputs with model_output and a deterministic model
-        WHEN ClassificationAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct List of EvalScores is returned
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-        eval_algorithm = ClassificationAccuracySemanticRobustness(test_case.config)
-        eval_algorithm._is_model_deterministic = True
         assert (
             eval_algorithm.evaluate_sample(
                 model_input=test_case.model_input,
@@ -321,42 +275,6 @@ class TestClassificationAccuracySemanticRobustness:
         )
         assert model.predict.call_count == 2
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateSample(
-                model_input="What is the capital of England?",
-                target_output="London",
-                original_model_output="Some model output.",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                expected_response=None,
-                config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=["1", "2", "3", "4", "5"], num_perturbations=2
-                ),
-            )
-        ],
-    )
-    def test_classification_accuracy_semantic_robustness_evaluate_sample_invalid_model(self, test_case):
-        """
-        GIVEN a non-deterministic model
-        WHEN ClassificationAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.original_model_output,),
-            (test_case.original_model_output + "_with_random_model_output",),
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-
-        eval_algorithm = ClassificationAccuracySemanticRobustness(test_case.config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate_sample(test_case.model_input, model, test_case.target_output)
-
     class TestCaseClassificationAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
         input_dataset_with_generated_model_output: Dataset
@@ -364,47 +282,6 @@ class TestClassificationAccuracySemanticRobustness:
         dataset_config: Optional[DataConfig]
         expected_response: List[EvalOutput]
         save_data: bool
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET,
-                input_dataset_with_generated_model_output=None,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$feature",
-                save_data=False,
-                expected_response=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
-    def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
-        """
-        GIVEN a non-deterministic model
-        WHEN ClassificationAccuracySemanticRobustness.evaluate is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        original_model_output = "some model output"
-        model.predict.side_effect = [
-            (original_model_output,),
-            (original_model_output + "1",),
-        ]
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = ClassificationAccuracySemanticRobustness(config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 
     @pytest.mark.parametrize(
         "test_case",

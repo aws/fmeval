@@ -12,7 +12,6 @@ from fmeval.constants import (
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     CATEGORY_COLUMN_NAME,
-    DEFAULT_EVAL_RESULTS_PATH,
     MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -226,7 +225,6 @@ class TestQAAccuracySemanticRobustness:
         model = MagicMock()
         model.predict.side_effect = [
             (test_case.original_model_output,),
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -240,7 +238,7 @@ class TestQAAccuracySemanticRobustness:
             )
             == test_case.expected_response
         )
-        assert model.predict.call_count == 4
+        assert model.predict.call_count == 3
 
     @pytest.mark.parametrize(
         "test_case",
@@ -271,7 +269,6 @@ class TestQAAccuracySemanticRobustness:
         """
         model = MagicMock()
         model.predict.side_effect = [
-            (test_case.original_model_output,),
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
@@ -283,51 +280,6 @@ class TestQAAccuracySemanticRobustness:
                 model=model,
                 target_output=test_case.target_output,
                 model_output=test_case.original_model_output,
-            )
-            == test_case.expected_response
-        )
-        assert model.predict.call_count == 3
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseQAAccuracySemanticRobustnessEvaluateSample(
-                model_input="What is the capital of England?",
-                original_model_output="london!",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                target_output="London",
-                expected_response=[
-                    EvalScore(name=F1_SCORE, value=1.0),
-                    EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
-                    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
-                    EvalScore(name=DELTA_F1_SCORE, value=1.0),
-                    EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
-                    EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
-                ],
-                config=QAAccuracySemanticRobustnessConfig(target_output_delimiter="<OR>", num_perturbations=2),
-            ),
-        ],
-    )
-    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, test_case):
-        """
-        GIVEN valid inputs with model_output and a deterministic model
-        WHEN QAAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct List of EvalScores is returned
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-        eval_algorithm = QAAccuracySemanticRobustness(test_case.config)
-        eval_algorithm._is_model_deterministic = True
-        assert (
-            eval_algorithm.evaluate_sample(
-                model_input=test_case.model_input,
-                model=model,
-                model_output=test_case.original_model_output,
-                target_output=test_case.target_output,
             )
             == test_case.expected_response
         )
@@ -374,40 +326,6 @@ class TestQAAccuracySemanticRobustness:
         eval_algorithm = QAAccuracySemanticRobustness(config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.model, test_case.target_output)
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseQAAccuracySemanticRobustnessEvaluateSample(
-                model_input="What is the capital of England?",
-                target_output="London",
-                original_model_output="Some model output.",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                expected_response=None,
-                config=QAAccuracySemanticRobustnessConfig(num_perturbations=2),
-            )
-        ],
-    )
-    def test_qa_accuracy_semantic_robustness_evaluate_sample_invalid_model(self, test_case):
-        """
-        GIVEN a non-deterministic model
-        WHEN QAAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.original_model_output,),
-            (test_case.original_model_output + "_with_random_model_output",),
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-
-        eval_algorithm = QAAccuracySemanticRobustness(test_case.config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate_sample(test_case.model_input, model, test_case.target_output)
 
     class TestCaseQAAccuracySemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
@@ -630,47 +548,6 @@ class TestQAAccuracySemanticRobustness:
         )
         assert save_dataset.called == test_case.save_data
         assert actual_response == test_case.expected_response
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseQAAccuracySemanticRobustnessEvaluate(
-                input_dataset=QA_DATASET,
-                input_dataset_with_generated_model_output=None,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$feature",
-                save_data=False,
-                expected_response=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
-    def test_qa_accuracy_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
-        """
-        GIVEN a non-deterministic model
-        WHEN QAAccuracySemanticRobustness.evaluate is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        original_model_output = "some model output"
-        model.predict.side_effect = [
-            (original_model_output,),
-            (original_model_output + "1",),
-        ]
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = QAAccuracySemanticRobustness(config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
 
     class TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
         input_dataset: Dataset

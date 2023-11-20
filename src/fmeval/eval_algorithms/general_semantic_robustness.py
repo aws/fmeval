@@ -225,7 +225,6 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             self._is_model_deterministic = verify_model_determinism(model, dataset, PROMPT_COLUMN_NAME)
             if not self._is_model_deterministic:
                 raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
-
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
