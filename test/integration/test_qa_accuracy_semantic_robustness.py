@@ -1,8 +1,8 @@
 import os
-from typing import NamedTuple, Dict
-
 import pytest
+
 from pytest import approx
+from typing import NamedTuple, Dict
 from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustness,
     QAAccuracySemanticRobustnessConfig,
@@ -109,9 +109,9 @@ class TestQAAccuracySemanticRobustness:
                     F1_SCORE: 0.3606,
                     EXACT_MATCH_SCORE: 0.0606,
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
-                    DELTA_F1_SCORE: 0.1879,
-                    DELTA_EXACT_MATCH_SCORE: 0.0383,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1858,
+                    DELTA_F1_SCORE: 0.2277,
+                    DELTA_EXACT_MATCH_SCORE: 0.0586,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.2101,
                 },
             ),
             TestCaseEvaluate(
@@ -124,9 +124,9 @@ class TestQAAccuracySemanticRobustness:
                     F1_SCORE: 0.3606,
                     EXACT_MATCH_SCORE: 0.0606,
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
-                    DELTA_F1_SCORE: 0.0984,
-                    DELTA_EXACT_MATCH_SCORE: 0.0323,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1111,
+                    DELTA_F1_SCORE: 0.1876,
+                    DELTA_EXACT_MATCH_SCORE: 0.0687,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1798,
                 },
             ),
             TestCaseEvaluate(
@@ -140,9 +140,9 @@ class TestQAAccuracySemanticRobustness:
                     F1_SCORE: 0.3606,
                     EXACT_MATCH_SCORE: 0.0606,
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
-                    DELTA_F1_SCORE: 0.0976,
-                    DELTA_EXACT_MATCH_SCORE: 0.0161,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1010,
+                    DELTA_F1_SCORE: 0.1709,
+                    DELTA_EXACT_MATCH_SCORE: 0.0525,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1535,
                 },
             ),
         ],
