@@ -356,7 +356,7 @@ def generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores:
     :param perturbed_input_scores: List of scores for model inference outputs on perturbed inputs
     :returns: mean of delta between the scores
     """
-    return sum([original_score.value - reference_score.value for reference_score in perturbed_input_scores]) / len(
+    return sum([abs(original_score.value - reference_score.value) for reference_score in perturbed_input_scores]) / len(
         perturbed_input_scores
     )
 

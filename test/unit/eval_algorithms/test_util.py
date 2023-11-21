@@ -376,7 +376,7 @@ class TestCaseGenerateMeanDeltaScore(NamedTuple):
                 EvalScore(name="my_score", value=2.5),
                 EvalScore(name="my_score", value=1.5),
             ],
-            expected_response=0.625,
+            expected_response=0.875,
         ),
     ],
 )

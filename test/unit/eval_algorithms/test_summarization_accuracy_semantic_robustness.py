@@ -144,8 +144,8 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=ROUGE_SCORE, value=1.0),
                     EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
-                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
-                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=0.75),
+                    EvalScore(name=DELTA_BERT_SCORE, value=1.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
             ),
@@ -175,8 +175,8 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=ROUGE_SCORE, value=1.0),
                     EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
-                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
-                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=0.75),
+                    EvalScore(name=DELTA_BERT_SCORE, value=1.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(
                     num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
@@ -208,8 +208,8 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=ROUGE_SCORE, value=1.0),
                     EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
-                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
-                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=0.75),
+                    EvalScore(name=DELTA_BERT_SCORE, value=1.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(
                     num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
@@ -277,8 +277,8 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=ROUGE_SCORE, value=1.0),
                     EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_METEOR_SCORE, value=1.25),
-                    EvalScore(name=DELTA_ROUGE_SCORE, value=-0.25),
-                    EvalScore(name=DELTA_BERT_SCORE, value=-1.25),
+                    EvalScore(name=DELTA_ROUGE_SCORE, value=0.75),
+                    EvalScore(name=DELTA_BERT_SCORE, value=1.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(num_perturbations=2),
             ),
