@@ -310,6 +310,71 @@ class TestClassificationAccuracySemanticRobustness:
                     },
                 },
             ),
+            CASRTestCase(
+                config=None,
+                aggregate_scores={
+                    CLASSIFICATION_ACCURACY_SCORE: 0.83,
+                    DELTA_CLASSIFICATION_ACCURACY_SCORE: 0,
+                },
+                category_scores={
+                    "Blouses": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Dresses": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.8571428571428571,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Fine gauge": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Jackets": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Jeans": {
+                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Knits": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.9166666666666666,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Lounge": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Outerwear": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Pants": {
+                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Shorts": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.6666666666666666,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Skirts": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Sweaters": {
+                        CLASSIFICATION_ACCURACY_SCORE: 0.7142857142857143,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Swim": {
+                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                    "Trend": {
+                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
+                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
+                    },
+                },
+            ),
         ],
     )
     def test_evaluate(self, casr_test_case):
