@@ -379,7 +379,9 @@ class TestClassificationAccuracySemanticRobustness:
     )
     def test_evaluate(self, casr_test_case):
         if casr_test_case.config:
-            ca_semantic_robustness = ClassificationAccuracySemanticRobustness(eval_algorithm_config=casr_test_case.config)
+            ca_semantic_robustness = ClassificationAccuracySemanticRobustness(
+                eval_algorithm_config=casr_test_case.config
+            )
         else:
             ca_semantic_robustness = ClassificationAccuracySemanticRobustness()
         prompt_template = "Classify the sentiment of the following review with 0 (negative sentiment) "
