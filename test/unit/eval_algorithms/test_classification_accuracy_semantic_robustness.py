@@ -413,7 +413,7 @@ class TestClassificationAccuracySemanticRobustness:
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         classification_accuracy.return_value = MagicMock()
 
-        eval_algorithm = ClassificationAccuracySemanticRobustness(config)
+        eval_algorithm = ClassificationAccuracySemanticRobustness()
         actual_response = eval_algorithm.evaluate(
             model=ConstantModel(),
             dataset_config=test_case.dataset_config,

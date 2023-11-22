@@ -47,10 +47,12 @@ class JumpStartExtractor(Extractor):
         self._sagemaker_session = sagemaker_session if sagemaker_session else get_sagemaker_session()
         self._log_prob_compiler = compile_jmespath(JS_LOG_PROB_JMESPATH)
 
+        model_manifest = seq(self.get_jumpstart_sdk_manifest(self._sagemaker_session.boto_region_name)).find(
+            lambda x: x.get(MODEL_ID, None) == jumpstart_model_id
+        )
+        util.require(model_manifest, f"Model {jumpstart_model_id} is not a valid JumpStart Model")
         model_spec_key = self.get_jumpstart_sdk_spec(
-            seq(self.get_jumpstart_sdk_manifest(self._sagemaker_session.boto_region_name)).find(
-                lambda x: x[MODEL_ID] == jumpstart_model_id
-            )[SPEC_KEY],
+            model_manifest.get(SPEC_KEY, None),
             self._sagemaker_session.boto_region_name,
         )
         util.require(DEFAULT_PAYLOADS in model_spec_key, f"Model: {jumpstart_model_id} is not supported at this time")

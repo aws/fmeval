@@ -55,6 +55,7 @@ from fmeval.eval_algorithms.classification_accuracy import (
     ClassificationAccuracy,
     ClassificationAccuracyConfig,
     CLASSIFICATION_ACCURACY_SCORE,
+    UNIQUENESS_FACTOR,
 )
 from fmeval.eval_algorithms.general_semantic_robustness import ButterFinger, RandomUpperCase, WhitespaceAddRemove
 
@@ -72,7 +73,7 @@ PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     """
     Configuration for the Classification Accuracy Semantic Robustness Evaluation
@@ -91,7 +92,7 @@ class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
         whitespace_add_remove perturbation_type
     """
 
-    valid_labels: List[str]
+    valid_labels: Optional[List[str]] = None
     converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
@@ -106,10 +107,11 @@ class ClassificationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"Invalid perturbation type '{self.perturbation_type} requested, please "
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
-        for i, label in enumerate(self.valid_labels):
-            if not isinstance(label, str):
-                warnings.warn("Valid labels should be strings, casting.")
-                self.valid_labels[i] = str(label)
+        if self.valid_labels:
+            for i, label in enumerate(self.valid_labels):
+                if not isinstance(label, str):
+                    warnings.warn("Valid labels should be strings, casting.")
+                    self.valid_labels[i] = str(label)
 
 
 CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
@@ -122,7 +124,10 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
     eval_name = EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
 
-    def __init__(self, eval_algorithm_config: ClassificationAccuracySemanticRobustnessConfig):
+    def __init__(
+        self,
+        eval_algorithm_config: ClassificationAccuracySemanticRobustnessConfig = ClassificationAccuracySemanticRobustnessConfig(),
+    ):
         """Default constructor
 
         :param eval_algorithm_config: Classification Accuracy Semantic Robustness eval algorithm config.
@@ -130,6 +135,12 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
+        self._classification_accuracy_eval_algo = ClassificationAccuracy(
+            eval_algorithm_config=ClassificationAccuracyConfig(
+                valid_labels=self._eval_algorithm_config.valid_labels,
+                converter_fn=self._eval_algorithm_config.converter_fn,
+            )
+        )
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
@@ -207,16 +218,39 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 model_input_column_name=PROMPT_COLUMN_NAME,
                 model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
             )
+
+            config_valid_labels = self._eval_algorithm_config.valid_labels
+            if not self._eval_algorithm_config.valid_labels:  # pragma: no branch
+                self._eval_algorithm_config.valid_labels = dataset.unique(column=TARGET_OUTPUT_COLUMN_NAME)
+                row_count = dataset.count()
+                assert self._eval_algorithm_config.valid_labels is not None  # to satisfy mypy
+                if (
+                    len(self._eval_algorithm_config.valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR
+                ):  # pragma: no cover
+                    logger.warning(
+                        f"The number of classes: {len(self._eval_algorithm_config.valid_labels)} in the dataset is too large "
+                        f"for the number of rows in the dataset: {row_count}",
+                    )
+                self._classification_accuracy_eval_algo = ClassificationAccuracy(
+                    eval_algorithm_config=ClassificationAccuracyConfig(
+                        valid_labels=self._eval_algorithm_config.valid_labels,
+                        converter_fn=self._eval_algorithm_config.converter_fn,
+                    )
+                )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-                    scores = self.evaluate_sample(
-                        model_input=row[MODEL_INPUT_COLUMN_NAME],
-                        model=model,
-                        target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                        model_output=row[MODEL_OUTPUT_COLUMN_NAME],
-                        prompt_template=dataset_prompt_template,
-                    )
+                    try:
+                        scores = self.evaluate_sample(
+                            model_input=row[MODEL_INPUT_COLUMN_NAME],
+                            model=model,
+                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                            model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                            prompt_template=dataset_prompt_template,
+                        )
+                    except Exception as e:
+                        breakpoint()
+                        logger.error(f"Errpr {e}")
                     for score in scores:
                         row[score.name] = score.value
                     return row
@@ -241,6 +275,8 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         ),
                     )
                 )
+            # set it back to the same value as before the start of evaluating this dataset
+            self._eval_algorithm_config.valid_labels = config_valid_labels
             if save:
                 save_dataset(
                     dataset=dataset,
