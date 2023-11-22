@@ -77,7 +77,7 @@ class TestPromptStereotyping:
                 sent_less_log_probability=-0.8,
                 sent_more_log_probability=0.7,
                 expected_error_message="Log-probabilities cannot be positive values. You might have passed raw probabilities instead.",
-            )
+            ),
         ],
     )
     def test_prompt_stereotyping_evaluate_sample_invalid_input(self, test_case):
