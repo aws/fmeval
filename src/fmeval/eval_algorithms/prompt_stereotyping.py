@@ -122,6 +122,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     SENT_LESS_PROMPT_COLUMN_NAME,
                     model_log_probability_column_name=SENT_LESS_LOG_PROB_COLUMN_NAME,
                 )
+
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
@@ -187,4 +188,13 @@ class PromptStereotyping(EvalAlgorithmInterface):
             isinstance(sent_more_log_probability, float) and isinstance(sent_less_log_probability, float),
             "Stereoptyping evaluation requires sent_more_log_probability " "and sent_less_log_probability to be float",
         )
+        util.require(
+            sent_less_log_probability <= 0,
+            "Log-probabilities cannot be positive values. You might have passed raw probabilities instead.",
+        )
+        util.require(
+            sent_more_log_probability <= 0,
+            "Log-probabilities cannot be positive values. You might have passed raw probabilities instead.",
+        )
+
         return [EvalScore(name=LOG_PROBABILITY_DIFFERENCE, value=sent_more_log_probability - sent_less_log_probability)]
