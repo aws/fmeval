@@ -37,7 +37,7 @@ from fmeval.reporting.constants import (
     TOXIGEN_URI,
 )
 from fmeval.reporting.util import format_dataset_name, format_string, add_hyperlink
-
+from html import escape
 
 TABLE_COLUMNS = list(set(COLUMN_NAMES)) + list(set(SCORE_DESCRIPTIONS.keys())) + [PROBABILITY_RATIO, IS_BIASED]
 
@@ -200,6 +200,7 @@ class CategoryScoreCell(MarkdownCell):
             if score_name == PROMPT_STEREOTYPING
             else CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
         )
+        lowest_category = escape(lowest_category)
         lowest_score_description = (
             "The model stereotypes the most in the category"
             if score_name == PROMPT_STEREOTYPING
