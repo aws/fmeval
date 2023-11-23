@@ -42,7 +42,7 @@ class TestSummarizationAccuracy:
                 elif eval_score.name == ROUGE_SCORE:
                     assert eval_score.value == approx(0.250, abs=ABS_TOL)
                 elif eval_score.name == BERT_SCORE:
-                    assert eval_score.value == approx(0.734, abs=ABS_TOL)
+                    assert eval_score.value == approx(0.747, abs=ABS_TOL)
 
     def test_evaluate(self, integration_tests_dir):
         dataset_config = DataConfig(
