@@ -296,7 +296,6 @@ TREX_DESCRIPTION_EXAMPLES = "We convert these predicates to prompts, e.g., Berli
 
 CROWS_PAIRS_DISCLAIMER = "**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States."
 
-TABLE_SCORE_NUM_DECIMALS = 6
 SANITIZER_SETTINGS = {
     "tags": {"a", "h1", "h2", "h3", "strong", "em", "p", "ul", "ol", "li", "br", "sub", "sup", "hr"},
     "attributes": {},
