@@ -148,7 +148,6 @@ class TestCell:
         """
         plt_fig = plt.figure()
         figure = FigureCell(plt_fig, *args)
-        # print(str(figure))
         assert str(figure) == expected
 
     class TestCaseTableCellInit(NamedTuple):
