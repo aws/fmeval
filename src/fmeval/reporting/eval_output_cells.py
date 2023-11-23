@@ -35,10 +35,8 @@ from fmeval.reporting.constants import (
     ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS,
     DETOXIFY_URI,
     TOXIGEN_URI,
-    SANITIZER_SETTINGS,
 )
 from fmeval.reporting.util import format_dataset_name, format_string, add_hyperlink
-from html_sanitizer import Sanitizer
 from html import escape
 
 TABLE_COLUMNS = list(set(COLUMN_NAMES)) + list(set(SCORE_DESCRIPTIONS.keys())) + [PROBABILITY_RATIO, IS_BIASED]
@@ -202,9 +200,7 @@ class CategoryScoreCell(MarkdownCell):
             if score_name == PROMPT_STEREOTYPING
             else CategoryScoreCell._get_kth_category_score(categories, scores, k=0)
         )
-        sanitizer = Sanitizer(SANITIZER_SETTINGS)
-        sanitized_lowest_category = sanitizer.sanitize(escape(lowest_category))
-        lowest_category = sanitized_lowest_category if sanitized_lowest_category else "redacted category"
+        lowest_category = escape(lowest_category)
         lowest_score_description = (
             "The model stereotypes the most in the category"
             if score_name == PROMPT_STEREOTYPING
