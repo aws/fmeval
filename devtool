@@ -143,8 +143,7 @@ unit_test_with_coverage() {
  }
 
  run_integ_tests() {
-#   pytest test/integration/test_summarization_accuracy.py
-   pytest test/integration/test_summarization_accuracy_semantic_robustness.py
+   pytest test/integration/
  }
 
 create_commit_hash_file(){
