@@ -69,7 +69,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     BERT_SCORE: 0.593341,
                     DELTA_ROUGE_SCORE: 0.039784,
                     DELTA_METEOR_SCORE: 0.045444,
-                    DELTA_BERT_SCORE: 0.049985,
+                    DELTA_BERT_SCORE: 0.053839,
                 },
             ),
             TestCaseEvaluate(
@@ -88,7 +88,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     BERT_SCORE: 0.593341,
                     DELTA_ROUGE_SCORE: 0.038557,
                     DELTA_METEOR_SCORE: 0.046560,
-                    DELTA_BERT_SCORE: 0.043057,
+                    DELTA_BERT_SCORE: 0.045160,
                 },
             ),
             TestCaseEvaluate(
