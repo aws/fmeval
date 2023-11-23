@@ -41,6 +41,7 @@ detoxify = "^0.5.1"
 sagemaker = "^2.195.1"
 testbook = "^0.4.2"
 ipykernel = "^6.26.0"
+html-sanitizer = "*"
 
 [tool.poetry.dev-dependencies]
 fire = "*"
