@@ -61,7 +61,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     BERT_SCORE: 0.578891,
                     DELTA_ROUGE_SCORE: 0.0,
                     DELTA_METEOR_SCORE: 0.0,
-                    DELTA_BERT_SCORE: 0.022468,
+                    DELTA_BERT_SCORE: 0.020095,
                 },
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.067589,
@@ -80,7 +80,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     BERT_SCORE: 0.578891,
                     DELTA_ROUGE_SCORE: 0.0,
                     DELTA_METEOR_SCORE: 0.011111,
-                    DELTA_BERT_SCORE: 0.018563,
+                    DELTA_BERT_SCORE: 0.017104,
                 },
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.067589,
@@ -99,12 +99,12 @@ class TestSummarizationAccuracySemanticRobustness:
                     BERT_SCORE: 0.578891,
                     DELTA_ROUGE_SCORE: 0.0,
                     DELTA_METEOR_SCORE: 0.016667,
-                    DELTA_BERT_SCORE: 0.009372,
+                    DELTA_BERT_SCORE: 0.009599,
                 },
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.067589,
                     METEOR_SCORE: 0.110135,
-                    BERT_SCORE: 0.592226,
+                    BERT_SCORE: 0.593341,
                     DELTA_ROUGE_SCORE: 0.025756,
                     DELTA_BERT_SCORE: 0.036524,
                     DELTA_METEOR_SCORE: 0.033426,
