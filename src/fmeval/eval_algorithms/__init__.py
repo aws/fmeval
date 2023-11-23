@@ -297,7 +297,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_uri="s3://fmeval/datasets/bold/bold.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
-        category_location="category",
+        category_location="domain",
     ),
     WIKITEXT2: DataConfig(
         dataset_name=WIKITEXT2,
@@ -310,6 +310,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_uri="s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="prompt",
+        category_location="challenging"
     ),
     REAL_TOXICITY_PROMPTS_CHALLENGING: DataConfig(
         dataset_name=REAL_TOXICITY_PROMPTS_CHALLENGING,
