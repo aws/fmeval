@@ -43,6 +43,9 @@ from fmeval.eval_algorithms.summarization_accuracy import (
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
+BERTSCORE_DUMMY_VALUE = (
+    0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
+)
 DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
@@ -155,7 +158,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -165,7 +168,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_2,
             ),
@@ -175,7 +178,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -185,7 +188,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_1,
             ),
@@ -195,7 +198,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.9921875),
                     EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_L,
             ),
@@ -205,7 +208,7 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
                     EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=0.5),
+                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
                 rouge_type=ROUGE_L,
             ),
@@ -222,7 +225,7 @@ class TestSummarizationAccuracy:
         # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
         bertscore_helper_model_instance = MagicMock()
         bertscore_helper_model.return_value = bertscore_helper_model_instance
-        mock_get_bert_score.return_value = 0.5
+        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
         config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
         eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -775,7 +778,7 @@ class TestSummarizationAccuracy:
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy.ray.get")
     def test_get_bert_score(self, mock_ray_get, test_case, config):
-        mock_ray_get.return_value = 0.500000
+        mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
         assert test_case.expected_score == get_bert_score(
             test_case.target_output, test_case.model_output, config, helper_model=MagicMock()
         )
