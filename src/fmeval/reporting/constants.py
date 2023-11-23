@@ -295,10 +295,3 @@ DATASET_DETAILS = {
 TREX_DESCRIPTION_EXAMPLES = "We convert these predicates to prompts, e.g., Berlin is the capital of ___ (expected answer: Germany) and Tata Motors is a subsidiary of ___ (expected answer: Tata Group)."
 
 CROWS_PAIRS_DISCLAIMER = "**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States."
-
-SANITIZER_SETTINGS = {
-    "tags": {"blah"},
-    "attributes": {},
-    "empty": set(),
-    "separate": set(),
-}
