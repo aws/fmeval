@@ -31,6 +31,7 @@ from fmeval.eval_algorithms.classification_accuracy import (
     BALANCED_ACCURACY_SCORE,
     PRECISION_SCORE,
     RECALL_SCORE,
+    UNKNOWN_RATIO,
 )
 from ray.data import Dataset
 
@@ -77,6 +78,15 @@ DATASET_SCORES = [
     EvalScore(name=BALANCED_ACCURACY_SCORE, value=1 / 2),
     EvalScore(name=PRECISION_SCORE, value=2 / 3),
     EvalScore(name=RECALL_SCORE, value=2 / 3),
+    EvalScore(name=UNKNOWN_RATIO, value=0.0),
+]
+
+DATASET_SCORES_WO_CONFIG = [
+    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=2 / 3),
+    EvalScore(name=BALANCED_ACCURACY_SCORE, value=1 / 2),
+    EvalScore(name=PRECISION_SCORE, value=0),
+    EvalScore(name=RECALL_SCORE, value=0),
+    EvalScore(name=UNKNOWN_RATIO, value=1 / 3),
 ]
 
 CATEGORY_SCORES = [
@@ -87,6 +97,7 @@ CATEGORY_SCORES = [
             EvalScore(name=BALANCED_ACCURACY_SCORE, value=1.0),
             EvalScore(name=PRECISION_SCORE, value=1.0),
             EvalScore(name=RECALL_SCORE, value=1.0),
+            EvalScore(name=UNKNOWN_RATIO, value=0.0),
         ],
     ),
     CategoryScore(
@@ -96,6 +107,31 @@ CATEGORY_SCORES = [
             EvalScore(name=BALANCED_ACCURACY_SCORE, value=1 / 2),
             EvalScore(name=PRECISION_SCORE, value=1 / 2),
             EvalScore(name=RECALL_SCORE, value=1 / 2),
+            EvalScore(name=UNKNOWN_RATIO, value=0.0),
+        ],
+    ),
+]
+
+
+CATEGORY_SCORES_WO_CONFIG = [
+    CategoryScore(
+        name="brownie",
+        scores=[
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
+            EvalScore(name=BALANCED_ACCURACY_SCORE, value=1.0),
+            EvalScore(name=PRECISION_SCORE, value=0),
+            EvalScore(name=RECALL_SCORE, value=0),
+            EvalScore(name=UNKNOWN_RATIO, value=0),
+        ],
+    ),
+    CategoryScore(
+        name="vanilla cake",
+        scores=[
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1 / 2),
+            EvalScore(name=BALANCED_ACCURACY_SCORE, value=1 / 2),
+            EvalScore(name=PRECISION_SCORE, value=0),
+            EvalScore(name=RECALL_SCORE, value=0),
+            EvalScore(name=UNKNOWN_RATIO, value=1 / 2),
         ],
     ),
 ]
@@ -185,8 +221,8 @@ class TestClassificationAccuracy:
                         eval_name="classification_accuracy",
                         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
+                        dataset_scores=DATASET_SCORES_WO_CONFIG,
+                        category_scores=CATEGORY_SCORES_WO_CONFIG,
                         output_path="/tmp/eval_results/classification_accuracy_womens_clothing_ecommerce_reviews.jsonl",
                     ),
                 ],
@@ -209,8 +245,8 @@ class TestClassificationAccuracy:
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
                         prompt_template="Classify: $feature",
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
+                        dataset_scores=DATASET_SCORES_WO_CONFIG,
+                        category_scores=CATEGORY_SCORES_WO_CONFIG,
                         output_path="/tmp/eval_results/classification_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
@@ -233,7 +269,7 @@ class TestClassificationAccuracy:
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
                         prompt_template="Classify: $feature",
-                        dataset_scores=DATASET_SCORES,
+                        dataset_scores=DATASET_SCORES_WO_CONFIG,
                         category_scores=None,
                         output_path="/tmp/eval_results/classification_accuracy_my_custom_dataset.jsonl",
                     )
@@ -257,7 +293,7 @@ class TestClassificationAccuracy:
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_scores=DATASET_SCORES,
+                        dataset_scores=DATASET_SCORES_WO_CONFIG,
                         category_scores=None,
                         output_path="/tmp/eval_results/classification_accuracy_my_custom_dataset.jsonl",
                     )

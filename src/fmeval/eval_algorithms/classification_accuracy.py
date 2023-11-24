@@ -1,4 +1,5 @@
 import logging
+import re
 import warnings
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Any
@@ -28,7 +29,6 @@ from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     CategoryScore,
     get_default_prompt_template,
-    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
@@ -46,13 +46,27 @@ CLASSIFICATION_ACCURACY_SCORE = "classification_accuracy_score"
 BALANCED_ACCURACY_SCORE = "balanced_accuracy_score"
 PRECISION_SCORE = "precision_score"
 RECALL_SCORE = "recall_score"
+UNKNOWN_RATIO = "unknown_ratio"
 UNKNOWN_LABEL = "unknown"
 PROMPT_COLUMN_NAME = "prompt"
-CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME = "classified_model_output"
+PREDICTED_CLASS_COLUMN_NAME = "predicted_class"
+
+
+def unknown_ratio(y_pred) -> float:
+    """
+    Computes the ratio of predictions that do not contain any valid class label
+
+    :param y_pred:  Predicted class labels, array or pandas dataframe
+    :return:        The fraction of predicted labels that do not match any known class.
+    """
+    return (y_pred == UNKNOWN_LABEL).sum() / y_pred.count()
+
+
 CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     BALANCED_ACCURACY_SCORE: balanced_accuracy_score,
     PRECISION_SCORE: precision_score,
     RECALL_SCORE: recall_score,
+    UNKNOWN_RATIO: unknown_ratio,
 }
 UNIQUENESS_FACTOR = 0.05
 
@@ -73,7 +87,7 @@ def convert_model_output_to_label(model_output: str, valid_labels: List[str]) ->
     # normalise to lowercase & strip
     valid_labels = [label.lower().strip() for label in valid_labels]
 
-    response_words = model_output.split(" ")
+    response_words = re.split(r"[\n\s+]", model_output)
     predicted_labels = [word.lower().strip() for word in response_words if word.lower().strip() in valid_labels]
     # if there is more than one label in the model output we pick the first
     string_label = predicted_labels[0] if predicted_labels else UNKNOWN_LABEL
@@ -88,15 +102,24 @@ class ClassificationAccuracyConfig(EvalAlgorithmConfig):
 
     :param valid_labels: The labels of the classes predicted from the model.
     :param converter_fn: Function to process model output to labels, defaults to simple integer conversion.
-    :param multiclass_average_strategy: `average` to be passed to sklearn's precision and recall scores.
-        This determines how scores are aggregated in the multiclass classification setting
+    :param binary_average_strategy: `average` to be passed to sklearn's precision and recall scores.
+        This determines how scores are aggregated in the binary classification settings
         (see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html).
-        Options are {'micro', 'macro', 'samples', 'weighted', 'binary'} or None, default='micro'.
+        Options are {'micro', 'macro', 'samples', 'weighted', 'binary'} or None, default='binary'.
+    :param positive_label: The label that is considered to be the positive class when computing precision and recall
+        for binary classification problems and the averaging strategy is `binary`. This parameter has no effect
+         for the multiclass case. Default='1'.
+    :param multiclass_average_strategy: `average` to be passed to sklearn's precision and recall scores.
+        This determines how scores are aggregated in multiclass classification settings
+        (see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html).
+        Options are {'micro', 'macro', 'samples', 'weighted'} or None, default='weighted'.
     """
 
     valid_labels: Optional[List[str]] = None
     converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label
-    multiclass_average_strategy: Optional[str] = "micro"
+    binary_average_strategy: Optional[str] = "binary"
+    positive_label: str = "1"
+    multiclass_average_strategy: Optional[str] = "weighted"
 
     def __post_init__(self):
         if self.valid_labels:
@@ -138,7 +161,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                      EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
-        :returns: List of EvalOutput objects. Current implementation returns only one score.
+        :returns: List of EvalOutput objects.
         """
         if dataset_config:
             dataset_configs = [dataset_config]
@@ -185,11 +208,11 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     Map function for generating classified model output and classification accuracy
                     columns for dataset.
                     """
-                    row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
+                    row[PREDICTED_CLASS_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
                         row[MODEL_OUTPUT_COLUMN_NAME], self._valid_labels  # type: ignore
                     )
                     row[CLASSIFICATION_ACCURACY_SCORE] = int(
-                        row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME])
+                        row[PREDICTED_CLASS_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME])
                     )
                     return row
 
@@ -208,7 +231,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                             value=self._get_score(
                                 # TODO dataloader should ensure target output is string
                                 y_true=df[TARGET_OUTPUT_COLUMN_NAME],
-                                y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
+                                y_pred=df[PREDICTED_CLASS_COLUMN_NAME],
                                 eval_fn=eval_fn,
                             ),
                         )
@@ -232,7 +255,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                             df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], TARGET_OUTPUT_COLUMN_NAME
                         ]
                         categorical_y_pred = df.loc[
-                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME
+                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], PREDICTED_CLASS_COLUMN_NAME
                         ]
                         for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
                             category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
@@ -274,14 +297,28 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
 
     def _get_score(self, y_true, y_pred, eval_fn: Callable[..., float]) -> float:
         """
-        Method to generate accuracy score
-        :param y_true: Ground truth (correct) target values.
-        :param y_pred: Estimated targets as returned by a classifier.
-        :param eval_fn: Score evaluate function.
+        Method to compute accuracy scores
+        :param y_true: Ground truth (correct) labels.
+        :param y_pred: Predicted labels.
+        :param eval_fn: method to compute the score.
         :returns: Computed score
         """
         if eval_fn == recall_score or eval_fn == precision_score:
-            return eval_fn(y_true, y_pred, average=self._eval_algorithm_config.multiclass_average_strategy)
+            # compute these metrics only on the subset of records that have a known predicted label
+            y_true_sub = y_true[y_pred != UNKNOWN_LABEL]
+            y_pred_sub = y_pred[y_pred != UNKNOWN_LABEL]
+
+            # picks the averaging strategy according to the number of classes
+            avg_strategy = (
+                self._eval_algorithm_config.binary_average_strategy
+                if len(self._valid_labels) == 2
+                else self._eval_algorithm_config.multiclass_average_strategy
+            )
+            return eval_fn(
+                y_true_sub, y_pred_sub, average=avg_strategy, pos_label=self._eval_algorithm_config.positive_label
+            )
+        elif eval_fn == unknown_ratio:
+            return eval_fn(y_pred)
         return eval_fn(y_true, y_pred)
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
