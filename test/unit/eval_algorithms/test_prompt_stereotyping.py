@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import ray
 from ray.data import Dataset
+import numpy as np
 
 from fmeval.constants import (
     MIME_TYPE_JSON,
@@ -53,24 +54,29 @@ class TestPromptStereotyping:
         "test_case",
         [
             TestCasePromptStereotypingEvaluateSampleInvalid(
-                sent_less_log_probability=0.8,
+                sent_less_log_probability=np.log(0.8),
                 sent_more_log_probability=None,
                 expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability=None,
-                sent_more_log_probability=0.7,
+                sent_more_log_probability=np.log(0.7),
                 expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
-                sent_less_log_probability=0.8,
+                sent_less_log_probability=np.log(0.8),
                 sent_more_log_probability="prob",
                 expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
-                sent_less_log_probability="0.8",
-                sent_more_log_probability=0.7,
+                sent_less_log_probability="-0.8",
+                sent_more_log_probability=np.log(0.7),
                 expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
+            ),
+            TestCasePromptStereotypingEvaluateSampleInvalid(
+                sent_less_log_probability=-0.8,
+                sent_more_log_probability=0.7,
+                expected_error_message="Log-probabilities cannot be positive values. You might have passed raw probabilities instead.",
             ),
         ],
     )
@@ -126,29 +132,29 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "gender",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.9),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.5),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.2),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.7),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "nationality",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.8),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.6),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.1),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.4),
                         },
                     ]
                 ),
@@ -202,36 +208,36 @@ class TestPromptStereotyping:
                     sent_more_input_location="sent_more",
                     sent_less_input_location="sent_less",
                 ),
-                prompt_template="Is this stereotypical? $feature",
+                prompt_template="$feature",
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "gender",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.9),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.5),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.2),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.7),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "nationality",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.8),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.6),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.1),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.4),
                         },
                     ]
                 ),
@@ -240,7 +246,7 @@ class TestPromptStereotyping:
                     EvalOutput(
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
-                        prompt_template="Is this stereotypical? $feature",
+                        prompt_template="$feature",
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
                             CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
@@ -289,26 +295,26 @@ class TestPromptStereotyping:
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.9),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.5),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.2),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.7),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.8),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.6),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.1),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.4),
                         },
                     ]
                 ),
@@ -358,26 +364,26 @@ class TestPromptStereotyping:
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.9),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.5),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.2),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.7),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.8),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.6),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.1),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.4),
                         },
                     ]
                 ),
@@ -432,29 +438,29 @@ class TestPromptStereotyping:
                             SENT_MORE_INPUT_COLUMN_NAME: GENDER_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: GENDER_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "gender",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.9,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.5,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.9),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.5),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "socioeconomic",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.2,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.7,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.2),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.7),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "nationality",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.8,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.6,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.8),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.6),
                         },
                         {
                             SENT_MORE_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
                             SENT_LESS_INPUT_COLUMN_NAME: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
                             CATEGORY_COLUMN_NAME: "sexual-orientation",
-                            SENT_MORE_LOG_PROB_COLUMN_NAME: 0.1,
-                            SENT_LESS_LOG_PROB_COLUMN_NAME: 0.4,
+                            SENT_MORE_LOG_PROB_COLUMN_NAME: np.log(0.1),
+                            SENT_LESS_LOG_PROB_COLUMN_NAME: np.log(0.4),
                         },
                     ]
                 ),
@@ -510,4 +516,6 @@ class TestPromptStereotyping:
         assert actual_response == test_case.expected_response
 
     def test_evaluate_sample(self):
-        assert PromptStereotyping().evaluate_sample(0.5, 0.3) == [EvalScore(name=LOG_PROBABILITY_DIFFERENCE, value=0.2)]
+        assert PromptStereotyping().evaluate_sample(-3.0, -5.0) == [
+            EvalScore(name=LOG_PROBABILITY_DIFFERENCE, value=2.0)
+        ]
