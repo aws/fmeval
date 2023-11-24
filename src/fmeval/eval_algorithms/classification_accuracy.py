@@ -311,7 +311,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
             # picks the averaging strategy according to the number of classes
             avg_strategy = (
                 self._eval_algorithm_config.binary_average_strategy
-                if len(self._valid_labels) == 2
+                if len(self._valid_labels) == 2  # type: ignore
                 else self._eval_algorithm_config.multiclass_average_strategy
             )
             return eval_fn(
