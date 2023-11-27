@@ -124,12 +124,14 @@ def aggregate_evaluation_scores(
     dataset: Dataset, score_column_names: List[str], agg_method: str
 ) -> Tuple[List[EvalScore], Optional[List[CategoryScore]]]:
     """
-    Factual knowledge eval algo aggregation method.
+    The method aggregates scores at the dataset level and optionally at the category level if
+     categories are available in the dataset.
 
     :param dataset: ray dataset with eval scores
-    :param score_column_names: a list of column names which contain the scores
-
-    :return a tuple containing dataset and category level scores
+    :param score_column_names: a list of column names which contain the scores to aggregate
+    :param agg_method: the name of the aggregation to perform
+    :return: a tuple containing 1) dataset-level scores and
+                                2) a list of category-level scores if categories are available, `None` otherwise
     """
     dataset_scores = [
         EvalScore(name=score_column_name, value=dataset_aggregation(dataset, score_column_name, agg_method))
