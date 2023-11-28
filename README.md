@@ -1,17 +1,16 @@
 ## Foundation Model Evaluations Library
-FMEval is a library to evaluate Large Language Models (LLMs), to help evaluate and select the best large language models (LLMs)
-for your use case.  The library can help evaluate LLMs for the following tasks:
-* Open-ended generation - the production of natural human responses to general questions that do not have a
+FMEval is a library to evaluate Large Language Models (LLMs) and select the best LLM
+for your use case. The library can help evaluate LLMs for the following tasks:
+* Open-ended generation - the production of natural language as a response to general prompts that do not have a
   pre-defined structure.
-* Text summarization - the verbatim extraction of a few pieces of highly relevant text (extraction) or the condensed
-  summarization of the original text (abstraction).
+* Text summarization - summarizing the most important parts of a text, shortening a text while preserving its meaning.
 * Question Answering - the generation of a relevant and accurate response to a question.
 * Classification - assigning a category, such as a label or score, to text based on its content.
 
 The library contains the following:
 * Implementation of popular metrics (eval algorithms) such as Accuracy, Toxicity, Semantic Robustness and
-  Prompt Stereotyping or evaluating LLMs across different tasks.
-* Implementation of ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
+  Prompt Stereotyping for evaluating LLMs across different tasks.
+* Implementation of the ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
   method that greatly simplifies interactions with LLMs within eval algorithm code. The interface can be extended by
   the user for their LLMs.
   We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
@@ -57,14 +56,14 @@ config = DataConfig(
 )
 ```
 
-2. Use eval algorithm with custom dataset
+2. Use an eval algorithm with a custom dataset
 ```
 eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
 *Please refer to [code documentation](http://aws.github.io/fmeval) and
-[examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around usage of
+[examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around the usage of
 eval algorithms.*
 
 ## Development
