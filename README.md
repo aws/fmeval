@@ -21,7 +21,6 @@ To install the package from PIP you can simply do:
 ```
 pip install fmeval
 ```
-*Note: A PyPi package is currently not available. Please reach out to the team for beta preview whl distribution*
 
 ## Usage
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
