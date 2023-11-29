@@ -76,14 +76,14 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model_runners.html">model_runners</a><wbr>.<a href="./../extractors.html">extractors</a><wbr>.json_extractor    </h1>
 
-
+                
                         <input id="mod-json_extractor-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-json_extractor-view-source"><span>View Source</span></label>
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">import</span> <span class="nn">logging</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">import</span> <span class="nn">fmeval.util</span> <span class="k">as</span> <span class="nn">util</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">fmeval.data_loaders.jmespath_util</span> <span class="kn">import</span> <span class="n">compile_jmespath</span>
@@ -119,63 +119,50 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model
 </span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">        Extract log probability from model response.</span>
 </span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">        :param data: Model response. The probability_jmespath_expression is used to extract the predicted softmax</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">                     probabilities. Each record in the extracted probabilities will be a list of list of floats.</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">        :param data: Model response. The log_probability_jmespath_expression is used to extract the log probabilities</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">                     of the input tokens. Each record in the extracted probabilities will be a float or list of floats.</span>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">                     Examples for the extracted probabilities:</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">                        - data: [[0.6],[0.3],[0.1]], num_records: 1</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">                        - data: [ [[0.6],[0.3],[0.1]] ], num_records: 1</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">                        - data: [ [[0.6]], [[0.1]] ], num_records: 2</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">                        - data: 0.1, num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">                        - data: [0.1], num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">                        - data: [0.1, 0.2], num_records: 1, num tokens: 2</span>
 </span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">        :return: list of a list, each element is a list of probabilities.</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">        :return: float or list of float where each float is sum of log probabilities.</span>
 </span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="p">,</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="p">)</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">probabilities</span><span class="p">,</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>            <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>            <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="n">probabilities</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">        Extract output from JSON model output</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">                     predicted output must be a string</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        :return: model output</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>        <span class="p">)</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span> <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span>  <span class="c1"># type: ignore</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="p">)</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>            <span class="n">log_probs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="p">)</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>            <span class="k">return</span> <span class="n">log_probs</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">log_probs</span><span class="p">),</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>            <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">log_probs</span><span class="si">}</span><span class="s2"> which does not match expected </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2"> or list of </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="p">)</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">        Extract output from JSON model output</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">                     predicted output must be a string</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        :return: model output</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
 </span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>        <span class="p">)</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>        <span class="k">return</span> <span class="n">outputs</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>    <span class="k">def</span> <span class="nf">_validate_types</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Type</span><span class="p">,</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">jmespath_expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="n">jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span><span class="p">)</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>        <span class="k">if</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a>            <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">type</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> which does not match expected type </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>            <span class="p">)</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>            <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos">91</span></a>                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos">92</span></a>                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_records</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos">93</span></a>                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">),</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos">94</span></a>                <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> which does not match expected list of </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos">95</span></a>            <span class="p">)</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span><span class="p">)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">outputs</span><span class="si">}</span><span class="s2"> which does not match expected type </span><span class="si">{</span><span class="nb">str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>        <span class="k">return</span> <span class="n">outputs</span>
 </span></pre></div>
 
 
@@ -185,17 +172,17 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model
             <span class="name">logger</span>        =
 <span class="default_value">&lt;Logger <a href="">src.fmeval.model_runners.extractors.json_extractor</a> (WARNING)&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#logger"></a>
-
-
+    
+    
 
                 </section>
                 <section id="JsonExtractor">
                             <input id="JsonExtractor-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">JsonExtractor</span><wbr>(<span class="base">fmeval.model_runners.extractors.extractor.Extractor</span>):
 
@@ -230,63 +217,50 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model
 </span><span id="JsonExtractor-37"><a href="#JsonExtractor-37"><span class="linenos">37</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="JsonExtractor-38"><a href="#JsonExtractor-38"><span class="linenos">38</span></a><span class="sd">        Extract log probability from model response.</span>
 </span><span id="JsonExtractor-39"><a href="#JsonExtractor-39"><span class="linenos">39</span></a>
-</span><span id="JsonExtractor-40"><a href="#JsonExtractor-40"><span class="linenos">40</span></a><span class="sd">        :param data: Model response. The probability_jmespath_expression is used to extract the predicted softmax</span>
-</span><span id="JsonExtractor-41"><a href="#JsonExtractor-41"><span class="linenos">41</span></a><span class="sd">                     probabilities. Each record in the extracted probabilities will be a list of list of floats.</span>
+</span><span id="JsonExtractor-40"><a href="#JsonExtractor-40"><span class="linenos">40</span></a><span class="sd">        :param data: Model response. The log_probability_jmespath_expression is used to extract the log probabilities</span>
+</span><span id="JsonExtractor-41"><a href="#JsonExtractor-41"><span class="linenos">41</span></a><span class="sd">                     of the input tokens. Each record in the extracted probabilities will be a float or list of floats.</span>
 </span><span id="JsonExtractor-42"><a href="#JsonExtractor-42"><span class="linenos">42</span></a><span class="sd">                     Examples for the extracted probabilities:</span>
-</span><span id="JsonExtractor-43"><a href="#JsonExtractor-43"><span class="linenos">43</span></a><span class="sd">                        - data: [[0.6],[0.3],[0.1]], num_records: 1</span>
-</span><span id="JsonExtractor-44"><a href="#JsonExtractor-44"><span class="linenos">44</span></a><span class="sd">                        - data: [ [[0.6],[0.3],[0.1]] ], num_records: 1</span>
-</span><span id="JsonExtractor-45"><a href="#JsonExtractor-45"><span class="linenos">45</span></a><span class="sd">                        - data: [ [[0.6]], [[0.1]] ], num_records: 2</span>
+</span><span id="JsonExtractor-43"><a href="#JsonExtractor-43"><span class="linenos">43</span></a><span class="sd">                        - data: 0.1, num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="JsonExtractor-44"><a href="#JsonExtractor-44"><span class="linenos">44</span></a><span class="sd">                        - data: [0.1], num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="JsonExtractor-45"><a href="#JsonExtractor-45"><span class="linenos">45</span></a><span class="sd">                        - data: [0.1, 0.2], num_records: 1, num tokens: 2</span>
 </span><span id="JsonExtractor-46"><a href="#JsonExtractor-46"><span class="linenos">46</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="JsonExtractor-47"><a href="#JsonExtractor-47"><span class="linenos">47</span></a><span class="sd">        :return: list of a list, each element is a list of probabilities.</span>
+</span><span id="JsonExtractor-47"><a href="#JsonExtractor-47"><span class="linenos">47</span></a><span class="sd">        :return: float or list of float where each float is sum of log probabilities.</span>
 </span><span id="JsonExtractor-48"><a href="#JsonExtractor-48"><span class="linenos">48</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonExtractor-49"><a href="#JsonExtractor-49"><span class="linenos">49</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor-50"><a href="#JsonExtractor-50"><span class="linenos">50</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="p">,</span>
-</span><span id="JsonExtractor-51"><a href="#JsonExtractor-51"><span class="linenos">51</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="JsonExtractor-52"><a href="#JsonExtractor-52"><span class="linenos">52</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor-53"><a href="#JsonExtractor-53"><span class="linenos">53</span></a>        <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="JsonExtractor-54"><a href="#JsonExtractor-54"><span class="linenos">54</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="JsonExtractor-55"><a href="#JsonExtractor-55"><span class="linenos">55</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">probabilities</span><span class="p">,</span>
-</span><span id="JsonExtractor-56"><a href="#JsonExtractor-56"><span class="linenos">56</span></a>            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-</span><span id="JsonExtractor-57"><a href="#JsonExtractor-57"><span class="linenos">57</span></a>            <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span>
-</span><span id="JsonExtractor-58"><a href="#JsonExtractor-58"><span class="linenos">58</span></a>            <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-</span><span id="JsonExtractor-59"><a href="#JsonExtractor-59"><span class="linenos">59</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor-60"><a href="#JsonExtractor-60"><span class="linenos">60</span></a>
-</span><span id="JsonExtractor-61"><a href="#JsonExtractor-61"><span class="linenos">61</span></a>        <span class="k">return</span> <span class="n">probabilities</span>
-</span><span id="JsonExtractor-62"><a href="#JsonExtractor-62"><span class="linenos">62</span></a>
-</span><span id="JsonExtractor-63"><a href="#JsonExtractor-63"><span class="linenos">63</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="JsonExtractor-64"><a href="#JsonExtractor-64"><span class="linenos">64</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="JsonExtractor-65"><a href="#JsonExtractor-65"><span class="linenos">65</span></a><span class="sd">        Extract output from JSON model output</span>
-</span><span id="JsonExtractor-66"><a href="#JsonExtractor-66"><span class="linenos">66</span></a>
-</span><span id="JsonExtractor-67"><a href="#JsonExtractor-67"><span class="linenos">67</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
-</span><span id="JsonExtractor-68"><a href="#JsonExtractor-68"><span class="linenos">68</span></a><span class="sd">                     predicted output must be a string</span>
-</span><span id="JsonExtractor-69"><a href="#JsonExtractor-69"><span class="linenos">69</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="JsonExtractor-70"><a href="#JsonExtractor-70"><span class="linenos">70</span></a><span class="sd">        :return: model output</span>
-</span><span id="JsonExtractor-71"><a href="#JsonExtractor-71"><span class="linenos">71</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonExtractor-72"><a href="#JsonExtractor-72"><span class="linenos">72</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor-73"><a href="#JsonExtractor-73"><span class="linenos">73</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
-</span><span id="JsonExtractor-74"><a href="#JsonExtractor-74"><span class="linenos">74</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="JsonExtractor-75"><a href="#JsonExtractor-75"><span class="linenos">75</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor-76"><a href="#JsonExtractor-76"><span class="linenos">76</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="JsonExtractor-77"><a href="#JsonExtractor-77"><span class="linenos">77</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="JsonExtractor-78"><a href="#JsonExtractor-78"><span class="linenos">78</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span> <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span>  <span class="c1"># type: ignore</span>
+</span><span id="JsonExtractor-49"><a href="#JsonExtractor-49"><span class="linenos">49</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="JsonExtractor-50"><a href="#JsonExtractor-50"><span class="linenos">50</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor-51"><a href="#JsonExtractor-51"><span class="linenos">51</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>
+</span><span id="JsonExtractor-52"><a href="#JsonExtractor-52"><span class="linenos">52</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
+</span><span id="JsonExtractor-53"><a href="#JsonExtractor-53"><span class="linenos">53</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor-54"><a href="#JsonExtractor-54"><span class="linenos">54</span></a>        <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="JsonExtractor-55"><a href="#JsonExtractor-55"><span class="linenos">55</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor-56"><a href="#JsonExtractor-56"><span class="linenos">56</span></a>            <span class="n">log_probs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span>
+</span><span id="JsonExtractor-57"><a href="#JsonExtractor-57"><span class="linenos">57</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor-58"><a href="#JsonExtractor-58"><span class="linenos">58</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+</span><span id="JsonExtractor-59"><a href="#JsonExtractor-59"><span class="linenos">59</span></a>            <span class="k">return</span> <span class="n">log_probs</span>
+</span><span id="JsonExtractor-60"><a href="#JsonExtractor-60"><span class="linenos">60</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor-61"><a href="#JsonExtractor-61"><span class="linenos">61</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">log_probs</span><span class="p">),</span>
+</span><span id="JsonExtractor-62"><a href="#JsonExtractor-62"><span class="linenos">62</span></a>            <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">log_probs</span><span class="si">}</span><span class="s2"> which does not match expected </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2"> or list of </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="JsonExtractor-63"><a href="#JsonExtractor-63"><span class="linenos">63</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor-64"><a href="#JsonExtractor-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
+</span><span id="JsonExtractor-65"><a href="#JsonExtractor-65"><span class="linenos">65</span></a>
+</span><span id="JsonExtractor-66"><a href="#JsonExtractor-66"><span class="linenos">66</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="JsonExtractor-67"><a href="#JsonExtractor-67"><span class="linenos">67</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="JsonExtractor-68"><a href="#JsonExtractor-68"><span class="linenos">68</span></a><span class="sd">        Extract output from JSON model output</span>
+</span><span id="JsonExtractor-69"><a href="#JsonExtractor-69"><span class="linenos">69</span></a>
+</span><span id="JsonExtractor-70"><a href="#JsonExtractor-70"><span class="linenos">70</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
+</span><span id="JsonExtractor-71"><a href="#JsonExtractor-71"><span class="linenos">71</span></a><span class="sd">                     predicted output must be a string</span>
+</span><span id="JsonExtractor-72"><a href="#JsonExtractor-72"><span class="linenos">72</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
+</span><span id="JsonExtractor-73"><a href="#JsonExtractor-73"><span class="linenos">73</span></a><span class="sd">        :return: model output</span>
+</span><span id="JsonExtractor-74"><a href="#JsonExtractor-74"><span class="linenos">74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JsonExtractor-75"><a href="#JsonExtractor-75"><span class="linenos">75</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="JsonExtractor-76"><a href="#JsonExtractor-76"><span class="linenos">76</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor-77"><a href="#JsonExtractor-77"><span class="linenos">77</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
+</span><span id="JsonExtractor-78"><a href="#JsonExtractor-78"><span class="linenos">78</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
 </span><span id="JsonExtractor-79"><a href="#JsonExtractor-79"><span class="linenos">79</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor-80"><a href="#JsonExtractor-80"><span class="linenos">80</span></a>
-</span><span id="JsonExtractor-81"><a href="#JsonExtractor-81"><span class="linenos">81</span></a>        <span class="k">return</span> <span class="n">outputs</span>
-</span><span id="JsonExtractor-82"><a href="#JsonExtractor-82"><span class="linenos">82</span></a>
-</span><span id="JsonExtractor-83"><a href="#JsonExtractor-83"><span class="linenos">83</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="JsonExtractor-84"><a href="#JsonExtractor-84"><span class="linenos">84</span></a>    <span class="k">def</span> <span class="nf">_validate_types</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Type</span><span class="p">,</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">jmespath_expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="JsonExtractor-85"><a href="#JsonExtractor-85"><span class="linenos">85</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="n">jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span><span class="p">)</span>
-</span><span id="JsonExtractor-86"><a href="#JsonExtractor-86"><span class="linenos">86</span></a>        <span class="k">if</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-</span><span id="JsonExtractor-87"><a href="#JsonExtractor-87"><span class="linenos">87</span></a>            <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor-88"><a href="#JsonExtractor-88"><span class="linenos">88</span></a>                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">type</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> which does not match expected type </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="JsonExtractor-89"><a href="#JsonExtractor-89"><span class="linenos">89</span></a>            <span class="p">)</span>
-</span><span id="JsonExtractor-90"><a href="#JsonExtractor-90"><span class="linenos">90</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="JsonExtractor-91"><a href="#JsonExtractor-91"><span class="linenos">91</span></a>            <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor-92"><a href="#JsonExtractor-92"><span class="linenos">92</span></a>                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span>
-</span><span id="JsonExtractor-93"><a href="#JsonExtractor-93"><span class="linenos">93</span></a>                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_records</span>
-</span><span id="JsonExtractor-94"><a href="#JsonExtractor-94"><span class="linenos">94</span></a>                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">),</span>
-</span><span id="JsonExtractor-95"><a href="#JsonExtractor-95"><span class="linenos">95</span></a>                <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> which does not match expected list of </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="JsonExtractor-96"><a href="#JsonExtractor-96"><span class="linenos">96</span></a>            <span class="p">)</span>
+</span><span id="JsonExtractor-80"><a href="#JsonExtractor-80"><span class="linenos">80</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="JsonExtractor-81"><a href="#JsonExtractor-81"><span class="linenos">81</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span><span class="p">)</span>
+</span><span id="JsonExtractor-82"><a href="#JsonExtractor-82"><span class="linenos">82</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">outputs</span><span class="si">}</span><span class="s2"> which does not match expected type </span><span class="si">{</span><span class="nb">str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="JsonExtractor-83"><a href="#JsonExtractor-83"><span class="linenos">83</span></a>        <span class="k">return</span> <span class="n">outputs</span>
 </span></pre></div>
 
 
@@ -297,7 +271,7 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model
                             <div id="JsonExtractor.__init__" class="classattr">
                                         <input id="JsonExtractor.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">JsonExtractor</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">output_jmespath_expression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">log_probability_jmespath_expression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
 
                 <label class="view-source-button" for="JsonExtractor.__init__-view-source"><span>View Source</span></label>
@@ -340,50 +314,50 @@ response.</p>
                                 <div class="attr variable">
             <span class="name">log_probability_jmespath_expression</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JsonExtractor.log_probability_jmespath_expression"></a>
-
-
+    
+    
 
                             </div>
                             <div id="JsonExtractor.log_probability_jmespath" class="classattr">
                                 <div class="attr variable">
             <span class="name">log_probability_jmespath</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JsonExtractor.log_probability_jmespath"></a>
-
-
+    
+    
 
                             </div>
                             <div id="JsonExtractor.output_jmespath_expression" class="classattr">
                                 <div class="attr variable">
             <span class="name">output_jmespath_expression</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JsonExtractor.output_jmespath_expression"></a>
-
-
+    
+    
 
                             </div>
                             <div id="JsonExtractor.output_jmespath" class="classattr">
                                 <div class="attr variable">
             <span class="name">output_jmespath</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JsonExtractor.output_jmespath"></a>
-
-
+    
+    
 
                             </div>
                             <div id="JsonExtractor.extract_log_probability" class="classattr">
                                         <input id="JsonExtractor.extract_log_probability-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">extract_log_probability</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span>,</span><span class="param">	<span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>:</span></span>
 
@@ -395,28 +369,31 @@ response.</p>
 </span><span id="JsonExtractor.extract_log_probability-37"><a href="#JsonExtractor.extract_log_probability-37"><span class="linenos">37</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="JsonExtractor.extract_log_probability-38"><a href="#JsonExtractor.extract_log_probability-38"><span class="linenos">38</span></a><span class="sd">        Extract log probability from model response.</span>
 </span><span id="JsonExtractor.extract_log_probability-39"><a href="#JsonExtractor.extract_log_probability-39"><span class="linenos">39</span></a>
-</span><span id="JsonExtractor.extract_log_probability-40"><a href="#JsonExtractor.extract_log_probability-40"><span class="linenos">40</span></a><span class="sd">        :param data: Model response. The probability_jmespath_expression is used to extract the predicted softmax</span>
-</span><span id="JsonExtractor.extract_log_probability-41"><a href="#JsonExtractor.extract_log_probability-41"><span class="linenos">41</span></a><span class="sd">                     probabilities. Each record in the extracted probabilities will be a list of list of floats.</span>
+</span><span id="JsonExtractor.extract_log_probability-40"><a href="#JsonExtractor.extract_log_probability-40"><span class="linenos">40</span></a><span class="sd">        :param data: Model response. The log_probability_jmespath_expression is used to extract the log probabilities</span>
+</span><span id="JsonExtractor.extract_log_probability-41"><a href="#JsonExtractor.extract_log_probability-41"><span class="linenos">41</span></a><span class="sd">                     of the input tokens. Each record in the extracted probabilities will be a float or list of floats.</span>
 </span><span id="JsonExtractor.extract_log_probability-42"><a href="#JsonExtractor.extract_log_probability-42"><span class="linenos">42</span></a><span class="sd">                     Examples for the extracted probabilities:</span>
-</span><span id="JsonExtractor.extract_log_probability-43"><a href="#JsonExtractor.extract_log_probability-43"><span class="linenos">43</span></a><span class="sd">                        - data: [[0.6],[0.3],[0.1]], num_records: 1</span>
-</span><span id="JsonExtractor.extract_log_probability-44"><a href="#JsonExtractor.extract_log_probability-44"><span class="linenos">44</span></a><span class="sd">                        - data: [ [[0.6],[0.3],[0.1]] ], num_records: 1</span>
-</span><span id="JsonExtractor.extract_log_probability-45"><a href="#JsonExtractor.extract_log_probability-45"><span class="linenos">45</span></a><span class="sd">                        - data: [ [[0.6]], [[0.1]] ], num_records: 2</span>
+</span><span id="JsonExtractor.extract_log_probability-43"><a href="#JsonExtractor.extract_log_probability-43"><span class="linenos">43</span></a><span class="sd">                        - data: 0.1, num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="JsonExtractor.extract_log_probability-44"><a href="#JsonExtractor.extract_log_probability-44"><span class="linenos">44</span></a><span class="sd">                        - data: [0.1], num_records: 1, num tokens: 1 (or probabilities already summed up)</span>
+</span><span id="JsonExtractor.extract_log_probability-45"><a href="#JsonExtractor.extract_log_probability-45"><span class="linenos">45</span></a><span class="sd">                        - data: [0.1, 0.2], num_records: 1, num tokens: 2</span>
 </span><span id="JsonExtractor.extract_log_probability-46"><a href="#JsonExtractor.extract_log_probability-46"><span class="linenos">46</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="JsonExtractor.extract_log_probability-47"><a href="#JsonExtractor.extract_log_probability-47"><span class="linenos">47</span></a><span class="sd">        :return: list of a list, each element is a list of probabilities.</span>
+</span><span id="JsonExtractor.extract_log_probability-47"><a href="#JsonExtractor.extract_log_probability-47"><span class="linenos">47</span></a><span class="sd">        :return: float or list of float where each float is sum of log probabilities.</span>
 </span><span id="JsonExtractor.extract_log_probability-48"><a href="#JsonExtractor.extract_log_probability-48"><span class="linenos">48</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonExtractor.extract_log_probability-49"><a href="#JsonExtractor.extract_log_probability-49"><span class="linenos">49</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor.extract_log_probability-50"><a href="#JsonExtractor.extract_log_probability-50"><span class="linenos">50</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_log_probability-51"><a href="#JsonExtractor.extract_log_probability-51"><span class="linenos">51</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_log_probability-52"><a href="#JsonExtractor.extract_log_probability-52"><span class="linenos">52</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor.extract_log_probability-53"><a href="#JsonExtractor.extract_log_probability-53"><span class="linenos">53</span></a>        <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="JsonExtractor.extract_log_probability-54"><a href="#JsonExtractor.extract_log_probability-54"><span class="linenos">54</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="JsonExtractor.extract_log_probability-55"><a href="#JsonExtractor.extract_log_probability-55"><span class="linenos">55</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">probabilities</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_log_probability-56"><a href="#JsonExtractor.extract_log_probability-56"><span class="linenos">56</span></a>            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_log_probability-57"><a href="#JsonExtractor.extract_log_probability-57"><span class="linenos">57</span></a>            <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_log_probability-58"><a href="#JsonExtractor.extract_log_probability-58"><span class="linenos">58</span></a>            <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-</span><span id="JsonExtractor.extract_log_probability-59"><a href="#JsonExtractor.extract_log_probability-59"><span class="linenos">59</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor.extract_log_probability-60"><a href="#JsonExtractor.extract_log_probability-60"><span class="linenos">60</span></a>
-</span><span id="JsonExtractor.extract_log_probability-61"><a href="#JsonExtractor.extract_log_probability-61"><span class="linenos">61</span></a>        <span class="k">return</span> <span class="n">probabilities</span>
+</span><span id="JsonExtractor.extract_log_probability-49"><a href="#JsonExtractor.extract_log_probability-49"><span class="linenos">49</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="JsonExtractor.extract_log_probability-50"><a href="#JsonExtractor.extract_log_probability-50"><span class="linenos">50</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor.extract_log_probability-51"><a href="#JsonExtractor.extract_log_probability-51"><span class="linenos">51</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="p">,</span>
+</span><span id="JsonExtractor.extract_log_probability-52"><a href="#JsonExtractor.extract_log_probability-52"><span class="linenos">52</span></a>            <span class="s2">&quot;Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided&quot;</span><span class="p">,</span>
+</span><span id="JsonExtractor.extract_log_probability-53"><a href="#JsonExtractor.extract_log_probability-53"><span class="linenos">53</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor.extract_log_probability-54"><a href="#JsonExtractor.extract_log_probability-54"><span class="linenos">54</span></a>        <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="JsonExtractor.extract_log_probability-55"><a href="#JsonExtractor.extract_log_probability-55"><span class="linenos">55</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor.extract_log_probability-56"><a href="#JsonExtractor.extract_log_probability-56"><span class="linenos">56</span></a>            <span class="n">log_probs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">log_probability_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span>
+</span><span id="JsonExtractor.extract_log_probability-57"><a href="#JsonExtractor.extract_log_probability-57"><span class="linenos">57</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor.extract_log_probability-58"><a href="#JsonExtractor.extract_log_probability-58"><span class="linenos">58</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+</span><span id="JsonExtractor.extract_log_probability-59"><a href="#JsonExtractor.extract_log_probability-59"><span class="linenos">59</span></a>            <span class="k">return</span> <span class="n">log_probs</span>
+</span><span id="JsonExtractor.extract_log_probability-60"><a href="#JsonExtractor.extract_log_probability-60"><span class="linenos">60</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor.extract_log_probability-61"><a href="#JsonExtractor.extract_log_probability-61"><span class="linenos">61</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">log_probs</span><span class="p">),</span>
+</span><span id="JsonExtractor.extract_log_probability-62"><a href="#JsonExtractor.extract_log_probability-62"><span class="linenos">62</span></a>            <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">log_probs</span><span class="si">}</span><span class="s2"> which does not match expected </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2"> or list of </span><span class="si">{</span><span class="nb">float</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="JsonExtractor.extract_log_probability-63"><a href="#JsonExtractor.extract_log_probability-63"><span class="linenos">63</span></a>        <span class="p">)</span>
+</span><span id="JsonExtractor.extract_log_probability-64"><a href="#JsonExtractor.extract_log_probability-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -425,13 +402,13 @@ response.</p>
 <h6 id="parameters">Parameters</h6>
 
 <ul>
-<li><strong>data</strong>:  Model response. The probability_jmespath_expression is used to extract the predicted softmax
-probabilities. Each record in the extracted probabilities will be a list of list of floats.
+<li><strong>data</strong>:  Model response. The log_probability_jmespath_expression is used to extract the log probabilities
+of the input tokens. Each record in the extracted probabilities will be a float or list of floats.
 Examples for the extracted probabilities:
 <ul>
-<li>data: [[0.6],[0.3],[0.1]], num_records: 1</li>
-<li>data: [ [[0.6],[0.3],[0.1]] ], num_records: 1</li>
-<li>data: [ [[0.6]], [[0.1]] ], num_records: 2</li>
+<li>data: 0.1, num_records: 1, num tokens: 1 (or probabilities already summed up)</li>
+<li>data: [0.1], num_records: 1, num tokens: 1 (or probabilities already summed up)</li>
+<li>data: [0.1, 0.2], num_records: 1, num tokens: 2</li>
 </ul></li>
 <li><strong>num_records</strong>:  number of inference records in the model output</li>
 </ul>
@@ -439,7 +416,7 @@ Examples for the extracted probabilities:
 <h6 id="returns">Returns</h6>
 
 <blockquote>
-  <p>list of a list, each element is a list of probabilities.</p>
+  <p>float or list of float where each float is sum of log probabilities.</p>
 </blockquote>
 </div>
 
@@ -448,7 +425,7 @@ Examples for the extracted probabilities:
                             <div id="JsonExtractor.extract_output" class="classattr">
                                         <input id="JsonExtractor.extract_output-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">extract_output</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span>, </span><span class="param"><span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span>:</span></span>
 
@@ -456,25 +433,24 @@ Examples for the extracted probabilities:
 
     </div>
     <a class="headerlink" href="#JsonExtractor.extract_output"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="JsonExtractor.extract_output-63"><a href="#JsonExtractor.extract_output-63"><span class="linenos">63</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="JsonExtractor.extract_output-64"><a href="#JsonExtractor.extract_output-64"><span class="linenos">64</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="JsonExtractor.extract_output-65"><a href="#JsonExtractor.extract_output-65"><span class="linenos">65</span></a><span class="sd">        Extract output from JSON model output</span>
-</span><span id="JsonExtractor.extract_output-66"><a href="#JsonExtractor.extract_output-66"><span class="linenos">66</span></a>
-</span><span id="JsonExtractor.extract_output-67"><a href="#JsonExtractor.extract_output-67"><span class="linenos">67</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
-</span><span id="JsonExtractor.extract_output-68"><a href="#JsonExtractor.extract_output-68"><span class="linenos">68</span></a><span class="sd">                     predicted output must be a string</span>
-</span><span id="JsonExtractor.extract_output-69"><a href="#JsonExtractor.extract_output-69"><span class="linenos">69</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
-</span><span id="JsonExtractor.extract_output-70"><a href="#JsonExtractor.extract_output-70"><span class="linenos">70</span></a><span class="sd">        :return: model output</span>
-</span><span id="JsonExtractor.extract_output-71"><a href="#JsonExtractor.extract_output-71"><span class="linenos">71</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonExtractor.extract_output-72"><a href="#JsonExtractor.extract_output-72"><span class="linenos">72</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
-</span><span id="JsonExtractor.extract_output-73"><a href="#JsonExtractor.extract_output-73"><span class="linenos">73</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_output-74"><a href="#JsonExtractor.extract_output-74"><span class="linenos">74</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
-</span><span id="JsonExtractor.extract_output-75"><a href="#JsonExtractor.extract_output-75"><span class="linenos">75</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor.extract_output-76"><a href="#JsonExtractor.extract_output-76"><span class="linenos">76</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="JsonExtractor.extract_output-77"><a href="#JsonExtractor.extract_output-77"><span class="linenos">77</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_types</span><span class="p">(</span>
-</span><span id="JsonExtractor.extract_output-78"><a href="#JsonExtractor.extract_output-78"><span class="linenos">78</span></a>            <span class="n">values</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">num_records</span><span class="o">=</span><span class="n">num_records</span><span class="p">,</span> <span class="n">jmespath_expression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span>  <span class="c1"># type: ignore</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="JsonExtractor.extract_output-66"><a href="#JsonExtractor.extract_output-66"><span class="linenos">66</span></a>    <span class="k">def</span> <span class="nf">extract_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">num_records</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="JsonExtractor.extract_output-67"><a href="#JsonExtractor.extract_output-67"><span class="linenos">67</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="JsonExtractor.extract_output-68"><a href="#JsonExtractor.extract_output-68"><span class="linenos">68</span></a><span class="sd">        Extract output from JSON model output</span>
+</span><span id="JsonExtractor.extract_output-69"><a href="#JsonExtractor.extract_output-69"><span class="linenos">69</span></a>
+</span><span id="JsonExtractor.extract_output-70"><a href="#JsonExtractor.extract_output-70"><span class="linenos">70</span></a><span class="sd">        :param data: Model response. The output_jmespath_expression is used to extract the predicted output. The</span>
+</span><span id="JsonExtractor.extract_output-71"><a href="#JsonExtractor.extract_output-71"><span class="linenos">71</span></a><span class="sd">                     predicted output must be a string</span>
+</span><span id="JsonExtractor.extract_output-72"><a href="#JsonExtractor.extract_output-72"><span class="linenos">72</span></a><span class="sd">        :param num_records: number of inference records in the model output</span>
+</span><span id="JsonExtractor.extract_output-73"><a href="#JsonExtractor.extract_output-73"><span class="linenos">73</span></a><span class="sd">        :return: model output</span>
+</span><span id="JsonExtractor.extract_output-74"><a href="#JsonExtractor.extract_output-74"><span class="linenos">74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JsonExtractor.extract_output-75"><a href="#JsonExtractor.extract_output-75"><span class="linenos">75</span></a>        <span class="k">assert</span> <span class="n">num_records</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;JSON extractor does not support batch requests&quot;</span>
+</span><span id="JsonExtractor.extract_output-76"><a href="#JsonExtractor.extract_output-76"><span class="linenos">76</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+</span><span id="JsonExtractor.extract_output-77"><a href="#JsonExtractor.extract_output-77"><span class="linenos">77</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="p">,</span>
+</span><span id="JsonExtractor.extract_output-78"><a href="#JsonExtractor.extract_output-78"><span class="linenos">78</span></a>            <span class="s2">&quot;Extractor cannot extract output as output_jmespath_expression is not provided&quot;</span><span class="p">,</span>
 </span><span id="JsonExtractor.extract_output-79"><a href="#JsonExtractor.extract_output-79"><span class="linenos">79</span></a>        <span class="p">)</span>
-</span><span id="JsonExtractor.extract_output-80"><a href="#JsonExtractor.extract_output-80"><span class="linenos">80</span></a>
-</span><span id="JsonExtractor.extract_output-81"><a href="#JsonExtractor.extract_output-81"><span class="linenos">81</span></a>        <span class="k">return</span> <span class="n">outputs</span>
+</span><span id="JsonExtractor.extract_output-80"><a href="#JsonExtractor.extract_output-80"><span class="linenos">80</span></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="JsonExtractor.extract_output-81"><a href="#JsonExtractor.extract_output-81"><span class="linenos">81</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;JMESpath </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_jmespath_expression</span><span class="si">}</span><span class="s2"> could not find any data&quot;</span><span class="p">)</span>
+</span><span id="JsonExtractor.extract_output-82"><a href="#JsonExtractor.extract_output-82"><span class="linenos">82</span></a>        <span class="n">util</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Extractor found: </span><span class="si">{</span><span class="n">outputs</span><span class="si">}</span><span class="s2"> which does not match expected type </span><span class="si">{</span><span class="nb">str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="JsonExtractor.extract_output-83"><a href="#JsonExtractor.extract_output-83"><span class="linenos">83</span></a>        <span class="k">return</span> <span class="n">outputs</span>
 </span></pre></div>
 
 

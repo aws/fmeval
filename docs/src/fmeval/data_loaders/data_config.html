@@ -64,10 +64,10 @@
                                 <a class="variable" href="#DataConfig.sent_less_input_location">sent_less_input_location</a>
                         </li>
                         <li>
-                                <a class="variable" href="#DataConfig.sent_more_output_location">sent_more_output_location</a>
+                                <a class="variable" href="#DataConfig.sent_more_log_prob_location">sent_more_log_prob_location</a>
                         </li>
                         <li>
-                                <a class="variable" href="#DataConfig.sent_less_output_location">sent_less_output_location</a>
+                                <a class="variable" href="#DataConfig.sent_less_log_prob_location">sent_less_log_prob_location</a>
                         </li>
                 </ul>
 
@@ -88,7 +88,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loaders.html">data_loaders</a><wbr>.data_config    </h1>
 
-
+                
                         <input id="mod-data_config-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-data_config-view-source"><span>View Source</span></label>
@@ -128,10 +128,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">            inputs (used by the Prompt Stereotyping evaluation algorithm)</span>
 </span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">    :param sent_less_input_location: the location for the &quot;sent less&quot;</span>
 </span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">            inputs (used by the Prompt Stereotyping evaluation algorithm)</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">    :param sent_more_output_location: the location for the &quot;sent more&quot;</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">            outputs (used by the Prompt Stereotyping evaluation algorithm)</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">    :param sent_less_output_location: the location for the &quot;sent less&quot;</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">            outputs (used by the Prompt Stereotyping evaluation algorithm).</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">    :param sent_more_log_prob_location: the location for the &quot;sent more&quot;</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">            input log probability (used by the Prompt Stereotyping evaluation algorithm)</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">    :param sent_less_log_prob_location: the location for the &quot;sent less&quot;</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">            input log probability (used by the Prompt Stereotyping evaluation algorithm).</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>
@@ -143,8 +143,8 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>    <span class="n">category_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>    <span class="n">sent_more_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="n">sent_less_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>    <span class="n">sent_more_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>    <span class="n">sent_less_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>    <span class="n">sent_more_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>    <span class="n">sent_less_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
 </span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="n">require</span><span class="p">(</span>
@@ -197,10 +197,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span><span id="DataConfig-34"><a href="#DataConfig-34"><span class="linenos">34</span></a><span class="sd">            inputs (used by the Prompt Stereotyping evaluation algorithm)</span>
 </span><span id="DataConfig-35"><a href="#DataConfig-35"><span class="linenos">35</span></a><span class="sd">    :param sent_less_input_location: the location for the &quot;sent less&quot;</span>
 </span><span id="DataConfig-36"><a href="#DataConfig-36"><span class="linenos">36</span></a><span class="sd">            inputs (used by the Prompt Stereotyping evaluation algorithm)</span>
-</span><span id="DataConfig-37"><a href="#DataConfig-37"><span class="linenos">37</span></a><span class="sd">    :param sent_more_output_location: the location for the &quot;sent more&quot;</span>
-</span><span id="DataConfig-38"><a href="#DataConfig-38"><span class="linenos">38</span></a><span class="sd">            outputs (used by the Prompt Stereotyping evaluation algorithm)</span>
-</span><span id="DataConfig-39"><a href="#DataConfig-39"><span class="linenos">39</span></a><span class="sd">    :param sent_less_output_location: the location for the &quot;sent less&quot;</span>
-</span><span id="DataConfig-40"><a href="#DataConfig-40"><span class="linenos">40</span></a><span class="sd">            outputs (used by the Prompt Stereotyping evaluation algorithm).</span>
+</span><span id="DataConfig-37"><a href="#DataConfig-37"><span class="linenos">37</span></a><span class="sd">    :param sent_more_log_prob_location: the location for the &quot;sent more&quot;</span>
+</span><span id="DataConfig-38"><a href="#DataConfig-38"><span class="linenos">38</span></a><span class="sd">            input log probability (used by the Prompt Stereotyping evaluation algorithm)</span>
+</span><span id="DataConfig-39"><a href="#DataConfig-39"><span class="linenos">39</span></a><span class="sd">    :param sent_less_log_prob_location: the location for the &quot;sent less&quot;</span>
+</span><span id="DataConfig-40"><a href="#DataConfig-40"><span class="linenos">40</span></a><span class="sd">            input log probability (used by the Prompt Stereotyping evaluation algorithm).</span>
 </span><span id="DataConfig-41"><a href="#DataConfig-41"><span class="linenos">41</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="DataConfig-42"><a href="#DataConfig-42"><span class="linenos">42</span></a>
 </span><span id="DataConfig-43"><a href="#DataConfig-43"><span class="linenos">43</span></a>    <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>
@@ -212,8 +212,8 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span><span id="DataConfig-49"><a href="#DataConfig-49"><span class="linenos">49</span></a>    <span class="n">category_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="DataConfig-50"><a href="#DataConfig-50"><span class="linenos">50</span></a>    <span class="n">sent_more_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="DataConfig-51"><a href="#DataConfig-51"><span class="linenos">51</span></a>    <span class="n">sent_less_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DataConfig-52"><a href="#DataConfig-52"><span class="linenos">52</span></a>    <span class="n">sent_more_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DataConfig-53"><a href="#DataConfig-53"><span class="linenos">53</span></a>    <span class="n">sent_less_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DataConfig-52"><a href="#DataConfig-52"><span class="linenos">52</span></a>    <span class="n">sent_more_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DataConfig-53"><a href="#DataConfig-53"><span class="linenos">53</span></a>    <span class="n">sent_less_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="DataConfig-54"><a href="#DataConfig-54"><span class="linenos">54</span></a>
 </span><span id="DataConfig-55"><a href="#DataConfig-55"><span class="linenos">55</span></a>    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="DataConfig-56"><a href="#DataConfig-56"><span class="linenos">56</span></a>        <span class="n">require</span><span class="p">(</span>
@@ -253,57 +253,57 @@ is a JMESPath query.</p>
 inputs (used by the Prompt Stereotyping evaluation algorithm)</li>
 <li><strong>sent_less_input_location</strong>:  the location for the "sent less"
 inputs (used by the Prompt Stereotyping evaluation algorithm)</li>
-<li><strong>sent_more_output_location</strong>:  the location for the "sent more"
-outputs (used by the Prompt Stereotyping evaluation algorithm)</li>
-<li><strong>sent_less_output_location</strong>:  the location for the "sent less"
-outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
+<li><strong>sent_more_log_prob_location</strong>:  the location for the "sent more"
+input log probability (used by the Prompt Stereotyping evaluation algorithm)</li>
+<li><strong>sent_less_log_prob_location</strong>:  the location for the "sent less"
+input log probability (used by the Prompt Stereotyping evaluation algorithm).</li>
 </ul>
 </div>
 
 
                             <div id="DataConfig.__init__" class="classattr">
                                 <div class="attr function">
+            
+        <span class="name">DataConfig</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_uri</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_mime_type</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">model_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">model_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">target_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">category_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_more_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_less_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_more_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_less_log_prob_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
 
-        <span class="name">DataConfig</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_uri</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_mime_type</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">model_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">model_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">target_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">category_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_more_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_less_input_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_more_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sent_less_output_location</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
-
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.dataset_name" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.dataset_name"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.dataset_uri" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_uri</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.dataset_uri"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.dataset_mime_type" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_mime_type</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.dataset_mime_type"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.model_input_location" class="classattr">
@@ -311,11 +311,11 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">model_input_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.model_input_location"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.model_output_location" class="classattr">
@@ -323,11 +323,11 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">model_output_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.model_output_location"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.target_output_location" class="classattr">
@@ -335,11 +335,11 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">target_output_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.target_output_location"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.category_location" class="classattr">
@@ -347,11 +347,11 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">category_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.category_location"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.sent_more_input_location" class="classattr">
@@ -359,11 +359,11 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">sent_more_input_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.sent_more_input_location"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DataConfig.sent_less_input_location" class="classattr">
@@ -371,35 +371,35 @@ outputs (used by the Prompt Stereotyping evaluation algorithm).</li>
             <span class="name">sent_less_input_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataConfig.sent_less_input_location"></a>
-
-
-
-                            </div>
-                            <div id="DataConfig.sent_more_output_location" class="classattr">
-                                <div class="attr variable">
-            <span class="name">sent_more_output_location</span><span class="annotation">: Optional[str]</span>        =
-<span class="default_value">None</span>
-
-
-    </div>
-    <a class="headerlink" href="#DataConfig.sent_more_output_location"></a>
-
-
+    
+    
 
                             </div>
-                            <div id="DataConfig.sent_less_output_location" class="classattr">
+                            <div id="DataConfig.sent_more_log_prob_location" class="classattr">
                                 <div class="attr variable">
-            <span class="name">sent_less_output_location</span><span class="annotation">: Optional[str]</span>        =
+            <span class="name">sent_more_log_prob_location</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
-    <a class="headerlink" href="#DataConfig.sent_less_output_location"></a>
+    <a class="headerlink" href="#DataConfig.sent_more_log_prob_location"></a>
+    
+    
 
+                            </div>
+                            <div id="DataConfig.sent_less_log_prob_location" class="classattr">
+                                <div class="attr variable">
+            <span class="name">sent_less_log_prob_location</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
 
+        
+    </div>
+    <a class="headerlink" href="#DataConfig.sent_less_log_prob_location"></a>
+    
+    
 
                             </div>
                 </section>

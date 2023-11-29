@@ -91,7 +91,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loaders.html">data_loaders</a><wbr>.data_sources    </h1>
 
-
+                
                         <input id="mod-data_sources-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-data_sources-view-source"><span>View Source</span></label>
@@ -175,7 +175,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                 <section id="DataSource">
                             <input id="DataSource-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">DataSource</span><wbr>(<span class="base">abc.ABC</span>):
 
@@ -207,7 +207,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                             <div id="DataSource.__init__" class="classattr">
                                         <input id="DataSource.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">DataSource</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="DataSource.__init__-view-source"><span>View Source</span></label>
@@ -219,17 +219,17 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span></pre></div>
 
 
-
+    
 
                             </div>
                             <div id="DataSource.uri" class="classattr">
                                 <div class="attr variable">
             <span class="name">uri</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DataSource.uri"></a>
-
+    
             <div class="docstring"><h6 id="returns">Returns</h6>
 
 <blockquote>
@@ -243,7 +243,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                 <section id="DataFile">
                             <input id="DataFile-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">DataFile</span><wbr>(<span class="base"><a href="#DataSource">DataSource</a></span>):
 
@@ -321,7 +321,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                 <section id="LocalDataFile">
                             <input id="LocalDataFile-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">LocalDataFile</span><wbr>(<span class="base"><a href="#DataFile">DataFile</a></span>):
 
@@ -354,7 +354,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                             <div id="LocalDataFile.__init__" class="classattr">
                                         <input id="LocalDataFile.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">LocalDataFile</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="LocalDataFile.__init__-view-source"><span>View Source</span></label>
@@ -366,13 +366,13 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span></pre></div>
 
 
-
+    
 
                             </div>
                             <div id="LocalDataFile.open" class="classattr">
                                         <input id="LocalDataFile.open-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">open</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span></span><span class="return-annotation">) -> &lt;class &#x27;IO&#x27;&gt;:</span></span>
 
@@ -418,7 +418,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                 <section id="S3DataFile">
                             <input id="S3DataFile-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">S3DataFile</span><wbr>(<span class="base"><a href="#DataFile">DataFile</a></span>):
 
@@ -452,7 +452,7 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
                             <div id="S3DataFile.__init__" class="classattr">
                                         <input id="S3DataFile.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">S3DataFile</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">s3</span><span class="p">:</span> <span class="n">s3fs</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">S3FileSystem</span>, </span><span class="param"><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="S3DataFile.__init__-view-source"><span>View Source</span></label>
@@ -465,13 +465,13 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span></pre></div>
 
 
-
+    
 
                             </div>
                             <div id="S3DataFile.open" class="classattr">
                                         <input id="S3DataFile.open-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">open</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span></span><span class="return-annotation">) -> &lt;class &#x27;IO&#x27;&gt;:</span></span>
 

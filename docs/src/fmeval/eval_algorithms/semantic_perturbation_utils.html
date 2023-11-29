@@ -405,14 +405,14 @@ Defaults set to match those in NL-Augmenter.</p>
 
                             <div id="ButterFingerConfig.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">ButterFingerConfig</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">perturbation_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ButterFingerConfig.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ButterFingerConfig.perturbation_prob" class="classattr">
@@ -420,11 +420,11 @@ Defaults set to match those in NL-Augmenter.</p>
             <span class="name">perturbation_prob</span><span class="annotation">: float</span>        =
 <span class="default_value">0.1</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ButterFingerConfig.perturbation_prob"></a>
-
-
+    
+    
 
                             </div>
                 </section>
@@ -466,14 +466,14 @@ Defaults set to match those in NL-Augmenter.</p>
 
                             <div id="RandomUpperCaseConfig.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">RandomUpperCaseConfig</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">corrupt_proportion</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#RandomUpperCaseConfig.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="RandomUpperCaseConfig.corrupt_proportion" class="classattr">
@@ -481,11 +481,11 @@ Defaults set to match those in NL-Augmenter.</p>
             <span class="name">corrupt_proportion</span><span class="annotation">: float</span>        =
 <span class="default_value">0.1</span>
 
-
+        
     </div>
     <a class="headerlink" href="#RandomUpperCaseConfig.corrupt_proportion"></a>
-
-
+    
+    
 
                             </div>
                 </section>
@@ -530,14 +530,14 @@ Defaults set to match those in NL-Augmenter.</p>
 
                             <div id="WhitespaceAddRemoveConfig.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">WhitespaceAddRemoveConfig</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">remove_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>, </span><span class="param"><span class="n">add_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WhitespaceAddRemoveConfig.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="WhitespaceAddRemoveConfig.remove_prob" class="classattr">
@@ -545,11 +545,11 @@ Defaults set to match those in NL-Augmenter.</p>
             <span class="name">remove_prob</span><span class="annotation">: float</span>        =
 <span class="default_value">0.1</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WhitespaceAddRemoveConfig.remove_prob"></a>
-
-
+    
+    
 
                             </div>
                             <div id="WhitespaceAddRemoveConfig.add_prob" class="classattr">
@@ -557,18 +557,18 @@ Defaults set to match those in NL-Augmenter.</p>
             <span class="name">add_prob</span><span class="annotation">: float</span>        =
 <span class="default_value">0.05</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WhitespaceAddRemoveConfig.add_prob"></a>
-
-
+    
+    
 
                             </div>
                 </section>
                 <section id="SemanticPerturbationUtil">
                             <input id="SemanticPerturbationUtil-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">SemanticPerturbationUtil</span><wbr>(<span class="base">abc.ABC</span>):
 
@@ -680,14 +680,14 @@ only generate a single perturbed versions and will ignore this parameter.
 </span></pre></div>
 
 
-
+    
 
                             </div>
                 </section>
                 <section id="ButterFinger">
                             <input id="ButterFinger-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">ButterFinger</span><wbr>(<span class="base"><a href="#SemanticPerturbationUtil">SemanticPerturbationUtil</a></span>):
 
@@ -781,17 +781,17 @@ Keyboard induced typos are ones where a character is replaced by adjacent charac
 <input id="ButterFinger.QUERTY_KEY_APPROX-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="ButterFinger.QUERTY_KEY_APPROX-view-value"></label><span class="default_value">{&#39;q&#39;: &#39;qwasedzx&#39;, &#39;w&#39;: &#39;wqesadrfcx&#39;, &#39;e&#39;: &#39;ewrsfdqazxcvgt&#39;, &#39;r&#39;: &#39;retdgfwsxcvgt&#39;, &#39;t&#39;: &#39;tryfhgedcvbnju&#39;, &#39;y&#39;: &#39;ytugjhrfvbnji&#39;, &#39;u&#39;: &#39;uyihkjtgbnmlo&#39;, &#39;i&#39;: &#39;iuojlkyhnmlp&#39;, &#39;o&#39;: &#39;oipklujm&#39;, &#39;p&#39;: &#34;plo[&#39;ik&#34;, &#39;a&#39;: &#39;aqszwxwdce&#39;, &#39;s&#39;: &#39;swxadrfv&#39;, &#39;d&#39;: &#39;decsfaqgbv&#39;, &#39;f&#39;: &#39;fdgrvwsxyhn&#39;, &#39;g&#39;: &#39;gtbfhedcyjn&#39;, &#39;h&#39;: &#39;hyngjfrvkim&#39;, &#39;j&#39;: &#39;jhknugtblom&#39;, &#39;k&#39;: &#39;kjlinyhn&#39;, &#39;l&#39;: &#39;lokmpujn&#39;, &#39;z&#39;: &#39;zaxsvde&#39;, &#39;x&#39;: &#39;xzcsdbvfrewq&#39;, &#39;c&#39;: &#39;cxvdfzswergb&#39;, &#39;v&#39;: &#39;vcfbgxdertyn&#39;, &#39;b&#39;: &#39;bvnghcftyun&#39;, &#39;n&#39;: &#39;nbmhjvgtuik&#39;, &#39;m&#39;: &#39;mnkjloik&#39;, &#39; &#39;: &#39; &#39;}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ButterFinger.QUERTY_KEY_APPROX"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ButterFinger.perturb" class="classattr">
                                         <input id="ButterFinger.perturb-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">perturb</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">text</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">config</span><span class="p">:</span> <span class="n"><a href="#ButterFingerConfig">ButterFingerConfig</a></span>,</span><span class="param">	<span class="n">num_perturbations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span></span><span class="return-annotation">) -> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
 
@@ -854,7 +854,7 @@ only generate a single perturbed versions and will ignore this parameter.
                 <section id="RandomUpperCase">
                             <input id="RandomUpperCase-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">RandomUpperCase</span><wbr>(<span class="base"><a href="#SemanticPerturbationUtil">SemanticPerturbationUtil</a></span>):
 
@@ -902,7 +902,7 @@ Example:
                             <div id="RandomUpperCase.perturb" class="classattr">
                                         <input id="RandomUpperCase.perturb-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">perturb</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">text</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">config</span><span class="p">:</span> <span class="n"><a href="#RandomUpperCaseConfig">RandomUpperCaseConfig</a></span>,</span><span class="param">	<span class="n">num_perturbations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span></span><span class="return-annotation">) -> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
 
@@ -958,7 +958,7 @@ only generate a single perturbed versions and will ignore this parameter.
 </span></pre></div>
 
 
-
+    
 
                             </div>
                             <div class="inherited">
@@ -975,7 +975,7 @@ only generate a single perturbed versions and will ignore this parameter.
                 <section id="WhitespaceAddRemove">
                             <input id="WhitespaceAddRemove-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">WhitespaceAddRemove</span><wbr>(<span class="base"><a href="#SemanticPerturbationUtil">SemanticPerturbationUtil</a></span>):
 
@@ -1029,7 +1029,7 @@ Example:
                             <div id="WhitespaceAddRemove.perturb" class="classattr">
                                         <input id="WhitespaceAddRemove.perturb-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">perturb</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">text</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">config</span><span class="p">:</span> <span class="n"><a href="#WhitespaceAddRemoveConfig">WhitespaceAddRemoveConfig</a></span>,</span><span class="param">	<span class="n">num_perturbations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span></span><span class="return-annotation">) -> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
 
@@ -1091,7 +1091,7 @@ only generate a single perturbed versions and will ignore this parameter.
 </span></pre></div>
 
 
-
+    
 
                             </div>
                             <div class="inherited">

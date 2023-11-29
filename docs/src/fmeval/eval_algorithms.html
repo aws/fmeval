@@ -194,6 +194,12 @@
                     <a class="variable" href="#XSUM">XSUM</a>
             </li>
             <li>
+                    <a class="variable" href="#GIGAWORD">GIGAWORD</a>
+            </li>
+            <li>
+                    <a class="variable" href="#GOV_REPORT">GOV_REPORT</a>
+            </li>
+            <li>
                     <a class="variable" href="#WOMENS_CLOTHING_ECOMMERCE_REVIEWS">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</a>
             </li>
             <li>
@@ -239,7 +245,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.eval_algorithms    </h1>
 
-
+                
                         <input id="mod-eval_algorithms-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-eval_algorithms-view-source"><span>View Source</span></label>
@@ -432,132 +438,152 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.eval_algorithms    </h1>
 </span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a><span class="n">NATURAL_QUESTIONS</span> <span class="o">=</span> <span class="s2">&quot;natural_questions&quot;</span>
 </span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a><span class="n">CROWS_PAIRS</span> <span class="o">=</span> <span class="s2">&quot;crows-pairs&quot;</span>
 </span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a><span class="n">XSUM</span> <span class="o">=</span> <span class="s2">&quot;xsum&quot;</span>
-</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span> <span class="o">=</span> <span class="s2">&quot;womens_clothing_ecommerce_reviews&quot;</span>
-</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a><span class="n">BOLD</span> <span class="o">=</span> <span class="s2">&quot;bold&quot;</span>
-</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a><span class="n">WIKITEXT2</span> <span class="o">=</span> <span class="s2">&quot;wikitext2&quot;</span>
-</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a><span class="n">REAL_TOXICITY_PROMPTS</span> <span class="o">=</span> <span class="s2">&quot;real_toxicity_prompts&quot;</span>
-</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a><span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span> <span class="o">=</span> <span class="s2">&quot;real_toxicity_prompts_challenging&quot;</span>
-</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>
-</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a><span class="c1"># Mapping of Eval algorithms and corresponding Built-in datasets</span>
-</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a><span class="n">EVAL_DATASETS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">FACTUAL_KNOWLEDGE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">TREX</span><span class="p">],</span>
-</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
-</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
-</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">PROMPT_STEREOTYPING</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">CROWS_PAIRS</span><span class="p">],</span>
-</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">],</span>
-</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">GENERAL_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOLD</span><span class="p">,</span> <span class="n">TREX</span><span class="p">,</span> <span class="n">WIKITEXT2</span><span class="p">],</span>
-</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">],</span>
-</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span>
-</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>        <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">,</span>
-</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>    <span class="p">],</span>
-</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">],</span>
-</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOLD</span><span class="p">,</span> <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">,</span> <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">],</span>
-</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
-</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">],</span>
-</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a><span class="p">}</span>
-</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>
-</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a><span class="c1"># Mapping of Default Prompt Template corresponding to eval, built-in dataset pair</span>
-</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a><span class="n">DEFAULT_PROMPT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;$feature&quot;</span>
-</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>
-</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a><span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="s1">&#39;Respond to the following question. Valid answers are &quot;true&quot; or &quot;false&quot;. $feature Answer:&#39;</span><span class="p">,</span>
-</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="s2">&quot;Respond to the following question with a short answer: $feature Answer:&quot;</span><span class="p">,</span>
-</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="s2">&quot;Respond to the following question with a short answer: $feature Answer:&quot;</span><span class="p">,</span>
-</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="s2">&quot;Summarise the following text in one sentence: $feature&quot;</span><span class="p">,</span>
-</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="s2">&quot;Classify the sentiment of the following review with 0 (negative sentiment) &quot;</span>
-</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>    <span class="s2">&quot;or 1 (positive sentiment). Review: $feature. Classification:&quot;</span><span class="p">,</span>
-</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a><span class="p">}</span>
-</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>
-</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>
-</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a><span class="k">def</span> <span class="nf">get_default_prompt_template</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a><span class="sd">    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,</span>
-</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a><span class="sd">        the method returns a generic default prompt template.</span>
-</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a><span class="sd">    :param dataset_name: Name of dataset</span>
-</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a>    <span class="k">return</span> <span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">DEFAULT_PROMPT_TEMPLATE</span><span class="p">)</span>
-</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>
-</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a>
-</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a><span class="c1"># Mapping of Built-in dataset names and their DataConfigs</span>
-</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a><span class="n">DATASET_CONFIGS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataConfig</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a>    <span class="n">TREX</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">TREX</span><span class="p">,</span>
-</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/trex/trex.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
-</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answers&quot;</span><span class="p">,</span>
-</span><span id="L-243"><a href="#L-243"><span class="linenos">243</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;knowledge_category&quot;</span><span class="p">,</span>
-</span><span id="L-244"><a href="#L-244"><span class="linenos">244</span></a>    <span class="p">),</span>
-</span><span id="L-245"><a href="#L-245"><span class="linenos">245</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-246"><a href="#L-246"><span class="linenos">246</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">BOOLQ</span><span class="p">,</span>
-</span><span id="L-247"><a href="#L-247"><span class="linenos">247</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/boolq/boolq.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-248"><a href="#L-248"><span class="linenos">248</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-249"><a href="#L-249"><span class="linenos">249</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
-</span><span id="L-250"><a href="#L-250"><span class="linenos">250</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
-</span><span id="L-251"><a href="#L-251"><span class="linenos">251</span></a>    <span class="p">),</span>
-</span><span id="L-252"><a href="#L-252"><span class="linenos">252</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">TRIVIA_QA</span><span class="p">,</span>
-</span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/triviaQA/triviaQA.json&quot;</span><span class="p">,</span>
-</span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
-</span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
-</span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a>    <span class="p">),</span>
-</span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-260"><a href="#L-260"><span class="linenos">260</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">NATURAL_QUESTIONS</span><span class="p">,</span>
-</span><span id="L-261"><a href="#L-261"><span class="linenos">261</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/natural_questions/natural_questions.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-262"><a href="#L-262"><span class="linenos">262</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
-</span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
-</span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>    <span class="p">),</span>
-</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>    <span class="n">CROWS_PAIRS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">CROWS_PAIRS</span><span class="p">,</span>
-</span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/crows-pairs/crows-pairs.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a>        <span class="n">sent_more_input_location</span><span class="o">=</span><span class="s2">&quot;sent_more&quot;</span><span class="p">,</span>
-</span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a>        <span class="n">sent_less_input_location</span><span class="o">=</span><span class="s2">&quot;sent_less&quot;</span><span class="p">,</span>
-</span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;bias_type&quot;</span><span class="p">,</span>
-</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a>    <span class="p">),</span>
-</span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">XSUM</span><span class="p">,</span>
-</span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/xsum/xsum.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-277"><a href="#L-277"><span class="linenos">277</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-278"><a href="#L-278"><span class="linenos">278</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;document&quot;</span><span class="p">,</span>
-</span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span>
-</span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>    <span class="p">),</span>
-</span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">,</span>
-</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-284"><a href="#L-284"><span class="linenos">284</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-285"><a href="#L-285"><span class="linenos">285</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s1">&#39;&quot;Review Text&quot;&#39;</span><span class="p">,</span>
-</span><span id="L-286"><a href="#L-286"><span class="linenos">286</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s1">&#39;&quot;Recommended IND&quot;&#39;</span><span class="p">,</span>
-</span><span id="L-287"><a href="#L-287"><span class="linenos">287</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s1">&#39;&quot;Class Name&quot;&#39;</span><span class="p">,</span>
-</span><span id="L-288"><a href="#L-288"><span class="linenos">288</span></a>    <span class="p">),</span>
-</span><span id="L-289"><a href="#L-289"><span class="linenos">289</span></a>    <span class="n">BOLD</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-290"><a href="#L-290"><span class="linenos">290</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">BOLD</span><span class="p">,</span>
-</span><span id="L-291"><a href="#L-291"><span class="linenos">291</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/bold/bold.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-292"><a href="#L-292"><span class="linenos">292</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-293"><a href="#L-293"><span class="linenos">293</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
-</span><span id="L-294"><a href="#L-294"><span class="linenos">294</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;category&quot;</span><span class="p">,</span>
-</span><span id="L-295"><a href="#L-295"><span class="linenos">295</span></a>    <span class="p">),</span>
-</span><span id="L-296"><a href="#L-296"><span class="linenos">296</span></a>    <span class="n">WIKITEXT2</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-297"><a href="#L-297"><span class="linenos">297</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">WIKITEXT2</span><span class="p">,</span>
-</span><span id="L-298"><a href="#L-298"><span class="linenos">298</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/wikitext2/wikitext2.jsonl&quot;</span><span class="p">,</span>
-</span><span id="L-299"><a href="#L-299"><span class="linenos">299</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
-</span><span id="L-300"><a href="#L-300"><span class="linenos">300</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a><span class="n">GIGAWORD</span> <span class="o">=</span> <span class="s2">&quot;gigaword&quot;</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a><span class="n">GOV_REPORT</span> <span class="o">=</span> <span class="s2">&quot;gov_report&quot;</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span> <span class="o">=</span> <span class="s2">&quot;womens_clothing_ecommerce_reviews&quot;</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a><span class="n">BOLD</span> <span class="o">=</span> <span class="s2">&quot;bold&quot;</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a><span class="n">WIKITEXT2</span> <span class="o">=</span> <span class="s2">&quot;wikitext2&quot;</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a><span class="n">REAL_TOXICITY_PROMPTS</span> <span class="o">=</span> <span class="s2">&quot;real_toxicity_prompts&quot;</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a><span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span> <span class="o">=</span> <span class="s2">&quot;real_toxicity_prompts_challenging&quot;</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a><span class="c1"># Mapping of Eval algorithms and corresponding Built-in datasets</span>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a><span class="n">EVAL_DATASETS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">FACTUAL_KNOWLEDGE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">TREX</span><span class="p">],</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">PROMPT_STEREOTYPING</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">CROWS_PAIRS</span><span class="p">],</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">,</span> <span class="n">GIGAWORD</span><span class="p">,</span> <span class="n">GOV_REPORT</span><span class="p">],</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">GENERAL_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOLD</span><span class="p">,</span> <span class="n">TREX</span><span class="p">,</span> <span class="n">WIKITEXT2</span><span class="p">],</span>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">],</span>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>        <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">,</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>    <span class="p">],</span>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">,</span> <span class="n">GIGAWORD</span><span class="p">,</span> <span class="n">GOV_REPORT</span><span class="p">],</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOLD</span><span class="p">,</span> <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">,</span> <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">],</span>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">BOOLQ</span><span class="p">,</span> <span class="n">TRIVIA_QA</span><span class="p">,</span> <span class="n">NATURAL_QUESTIONS</span><span class="p">],</span>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[</span><span class="n">XSUM</span><span class="p">,</span> <span class="n">GIGAWORD</span><span class="p">,</span> <span class="n">GOV_REPORT</span><span class="p">],</span>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a><span class="p">}</span>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a><span class="c1"># Mapping of Default Prompt Template corresponding to eval, built-in dataset pair</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a><span class="n">DEFAULT_PROMPT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;$feature&quot;</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a><span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="s1">&#39;Respond to the following question. Valid answers are &quot;true&quot; or &quot;false&quot;. $feature Answer:&#39;</span><span class="p">,</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="s2">&quot;Respond to the following question with a short answer: $feature Answer:&quot;</span><span class="p">,</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="s2">&quot;Respond to the following question with a short answer: $feature Answer:&quot;</span><span class="p">,</span>
+</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="s2">&quot;Summarise the following text in one sentence: $feature&quot;</span><span class="p">,</span>
+</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>    <span class="n">GIGAWORD</span><span class="p">:</span> <span class="s2">&quot;Summarise the following text in one sentence: $feature&quot;</span><span class="p">,</span>
+</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>    <span class="n">GOV_REPORT</span><span class="p">:</span> <span class="s2">&quot;Summarise the following text in a few sentences: $feature&quot;</span><span class="p">,</span>
+</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="p">(</span>
+</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a>        <span class="s2">&quot;Classify the sentiment of the following review with 0 (negative sentiment)&quot;</span>
+</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>        <span class="s2">&quot; or 1 (positive sentiment). Review: $feature. Classification:&quot;</span>
+</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>    <span class="p">),</span>
+</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a><span class="p">}</span>
+</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>
+</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a>
+</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a><span class="k">def</span> <span class="nf">get_default_prompt_template</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a><span class="sd">    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,</span>
+</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a><span class="sd">        the method returns a generic default prompt template.</span>
+</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a><span class="sd">    :param dataset_name: Name of dataset</span>
+</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a>    <span class="k">return</span> <span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">DEFAULT_PROMPT_TEMPLATE</span><span class="p">)</span>
+</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a>
+</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a>
+</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a><span class="c1"># Mapping of Built-in dataset names and their DataConfigs</span>
+</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a><span class="n">DATASET_CONFIGS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataConfig</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-243"><a href="#L-243"><span class="linenos">243</span></a>    <span class="n">TREX</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-244"><a href="#L-244"><span class="linenos">244</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">TREX</span><span class="p">,</span>
+</span><span id="L-245"><a href="#L-245"><span class="linenos">245</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/trex/trex.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-246"><a href="#L-246"><span class="linenos">246</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-247"><a href="#L-247"><span class="linenos">247</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
+</span><span id="L-248"><a href="#L-248"><span class="linenos">248</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answers&quot;</span><span class="p">,</span>
+</span><span id="L-249"><a href="#L-249"><span class="linenos">249</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;knowledge_category&quot;</span><span class="p">,</span>
+</span><span id="L-250"><a href="#L-250"><span class="linenos">250</span></a>    <span class="p">),</span>
+</span><span id="L-251"><a href="#L-251"><span class="linenos">251</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-252"><a href="#L-252"><span class="linenos">252</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">BOOLQ</span><span class="p">,</span>
+</span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/boolq/boolq.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
+</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
+</span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a>    <span class="p">),</span>
+</span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">TRIVIA_QA</span><span class="p">,</span>
+</span><span id="L-260"><a href="#L-260"><span class="linenos">260</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/triviaQA/triviaQA.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-261"><a href="#L-261"><span class="linenos">261</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-262"><a href="#L-262"><span class="linenos">262</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
+</span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
+</span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a>    <span class="p">),</span>
+</span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">NATURAL_QUESTIONS</span><span class="p">,</span>
+</span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/natural_questions/natural_questions.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;question&quot;</span><span class="p">,</span>
+</span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span>
+</span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a>    <span class="p">),</span>
+</span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a>    <span class="n">CROWS_PAIRS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">CROWS_PAIRS</span><span class="p">,</span>
+</span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/crows-pairs/crows-pairs.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a>        <span class="n">sent_more_input_location</span><span class="o">=</span><span class="s2">&quot;sent_more&quot;</span><span class="p">,</span>
+</span><span id="L-277"><a href="#L-277"><span class="linenos">277</span></a>        <span class="n">sent_less_input_location</span><span class="o">=</span><span class="s2">&quot;sent_less&quot;</span><span class="p">,</span>
+</span><span id="L-278"><a href="#L-278"><span class="linenos">278</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;bias_type&quot;</span><span class="p">,</span>
+</span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a>    <span class="p">),</span>
+</span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">XSUM</span><span class="p">,</span>
+</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/xsum/xsum.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-284"><a href="#L-284"><span class="linenos">284</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;document&quot;</span><span class="p">,</span>
+</span><span id="L-285"><a href="#L-285"><span class="linenos">285</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span>
+</span><span id="L-286"><a href="#L-286"><span class="linenos">286</span></a>    <span class="p">),</span>
+</span><span id="L-287"><a href="#L-287"><span class="linenos">287</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-288"><a href="#L-288"><span class="linenos">288</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">,</span>
+</span><span id="L-289"><a href="#L-289"><span class="linenos">289</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-290"><a href="#L-290"><span class="linenos">290</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-291"><a href="#L-291"><span class="linenos">291</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s1">&#39;&quot;Review Text&quot;&#39;</span><span class="p">,</span>
+</span><span id="L-292"><a href="#L-292"><span class="linenos">292</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s1">&#39;&quot;Recommended IND&quot;&#39;</span><span class="p">,</span>
+</span><span id="L-293"><a href="#L-293"><span class="linenos">293</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s1">&#39;&quot;Class Name&quot;&#39;</span><span class="p">,</span>
+</span><span id="L-294"><a href="#L-294"><span class="linenos">294</span></a>    <span class="p">),</span>
+</span><span id="L-295"><a href="#L-295"><span class="linenos">295</span></a>    <span class="n">BOLD</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-296"><a href="#L-296"><span class="linenos">296</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">BOLD</span><span class="p">,</span>
+</span><span id="L-297"><a href="#L-297"><span class="linenos">297</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/bold/bold.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-298"><a href="#L-298"><span class="linenos">298</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-299"><a href="#L-299"><span class="linenos">299</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
+</span><span id="L-300"><a href="#L-300"><span class="linenos">300</span></a>        <span class="n">category_location</span><span class="o">=</span><span class="s2">&quot;category&quot;</span><span class="p">,</span>
 </span><span id="L-301"><a href="#L-301"><span class="linenos">301</span></a>    <span class="p">),</span>
-</span><span id="L-302"><a href="#L-302"><span class="linenos">302</span></a>    <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-303"><a href="#L-303"><span class="linenos">303</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">,</span>
-</span><span id="L-304"><a href="#L-304"><span class="linenos">304</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-302"><a href="#L-302"><span class="linenos">302</span></a>    <span class="n">WIKITEXT2</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-303"><a href="#L-303"><span class="linenos">303</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">WIKITEXT2</span><span class="p">,</span>
+</span><span id="L-304"><a href="#L-304"><span class="linenos">304</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/wikitext2/wikitext2.jsonl&quot;</span><span class="p">,</span>
 </span><span id="L-305"><a href="#L-305"><span class="linenos">305</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
 </span><span id="L-306"><a href="#L-306"><span class="linenos">306</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
 </span><span id="L-307"><a href="#L-307"><span class="linenos">307</span></a>    <span class="p">),</span>
-</span><span id="L-308"><a href="#L-308"><span class="linenos">308</span></a>    <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
-</span><span id="L-309"><a href="#L-309"><span class="linenos">309</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">,</span>
-</span><span id="L-310"><a href="#L-310"><span class="linenos">310</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-308"><a href="#L-308"><span class="linenos">308</span></a>    <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-309"><a href="#L-309"><span class="linenos">309</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">,</span>
+</span><span id="L-310"><a href="#L-310"><span class="linenos">310</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl&quot;</span><span class="p">,</span>
 </span><span id="L-311"><a href="#L-311"><span class="linenos">311</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
 </span><span id="L-312"><a href="#L-312"><span class="linenos">312</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
 </span><span id="L-313"><a href="#L-313"><span class="linenos">313</span></a>    <span class="p">),</span>
-</span><span id="L-314"><a href="#L-314"><span class="linenos">314</span></a><span class="p">}</span>
+</span><span id="L-314"><a href="#L-314"><span class="linenos">314</span></a>    <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-315"><a href="#L-315"><span class="linenos">315</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">,</span>
+</span><span id="L-316"><a href="#L-316"><span class="linenos">316</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-317"><a href="#L-317"><span class="linenos">317</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-318"><a href="#L-318"><span class="linenos">318</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span>
+</span><span id="L-319"><a href="#L-319"><span class="linenos">319</span></a>    <span class="p">),</span>
+</span><span id="L-320"><a href="#L-320"><span class="linenos">320</span></a>    <span class="n">GIGAWORD</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-321"><a href="#L-321"><span class="linenos">321</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">GIGAWORD</span><span class="p">,</span>
+</span><span id="L-322"><a href="#L-322"><span class="linenos">322</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/gigaword/gigaword.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-323"><a href="#L-323"><span class="linenos">323</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-324"><a href="#L-324"><span class="linenos">324</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;document&quot;</span><span class="p">,</span>
+</span><span id="L-325"><a href="#L-325"><span class="linenos">325</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span>
+</span><span id="L-326"><a href="#L-326"><span class="linenos">326</span></a>    <span class="p">),</span>
+</span><span id="L-327"><a href="#L-327"><span class="linenos">327</span></a>    <span class="n">GOV_REPORT</span><span class="p">:</span> <span class="n">DataConfig</span><span class="p">(</span>
+</span><span id="L-328"><a href="#L-328"><span class="linenos">328</span></a>        <span class="n">dataset_name</span><span class="o">=</span><span class="n">GOV_REPORT</span><span class="p">,</span>
+</span><span id="L-329"><a href="#L-329"><span class="linenos">329</span></a>        <span class="n">dataset_uri</span><span class="o">=</span><span class="s2">&quot;s3://fmeval/datasets/gov_report/gov_report.jsonl&quot;</span><span class="p">,</span>
+</span><span id="L-330"><a href="#L-330"><span class="linenos">330</span></a>        <span class="n">dataset_mime_type</span><span class="o">=</span><span class="n">MIME_TYPE_JSONLINES</span><span class="p">,</span>
+</span><span id="L-331"><a href="#L-331"><span class="linenos">331</span></a>        <span class="n">model_input_location</span><span class="o">=</span><span class="s2">&quot;report&quot;</span><span class="p">,</span>
+</span><span id="L-332"><a href="#L-332"><span class="linenos">332</span></a>        <span class="n">target_output_location</span><span class="o">=</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span>
+</span><span id="L-333"><a href="#L-333"><span class="linenos">333</span></a>    <span class="p">),</span>
+</span><span id="L-334"><a href="#L-334"><span class="linenos">334</span></a><span class="p">}</span>
 </span></pre></div>
 
 
@@ -609,43 +635,43 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.eval_algorithms    </h1>
 
                             <div id="EvalScore.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">EvalScore</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">value</span><span class="p">:</span> <span class="nb">float</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalScore.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalScore.name" class="classattr">
                                 <div class="attr variable">
             <span class="name">name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalScore.name"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalScore.value" class="classattr">
                                 <div class="attr variable">
             <span class="name">value</span><span class="annotation">: float</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalScore.value"></a>
-
-
+    
+    
 
                             </div>
                 </section>
                 <section id="EvalAlgorithm">
                             <input id="EvalAlgorithm-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">EvalAlgorithm</span><wbr>(<span class="base">enum.Enum</span>):
 
@@ -694,11 +720,11 @@ model.</p>
             <span class="name">PROMPT_STEREOTYPING</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.PROMPT_STEREOTYPING">EvalAlgorithm.PROMPT_STEREOTYPING</a>: &#39;prompt_stereotyping&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.PROMPT_STEREOTYPING"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.FACTUAL_KNOWLEDGE" class="classattr">
@@ -706,11 +732,11 @@ model.</p>
             <span class="name">FACTUAL_KNOWLEDGE</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.FACTUAL_KNOWLEDGE">EvalAlgorithm.FACTUAL_KNOWLEDGE</a>: &#39;factual_knowledge&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.FACTUAL_KNOWLEDGE"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.TOXICITY" class="classattr">
@@ -718,11 +744,11 @@ model.</p>
             <span class="name">TOXICITY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.TOXICITY">EvalAlgorithm.TOXICITY</a>: &#39;toxicity&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.TOXICITY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.QA_TOXICITY" class="classattr">
@@ -730,11 +756,11 @@ model.</p>
             <span class="name">QA_TOXICITY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.QA_TOXICITY">EvalAlgorithm.QA_TOXICITY</a>: &#39;qa_toxicity&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.QA_TOXICITY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.SUMMARIZATION_TOXICITY" class="classattr">
@@ -742,11 +768,11 @@ model.</p>
             <span class="name">SUMMARIZATION_TOXICITY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.SUMMARIZATION_TOXICITY">EvalAlgorithm.SUMMARIZATION_TOXICITY</a>: &#39;summarization_toxicity&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.SUMMARIZATION_TOXICITY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS" class="classattr">
@@ -754,11 +780,11 @@ model.</p>
             <span class="name">GENERAL_SEMANTIC_ROBUSTNESS</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS">EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS</a>: &#39;general_semantic_robustness&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.ACCURACY" class="classattr">
@@ -766,11 +792,11 @@ model.</p>
             <span class="name">ACCURACY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.ACCURACY">EvalAlgorithm.ACCURACY</a>: &#39;accuracy&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.ACCURACY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.QA_ACCURACY" class="classattr">
@@ -778,11 +804,11 @@ model.</p>
             <span class="name">QA_ACCURACY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.QA_ACCURACY">EvalAlgorithm.QA_ACCURACY</a>: &#39;qa_accuracy&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.QA_ACCURACY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS" class="classattr">
@@ -790,11 +816,11 @@ model.</p>
             <span class="name">QA_ACCURACY_SEMANTIC_ROBUSTNESS</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;qa_accuracy_semantic_robustness&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.SUMMARIZATION_ACCURACY" class="classattr">
@@ -802,11 +828,11 @@ model.</p>
             <span class="name">SUMMARIZATION_ACCURACY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.SUMMARIZATION_ACCURACY">EvalAlgorithm.SUMMARIZATION_ACCURACY</a>: &#39;summarization_accuracy&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.SUMMARIZATION_ACCURACY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS" class="classattr">
@@ -815,11 +841,11 @@ model.</p>
 <input id="EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS-view-value"></label><span class="default_value">&lt;<a href="#EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;summarization_accuracy_semantic_robustness&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.CLASSIFICATION_ACCURACY" class="classattr">
@@ -827,11 +853,11 @@ model.</p>
             <span class="name">CLASSIFICATION_ACCURACY</span>        =
 <span class="default_value">&lt;<a href="#EvalAlgorithm.CLASSIFICATION_ACCURACY">EvalAlgorithm.CLASSIFICATION_ACCURACY</a>: &#39;classification_accuracy&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.CLASSIFICATION_ACCURACY"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS" class="classattr">
@@ -840,11 +866,11 @@ model.</p>
 <input id="EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS-view-value"></label><span class="default_value">&lt;<a href="#EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;classification_accuracy_semantic_robustness&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS"></a>
-
-
+    
+    
 
                             </div>
                             <div class="inherited">
@@ -907,36 +933,36 @@ model.</p>
 
                             <div id="CategoryScore.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">CategoryScore</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">scores</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n"><a href="#EvalScore">EvalScore</a></span><span class="p">]</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CategoryScore.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="CategoryScore.name" class="classattr">
                                 <div class="attr variable">
             <span class="name">name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CategoryScore.name"></a>
-
-
+    
+    
 
                             </div>
                             <div id="CategoryScore.scores" class="classattr">
                                 <div class="attr variable">
             <span class="name">scores</span><span class="annotation">: List[<a href="#EvalScore">EvalScore</a>]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CategoryScore.scores"></a>
-
-
+    
+    
 
                             </div>
                 </section>
@@ -1033,36 +1059,36 @@ record wise eval scores</li>
 
                             <div id="EvalOutput.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">EvalOutput</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">eval_name</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_scores</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n"><a href="#EvalScore">EvalScore</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">prompt_template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">category_scores</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n"><a href="#CategoryScore">CategoryScore</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">output_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.eval_name" class="classattr">
                                 <div class="attr variable">
             <span class="name">eval_name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.eval_name"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.dataset_name" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.dataset_name"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.dataset_scores" class="classattr">
@@ -1070,11 +1096,11 @@ record wise eval scores</li>
             <span class="name">dataset_scores</span><span class="annotation">: Optional[List[<a href="#EvalScore">EvalScore</a>]]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.dataset_scores"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.prompt_template" class="classattr">
@@ -1082,11 +1108,11 @@ record wise eval scores</li>
             <span class="name">prompt_template</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.prompt_template"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.category_scores" class="classattr">
@@ -1094,11 +1120,11 @@ record wise eval scores</li>
             <span class="name">category_scores</span><span class="annotation">: Optional[List[<a href="#CategoryScore">CategoryScore</a>]]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.category_scores"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.output_path" class="classattr">
@@ -1106,11 +1132,11 @@ record wise eval scores</li>
             <span class="name">output_path</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.output_path"></a>
-
-
+    
+    
 
                             </div>
                             <div id="EvalOutput.error" class="classattr">
@@ -1118,18 +1144,18 @@ record wise eval scores</li>
             <span class="name">error</span><span class="annotation">: Optional[str]</span>        =
 <span class="default_value">None</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EvalOutput.error"></a>
-
-
+    
+    
 
                             </div>
                 </section>
                 <section id="ModelTask">
                             <input id="ModelTask-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">ModelTask</span><wbr>(<span class="base">enum.Enum</span>):
 
@@ -1163,11 +1189,11 @@ model.</p>
             <span class="name">NO_TASK</span>        =
 <span class="default_value">&lt;<a href="#ModelTask.NO_TASK">ModelTask.NO_TASK</a>: &#39;no_task&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ModelTask.NO_TASK"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ModelTask.CLASSIFICATION" class="classattr">
@@ -1175,11 +1201,11 @@ model.</p>
             <span class="name">CLASSIFICATION</span>        =
 <span class="default_value">&lt;<a href="#ModelTask.CLASSIFICATION">ModelTask.CLASSIFICATION</a>: &#39;classification&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ModelTask.CLASSIFICATION"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ModelTask.QUESTION_ANSWERING" class="classattr">
@@ -1187,11 +1213,11 @@ model.</p>
             <span class="name">QUESTION_ANSWERING</span>        =
 <span class="default_value">&lt;<a href="#ModelTask.QUESTION_ANSWERING">ModelTask.QUESTION_ANSWERING</a>: &#39;question_answering&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ModelTask.QUESTION_ANSWERING"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ModelTask.SUMMARIZATION" class="classattr">
@@ -1199,11 +1225,11 @@ model.</p>
             <span class="name">SUMMARIZATION</span>        =
 <span class="default_value">&lt;<a href="#ModelTask.SUMMARIZATION">ModelTask.SUMMARIZATION</a>: &#39;summarization&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ModelTask.SUMMARIZATION"></a>
-
-
+    
+    
 
                             </div>
                             <div class="inherited">
@@ -1223,11 +1249,11 @@ model.</p>
 <input id="MODEL_TASK_EVALUATION_MAP-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="MODEL_TASK_EVALUATION_MAP-view-value"></label><span class="default_value">{&lt;<a href="#ModelTask.NO_TASK">ModelTask.NO_TASK</a>: &#39;no_task&#39;&gt;: [&lt;<a href="#EvalAlgorithm.PROMPT_STEREOTYPING">EvalAlgorithm.PROMPT_STEREOTYPING</a>: &#39;prompt_stereotyping&#39;&gt;, &lt;<a href="#EvalAlgorithm.FACTUAL_KNOWLEDGE">EvalAlgorithm.FACTUAL_KNOWLEDGE</a>: &#39;factual_knowledge&#39;&gt;, &lt;<a href="#EvalAlgorithm.TOXICITY">EvalAlgorithm.TOXICITY</a>: &#39;toxicity&#39;&gt;, &lt;<a href="#EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS">EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS</a>: &#39;general_semantic_robustness&#39;&gt;], &lt;<a href="#ModelTask.CLASSIFICATION">ModelTask.CLASSIFICATION</a>: &#39;classification&#39;&gt;: [&lt;<a href="#EvalAlgorithm.CLASSIFICATION_ACCURACY">EvalAlgorithm.CLASSIFICATION_ACCURACY</a>: &#39;classification_accuracy&#39;&gt;, &lt;<a href="#EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;classification_accuracy_semantic_robustness&#39;&gt;], &lt;<a href="#ModelTask.QUESTION_ANSWERING">ModelTask.QUESTION_ANSWERING</a>: &#39;question_answering&#39;&gt;: [&lt;<a href="#EvalAlgorithm.QA_TOXICITY">EvalAlgorithm.QA_TOXICITY</a>: &#39;qa_toxicity&#39;&gt;, &lt;<a href="#EvalAlgorithm.QA_ACCURACY">EvalAlgorithm.QA_ACCURACY</a>: &#39;qa_accuracy&#39;&gt;, &lt;<a href="#EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;qa_accuracy_semantic_robustness&#39;&gt;], &lt;<a href="#ModelTask.SUMMARIZATION">ModelTask.SUMMARIZATION</a>: &#39;summarization&#39;&gt;: [&lt;<a href="#EvalAlgorithm.SUMMARIZATION_TOXICITY">EvalAlgorithm.SUMMARIZATION_TOXICITY</a>: &#39;summarization_toxicity&#39;&gt;, &lt;<a href="#EvalAlgorithm.SUMMARIZATION_ACCURACY">EvalAlgorithm.SUMMARIZATION_ACCURACY</a>: &#39;summarization_accuracy&#39;&gt;, &lt;<a href="#EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS">EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</a>: &#39;summarization_accuracy_semantic_robustness&#39;&gt;]}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MODEL_TASK_EVALUATION_MAP"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TREX">
@@ -1235,11 +1261,11 @@ model.</p>
             <span class="name">TREX</span>        =
 <span class="default_value">&#39;trex&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TREX"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BOOLQ">
@@ -1247,11 +1273,11 @@ model.</p>
             <span class="name">BOOLQ</span>        =
 <span class="default_value">&#39;boolq&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BOOLQ"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TRIVIA_QA">
@@ -1259,11 +1285,11 @@ model.</p>
             <span class="name">TRIVIA_QA</span>        =
 <span class="default_value">&#39;trivia_qa&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TRIVIA_QA"></a>
-
-
+    
+    
 
                 </section>
                 <section id="NATURAL_QUESTIONS">
@@ -1271,11 +1297,11 @@ model.</p>
             <span class="name">NATURAL_QUESTIONS</span>        =
 <span class="default_value">&#39;natural_questions&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#NATURAL_QUESTIONS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="CROWS_PAIRS">
@@ -1283,11 +1309,11 @@ model.</p>
             <span class="name">CROWS_PAIRS</span>        =
 <span class="default_value">&#39;crows-pairs&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CROWS_PAIRS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="XSUM">
@@ -1295,11 +1321,35 @@ model.</p>
             <span class="name">XSUM</span>        =
 <span class="default_value">&#39;xsum&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#XSUM"></a>
+    
+    
 
+                </section>
+                <section id="GIGAWORD">
+                    <div class="attr variable">
+            <span class="name">GIGAWORD</span>        =
+<span class="default_value">&#39;gigaword&#39;</span>
 
+        
+    </div>
+    <a class="headerlink" href="#GIGAWORD"></a>
+    
+    
+
+                </section>
+                <section id="GOV_REPORT">
+                    <div class="attr variable">
+            <span class="name">GOV_REPORT</span>        =
+<span class="default_value">&#39;gov_report&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#GOV_REPORT"></a>
+    
+    
 
                 </section>
                 <section id="WOMENS_CLOTHING_ECOMMERCE_REVIEWS">
@@ -1307,11 +1357,11 @@ model.</p>
             <span class="name">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span>        =
 <span class="default_value">&#39;womens_clothing_ecommerce_reviews&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WOMENS_CLOTHING_ECOMMERCE_REVIEWS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BOLD">
@@ -1319,11 +1369,11 @@ model.</p>
             <span class="name">BOLD</span>        =
 <span class="default_value">&#39;bold&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BOLD"></a>
-
-
+    
+    
 
                 </section>
                 <section id="WIKITEXT2">
@@ -1331,11 +1381,11 @@ model.</p>
             <span class="name">WIKITEXT2</span>        =
 <span class="default_value">&#39;wikitext2&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WIKITEXT2"></a>
-
-
+    
+    
 
                 </section>
                 <section id="REAL_TOXICITY_PROMPTS">
@@ -1343,11 +1393,11 @@ model.</p>
             <span class="name">REAL_TOXICITY_PROMPTS</span>        =
 <span class="default_value">&#39;real_toxicity_prompts&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#REAL_TOXICITY_PROMPTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="REAL_TOXICITY_PROMPTS_CHALLENGING">
@@ -1355,24 +1405,24 @@ model.</p>
             <span class="name">REAL_TOXICITY_PROMPTS_CHALLENGING</span>        =
 <span class="default_value">&#39;real_toxicity_prompts_challenging&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#REAL_TOXICITY_PROMPTS_CHALLENGING"></a>
-
-
+    
+    
 
                 </section>
                 <section id="EVAL_DATASETS">
                     <div class="attr variable">
             <span class="name">EVAL_DATASETS</span><span class="annotation">: Dict[str, List[str]]</span>        =
 <input id="EVAL_DATASETS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="EVAL_DATASETS-view-value"></label><span class="default_value">{&#39;factual_knowledge&#39;: [&#39;trex&#39;], &#39;qa_accuracy&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;qa_accuracy_semantic_robustness&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;prompt_stereotyping&#39;: [&#39;crows-pairs&#39;], &#39;summarization_accuracy&#39;: [&#39;xsum&#39;], &#39;general_semantic_robustness&#39;: [&#39;bold&#39;, &#39;trex&#39;, &#39;wikitext2&#39;], &#39;classification_accuracy&#39;: [&#39;womens_clothing_ecommerce_reviews&#39;], &#39;classification_accuracy_semantic_robustness&#39;: [&#39;womens_clothing_ecommerce_reviews&#39;], &#39;summarization_accuracy_semantic_robustness&#39;: [&#39;xsum&#39;], &#39;toxicity&#39;: [&#39;bold&#39;, &#39;real_toxicity_prompts&#39;, &#39;real_toxicity_prompts_challenging&#39;], &#39;qa_toxicity&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;summarization_toxicity&#39;: [&#39;xsum&#39;]}</span>
+            <label class="view-value-button pdoc-button" for="EVAL_DATASETS-view-value"></label><span class="default_value">{&#39;factual_knowledge&#39;: [&#39;trex&#39;], &#39;qa_accuracy&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;qa_accuracy_semantic_robustness&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;prompt_stereotyping&#39;: [&#39;crows-pairs&#39;], &#39;summarization_accuracy&#39;: [&#39;xsum&#39;, &#39;gigaword&#39;, &#39;gov_report&#39;], &#39;general_semantic_robustness&#39;: [&#39;bold&#39;, &#39;trex&#39;, &#39;wikitext2&#39;], &#39;classification_accuracy&#39;: [&#39;womens_clothing_ecommerce_reviews&#39;], &#39;classification_accuracy_semantic_robustness&#39;: [&#39;womens_clothing_ecommerce_reviews&#39;], &#39;summarization_accuracy_semantic_robustness&#39;: [&#39;xsum&#39;, &#39;gigaword&#39;, &#39;gov_report&#39;], &#39;toxicity&#39;: [&#39;bold&#39;, &#39;real_toxicity_prompts&#39;, &#39;real_toxicity_prompts_challenging&#39;], &#39;qa_toxicity&#39;: [&#39;boolq&#39;, &#39;trivia_qa&#39;, &#39;natural_questions&#39;], &#39;summarization_toxicity&#39;: [&#39;xsum&#39;, &#39;gigaword&#39;, &#39;gov_report&#39;]}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EVAL_DATASETS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DEFAULT_PROMPT_TEMPLATE">
@@ -1380,30 +1430,30 @@ model.</p>
             <span class="name">DEFAULT_PROMPT_TEMPLATE</span>        =
 <span class="default_value">&#39;$feature&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DEFAULT_PROMPT_TEMPLATE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES">
                     <div class="attr variable">
             <span class="name">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span>        =
 <input id="BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES-view-value"></label><span class="default_value">{&#39;boolq&#39;: &#39;Respond to the following question. Valid answers are &#34;true&#34; or &#34;false&#34;. $feature Answer:&#39;, &#39;trivia_qa&#39;: &#39;Respond to the following question with a short answer: $feature Answer:&#39;, &#39;natural_questions&#39;: &#39;Respond to the following question with a short answer: $feature Answer:&#39;, &#39;xsum&#39;: &#39;Summarise the following text in one sentence: $feature&#39;, &#39;womens_clothing_ecommerce_reviews&#39;: &#39;Classify the sentiment of the following review with 0 (negative sentiment) or 1 (positive sentiment). Review: $feature. Classification:&#39;}</span>
+            <label class="view-value-button pdoc-button" for="BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES-view-value"></label><span class="default_value">{&#39;boolq&#39;: &#39;Respond to the following question. Valid answers are &#34;true&#34; or &#34;false&#34;. $feature Answer:&#39;, &#39;trivia_qa&#39;: &#39;Respond to the following question with a short answer: $feature Answer:&#39;, &#39;natural_questions&#39;: &#39;Respond to the following question with a short answer: $feature Answer:&#39;, &#39;xsum&#39;: &#39;Summarise the following text in one sentence: $feature&#39;, &#39;gigaword&#39;: &#39;Summarise the following text in one sentence: $feature&#39;, &#39;gov_report&#39;: &#39;Summarise the following text in a few sentences: $feature&#39;, &#39;womens_clothing_ecommerce_reviews&#39;: &#39;Classify the sentiment of the following review with 0 (negative sentiment) or 1 (positive sentiment). Review: $feature. Classification:&#39;}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="get_default_prompt_template">
                             <input id="get_default_prompt_template-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">get_default_prompt_template</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
@@ -1411,13 +1461,13 @@ model.</p>
 
     </div>
     <a class="headerlink" href="#get_default_prompt_template"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="get_default_prompt_template-227"><a href="#get_default_prompt_template-227"><span class="linenos">227</span></a><span class="k">def</span> <span class="nf">get_default_prompt_template</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="get_default_prompt_template-228"><a href="#get_default_prompt_template-228"><span class="linenos">228</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="get_default_prompt_template-229"><a href="#get_default_prompt_template-229"><span class="linenos">229</span></a><span class="sd">    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,</span>
-</span><span id="get_default_prompt_template-230"><a href="#get_default_prompt_template-230"><span class="linenos">230</span></a><span class="sd">        the method returns a generic default prompt template.</span>
-</span><span id="get_default_prompt_template-231"><a href="#get_default_prompt_template-231"><span class="linenos">231</span></a><span class="sd">    :param dataset_name: Name of dataset</span>
-</span><span id="get_default_prompt_template-232"><a href="#get_default_prompt_template-232"><span class="linenos">232</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="get_default_prompt_template-233"><a href="#get_default_prompt_template-233"><span class="linenos">233</span></a>    <span class="k">return</span> <span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">DEFAULT_PROMPT_TEMPLATE</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="get_default_prompt_template-233"><a href="#get_default_prompt_template-233"><span class="linenos">233</span></a><span class="k">def</span> <span class="nf">get_default_prompt_template</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="get_default_prompt_template-234"><a href="#get_default_prompt_template-234"><span class="linenos">234</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="get_default_prompt_template-235"><a href="#get_default_prompt_template-235"><span class="linenos">235</span></a><span class="sd">    Util method to provide dataset specific default prompt templates. If not default is configured for the dataset,</span>
+</span><span id="get_default_prompt_template-236"><a href="#get_default_prompt_template-236"><span class="linenos">236</span></a><span class="sd">        the method returns a generic default prompt template.</span>
+</span><span id="get_default_prompt_template-237"><a href="#get_default_prompt_template-237"><span class="linenos">237</span></a><span class="sd">    :param dataset_name: Name of dataset</span>
+</span><span id="get_default_prompt_template-238"><a href="#get_default_prompt_template-238"><span class="linenos">238</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="get_default_prompt_template-239"><a href="#get_default_prompt_template-239"><span class="linenos">239</span></a>    <span class="k">return</span> <span class="n">BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">DEFAULT_PROMPT_TEMPLATE</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -1437,13 +1487,13 @@ model.</p>
                     <div class="attr variable">
             <span class="name">DATASET_CONFIGS</span><span class="annotation">: Dict[str, fmeval.data_loaders.data_config.DataConfig]</span>        =
 <input id="DATASET_CONFIGS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="DATASET_CONFIGS-view-value"></label><span class="default_value">{&#39;trex&#39;: DataConfig(dataset_name=&#39;trex&#39;, dataset_uri=&#39;s3://fmeval/datasets/trex/trex.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answers&#39;, category_location=&#39;knowledge_category&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;boolq&#39;: DataConfig(dataset_name=&#39;boolq&#39;, dataset_uri=&#39;s3://fmeval/datasets/boolq/boolq.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;trivia_qa&#39;: DataConfig(dataset_name=&#39;trivia_qa&#39;, dataset_uri=&#39;s3://fmeval/datasets/triviaQA/triviaQA.json&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;natural_questions&#39;: DataConfig(dataset_name=&#39;natural_questions&#39;, dataset_uri=&#39;s3://fmeval/datasets/natural_questions/natural_questions.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;crows-pairs&#39;: DataConfig(dataset_name=&#39;crows-pairs&#39;, dataset_uri=&#39;s3://fmeval/datasets/crows-pairs/crows-pairs.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=None, model_output_location=None, target_output_location=None, category_location=&#39;bias_type&#39;, sent_more_input_location=&#39;sent_more&#39;, sent_less_input_location=&#39;sent_less&#39;, sent_more_output_location=None, sent_less_output_location=None), &#39;xsum&#39;: DataConfig(dataset_name=&#39;xsum&#39;, dataset_uri=&#39;s3://fmeval/datasets/xsum/xsum.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;document&#39;, model_output_location=None, target_output_location=&#39;summary&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;womens_clothing_ecommerce_reviews&#39;: DataConfig(dataset_name=&#39;womens_clothing_ecommerce_reviews&#39;, dataset_uri=&#39;s3://fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;&#34;Review Text&#34;&#39;, model_output_location=None, target_output_location=&#39;&#34;Recommended IND&#34;&#39;, category_location=&#39;&#34;Class Name&#34;&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;bold&#39;: DataConfig(dataset_name=&#39;bold&#39;, dataset_uri=&#39;s3://fmeval/datasets/bold/bold.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=&#39;category&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;wikitext2&#39;: DataConfig(dataset_name=&#39;wikitext2&#39;, dataset_uri=&#39;s3://fmeval/datasets/wikitext2/wikitext2.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;real_toxicity_prompts&#39;: DataConfig(dataset_name=&#39;real_toxicity_prompts&#39;, dataset_uri=&#39;s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None), &#39;real_toxicity_prompts_challenging&#39;: DataConfig(dataset_name=&#39;real_toxicity_prompts_challenging&#39;, dataset_uri=&#39;s3://fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_output_location=None, sent_less_output_location=None)}</span>
+            <label class="view-value-button pdoc-button" for="DATASET_CONFIGS-view-value"></label><span class="default_value">{&#39;trex&#39;: DataConfig(dataset_name=&#39;trex&#39;, dataset_uri=&#39;s3://fmeval/datasets/trex/trex.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answers&#39;, category_location=&#39;knowledge_category&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;boolq&#39;: DataConfig(dataset_name=&#39;boolq&#39;, dataset_uri=&#39;s3://fmeval/datasets/boolq/boolq.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;trivia_qa&#39;: DataConfig(dataset_name=&#39;trivia_qa&#39;, dataset_uri=&#39;s3://fmeval/datasets/triviaQA/triviaQA.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;natural_questions&#39;: DataConfig(dataset_name=&#39;natural_questions&#39;, dataset_uri=&#39;s3://fmeval/datasets/natural_questions/natural_questions.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;question&#39;, model_output_location=None, target_output_location=&#39;answer&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;crows-pairs&#39;: DataConfig(dataset_name=&#39;crows-pairs&#39;, dataset_uri=&#39;s3://fmeval/datasets/crows-pairs/crows-pairs.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=None, model_output_location=None, target_output_location=None, category_location=&#39;bias_type&#39;, sent_more_input_location=&#39;sent_more&#39;, sent_less_input_location=&#39;sent_less&#39;, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;xsum&#39;: DataConfig(dataset_name=&#39;xsum&#39;, dataset_uri=&#39;s3://fmeval/datasets/xsum/xsum.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;document&#39;, model_output_location=None, target_output_location=&#39;summary&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;womens_clothing_ecommerce_reviews&#39;: DataConfig(dataset_name=&#39;womens_clothing_ecommerce_reviews&#39;, dataset_uri=&#39;s3://fmeval/datasets/womens_clothing_reviews/womens_clothing_reviews.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;&#34;Review Text&#34;&#39;, model_output_location=None, target_output_location=&#39;&#34;Recommended IND&#34;&#39;, category_location=&#39;&#34;Class Name&#34;&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;bold&#39;: DataConfig(dataset_name=&#39;bold&#39;, dataset_uri=&#39;s3://fmeval/datasets/bold/bold.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=&#39;category&#39;, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;wikitext2&#39;: DataConfig(dataset_name=&#39;wikitext2&#39;, dataset_uri=&#39;s3://fmeval/datasets/wikitext2/wikitext2.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;real_toxicity_prompts&#39;: DataConfig(dataset_name=&#39;real_toxicity_prompts&#39;, dataset_uri=&#39;s3://fmeval/datasets/real_toxicity/real_toxicity.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;real_toxicity_prompts_challenging&#39;: DataConfig(dataset_name=&#39;real_toxicity_prompts_challenging&#39;, dataset_uri=&#39;s3://fmeval/datasets/real_toxicity/real_toxicity_challenging.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;prompt&#39;, model_output_location=None, target_output_location=None, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;gigaword&#39;: DataConfig(dataset_name=&#39;gigaword&#39;, dataset_uri=&#39;s3://fmeval/datasets/gigaword/gigaword.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;document&#39;, model_output_location=None, target_output_location=&#39;summary&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None), &#39;gov_report&#39;: DataConfig(dataset_name=&#39;gov_report&#39;, dataset_uri=&#39;s3://fmeval/datasets/gov_report/gov_report.jsonl&#39;, dataset_mime_type=&#39;application/jsonlines&#39;, model_input_location=&#39;report&#39;, model_output_location=None, target_output_location=&#39;summary&#39;, category_location=None, sent_more_input_location=None, sent_less_input_location=None, sent_more_log_prob_location=None, sent_less_log_prob_location=None)}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DATASET_CONFIGS"></a>
-
-
+    
+    
 
                 </section>
     </main>

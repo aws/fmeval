@@ -193,7 +193,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.html">reporting</a><wbr>.constants    </h1>
 
-
+                
                         <input id="mod-constants-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-constants-view-source"><span>View Source</span></label>
@@ -237,250 +237,264 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 </span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>    <span class="n">WIKITEXT2</span><span class="p">,</span>
 </span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>    <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">,</span>
 </span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">,</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="p">)</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="kn">from</span> <span class="nn">fmeval.eval_algorithms</span> <span class="kn">import</span> <span class="n">EvalAlgorithm</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="kn">from</span> <span class="nn">fmeval.eval_algorithms.helper_models.helper_model</span> <span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>    <span class="n">TOXIGEN_SCORE_NAME</span><span class="p">,</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>    <span class="n">DETOXIFY_SCORE_TOXICITY</span><span class="p">,</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>    <span class="n">DETOXIFY_SCORE_SEVERE_TOXICITY</span><span class="p">,</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>    <span class="n">DETOXIFY_SCORE_OBSCENE</span><span class="p">,</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>    <span class="n">DETOXIFY_SCORE_IDENTITY_ATTACK</span><span class="p">,</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>    <span class="n">DETOXIFY_SCORE_INSULT</span><span class="p">,</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>    <span class="n">DETOXIFY_SCORE_THREAT</span><span class="p">,</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>    <span class="n">DETOXIFY_SCORE_SEXUAL_EXPLICIT</span><span class="p">,</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="p">)</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="c1"># For general HTML alignment</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a><span class="n">CENTER</span> <span class="o">=</span> <span class="s2">&quot;center&quot;</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="n">LEFT</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="n">RIGHT</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a><span class="k">class</span> <span class="nc">ListType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>    <span class="n">BULLETED</span> <span class="o">=</span> <span class="s2">&quot;bulleted&quot;</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>    <span class="n">NUMBERED</span> <span class="o">=</span> <span class="s2">&quot;numbered&quot;</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a><span class="c1"># For general use in Markdown-related code</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="n">SINGLE_NEWLINE</span> <span class="o">=</span> <span class="s2">&quot;  </span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="n">DOUBLE_NEWLINE</span> <span class="o">=</span> <span class="s2">&quot;  </span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a><span class="c1"># For tables and bar plots</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a><span class="n">NUM_SAMPLES_TO_DISPLAY_IN_TABLE</span> <span class="o">=</span> <span class="mi">5</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a><span class="n">CATEGORY_BAR_COLOR</span> <span class="o">=</span> <span class="s2">&quot;steelblue&quot;</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="n">OVERALL_BAR_COLOR</span> <span class="o">=</span> <span class="s2">&quot;coral&quot;</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="n">MAX_CHAR</span> <span class="o">=</span> <span class="mi">200</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a><span class="c1"># Extensions used by the markdown library to convert markdown to HTML</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a><span class="n">MARKDOWN_EXTENSIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tables&quot;</span><span class="p">,</span> <span class="s2">&quot;md_in_html&quot;</span><span class="p">]</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="c1"># Dataset score label used in category bar plot</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a><span class="n">DATASET_SCORE_LABEL</span> <span class="o">=</span> <span class="s2">&quot;Overall&quot;</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a><span class="c1"># Scores that are not per sample</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a><span class="n">AGGREGATE_ONLY_SCORES</span> <span class="o">=</span> <span class="p">[</span><span class="n">BALANCED_ACCURACY_SCORE</span><span class="p">,</span> <span class="n">PRECISION_SCORE</span><span class="p">,</span> <span class="n">RECALL_SCORE</span><span class="p">]</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="c1"># For string formatting in eval names/score names</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a><span class="n">GENERAL_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;qa&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&amp;A&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span> <span class="s2">&quot;F1&quot;</span><span class="p">)]</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="n">SCORE_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="p">(</span><span class="s2">&quot;prompt stereotyping&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased&quot;</span><span class="p">),</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="p">(</span><span class="s2">&quot;meteor&quot;</span><span class="p">,</span> <span class="s2">&quot;METEOR&quot;</span><span class="p">),</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">,</span> <span class="s2">&quot;BERTScore&quot;</span><span class="p">),</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>    <span class="p">(</span><span class="s2">&quot;rouge&quot;</span><span class="p">,</span> <span class="s2">&quot;ROUGE&quot;</span><span class="p">),</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="p">(</span><span class="s2">&quot;F1 score&quot;</span><span class="p">,</span> <span class="s2">&quot;F1 over words&quot;</span><span class="p">),</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="p">(</span><span class="s2">&quot;obscene&quot;</span><span class="p">,</span> <span class="s2">&quot;Obscenity&quot;</span><span class="p">),</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="p">(</span><span class="s2">&quot;sexual explicit&quot;</span><span class="p">,</span> <span class="s2">&quot;Sexual Explicitness&quot;</span><span class="p">),</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a><span class="p">]</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="n">EVAL_NAME_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">GENERAL_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;semantic_robustness&quot;</span><span class="p">),</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="p">(</span><span class="s2">&quot;accuracy_semantic_robustness&quot;</span><span class="p">,</span> <span class="s2">&quot;semantic_robustness&quot;</span><span class="p">),</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="p">]</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="n">PLOT_TITLE_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;prompt_stereotyping&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased score&quot;</span><span class="p">)]</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="n">COLUMN_NAME_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="p">(</span><span class="s2">&quot;sent_more&quot;</span><span class="p">,</span> <span class="s2">&quot;s_more&quot;</span><span class="p">),</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="p">(</span><span class="s2">&quot;s_more_input&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;math&gt;S&lt;sub&gt;more&lt;/sub&gt;&lt;/math&gt;&quot;</span><span class="p">),</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="p">(</span><span class="s2">&quot;sent_less&quot;</span><span class="p">,</span> <span class="s2">&quot;s_less&quot;</span><span class="p">),</span>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="p">(</span><span class="s2">&quot;s_less_input&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;math&gt;S&lt;sub&gt;less&lt;/sub&gt;&lt;/math&gt;&quot;</span><span class="p">),</span>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>    <span class="p">(</span><span class="s2">&quot;prob_&quot;</span><span class="p">,</span> <span class="s2">&quot;probability_&quot;</span><span class="p">),</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>    <span class="p">(</span><span class="s2">&quot;word_error_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;Average WER&quot;</span><span class="p">),</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="p">(</span><span class="s2">&quot;classification_accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">),</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>    <span class="p">(</span><span class="s2">&quot;f1_score&quot;</span><span class="p">,</span> <span class="s2">&quot;f1 over words&quot;</span><span class="p">),</span>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>    <span class="p">(</span><span class="s2">&quot;meteor&quot;</span><span class="p">,</span> <span class="s2">&quot;METEOR&quot;</span><span class="p">),</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">,</span> <span class="s2">&quot;BERTScore&quot;</span><span class="p">),</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="p">(</span><span class="s2">&quot;rouge&quot;</span><span class="p">,</span> <span class="s2">&quot;ROUGE&quot;</span><span class="p">),</span>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a><span class="p">]</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="n">AVOID_REMOVE_UNDERSCORE</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sent_more_input&quot;</span><span class="p">,</span> <span class="s2">&quot;sent_less_input&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased&quot;</span><span class="p">]</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="n">ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="p">,</span>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="p">,</span>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="p">]</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="n">ACCURACY_SEMANTIC_ROBUSTNESS_SCORES</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>    <span class="n">CLASSIFICATION_ACCURACY_SCORE</span><span class="p">,</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>    <span class="n">METEOR_SCORE</span><span class="p">,</span>
-</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>    <span class="n">BERT_SCORE</span><span class="p">,</span>
-</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>    <span class="n">ROUGE_SCORE</span><span class="p">,</span>
-</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>    <span class="n">F1_SCORE</span><span class="p">,</span>
-</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>    <span class="n">EXACT_MATCH_SCORE</span><span class="p">,</span>
-</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>    <span class="n">QUASI_EXACT_MATCH_SCORE</span><span class="p">,</span>
-</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="p">]</span>
-</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="c1"># Dataset types</span>
-</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="n">BUILT_IN_DATASET</span> <span class="o">=</span> <span class="s2">&quot;Built-in Dataset&quot;</span>
-</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="n">CUSTOM_DATASET</span> <span class="o">=</span> <span class="s2">&quot;Custom Dataset&quot;</span>
-</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>
-</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a><span class="n">PROMPT_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;prompt&quot;</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>    <span class="n">GIGAWORD</span><span class="p">,</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>    <span class="n">GOV_REPORT</span><span class="p">,</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="p">)</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="kn">from</span> <span class="nn">fmeval.eval_algorithms</span> <span class="kn">import</span> <span class="n">EvalAlgorithm</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="kn">from</span> <span class="nn">fmeval.eval_algorithms.helper_models.helper_model</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>    <span class="n">TOXIGEN_SCORE_NAME</span><span class="p">,</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>    <span class="n">DETOXIFY_SCORE_TOXICITY</span><span class="p">,</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>    <span class="n">DETOXIFY_SCORE_SEVERE_TOXICITY</span><span class="p">,</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>    <span class="n">DETOXIFY_SCORE_OBSCENE</span><span class="p">,</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>    <span class="n">DETOXIFY_SCORE_IDENTITY_ATTACK</span><span class="p">,</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>    <span class="n">DETOXIFY_SCORE_INSULT</span><span class="p">,</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>    <span class="n">DETOXIFY_SCORE_THREAT</span><span class="p">,</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>    <span class="n">DETOXIFY_SCORE_SEXUAL_EXPLICIT</span><span class="p">,</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="p">)</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="c1"># For general HTML alignment</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="n">CENTER</span> <span class="o">=</span> <span class="s2">&quot;center&quot;</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="n">LEFT</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="n">RIGHT</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="k">class</span> <span class="nc">ListType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>    <span class="n">BULLETED</span> <span class="o">=</span> <span class="s2">&quot;bulleted&quot;</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>    <span class="n">NUMBERED</span> <span class="o">=</span> <span class="s2">&quot;numbered&quot;</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="c1"># For general use in Markdown-related code</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="n">SINGLE_NEWLINE</span> <span class="o">=</span> <span class="s2">&quot;  </span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a><span class="n">DOUBLE_NEWLINE</span> <span class="o">=</span> <span class="s2">&quot;  </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a><span class="c1"># For tables and bar plots</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="n">NUM_SAMPLES_TO_DISPLAY_IN_TABLE</span> <span class="o">=</span> <span class="mi">5</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="n">CATEGORY_BAR_COLOR</span> <span class="o">=</span> <span class="s2">&quot;steelblue&quot;</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="n">OVERALL_BAR_COLOR</span> <span class="o">=</span> <span class="s2">&quot;coral&quot;</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a><span class="n">MAX_CHAR</span> <span class="o">=</span> <span class="mi">200</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a><span class="c1"># Extensions used by the markdown library to convert markdown to HTML</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="n">MARKDOWN_EXTENSIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tables&quot;</span><span class="p">,</span> <span class="s2">&quot;md_in_html&quot;</span><span class="p">]</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a><span class="c1"># Dataset score label used in category bar plot</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a><span class="n">DATASET_SCORE_LABEL</span> <span class="o">=</span> <span class="s2">&quot;Overall&quot;</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a><span class="c1"># Scores that are not per sample</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="n">AGGREGATE_ONLY_SCORES</span> <span class="o">=</span> <span class="p">[</span><span class="n">BALANCED_ACCURACY_SCORE</span><span class="p">,</span> <span class="n">PRECISION_SCORE</span><span class="p">,</span> <span class="n">RECALL_SCORE</span><span class="p">]</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="c1"># For string formatting in eval names/score names</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a><span class="n">GENERAL_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;qa&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&amp;A&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span> <span class="s2">&quot;F1&quot;</span><span class="p">)]</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a><span class="n">SCORE_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="p">(</span><span class="s2">&quot;prompt stereotyping&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased&quot;</span><span class="p">),</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>    <span class="p">(</span><span class="s2">&quot;meteor&quot;</span><span class="p">,</span> <span class="s2">&quot;METEOR&quot;</span><span class="p">),</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">,</span> <span class="s2">&quot;BERTScore&quot;</span><span class="p">),</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="p">(</span><span class="s2">&quot;rouge&quot;</span><span class="p">,</span> <span class="s2">&quot;ROUGE&quot;</span><span class="p">),</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="p">(</span><span class="s2">&quot;F1 score&quot;</span><span class="p">,</span> <span class="s2">&quot;F1 over words&quot;</span><span class="p">),</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>    <span class="p">(</span><span class="s2">&quot;obscene&quot;</span><span class="p">,</span> <span class="s2">&quot;Obscenity&quot;</span><span class="p">),</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>    <span class="p">(</span><span class="s2">&quot;sexual explicit&quot;</span><span class="p">,</span> <span class="s2">&quot;Sexual Explicitness&quot;</span><span class="p">),</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a><span class="p">]</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a><span class="n">EVAL_NAME_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">GENERAL_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;semantic_robustness&quot;</span><span class="p">),</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>    <span class="p">(</span><span class="s2">&quot;accuracy_semantic_robustness&quot;</span><span class="p">,</span> <span class="s2">&quot;semantic_robustness&quot;</span><span class="p">),</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="p">(</span><span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="p">]</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a><span class="n">PLOT_TITLE_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;prompt_stereotyping&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased score&quot;</span><span class="p">)]</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="n">COLUMN_NAME_STRING_REPLACEMENTS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="p">(</span><span class="s2">&quot;sent_more&quot;</span><span class="p">,</span> <span class="s2">&quot;s_more&quot;</span><span class="p">),</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="p">(</span><span class="s2">&quot;s_more_input&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;math&gt;S&lt;sub&gt;more&lt;/sub&gt;&lt;/math&gt;&quot;</span><span class="p">),</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>    <span class="p">(</span><span class="s2">&quot;sent_less&quot;</span><span class="p">,</span> <span class="s2">&quot;s_less&quot;</span><span class="p">),</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>    <span class="p">(</span><span class="s2">&quot;s_less_input&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;math&gt;S&lt;sub&gt;less&lt;/sub&gt;&lt;/math&gt;&quot;</span><span class="p">),</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="p">(</span><span class="s2">&quot;prob_&quot;</span><span class="p">,</span> <span class="s2">&quot;probability_&quot;</span><span class="p">),</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>    <span class="p">(</span><span class="s2">&quot;word_error_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;Average WER&quot;</span><span class="p">),</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>    <span class="p">(</span><span class="s2">&quot;classification_accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">),</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="p">(</span><span class="s2">&quot;f1_score&quot;</span><span class="p">,</span> <span class="s2">&quot;f1 over words&quot;</span><span class="p">),</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="p">(</span><span class="s2">&quot;meteor&quot;</span><span class="p">,</span> <span class="s2">&quot;METEOR&quot;</span><span class="p">),</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">,</span> <span class="s2">&quot;BERTScore&quot;</span><span class="p">),</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="p">(</span><span class="s2">&quot;rouge&quot;</span><span class="p">,</span> <span class="s2">&quot;ROUGE&quot;</span><span class="p">),</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="p">]</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="n">AVOID_REMOVE_UNDERSCORE</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sent_more_input&quot;</span><span class="p">,</span> <span class="s2">&quot;sent_less_input&quot;</span><span class="p">,</span> <span class="s2">&quot;is_biased&quot;</span><span class="p">]</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="n">ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="p">,</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS</span><span class="p">,</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="p">]</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="n">ACCURACY_SEMANTIC_ROBUSTNESS_SCORES</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>    <span class="n">CLASSIFICATION_ACCURACY_SCORE</span><span class="p">,</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>    <span class="n">METEOR_SCORE</span><span class="p">,</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>    <span class="n">BERT_SCORE</span><span class="p">,</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>    <span class="n">ROUGE_SCORE</span><span class="p">,</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>    <span class="n">F1_SCORE</span><span class="p">,</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>    <span class="n">EXACT_MATCH_SCORE</span><span class="p">,</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>    <span class="n">QUASI_EXACT_MATCH_SCORE</span><span class="p">,</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="p">]</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="c1"># Dataset types</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a><span class="n">BUILT_IN_DATASET</span> <span class="o">=</span> <span class="s2">&quot;Built-in Dataset&quot;</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a><span class="n">CUSTOM_DATASET</span> <span class="o">=</span> <span class="s2">&quot;Custom Dataset&quot;</span>
 </span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>
-</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a><span class="n">TOXICITY_EVAL_NAMES</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a><span class="p">]</span>
-</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>
-</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="c1"># Prompt stereotyping table column name</span>
-</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a><span class="n">PROBABILITY_RATIO</span> <span class="o">=</span> <span class="s2">&quot;&lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;&quot;</span>
-</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="n">IS_BIASED</span> <span class="o">=</span> <span class="s2">&quot;is_biased&quot;</span>
-</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
-</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a><span class="c1"># Toxicity detector names</span>
-</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="n">TOXIGEN_NAME</span> <span class="o">=</span> <span class="s2">&quot;Toxigen-roberta&quot;</span>
-</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="n">DETOXIFY_NAME</span> <span class="o">=</span> <span class="s2">&quot;UnitaryAI Detoxify-unbiased&quot;</span>
-</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="n">TOXIGEN_URI</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/microsoft/TOXIGEN&quot;</span>
-</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="n">DETOXIFY_URI</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/unitaryai/detoxify&quot;</span>
-</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a><span class="c1"># Example table descriptions</span>
-</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a><span class="n">TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &quot;</span>
-</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="n">WER_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.&quot;</span>
-</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a><span class="n">STEREOTYPING_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;**Probability ratio:** </span><span class="se">\n\n</span><span class="s2">For each sentence pair, we additionally report by how much the model stereotypes. This is given by the ratio &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence.&quot;</span>
-</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a><span class="n">FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &quot;</span>
-</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>
-</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="c1"># Score descriptions for the report</span>
-</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a><span class="n">SCORE_DESCRIPTIONS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>    <span class="c1"># Factual knowledge</span>
-</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>    <span class="n">FACTUAL_KNOWLEDGE</span><span class="p">:</span> <span class="s2">&quot;A factual knowledge score is a value between 0 and 1, indicating the percentage of correctly retrieved real-world facts across different knowledge categories.&quot;</span><span class="p">,</span>
-</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>    <span class="c1"># Prompt stereotyping</span>
-</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>    <span class="n">PROMPT_STEREOTYPING</span><span class="p">:</span> <span class="s2">&quot;The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;) &gt; p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5&quot;</span><span class="p">,</span>
-</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="n">LOG_PROBABILITY_DIFFERENCE</span><span class="p">:</span> <span class="s2">&quot;For each sentence pair, we report the log probability difference, a value ranging -&amp;#8734; to &amp;#8734;, indicating how much the model stereotypes. &quot;</span><span class="p">,</span>
-</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>    <span class="c1"># QA accuracy</span>
-</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>    <span class="n">F1_SCORE</span><span class="p">:</span> <span class="s2">&quot;Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .&quot;</span><span class="p">,</span>
-</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>    <span class="n">EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;An exact match score is a binary score where 1 indicates the model output and answer match exactly and 0 indicates otherwise.&quot;</span><span class="p">,</span>
-</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>    <span class="n">QUASI_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;Similar as above, but both model output and answer are normalised first by removing any articles and punctuation. E.g., 1 also for predicted answers “Antarctica.” or “the Antarctica” .&quot;</span><span class="p">,</span>
-</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>    <span class="c1"># Summarization accuracy</span>
-</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>    <span class="n">ROUGE_SCORE</span><span class="p">:</span> <span class="s2">&quot;A ROUGE-N score computes the N-gram (sequences of n words) word overlaps between the reference and model summary, with the value ranging between 0 (no match) to 1 (perfect match).&quot;</span><span class="p">,</span>
-</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>    <span class="n">METEOR_SCORE</span><span class="p">:</span> <span class="s2">&quot;Meteor is similar to ROUGE-N, but it also accounts for rephrasing by using traditional NLP techniques such as stemming (e.g. matching “singing” to “sing”,“sings” etc.) and synonym lists.&quot;</span><span class="p">,</span>
-</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>    <span class="n">BERT_SCORE</span><span class="p">:</span> <span class="s2">&quot;BERTScore uses a second ML model (from the BERT family) to compute sentence embeddings and compare their similarity.&quot;</span><span class="p">,</span>
-</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>    <span class="c1"># Classification accuracy</span>
-</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>    <span class="n">CLASSIFICATION_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The classification accuracy is `predicted_label == true_label`, reported as the mean accuracy over all datapoints.&quot;</span><span class="p">,</span>
-</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>    <span class="n">PRECISION_SCORE</span><span class="p">:</span> <span class="s2">&quot;The precision score is computed as `true positives / (true positives + false positives)`. &quot;</span><span class="p">,</span>
-</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>    <span class="n">RECALL_SCORE</span><span class="p">:</span> <span class="s2">&quot;The recall score is computed as `true positives / (true positives + false negatives)`&quot;</span><span class="p">,</span>
-</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>    <span class="n">BALANCED_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The balanced accuracy score is the same as accuracy in the binary case, otherwise averaged recall per class.&quot;</span><span class="p">,</span>
-</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>    <span class="c1"># General semantic robustness</span>
-</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>    <span class="n">WER_SCORE</span><span class="p">:</span> <span class="s2">&quot;Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).&quot;</span><span class="p">,</span>
-</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>    <span class="c1"># Summarization semantic robustness</span>
-</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>    <span class="n">DELTA_ROUGE_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the ROUGE-N score is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>    <span class="n">DELTA_METEOR_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the METEOR score is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>    <span class="n">DELTA_BERT_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the BERTscore is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>    <span class="c1"># QA semantic robustness</span>
-</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>    <span class="n">DELTA_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the Exact Match score is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>    <span class="n">DELTA_QUASI_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the Quasi Exact Match score is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>    <span class="n">DELTA_F1_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the F1 over Words score is measured.&quot;</span><span class="p">,</span>
-</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>    <span class="c1"># Classification semantic robustness</span>
-</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>    <span class="n">DELTA_CLASSIFICATION_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The score is the binary indicator on whether or not the model answer is correct.&quot;</span><span class="p">,</span>
-</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>    <span class="c1"># Toxicity</span>
-</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="n">TOXIGEN_SCORE_NAME</span><span class="p">:</span> <span class="s2">&quot;A binary score where 0 indicates no toxicity detected and 1 indicates toxicity detected.&quot;</span><span class="p">,</span>
-</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>    <span class="n">DETOXIFY_SCORE_TOXICITY</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **toxicity**&quot;</span><span class="p">,</span>
-</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>    <span class="n">DETOXIFY_SCORE_SEVERE_TOXICITY</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **severe_toxicity**&quot;</span><span class="p">,</span>
-</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>    <span class="n">DETOXIFY_SCORE_OBSCENE</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **obscene**&quot;</span><span class="p">,</span>
-</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>    <span class="n">DETOXIFY_SCORE_IDENTITY_ATTACK</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class **identity_attack**&quot;</span><span class="p">,</span>
-</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>    <span class="n">DETOXIFY_SCORE_INSULT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **insult**&quot;</span><span class="p">,</span>
-</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>    <span class="n">DETOXIFY_SCORE_THREAT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **threat**&quot;</span><span class="p">,</span>
-</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>    <span class="n">DETOXIFY_SCORE_SEXUAL_EXPLICIT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **sexual_explicit**&quot;</span><span class="p">,</span>
-</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a><span class="p">}</span>
-</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>
-</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>
-</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a><span class="k">class</span> <span class="nc">DatasetDetails</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>
-</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>
-</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a><span class="c1"># Dataset details with the formatted names, URLs, descriptions and size</span>
-</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a><span class="n">DATASET_DETAILS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a>    <span class="n">TREX</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;T-REx&quot;</span><span class="p">,</span>
-</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://hadyelsahar.github.io/t-rex/&quot;</span><span class="p">,</span>
-</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset which consists of knowledge triplets extracted from Wikipedia. The triplets take the form (subject, predicate, object), for instance, (Berlin, capital of, Germany) or (Tata Motors, subsidiary of, Tata Group). &quot;</span><span class="p">,</span>
-</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">32260</span><span class="p">,</span>
-</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>    <span class="p">),</span>
-</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BoolQ&quot;</span><span class="p">,</span>
-</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/google-research-datasets/boolean-questions&quot;</span><span class="p">,</span>
-</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of question-passage-answer triplets. The question can be answered with yes/no, and the answer is contained in the passage. The questions are provided anonymously and unsolicited by users of the Google search engine, and afterwards paired with a paragraph from a Wikipedia article containing the answer.&quot;</span><span class="p">,</span>
-</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">12697</span><span class="p">,</span>
-</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>    <span class="p">),</span>
-</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;TriviaQA&quot;</span><span class="p">,</span>
-</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://nlp.cs.washington.edu/triviaqa/&quot;</span><span class="p">,</span>
-</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of 95K question-answer pairs with with on average six supporting evidence documents per question, leading to ~650K question-passage-answer triplets. The questions are authored by trivia enthusiasts and the evidence documents are independently gathered. &quot;</span><span class="p">,</span>
-</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">156328</span><span class="p">,</span>
-</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>    <span class="p">),</span>
-</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Natural Questions&quot;</span><span class="p">,</span>
-</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/google-research-datasets/natural-questions&quot;</span><span class="p">,</span>
-</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of ~320K question-passage-answer triplets. The questions are factual naturally-occurring questions. The passages are extracts from wikipedia articles (referred to as “long answers” in the original dataset). As before, providing the passage is optional depending on whether the open-book or closed-book case should be evaluated.&quot;</span><span class="p">,</span>
-</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">4289</span><span class="p">,</span>
-</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a>    <span class="p">),</span>
-</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a>    <span class="n">CROWS_PAIRS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;CrowS-Pairs&quot;</span><span class="p">,</span>
-</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/nyu-mll/crows-pairs&quot;</span><span class="p">,</span>
-</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.&quot;</span><span class="p">,</span>
-</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">1508</span><span class="p">,</span>
-</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a>    <span class="p">),</span>
-</span><span id="L-243"><a href="#L-243"><span class="linenos">243</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-244"><a href="#L-244"><span class="linenos">244</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;XSUM&quot;</span><span class="p">,</span>
-</span><span id="L-245"><a href="#L-245"><span class="linenos">245</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset&quot;</span><span class="p">,</span>
-</span><span id="L-246"><a href="#L-246"><span class="linenos">246</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.&quot;</span><span class="p">,</span>
-</span><span id="L-247"><a href="#L-247"><span class="linenos">247</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">204045</span><span class="p">,</span>
-</span><span id="L-248"><a href="#L-248"><span class="linenos">248</span></a>    <span class="p">),</span>
-</span><span id="L-249"><a href="#L-249"><span class="linenos">249</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-250"><a href="#L-250"><span class="linenos">250</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Women&#39;s E-commerce Clothing Reviews&quot;</span><span class="p">,</span>
-</span><span id="L-251"><a href="#L-251"><span class="linenos">251</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews&quot;</span><span class="p">,</span>
-</span><span id="L-252"><a href="#L-252"><span class="linenos">252</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This dataset consists of clothing reviews, both as a text and numerical scores.&quot;</span><span class="p">,</span>
-</span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">23486</span><span class="p">,</span>
-</span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a>    <span class="p">),</span>
-</span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a>    <span class="n">BOLD</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BOLD&quot;</span><span class="p">,</span>
-</span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/amazon-science/bold&quot;</span><span class="p">,</span>
-</span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A large-scale dataset that consists of English prompts aimed at testing bias and toxicity generation across five domains: profession, gender, race, religion, and political ideology.&quot;</span><span class="p">,</span>
-</span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">23679</span><span class="p">,</span>
-</span><span id="L-260"><a href="#L-260"><span class="linenos">260</span></a>    <span class="p">),</span>
-</span><span id="L-261"><a href="#L-261"><span class="linenos">261</span></a>    <span class="n">WIKITEXT2</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-262"><a href="#L-262"><span class="linenos">262</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;WikiText2&quot;</span><span class="p">,</span>
-</span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://huggingface.co/datasets/wikitext&quot;</span><span class="p">,</span>
-</span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset which consists of Good and Featured articles from Wikipedia. To create prompts, we broke each article down into sentences and extracted first 6 tokens from each sentence as the prompt.&quot;</span><span class="p">,</span>
-</span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">86007</span><span class="p">,</span>
-</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>    <span class="p">),</span>
-</span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>    <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Real Toxicity Prompts&quot;</span><span class="p">,</span>
-</span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/allenai/real-toxicity-prompts&quot;</span><span class="p">,</span>
-</span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset of truncated sentence snippets from the web. &quot;</span><span class="p">,</span>
-</span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">98243</span><span class="p">,</span>
-</span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a>    <span class="p">),</span>
-</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a>    <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
-</span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Real Toxicity Prompts Challenging&quot;</span><span class="p">,</span>
-</span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/allenai/real-toxicity-prompts&quot;</span><span class="p">,</span>
-</span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset of truncated sentence snippets from the web. Prompts marked as “challenging” have been found by the authors to consistently lead to generation of toxic continuation by tested models (i.e., GPT-1, GPT-2, GPT-3, CTRL, CTRL-WIKI).&quot;</span><span class="p">,</span>
-</span><span id="L-277"><a href="#L-277"><span class="linenos">277</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">1199</span><span class="p">,</span>
-</span><span id="L-278"><a href="#L-278"><span class="linenos">278</span></a>    <span class="p">),</span>
-</span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a><span class="p">}</span>
-</span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>
-</span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a><span class="n">TREX_DESCRIPTION_EXAMPLES</span> <span class="o">=</span> <span class="s2">&quot;We convert these predicates to prompts, e.g., Berlin is the capital of ___ (expected answer: Germany) and Tata Motors is a subsidiary of ___ (expected answer: Tata Group).&quot;</span>
-</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>
-</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a><span class="n">CROWS_PAIRS_DISCLAIMER</span> <span class="o">=</span> <span class="s2">&quot;**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States.&quot;</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a><span class="n">PROMPT_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;prompt&quot;</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a><span class="n">TOXICITY_EVAL_NAMES</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">QA_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>    <span class="n">EvalAlgorithm</span><span class="o">.</span><span class="n">SUMMARIZATION_TOXICITY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="p">]</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="c1"># Prompt stereotyping table column name</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a><span class="n">PROBABILITY_RATIO</span> <span class="o">=</span> <span class="s2">&quot;&lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;&quot;</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a><span class="n">IS_BIASED</span> <span class="o">=</span> <span class="s2">&quot;is_biased&quot;</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="c1"># Toxicity detector names</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="n">TOXIGEN_NAME</span> <span class="o">=</span> <span class="s2">&quot;Toxigen-roberta&quot;</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="n">DETOXIFY_NAME</span> <span class="o">=</span> <span class="s2">&quot;UnitaryAI Detoxify-unbiased&quot;</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a><span class="n">TOXIGEN_URI</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/microsoft/TOXIGEN&quot;</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a><span class="n">DETOXIFY_URI</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/unitaryai/detoxify&quot;</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="c1"># Example table descriptions</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a><span class="n">TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &quot;</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a><span class="n">WER_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.&quot;</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a><span class="n">STEREOTYPING_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;**Probability ratio:** </span><span class="se">\n\n</span><span class="s2">For each sentence pair, we additionally report by how much the model stereotypes. This is given by the ratio &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence.&quot;</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="n">FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &quot;</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="c1"># Score descriptions for the report</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="n">SCORE_DESCRIPTIONS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>    <span class="c1"># Factual knowledge</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>    <span class="n">FACTUAL_KNOWLEDGE</span><span class="p">:</span> <span class="s2">&quot;A factual knowledge score is a value between 0 and 1, indicating the percentage of correctly retrieved real-world facts across different knowledge categories.&quot;</span><span class="p">,</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="c1"># Prompt stereotyping</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>    <span class="n">PROMPT_STEREOTYPING</span><span class="p">:</span> <span class="s2">&quot;The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;) &gt; p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5&quot;</span><span class="p">,</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>    <span class="n">LOG_PROBABILITY_DIFFERENCE</span><span class="p">:</span> <span class="s2">&quot;For each sentence pair, we report the log probability difference, a value ranging -&amp;#8734; to &amp;#8734;, indicating how much the model stereotypes. &quot;</span><span class="p">,</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>    <span class="c1"># QA accuracy</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>    <span class="n">F1_SCORE</span><span class="p">:</span> <span class="s2">&quot;Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .&quot;</span><span class="p">,</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>    <span class="n">EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;An exact match score is a binary score where 1 indicates the model output and answer match exactly and 0 indicates otherwise.&quot;</span><span class="p">,</span>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>    <span class="n">QUASI_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;Similar as above, but both model output and answer are normalised first by removing any articles and punctuation. E.g., 1 also for predicted answers “Antarctica.” or “the Antarctica” .&quot;</span><span class="p">,</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>    <span class="c1"># Summarization accuracy</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>    <span class="n">ROUGE_SCORE</span><span class="p">:</span> <span class="s2">&quot;A ROUGE-N score computes the N-gram (sequences of n words) word overlaps between the reference and model summary, with the value ranging between 0 (no match) to 1 (perfect match).&quot;</span><span class="p">,</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>    <span class="n">METEOR_SCORE</span><span class="p">:</span> <span class="s2">&quot;Meteor is similar to ROUGE-N, but it also accounts for rephrasing by using traditional NLP techniques such as stemming (e.g. matching “singing” to “sing”,“sings” etc.) and synonym lists.&quot;</span><span class="p">,</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>    <span class="n">BERT_SCORE</span><span class="p">:</span> <span class="s2">&quot;BERTScore uses a second ML model (from the BERT family) to compute sentence embeddings and compare their similarity.&quot;</span><span class="p">,</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>    <span class="c1"># Classification accuracy</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>    <span class="n">CLASSIFICATION_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The classification accuracy is `predicted_label == true_label`, reported as the mean accuracy over all datapoints.&quot;</span><span class="p">,</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>    <span class="n">PRECISION_SCORE</span><span class="p">:</span> <span class="s2">&quot;The precision score is computed as `true positives / (true positives + false positives)`. &quot;</span><span class="p">,</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>    <span class="n">RECALL_SCORE</span><span class="p">:</span> <span class="s2">&quot;The recall score is computed as `true positives / (true positives + false negatives)`&quot;</span><span class="p">,</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>    <span class="n">BALANCED_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The balanced accuracy score is the same as accuracy in the binary case, otherwise averaged recall per class.&quot;</span><span class="p">,</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>    <span class="c1"># General semantic robustness</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>    <span class="n">WER_SCORE</span><span class="p">:</span> <span class="s2">&quot;Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).&quot;</span><span class="p">,</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>    <span class="c1"># Summarization semantic robustness</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>    <span class="n">DELTA_ROUGE_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the ROUGE-N score is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>    <span class="n">DELTA_METEOR_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the METEOR score is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>    <span class="n">DELTA_BERT_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the BERTscore is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>    <span class="c1"># QA semantic robustness</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>    <span class="n">DELTA_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the Exact Match score is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>    <span class="n">DELTA_QUASI_EXACT_MATCH_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the Quasi Exact Match score is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>    <span class="n">DELTA_F1_SCORE</span><span class="p">:</span> <span class="s2">&quot;The performance change of the F1 over Words score is measured.&quot;</span><span class="p">,</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>    <span class="c1"># Classification semantic robustness</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="n">DELTA_CLASSIFICATION_ACCURACY_SCORE</span><span class="p">:</span> <span class="s2">&quot;The score is the binary indicator on whether or not the model answer is correct.&quot;</span><span class="p">,</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>    <span class="c1"># Toxicity</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>    <span class="n">TOXIGEN_SCORE_NAME</span><span class="p">:</span> <span class="s2">&quot;A binary score where 0 indicates no toxicity detected and 1 indicates toxicity detected.&quot;</span><span class="p">,</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>    <span class="n">DETOXIFY_SCORE_TOXICITY</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **toxicity**&quot;</span><span class="p">,</span>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>    <span class="n">DETOXIFY_SCORE_SEVERE_TOXICITY</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **severe_toxicity**&quot;</span><span class="p">,</span>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>    <span class="n">DETOXIFY_SCORE_OBSCENE</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **obscene**&quot;</span><span class="p">,</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>    <span class="n">DETOXIFY_SCORE_IDENTITY_ATTACK</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class **identity_attack**&quot;</span><span class="p">,</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>    <span class="n">DETOXIFY_SCORE_INSULT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **insult**&quot;</span><span class="p">,</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>    <span class="n">DETOXIFY_SCORE_THREAT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **threat**&quot;</span><span class="p">,</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>    <span class="n">DETOXIFY_SCORE_SEXUAL_EXPLICIT</span><span class="p">:</span> <span class="s2">&quot;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **sexual_explicit**&quot;</span><span class="p">,</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a><span class="p">}</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a><span class="k">class</span> <span class="nc">DatasetDetails</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a><span class="c1"># Dataset details with the formatted names, URLs, descriptions and size</span>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a><span class="n">DATASET_DETAILS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>    <span class="n">TREX</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;T-REx&quot;</span><span class="p">,</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://hadyelsahar.github.io/t-rex/&quot;</span><span class="p">,</span>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset which consists of knowledge triplets extracted from Wikipedia. The triplets take the form (subject, predicate, object), for instance, (Berlin, capital of, Germany) or (Tata Motors, subsidiary of, Tata Group). &quot;</span><span class="p">,</span>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">32260</span><span class="p">,</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>    <span class="p">),</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>    <span class="n">BOOLQ</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BoolQ&quot;</span><span class="p">,</span>
+</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/google-research-datasets/boolean-questions&quot;</span><span class="p">,</span>
+</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of question-passage-answer triplets. The question can be answered with yes/no, and the answer is contained in the passage. The questions are provided anonymously and unsolicited by users of the Google search engine, and afterwards paired with a paragraph from a Wikipedia article containing the answer.&quot;</span><span class="p">,</span>
+</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">12697</span><span class="p">,</span>
+</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a>    <span class="p">),</span>
+</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>    <span class="n">TRIVIA_QA</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;TriviaQA&quot;</span><span class="p">,</span>
+</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://nlp.cs.washington.edu/triviaqa/&quot;</span><span class="p">,</span>
+</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of 95K question-answer pairs with with on average six supporting evidence documents per question, leading to ~650K question-passage-answer triplets. The questions are authored by trivia enthusiasts and the evidence documents are independently gathered. &quot;</span><span class="p">,</span>
+</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">156328</span><span class="p">,</span>
+</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a>    <span class="p">),</span>
+</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>    <span class="n">NATURAL_QUESTIONS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Natural Questions&quot;</span><span class="p">,</span>
+</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/google-research-datasets/natural-questions&quot;</span><span class="p">,</span>
+</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of ~320K question-passage-answer triplets. The questions are factual naturally-occurring questions. The passages are extracts from wikipedia articles (referred to as “long answers” in the original dataset). As before, providing the passage is optional depending on whether the open-book or closed-book case should be evaluated.&quot;</span><span class="p">,</span>
+</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">4289</span><span class="p">,</span>
+</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a>    <span class="p">),</span>
+</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a>    <span class="n">CROWS_PAIRS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;CrowS-Pairs&quot;</span><span class="p">,</span>
+</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/nyu-mll/crows-pairs&quot;</span><span class="p">,</span>
+</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.&quot;</span><span class="p">,</span>
+</span><span id="L-243"><a href="#L-243"><span class="linenos">243</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">1508</span><span class="p">,</span>
+</span><span id="L-244"><a href="#L-244"><span class="linenos">244</span></a>    <span class="p">),</span>
+</span><span id="L-245"><a href="#L-245"><span class="linenos">245</span></a>    <span class="n">XSUM</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-246"><a href="#L-246"><span class="linenos">246</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;XSUM&quot;</span><span class="p">,</span>
+</span><span id="L-247"><a href="#L-247"><span class="linenos">247</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset&quot;</span><span class="p">,</span>
+</span><span id="L-248"><a href="#L-248"><span class="linenos">248</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.&quot;</span><span class="p">,</span>
+</span><span id="L-249"><a href="#L-249"><span class="linenos">249</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">204045</span><span class="p">,</span>
+</span><span id="L-250"><a href="#L-250"><span class="linenos">250</span></a>    <span class="p">),</span>
+</span><span id="L-251"><a href="#L-251"><span class="linenos">251</span></a>    <span class="n">WOMENS_CLOTHING_ECOMMERCE_REVIEWS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-252"><a href="#L-252"><span class="linenos">252</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Women&#39;s E-commerce Clothing Reviews&quot;</span><span class="p">,</span>
+</span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews&quot;</span><span class="p">,</span>
+</span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;This dataset consists of clothing reviews, both as a text and numerical scores.&quot;</span><span class="p">,</span>
+</span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">23486</span><span class="p">,</span>
+</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>    <span class="p">),</span>
+</span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a>    <span class="n">BOLD</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BOLD&quot;</span><span class="p">,</span>
+</span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/amazon-science/bold&quot;</span><span class="p">,</span>
+</span><span id="L-260"><a href="#L-260"><span class="linenos">260</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A large-scale dataset that consists of English prompts aimed at testing bias and toxicity generation across five domains: profession, gender, race, religion, and political ideology.&quot;</span><span class="p">,</span>
+</span><span id="L-261"><a href="#L-261"><span class="linenos">261</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">23679</span><span class="p">,</span>
+</span><span id="L-262"><a href="#L-262"><span class="linenos">262</span></a>    <span class="p">),</span>
+</span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a>    <span class="n">WIKITEXT2</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;WikiText2&quot;</span><span class="p">,</span>
+</span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://huggingface.co/datasets/wikitext&quot;</span><span class="p">,</span>
+</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset which consists of Good and Featured articles from Wikipedia. To create prompts, we broke each article down into sentences and extracted first 6 tokens from each sentence as the prompt.&quot;</span><span class="p">,</span>
+</span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">86007</span><span class="p">,</span>
+</span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>    <span class="p">),</span>
+</span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>    <span class="n">REAL_TOXICITY_PROMPTS</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Real Toxicity Prompts&quot;</span><span class="p">,</span>
+</span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/allenai/real-toxicity-prompts&quot;</span><span class="p">,</span>
+</span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset of truncated sentence snippets from the web. &quot;</span><span class="p">,</span>
+</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">98243</span><span class="p">,</span>
+</span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a>    <span class="p">),</span>
+</span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a>    <span class="n">REAL_TOXICITY_PROMPTS_CHALLENGING</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Real Toxicity Prompts Challenging&quot;</span><span class="p">,</span>
+</span><span id="L-277"><a href="#L-277"><span class="linenos">277</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://github.com/allenai/real-toxicity-prompts&quot;</span><span class="p">,</span>
+</span><span id="L-278"><a href="#L-278"><span class="linenos">278</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset of truncated sentence snippets from the web. Prompts marked as “challenging” have been found by the authors to consistently lead to generation of toxic continuation by tested models (i.e., GPT-1, GPT-2, GPT-3, CTRL, CTRL-WIKI).&quot;</span><span class="p">,</span>
+</span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">1199</span><span class="p">,</span>
+</span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>    <span class="p">),</span>
+</span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a>    <span class="n">GIGAWORD</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Gigaword&quot;</span><span class="p">,</span>
+</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://huggingface.co/datasets/gigaword&quot;</span><span class="p">,</span>
+</span><span id="L-284"><a href="#L-284"><span class="linenos">284</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.&quot;</span><span class="p">,</span>
+</span><span id="L-285"><a href="#L-285"><span class="linenos">285</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">189651</span><span class="p">,</span>
+</span><span id="L-286"><a href="#L-286"><span class="linenos">286</span></a>    <span class="p">),</span>
+</span><span id="L-287"><a href="#L-287"><span class="linenos">287</span></a>    <span class="n">GOV_REPORT</span><span class="p">:</span> <span class="n">DatasetDetails</span><span class="p">(</span>
+</span><span id="L-288"><a href="#L-288"><span class="linenos">288</span></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Government Report&quot;</span><span class="p">,</span>
+</span><span id="L-289"><a href="#L-289"><span class="linenos">289</span></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://gov-report-data.github.io/&quot;</span><span class="p">,</span>
+</span><span id="L-290"><a href="#L-290"><span class="linenos">290</span></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets.&quot;</span><span class="p">,</span>
+</span><span id="L-291"><a href="#L-291"><span class="linenos">291</span></a>        <span class="n">size</span><span class="o">=</span><span class="mi">7238</span><span class="p">,</span>
+</span><span id="L-292"><a href="#L-292"><span class="linenos">292</span></a>    <span class="p">),</span>
+</span><span id="L-293"><a href="#L-293"><span class="linenos">293</span></a><span class="p">}</span>
+</span><span id="L-294"><a href="#L-294"><span class="linenos">294</span></a>
+</span><span id="L-295"><a href="#L-295"><span class="linenos">295</span></a><span class="n">TREX_DESCRIPTION_EXAMPLES</span> <span class="o">=</span> <span class="s2">&quot;We convert these predicates to prompts, e.g., Berlin is the capital of ___ (expected answer: Germany) and Tata Motors is a subsidiary of ___ (expected answer: Tata Group).&quot;</span>
+</span><span id="L-296"><a href="#L-296"><span class="linenos">296</span></a>
+</span><span id="L-297"><a href="#L-297"><span class="linenos">297</span></a><span class="n">CROWS_PAIRS_DISCLAIMER</span> <span class="o">=</span> <span class="s2">&quot;**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States.&quot;</span>
 </span></pre></div>
 
 
@@ -490,11 +504,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">CENTER</span>        =
 <span class="default_value">&#39;center&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CENTER"></a>
-
-
+    
+    
 
                 </section>
                 <section id="LEFT">
@@ -502,11 +516,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">LEFT</span>        =
 <span class="default_value">&#39;left&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#LEFT"></a>
-
-
+    
+    
 
                 </section>
                 <section id="RIGHT">
@@ -514,17 +528,17 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">RIGHT</span>        =
 <span class="default_value">&#39;right&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#RIGHT"></a>
-
-
+    
+    
 
                 </section>
                 <section id="ListType">
                             <input id="ListType-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">ListType</span><wbr>(<span class="base">enum.Enum</span>):
 
@@ -532,9 +546,9 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 
     </div>
     <a class="headerlink" href="#ListType"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ListType-60"><a href="#ListType-60"><span class="linenos">60</span></a><span class="k">class</span> <span class="nc">ListType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-</span><span id="ListType-61"><a href="#ListType-61"><span class="linenos">61</span></a>    <span class="n">BULLETED</span> <span class="o">=</span> <span class="s2">&quot;bulleted&quot;</span>
-</span><span id="ListType-62"><a href="#ListType-62"><span class="linenos">62</span></a>    <span class="n">NUMBERED</span> <span class="o">=</span> <span class="s2">&quot;numbered&quot;</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ListType-62"><a href="#ListType-62"><span class="linenos">62</span></a><span class="k">class</span> <span class="nc">ListType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+</span><span id="ListType-63"><a href="#ListType-63"><span class="linenos">63</span></a>    <span class="n">BULLETED</span> <span class="o">=</span> <span class="s2">&quot;bulleted&quot;</span>
+</span><span id="ListType-64"><a href="#ListType-64"><span class="linenos">64</span></a>    <span class="n">NUMBERED</span> <span class="o">=</span> <span class="s2">&quot;numbered&quot;</span>
 </span></pre></div>
 
 
@@ -547,11 +561,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">BULLETED</span>        =
 <span class="default_value">&lt;<a href="#ListType.BULLETED">ListType.BULLETED</a>: &#39;bulleted&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ListType.BULLETED"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ListType.NUMBERED" class="classattr">
@@ -559,11 +573,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">NUMBERED</span>        =
 <span class="default_value">&lt;<a href="#ListType.NUMBERED">ListType.NUMBERED</a>: &#39;numbered&#39;&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ListType.NUMBERED"></a>
-
-
+    
+    
 
                             </div>
                             <div class="inherited">
@@ -582,11 +596,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">SINGLE_NEWLINE</span>        =
 <span class="default_value">&#39;  \n&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SINGLE_NEWLINE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DOUBLE_NEWLINE">
@@ -594,11 +608,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">DOUBLE_NEWLINE</span>        =
 <span class="default_value">&#39;  \n\n&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DOUBLE_NEWLINE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="NUM_SAMPLES_TO_DISPLAY_IN_TABLE">
@@ -606,11 +620,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">NUM_SAMPLES_TO_DISPLAY_IN_TABLE</span>        =
 <span class="default_value">5</span>
 
-
+        
     </div>
     <a class="headerlink" href="#NUM_SAMPLES_TO_DISPLAY_IN_TABLE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="CATEGORY_BAR_COLOR">
@@ -618,11 +632,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">CATEGORY_BAR_COLOR</span>        =
 <span class="default_value">&#39;steelblue&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CATEGORY_BAR_COLOR"></a>
-
-
+    
+    
 
                 </section>
                 <section id="OVERALL_BAR_COLOR">
@@ -630,11 +644,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">OVERALL_BAR_COLOR</span>        =
 <span class="default_value">&#39;coral&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#OVERALL_BAR_COLOR"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MAX_CHAR">
@@ -642,11 +656,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">MAX_CHAR</span>        =
 <span class="default_value">200</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MAX_CHAR"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MARKDOWN_EXTENSIONS">
@@ -654,11 +668,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">MARKDOWN_EXTENSIONS</span>        =
 <span class="default_value">[&#39;tables&#39;, &#39;md_in_html&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MARKDOWN_EXTENSIONS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DATASET_SCORE_LABEL">
@@ -666,11 +680,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">DATASET_SCORE_LABEL</span>        =
 <span class="default_value">&#39;Overall&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DATASET_SCORE_LABEL"></a>
-
-
+    
+    
 
                 </section>
                 <section id="AGGREGATE_ONLY_SCORES">
@@ -678,11 +692,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">AGGREGATE_ONLY_SCORES</span>        =
 <span class="default_value">[&#39;balanced_accuracy_score&#39;, &#39;precision_score&#39;, &#39;recall_score&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#AGGREGATE_ONLY_SCORES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="GENERAL_STRING_REPLACEMENTS">
@@ -690,11 +704,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">GENERAL_STRING_REPLACEMENTS</span><span class="annotation">: List[Tuple[str, str]]</span>        =
 <span class="default_value">[(&#39;qa&#39;, &#39;Q&amp;A&#39;), (&#39;f1&#39;, &#39;F1&#39;)]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#GENERAL_STRING_REPLACEMENTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SCORE_STRING_REPLACEMENTS">
@@ -703,11 +717,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="SCORE_STRING_REPLACEMENTS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="SCORE_STRING_REPLACEMENTS-view-value"></label><span class="default_value">[(&#39;prompt stereotyping&#39;, &#39;is_biased&#39;), (&#39;meteor&#39;, &#39;METEOR&#39;), (&#39;bertscore&#39;, &#39;BERTScore&#39;), (&#39;rouge&#39;, &#39;ROUGE&#39;), (&#39;F1 score&#39;, &#39;F1 over words&#39;), (&#39;obscene&#39;, &#39;Obscenity&#39;), (&#39;sexual explicit&#39;, &#39;Sexual Explicitness&#39;)]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SCORE_STRING_REPLACEMENTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="EVAL_NAME_STRING_REPLACEMENTS">
@@ -716,11 +730,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="EVAL_NAME_STRING_REPLACEMENTS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="EVAL_NAME_STRING_REPLACEMENTS-view-value"></label><span class="default_value">[(&#39;qa_accuracy&#39;, &#39;accuracy&#39;), (&#39;summarization_accuracy&#39;, &#39;accuracy&#39;), (&#39;classification_accuracy&#39;, &#39;accuracy&#39;), (&#39;general_semantic_robustness&#39;, &#39;semantic_robustness&#39;), (&#39;accuracy_semantic_robustness&#39;, &#39;semantic_robustness&#39;), (&#39;qa_accuracy&#39;, &#39;toxicity&#39;), (&#39;summarization_toxicity&#39;, &#39;toxicity&#39;), (&#39;classification_accuracy&#39;, &#39;toxicity&#39;)]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EVAL_NAME_STRING_REPLACEMENTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PLOT_TITLE_STRING_REPLACEMENTS">
@@ -728,11 +742,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">PLOT_TITLE_STRING_REPLACEMENTS</span><span class="annotation">: List[Tuple[str, str]]</span>        =
 <span class="default_value">[(&#39;prompt_stereotyping&#39;, &#39;is_biased score&#39;)]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PLOT_TITLE_STRING_REPLACEMENTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="COLUMN_NAME_STRING_REPLACEMENTS">
@@ -741,11 +755,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="COLUMN_NAME_STRING_REPLACEMENTS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="COLUMN_NAME_STRING_REPLACEMENTS-view-value"></label><span class="default_value">[(&#39;sent_more&#39;, &#39;s_more&#39;), (&#39;s_more_input&#39;, &#39;&lt;math&gt;S&lt;sub&gt;more&lt;/sub&gt;&lt;/math&gt;&#39;), (&#39;sent_less&#39;, &#39;s_less&#39;), (&#39;s_less_input&#39;, &#39;&lt;math&gt;S&lt;sub&gt;less&lt;/sub&gt;&lt;/math&gt;&#39;), (&#39;prob_&#39;, &#39;probability_&#39;), (&#39;word_error_rate&#39;, &#39;Average WER&#39;), (&#39;classification_accuracy&#39;, &#39;accuracy&#39;), (&#39;f1_score&#39;, &#39;f1 over words&#39;), (&#39;meteor&#39;, &#39;METEOR&#39;), (&#39;bertscore&#39;, &#39;BERTScore&#39;), (&#39;rouge&#39;, &#39;ROUGE&#39;)]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#COLUMN_NAME_STRING_REPLACEMENTS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="AVOID_REMOVE_UNDERSCORE">
@@ -753,11 +767,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">AVOID_REMOVE_UNDERSCORE</span>        =
 <span class="default_value">[&#39;sent_more_input&#39;, &#39;sent_less_input&#39;, &#39;is_biased&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#AVOID_REMOVE_UNDERSCORE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS">
@@ -766,11 +780,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS-view-value"></label><span class="default_value">[&#39;summarization_accuracy_semantic_robustness&#39;, &lt;EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS: &#39;qa_accuracy_semantic_robustness&#39;&gt;, &lt;EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS: &#39;classification_accuracy_semantic_robustness&#39;&gt;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ACCURACY_SEMANTIC_ROBUSTNESS_ALGOS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="ACCURACY_SEMANTIC_ROBUSTNESS_SCORES">
@@ -779,11 +793,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="ACCURACY_SEMANTIC_ROBUSTNESS_SCORES-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="ACCURACY_SEMANTIC_ROBUSTNESS_SCORES-view-value"></label><span class="default_value">[&#39;classification_accuracy_score&#39;, &#39;meteor&#39;, &#39;bertscore&#39;, &#39;rouge&#39;, &#39;f1_score&#39;, &#39;exact_match_score&#39;, &#39;quasi_exact_match_score&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ACCURACY_SEMANTIC_ROBUSTNESS_SCORES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BUILT_IN_DATASET">
@@ -791,11 +805,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">BUILT_IN_DATASET</span>        =
 <span class="default_value">&#39;Built-in Dataset&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BUILT_IN_DATASET"></a>
-
-
+    
+    
 
                 </section>
                 <section id="CUSTOM_DATASET">
@@ -803,11 +817,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">CUSTOM_DATASET</span>        =
 <span class="default_value">&#39;Custom Dataset&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CUSTOM_DATASET"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PROMPT_COLUMN_NAME">
@@ -815,11 +829,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">PROMPT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;prompt&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PROMPT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TOXICITY_EVAL_NAMES">
@@ -827,11 +841,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">TOXICITY_EVAL_NAMES</span>        =
 <span class="default_value">[&#39;toxicity&#39;, &#39;qa_toxicity&#39;, &#39;summarization_toxicity&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TOXICITY_EVAL_NAMES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PROBABILITY_RATIO">
@@ -839,11 +853,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">PROBABILITY_RATIO</span>        =
 <span class="default_value">&#39;&lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PROBABILITY_RATIO"></a>
-
-
+    
+    
 
                 </section>
                 <section id="IS_BIASED">
@@ -851,11 +865,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">IS_BIASED</span>        =
 <span class="default_value">&#39;is_biased&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#IS_BIASED"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TOXIGEN_NAME">
@@ -863,11 +877,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">TOXIGEN_NAME</span>        =
 <span class="default_value">&#39;Toxigen-roberta&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TOXIGEN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_NAME">
@@ -875,11 +889,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">DETOXIFY_NAME</span>        =
 <span class="default_value">&#39;UnitaryAI Detoxify-unbiased&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TOXIGEN_URI">
@@ -887,11 +901,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">TOXIGEN_URI</span>        =
 <span class="default_value">&#39;https://github.com/microsoft/TOXIGEN&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TOXIGEN_URI"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_URI">
@@ -899,11 +913,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
             <span class="name">DETOXIFY_URI</span>        =
 <span class="default_value">&#39;https://github.com/unitaryai/detoxify&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_URI"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TABLE_DESCRIPTION">
@@ -912,11 +926,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="TABLE_DESCRIPTION-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="TABLE_DESCRIPTION-view-value"></label><span class="default_value">&#39;Below are a few examples of the highest and lowest-scoring examples across all categories. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TABLE_DESCRIPTION"></a>
-
-
+    
+    
 
                 </section>
                 <section id="WER_TABLE_DESCRIPTION">
@@ -925,11 +939,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="WER_TABLE_DESCRIPTION-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="WER_TABLE_DESCRIPTION-view-value"></label><span class="default_value">&#39;Below are a few examples of the highest and lowest-scoring examples across all categories. The lower the word error rate, the better the model performs. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job.&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WER_TABLE_DESCRIPTION"></a>
-
-
+    
+    
 
                 </section>
                 <section id="STEREOTYPING_TABLE_DESCRIPTION">
@@ -938,11 +952,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="STEREOTYPING_TABLE_DESCRIPTION-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="STEREOTYPING_TABLE_DESCRIPTION-view-value"></label><span class="default_value">&#39;**Probability ratio:** \n\nFor each sentence pair, we additionally report by how much the model stereotypes. This is given by the ratio &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;)/p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. This ratio will be between 0 and ∞. A ratio of 200, for example, means that the model assigns 200x the probability to the more stereotypical sentence than the less stereotypical sentence.&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#STEREOTYPING_TABLE_DESCRIPTION"></a>
-
-
+    
+    
 
                 </section>
                 <section id="FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION">
@@ -951,11 +965,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION-view-value"></label><span class="default_value">&#39;Below are a few examples of correct and incorrect model responses. Some text may be truncated due to length constraints. To view the full prompts, please go to the S3 job output location that you specified when configuring the job. &#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SCORE_DESCRIPTIONS">
@@ -964,17 +978,17 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="SCORE_DESCRIPTIONS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="SCORE_DESCRIPTIONS-view-value"></label><span class="default_value">{&#39;factual_knowledge&#39;: &#39;A factual knowledge score is a value between 0 and 1, indicating the percentage of correctly retrieved real-world facts across different knowledge categories.&#39;, &#39;prompt_stereotyping&#39;: &#39;The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., &lt;math&gt;&lt;box&gt;p(S&lt;sub&gt;more&lt;/sub&gt;) &gt; p(S&lt;sub&gt;less&lt;/sub&gt;)&lt;/box&gt;&lt;/math&gt;. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5&#39;, &#39;log_probability_difference&#39;: &#39;For each sentence pair, we report the log probability difference, a value ranging -&amp;#8734; to &amp;#8734;, indicating how much the model stereotypes. &#39;, &#39;f1_score&#39;: &#39;Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .&#39;, &#39;exact_match_score&#39;: &#39;An exact match score is a binary score where 1 indicates the model output and answer match exactly and 0 indicates otherwise.&#39;, &#39;quasi_exact_match_score&#39;: &#39;Similar as above, but both model output and answer are normalised first by removing any articles and punctuation. E.g., 1 also for predicted answers “Antarctica.” or “the Antarctica” .&#39;, &#39;rouge&#39;: &#39;A ROUGE-N score computes the N-gram (sequences of n words) word overlaps between the reference and model summary, with the value ranging between 0 (no match) to 1 (perfect match).&#39;, &#39;meteor&#39;: &#39;Meteor is similar to ROUGE-N, but it also accounts for rephrasing by using traditional NLP techniques such as stemming (e.g. matching “singing” to “sing”,“sings” etc.) and synonym lists.&#39;, &#39;bertscore&#39;: &#39;BERTScore uses a second ML model (from the BERT family) to compute sentence embeddings and compare their similarity.&#39;, &#39;classification_accuracy_score&#39;: &#39;The classification accuracy is `predicted_label == true_label`, reported as the mean accuracy over all datapoints.&#39;, &#39;precision_score&#39;: &#39;The precision score is computed as `true positives / (true positives + false positives)`. &#39;, &#39;recall_score&#39;: &#39;The recall score is computed as `true positives / (true positives + false negatives)`&#39;, &#39;balanced_accuracy_score&#39;: &#39;The balanced accuracy score is the same as accuracy in the binary case, otherwise averaged recall per class.&#39;, &#39;word_error_rate&#39;: &#39;Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).&#39;, &#39;delta_rouge&#39;: &#39;The performance change of the ROUGE-N score is measured.&#39;, &#39;delta_meteor&#39;: &#39;The performance change of the METEOR score is measured.&#39;, &#39;delta_bertscore&#39;: &#39;The performance change of the BERTscore is measured.&#39;, &#39;delta_exact_match_score&#39;: &#39;The performance change of the Exact Match score is measured.&#39;, &#39;delta_quasi_exact_match_score&#39;: &#39;The performance change of the Quasi Exact Match score is measured.&#39;, &#39;delta_f1_score&#39;: &#39;The performance change of the F1 over Words score is measured.&#39;, &#39;delta_classification_accuracy_score&#39;: &#39;The score is the binary indicator on whether or not the model answer is correct.&#39;, &#39;toxicity&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **toxicity**&#39;, &#39;severe_toxicity&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **severe_toxicity**&#39;, &#39;obscene&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **obscene**&#39;, &#39;identity_attack&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class **identity_attack**&#39;, &#39;insult&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **insult**&#39;, &#39;threat&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **threat**&#39;, &#39;sexual_explicit&#39;: &#39;A binary score from 0 (no toxicity detected) to 1 (toxicity detected) for the class: **sexual_explicit**&#39;}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SCORE_DESCRIPTIONS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DatasetDetails">
                             <input id="DatasetDetails-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">DatasetDetails</span><wbr>(<span class="base">typing.NamedTuple</span>):
 
@@ -982,11 +996,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 
     </div>
     <a class="headerlink" href="#DatasetDetails"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDetails-205"><a href="#DatasetDetails-205"><span class="linenos">205</span></a><span class="k">class</span> <span class="nc">DatasetDetails</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-</span><span id="DatasetDetails-206"><a href="#DatasetDetails-206"><span class="linenos">206</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="DatasetDetails-207"><a href="#DatasetDetails-207"><span class="linenos">207</span></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="DatasetDetails-208"><a href="#DatasetDetails-208"><span class="linenos">208</span></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="DatasetDetails-209"><a href="#DatasetDetails-209"><span class="linenos">209</span></a>    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDetails-207"><a href="#DatasetDetails-207"><span class="linenos">207</span></a><span class="k">class</span> <span class="nc">DatasetDetails</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+</span><span id="DatasetDetails-208"><a href="#DatasetDetails-208"><span class="linenos">208</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="DatasetDetails-209"><a href="#DatasetDetails-209"><span class="linenos">209</span></a>    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="DatasetDetails-210"><a href="#DatasetDetails-210"><span class="linenos">210</span></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="DatasetDetails-211"><a href="#DatasetDetails-211"><span class="linenos">211</span></a>    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
 </span></pre></div>
 
 
@@ -996,13 +1010,13 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 
                             <div id="DatasetDetails.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">DatasetDetails</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">url</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">description</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">size</span><span class="p">:</span> <span class="nb">int</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DatasetDetails.__init__"></a>
-
+    
             <div class="docstring"><p>Create new instance of DatasetDetails(name, url, description, size)</p>
 </div>
 
@@ -1012,10 +1026,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
                                 <div class="attr variable">
             <span class="name">name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DatasetDetails.name"></a>
-
+    
             <div class="docstring"><p>Alias for field number 0</p>
 </div>
 
@@ -1025,10 +1039,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
                                 <div class="attr variable">
             <span class="name">url</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DatasetDetails.url"></a>
-
+    
             <div class="docstring"><p>Alias for field number 1</p>
 </div>
 
@@ -1038,10 +1052,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
                                 <div class="attr variable">
             <span class="name">description</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DatasetDetails.description"></a>
-
+    
             <div class="docstring"><p>Alias for field number 2</p>
 </div>
 
@@ -1051,10 +1065,10 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
                                 <div class="attr variable">
             <span class="name">size</span><span class="annotation">: int</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DatasetDetails.size"></a>
-
+    
             <div class="docstring"><p>Alias for field number 3</p>
 </div>
 
@@ -1075,13 +1089,13 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
                     <div class="attr variable">
             <span class="name">DATASET_DETAILS</span>        =
 <input id="DATASET_DETAILS-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="DATASET_DETAILS-view-value"></label><span class="default_value">{&#39;trex&#39;: DatasetDetails(name=&#39;T-REx&#39;, url=&#39;https://hadyelsahar.github.io/t-rex/&#39;, description=&#39;A dataset which consists of knowledge triplets extracted from Wikipedia. The triplets take the form (subject, predicate, object), for instance, (Berlin, capital of, Germany) or (Tata Motors, subsidiary of, Tata Group). &#39;, size=32260), &#39;boolq&#39;: DatasetDetails(name=&#39;BoolQ&#39;, url=&#39;https://github.com/google-research-datasets/boolean-questions&#39;, description=&#39;A dataset consisting of question-passage-answer triplets. The question can be answered with yes/no, and the answer is contained in the passage. The questions are provided anonymously and unsolicited by users of the Google search engine, and afterwards paired with a paragraph from a Wikipedia article containing the answer.&#39;, size=12697), &#39;trivia_qa&#39;: DatasetDetails(name=&#39;TriviaQA&#39;, url=&#39;http://nlp.cs.washington.edu/triviaqa/&#39;, description=&#39;A dataset consisting of 95K question-answer pairs with with on average six supporting evidence documents per question, leading to ~650K question-passage-answer triplets. The questions are authored by trivia enthusiasts and the evidence documents are independently gathered. &#39;, size=156328), &#39;natural_questions&#39;: DatasetDetails(name=&#39;Natural Questions&#39;, url=&#39;https://github.com/google-research-datasets/natural-questions&#39;, description=&#39;A dataset consisting of ~320K question-passage-answer triplets. The questions are factual naturally-occurring questions. The passages are extracts from wikipedia articles (referred to as “long answers” in the original dataset). As before, providing the passage is optional depending on whether the open-book or closed-book case should be evaluated.&#39;, size=4289), &#39;crows-pairs&#39;: DatasetDetails(name=&#39;CrowS-Pairs&#39;, url=&#39;https://github.com/nyu-mll/crows-pairs&#39;, description=&#39;This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.&#39;, size=1508), &#39;xsum&#39;: DatasetDetails(name=&#39;XSUM&#39;, url=&#39;https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset&#39;, description=&#39;A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.&#39;, size=204045), &#39;womens_clothing_ecommerce_reviews&#39;: DatasetDetails(name=&#34;Women&#39;s E-commerce Clothing Reviews&#34;, url=&#39;https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews&#39;, description=&#39;This dataset consists of clothing reviews, both as a text and numerical scores.&#39;, size=23486), &#39;bold&#39;: DatasetDetails(name=&#39;BOLD&#39;, url=&#39;https://github.com/amazon-science/bold&#39;, description=&#39;A large-scale dataset that consists of English prompts aimed at testing bias and toxicity generation across five domains: profession, gender, race, religion, and political ideology.&#39;, size=23679), &#39;wikitext2&#39;: DatasetDetails(name=&#39;WikiText2&#39;, url=&#39;https://huggingface.co/datasets/wikitext&#39;, description=&#39;A dataset which consists of Good and Featured articles from Wikipedia. To create prompts, we broke each article down into sentences and extracted first 6 tokens from each sentence as the prompt.&#39;, size=86007), &#39;real_toxicity_prompts&#39;: DatasetDetails(name=&#39;Real Toxicity Prompts&#39;, url=&#39;https://github.com/allenai/real-toxicity-prompts&#39;, description=&#39;A dataset of truncated sentence snippets from the web. &#39;, size=98243), &#39;real_toxicity_prompts_challenging&#39;: DatasetDetails(name=&#39;Real Toxicity Prompts Challenging&#39;, url=&#39;https://github.com/allenai/real-toxicity-prompts&#39;, description=&#39;A dataset of truncated sentence snippets from the web. Prompts marked as “challenging” have been found by the authors to consistently lead to generation of toxic continuation by tested models (i.e., GPT-1, GPT-2, GPT-3, CTRL, CTRL-WIKI).&#39;, size=1199)}</span>
+            <label class="view-value-button pdoc-button" for="DATASET_DETAILS-view-value"></label><span class="default_value">{&#39;trex&#39;: DatasetDetails(name=&#39;T-REx&#39;, url=&#39;https://hadyelsahar.github.io/t-rex/&#39;, description=&#39;A dataset which consists of knowledge triplets extracted from Wikipedia. The triplets take the form (subject, predicate, object), for instance, (Berlin, capital of, Germany) or (Tata Motors, subsidiary of, Tata Group). &#39;, size=32260), &#39;boolq&#39;: DatasetDetails(name=&#39;BoolQ&#39;, url=&#39;https://github.com/google-research-datasets/boolean-questions&#39;, description=&#39;A dataset consisting of question-passage-answer triplets. The question can be answered with yes/no, and the answer is contained in the passage. The questions are provided anonymously and unsolicited by users of the Google search engine, and afterwards paired with a paragraph from a Wikipedia article containing the answer.&#39;, size=12697), &#39;trivia_qa&#39;: DatasetDetails(name=&#39;TriviaQA&#39;, url=&#39;http://nlp.cs.washington.edu/triviaqa/&#39;, description=&#39;A dataset consisting of 95K question-answer pairs with with on average six supporting evidence documents per question, leading to ~650K question-passage-answer triplets. The questions are authored by trivia enthusiasts and the evidence documents are independently gathered. &#39;, size=156328), &#39;natural_questions&#39;: DatasetDetails(name=&#39;Natural Questions&#39;, url=&#39;https://github.com/google-research-datasets/natural-questions&#39;, description=&#39;A dataset consisting of ~320K question-passage-answer triplets. The questions are factual naturally-occurring questions. The passages are extracts from wikipedia articles (referred to as “long answers” in the original dataset). As before, providing the passage is optional depending on whether the open-book or closed-book case should be evaluated.&#39;, size=4289), &#39;crows-pairs&#39;: DatasetDetails(name=&#39;CrowS-Pairs&#39;, url=&#39;https://github.com/nyu-mll/crows-pairs&#39;, description=&#39;This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.&#39;, size=1508), &#39;xsum&#39;: DatasetDetails(name=&#39;XSUM&#39;, url=&#39;https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset&#39;, description=&#39;A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.&#39;, size=204045), &#39;womens_clothing_ecommerce_reviews&#39;: DatasetDetails(name=&#34;Women&#39;s E-commerce Clothing Reviews&#34;, url=&#39;https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews&#39;, description=&#39;This dataset consists of clothing reviews, both as a text and numerical scores.&#39;, size=23486), &#39;bold&#39;: DatasetDetails(name=&#39;BOLD&#39;, url=&#39;https://github.com/amazon-science/bold&#39;, description=&#39;A large-scale dataset that consists of English prompts aimed at testing bias and toxicity generation across five domains: profession, gender, race, religion, and political ideology.&#39;, size=23679), &#39;wikitext2&#39;: DatasetDetails(name=&#39;WikiText2&#39;, url=&#39;https://huggingface.co/datasets/wikitext&#39;, description=&#39;A dataset which consists of Good and Featured articles from Wikipedia. To create prompts, we broke each article down into sentences and extracted first 6 tokens from each sentence as the prompt.&#39;, size=86007), &#39;real_toxicity_prompts&#39;: DatasetDetails(name=&#39;Real Toxicity Prompts&#39;, url=&#39;https://github.com/allenai/real-toxicity-prompts&#39;, description=&#39;A dataset of truncated sentence snippets from the web. &#39;, size=98243), &#39;real_toxicity_prompts_challenging&#39;: DatasetDetails(name=&#39;Real Toxicity Prompts Challenging&#39;, url=&#39;https://github.com/allenai/real-toxicity-prompts&#39;, description=&#39;A dataset of truncated sentence snippets from the web. Prompts marked as “challenging” have been found by the authors to consistently lead to generation of toxic continuation by tested models (i.e., GPT-1, GPT-2, GPT-3, CTRL, CTRL-WIKI).&#39;, size=1199), &#39;gigaword&#39;: DatasetDetails(name=&#39;Gigaword&#39;, url=&#39;https://huggingface.co/datasets/gigaword&#39;, description=&#39;A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.&#39;, size=189651), &#39;gov_report&#39;: DatasetDetails(name=&#39;Government Report&#39;, url=&#39;https://gov-report-data.github.io/&#39;, description=&#39;A dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets.&#39;, size=7238)}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DATASET_DETAILS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TREX_DESCRIPTION_EXAMPLES">
@@ -1090,11 +1104,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="TREX_DESCRIPTION_EXAMPLES-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="TREX_DESCRIPTION_EXAMPLES-view-value"></label><span class="default_value">&#39;We convert these predicates to prompts, e.g., Berlin is the capital of ___ (expected answer: Germany) and Tata Motors is a subsidiary of ___ (expected answer: Tata Group).&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TREX_DESCRIPTION_EXAMPLES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="CROWS_PAIRS_DISCLAIMER">
@@ -1103,11 +1117,11 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../reporting.h
 <input id="CROWS_PAIRS_DISCLAIMER-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="CROWS_PAIRS_DISCLAIMER-view-value"></label><span class="default_value">&#39;**Disclaimer**: 1) The crowdsourced CrowS dataset is noisy. While it gives a good indication of overall model performance, individual pairs may be invalid. 2) CrowS measures U.S.-typical stereotypes. Specifically, the bias categories are taken from the US Equal Employment Opportunities Commission’s list of protected categories and the sentence pairs are produced by Amazon Mechanical Turk workers in the United States.&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CROWS_PAIRS_DISCLAIMER"></a>
-
-
+    
+    
 
                 </section>
     </main>

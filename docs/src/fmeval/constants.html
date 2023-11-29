@@ -82,12 +82,6 @@
                     <a class="variable" href="#SENT_MORE_LOG_PROB_COLUMN_NAME">SENT_MORE_LOG_PROB_COLUMN_NAME</a>
             </li>
             <li>
-                    <a class="variable" href="#SENT_MORE_OUTPUT_COLUMN_NAME">SENT_MORE_OUTPUT_COLUMN_NAME</a>
-            </li>
-            <li>
-                    <a class="variable" href="#SENT_LESS_OUTPUT_COLUMN_NAME">SENT_LESS_OUTPUT_COLUMN_NAME</a>
-            </li>
-            <li>
                     <a class="variable" href="#COLUMN_NAMES">COLUMN_NAMES</a>
             </li>
             <li>
@@ -154,6 +148,9 @@
                     <a class="variable" href="#JUMPSTART_BUCKET_BASE_URL_FORMAT">JUMPSTART_BUCKET_BASE_URL_FORMAT</a>
             </li>
             <li>
+                    <a class="variable" href="#JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR">JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR</a>
+            </li>
+            <li>
                     <a class="variable" href="#GENERATED_TEXT_JMESPATH_EXPRESSION">GENERATED_TEXT_JMESPATH_EXPRESSION</a>
             </li>
     </ul>
@@ -172,7 +169,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
 
-
+                
                         <input id="mod-constants-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-constants-view-source"><span>View Source</span></label>
@@ -202,69 +199,68 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
 </span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="n">SENT_LESS_PROMPT_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;sent_less_prompt&quot;</span>
 </span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="n">SENT_LESS_LOG_PROB_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;sent_less_log_prob&quot;</span>
 </span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="n">SENT_MORE_LOG_PROB_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;sent_more_log_prob&quot;</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="n">SENT_MORE_OUTPUT_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;sent_more_output&quot;</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="n">SENT_LESS_OUTPUT_COLUMN_NAME</span> <span class="o">=</span> <span class="s2">&quot;sent_less_output&quot;</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="n">COLUMN_NAMES</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="n">MODEL_INPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="n">MODEL_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="n">TARGET_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="n">CATEGORY_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="n">SENT_MORE_INPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="n">SENT_LESS_INPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="n">SENT_MORE_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>    <span class="n">SENT_LESS_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="p">}</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="c1"># This suffix must be included at the end of all</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="c1"># DataConfig attribute names where the attribute</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="c1"># represents a mechanism for locating the data for</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="c1"># a column. An example mechanism is a JMESPath query</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="c1"># (when the dataset format is JSON/JSON Lines).</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="n">DATA_CONFIG_LOCATION_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;_location&quot;</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="c1"># Supported MIME types</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="n">MIME_TYPE_JSON</span> <span class="o">=</span> <span class="s2">&quot;application/json&quot;</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="n">MIME_TYPE_JSONLINES</span> <span class="o">=</span> <span class="s2">&quot;application/jsonlines&quot;</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="n">COLUMN_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="n">MODEL_INPUT_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="n">MODEL_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="n">TARGET_OUTPUT_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="n">CATEGORY_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="n">SENT_MORE_INPUT_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="n">SENT_LESS_INPUT_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="n">SENT_MORE_LOG_PROB_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="n">SENT_LESS_LOG_PROB_COLUMN_NAME</span><span class="p">,</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="p">}</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="c1"># This suffix must be included at the end of all</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="c1"># DataConfig attribute names where the attribute</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="c1"># represents a mechanism for locating the data for</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="c1"># a column. An example mechanism is a JMESPath query</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="c1"># (when the dataset format is JSON/JSON Lines).</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="n">DATA_CONFIG_LOCATION_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;_location&quot;</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="c1"># Supported MIME types</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="n">MIME_TYPE_JSON</span> <span class="o">=</span> <span class="s2">&quot;application/json&quot;</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="n">MIME_TYPE_JSONLINES</span> <span class="o">=</span> <span class="s2">&quot;application/jsonlines&quot;</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="n">SUPPORTED_MIME_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="n">MIME_TYPE_JSON</span><span class="p">,</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">]</span>
 </span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="n">SUPPORTED_MIME_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="n">MIME_TYPE_JSON</span><span class="p">,</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">]</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="c1"># Aggregation methods</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="n">MEAN</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="c1"># Configures `save_dataset` behavior regarding how many</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="c1"># EvalOutputRecords to accumulate before writing them</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="c1"># to the output JSON Lines file.</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="n">EVAL_OUTPUT_RECORDS_BATCH_SIZE</span> <span class="o">=</span> <span class="mi">1024</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="c1"># Dataloader seed</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="n">SEED</span> <span class="o">=</span> <span class="mi">1234</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="c1"># Semantic robustness perturbation types</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="n">BUTTER_FINGER</span> <span class="o">=</span> <span class="s2">&quot;butter_finger&quot;</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="n">RANDOM_UPPER_CASE</span> <span class="o">=</span> <span class="s2">&quot;random_upper_case&quot;</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="n">WHITESPACE_ADD_REMOVE</span> <span class="o">=</span> <span class="s2">&quot;whitespace_add_remove&quot;</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="c1"># Aggregation methods</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="n">MEAN</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="c1"># Configures `save_dataset` behavior regarding how many</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="c1"># EvalOutputRecords to accumulate before writing them</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="c1"># to the output JSON Lines file.</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="n">EVAL_OUTPUT_RECORDS_BATCH_SIZE</span> <span class="o">=</span> <span class="mi">1024</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="c1"># Dataloader seed</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="n">SEED</span> <span class="o">=</span> <span class="mi">1234</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="c1"># Semantic robustness perturbation types</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="n">BUTTER_FINGER</span> <span class="o">=</span> <span class="s2">&quot;butter_finger&quot;</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="n">RANDOM_UPPER_CASE</span> <span class="o">=</span> <span class="s2">&quot;random_upper_case&quot;</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="n">WHITESPACE_ADD_REMOVE</span> <span class="o">=</span> <span class="s2">&quot;whitespace_add_remove&quot;</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="n">PREFIX_FOR_DELTA_SCORES</span> <span class="o">=</span> <span class="s2">&quot;delta_&quot;</span>
 </span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="n">PREFIX_FOR_DELTA_SCORES</span> <span class="o">=</span> <span class="s2">&quot;delta_&quot;</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="c1"># Check if model is deterministic for first NUM_ROWS_DETERMINISTIC rows of dataset</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="n">NUM_ROWS_DETERMINISTIC</span> <span class="o">=</span> <span class="mi">5</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="c1"># Check if model is deterministic for first NUM_ROWS_DETERMINISTIC rows of dataset</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="n">NUM_ROWS_DETERMINISTIC</span> <span class="o">=</span> <span class="mi">5</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="n">MAX_ROWS_TO_TAKE</span> <span class="o">=</span> <span class="mi">100000</span>
 </span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="n">MAX_ROWS_TO_TAKE</span> <span class="o">=</span> <span class="mi">100000</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="c1"># The absolute tolerance used when performing approximate numerical comparisons,</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="c1"># specifically, when comparing EvalScore objects.</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="n">ABS_TOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="c1"># Jumpstart</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="n">JUMPSTART_MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;jumpstart_model_id&quot;</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="n">JUMPSTART_MODEL_VERSION</span> <span class="o">=</span> <span class="s2">&quot;jumpstart_model_version&quot;</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="n">MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;model_id&quot;</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="n">SPEC_KEY</span> <span class="o">=</span> <span class="s2">&quot;spec_key&quot;</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="n">DEFAULT_PAYLOADS</span> <span class="o">=</span> <span class="s2">&quot;default_payloads&quot;</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="n">SDK_MANIFEST_FILE</span> <span class="o">=</span> <span class="s2">&quot;models_manifest.json&quot;</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="n">JUMPSTART_BUCKET_BASE_URL_FORMAT</span> <span class="o">=</span> <span class="s2">&quot;https://jumpstart-cache-prod-</span><span class="si">{}</span><span class="s2">.s3.</span><span class="si">{}</span><span class="s2">.amazonaws.com&quot;</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a><span class="n">GENERATED_TEXT_JMESPATH_EXPRESSION</span> <span class="o">=</span> <span class="s2">&quot;*.output_keys.generated_text&quot;</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="c1"># The absolute tolerance used when performing approximate numerical comparisons,</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="c1"># specifically, when comparing EvalScore objects.</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="n">ABS_TOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="c1"># Jumpstart</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="n">JUMPSTART_MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;jumpstart_model_id&quot;</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="n">JUMPSTART_MODEL_VERSION</span> <span class="o">=</span> <span class="s2">&quot;jumpstart_model_version&quot;</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="n">MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;model_id&quot;</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="n">SPEC_KEY</span> <span class="o">=</span> <span class="s2">&quot;spec_key&quot;</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="n">DEFAULT_PAYLOADS</span> <span class="o">=</span> <span class="s2">&quot;default_payloads&quot;</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="n">SDK_MANIFEST_FILE</span> <span class="o">=</span> <span class="s2">&quot;models_manifest.json&quot;</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="n">JUMPSTART_BUCKET_BASE_URL_FORMAT</span> <span class="o">=</span> <span class="s2">&quot;https://jumpstart-cache-prod-</span><span class="si">{}</span><span class="s2">.s3.</span><span class="si">{}</span><span class="s2">.amazonaws.com&quot;</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="n">JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR</span> <span class="o">=</span> <span class="s2">&quot;JUMPSTART_BUCKET_BASE_URL_FORMAT&quot;</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="n">GENERATED_TEXT_JMESPATH_EXPRESSION</span> <span class="o">=</span> <span class="s2">&quot;*.output_keys.generated_text&quot;</span>
 </span></pre></div>
 
 
@@ -274,11 +270,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">EVAL_RESULTS_PATH</span>        =
 <span class="default_value">&#39;EVAL_RESULTS_PATH&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EVAL_RESULTS_PATH"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DEFAULT_EVAL_RESULTS_PATH">
@@ -286,11 +282,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">DEFAULT_EVAL_RESULTS_PATH</span>        =
 <span class="default_value">&#39;/tmp/eval_results/&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DEFAULT_EVAL_RESULTS_PATH"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PARALLELIZATION_FACTOR">
@@ -298,11 +294,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">PARALLELIZATION_FACTOR</span>        =
 <span class="default_value">&#39;PARALLELIZATION_FACTOR&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PARALLELIZATION_FACTOR"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PARTITION_MULTIPLIER">
@@ -310,11 +306,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">PARTITION_MULTIPLIER</span>        =
 <span class="default_value">5</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PARTITION_MULTIPLIER"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SAGEMAKER_SERVICE_ENDPOINT_URL">
@@ -322,11 +318,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SAGEMAKER_SERVICE_ENDPOINT_URL</span>        =
 <span class="default_value">&#39;SAGEMAKER_SERVICE_ENDPOINT_URL&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SAGEMAKER_SERVICE_ENDPOINT_URL"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SAGEMAKER_RUNTIME_ENDPOINT_URL">
@@ -334,11 +330,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SAGEMAKER_RUNTIME_ENDPOINT_URL</span>        =
 <span class="default_value">&#39;SAGEMAKER_RUNTIME_ENDPOINT_URL&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SAGEMAKER_RUNTIME_ENDPOINT_URL"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MODEL_INPUT_COLUMN_NAME">
@@ -346,11 +342,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MODEL_INPUT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;model_input&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MODEL_INPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MODEL_OUTPUT_COLUMN_NAME">
@@ -358,11 +354,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MODEL_OUTPUT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;model_output&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MODEL_OUTPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MODEL_LOG_PROBABILITY_COLUMN_NAME">
@@ -370,11 +366,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MODEL_LOG_PROBABILITY_COLUMN_NAME</span>        =
 <span class="default_value">&#39;model_log_probability&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MODEL_LOG_PROBABILITY_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="TARGET_OUTPUT_COLUMN_NAME">
@@ -382,11 +378,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">TARGET_OUTPUT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;target_output&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TARGET_OUTPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="CATEGORY_COLUMN_NAME">
@@ -394,11 +390,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">CATEGORY_COLUMN_NAME</span>        =
 <span class="default_value">&#39;category&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#CATEGORY_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_MORE_INPUT_COLUMN_NAME">
@@ -406,11 +402,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_MORE_INPUT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_more_input&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_MORE_INPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_LESS_INPUT_COLUMN_NAME">
@@ -418,11 +414,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_LESS_INPUT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_less_input&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_LESS_INPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_MORE_PROMPT_COLUMN_NAME">
@@ -430,11 +426,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_MORE_PROMPT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_more_prompt&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_MORE_PROMPT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_LESS_PROMPT_COLUMN_NAME">
@@ -442,11 +438,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_LESS_PROMPT_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_less_prompt&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_LESS_PROMPT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_LESS_LOG_PROB_COLUMN_NAME">
@@ -454,11 +450,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_LESS_LOG_PROB_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_less_log_prob&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_LESS_LOG_PROB_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SENT_MORE_LOG_PROB_COLUMN_NAME">
@@ -466,48 +462,24 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SENT_MORE_LOG_PROB_COLUMN_NAME</span>        =
 <span class="default_value">&#39;sent_more_log_prob&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SENT_MORE_LOG_PROB_COLUMN_NAME"></a>
-
-
-
-                </section>
-                <section id="SENT_MORE_OUTPUT_COLUMN_NAME">
-                    <div class="attr variable">
-            <span class="name">SENT_MORE_OUTPUT_COLUMN_NAME</span>        =
-<span class="default_value">&#39;sent_more_output&#39;</span>
-
-
-    </div>
-    <a class="headerlink" href="#SENT_MORE_OUTPUT_COLUMN_NAME"></a>
-
-
-
-                </section>
-                <section id="SENT_LESS_OUTPUT_COLUMN_NAME">
-                    <div class="attr variable">
-            <span class="name">SENT_LESS_OUTPUT_COLUMN_NAME</span>        =
-<span class="default_value">&#39;sent_less_output&#39;</span>
-
-
-    </div>
-    <a class="headerlink" href="#SENT_LESS_OUTPUT_COLUMN_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="COLUMN_NAMES">
                     <div class="attr variable">
             <span class="name">COLUMN_NAMES</span>        =
 <input id="COLUMN_NAMES-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="COLUMN_NAMES-view-value"></label><span class="default_value">{&#39;category&#39;, &#39;target_output&#39;, &#39;sent_more_input&#39;, &#39;sent_less_input&#39;, &#39;model_input&#39;, &#39;sent_more_output&#39;, &#39;model_output&#39;, &#39;sent_less_output&#39;}</span>
+            <label class="view-value-button pdoc-button" for="COLUMN_NAMES-view-value"></label><span class="default_value">{&#39;sent_less_input&#39;, &#39;sent_more_input&#39;, &#39;model_input&#39;, &#39;sent_less_log_prob&#39;, &#39;sent_more_log_prob&#39;, &#39;target_output&#39;, &#39;model_output&#39;, &#39;category&#39;}</span>
 
-
+        
     </div>
     <a class="headerlink" href="#COLUMN_NAMES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DATA_CONFIG_LOCATION_SUFFIX">
@@ -515,11 +487,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">DATA_CONFIG_LOCATION_SUFFIX</span>        =
 <span class="default_value">&#39;_location&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DATA_CONFIG_LOCATION_SUFFIX"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MIME_TYPE_JSON">
@@ -527,11 +499,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MIME_TYPE_JSON</span>        =
 <span class="default_value">&#39;application/json&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MIME_TYPE_JSON"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MIME_TYPE_JSONLINES">
@@ -539,11 +511,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MIME_TYPE_JSONLINES</span>        =
 <span class="default_value">&#39;application/jsonlines&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MIME_TYPE_JSONLINES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SUPPORTED_MIME_TYPES">
@@ -551,11 +523,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SUPPORTED_MIME_TYPES</span>        =
 <span class="default_value">[&#39;application/json&#39;, &#39;application/jsonlines&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SUPPORTED_MIME_TYPES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MEAN">
@@ -563,11 +535,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MEAN</span>        =
 <span class="default_value">&#39;mean&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MEAN"></a>
-
-
+    
+    
 
                 </section>
                 <section id="EVAL_OUTPUT_RECORDS_BATCH_SIZE">
@@ -575,11 +547,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">EVAL_OUTPUT_RECORDS_BATCH_SIZE</span>        =
 <span class="default_value">1024</span>
 
-
+        
     </div>
     <a class="headerlink" href="#EVAL_OUTPUT_RECORDS_BATCH_SIZE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SEED">
@@ -587,11 +559,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SEED</span>        =
 <span class="default_value">1234</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SEED"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BUTTER_FINGER">
@@ -599,11 +571,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">BUTTER_FINGER</span>        =
 <span class="default_value">&#39;butter_finger&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BUTTER_FINGER"></a>
-
-
+    
+    
 
                 </section>
                 <section id="RANDOM_UPPER_CASE">
@@ -611,11 +583,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">RANDOM_UPPER_CASE</span>        =
 <span class="default_value">&#39;random_upper_case&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#RANDOM_UPPER_CASE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="WHITESPACE_ADD_REMOVE">
@@ -623,11 +595,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">WHITESPACE_ADD_REMOVE</span>        =
 <span class="default_value">&#39;whitespace_add_remove&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#WHITESPACE_ADD_REMOVE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="PREFIX_FOR_DELTA_SCORES">
@@ -635,11 +607,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">PREFIX_FOR_DELTA_SCORES</span>        =
 <span class="default_value">&#39;delta_&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PREFIX_FOR_DELTA_SCORES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="NUM_ROWS_DETERMINISTIC">
@@ -647,11 +619,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">NUM_ROWS_DETERMINISTIC</span>        =
 <span class="default_value">5</span>
 
-
+        
     </div>
     <a class="headerlink" href="#NUM_ROWS_DETERMINISTIC"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MAX_ROWS_TO_TAKE">
@@ -659,11 +631,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MAX_ROWS_TO_TAKE</span>        =
 <span class="default_value">100000</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MAX_ROWS_TO_TAKE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="ABS_TOL">
@@ -671,11 +643,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">ABS_TOL</span>        =
 <span class="default_value">0.001</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ABS_TOL"></a>
-
-
+    
+    
 
                 </section>
                 <section id="JUMPSTART_MODEL_ID">
@@ -683,11 +655,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">JUMPSTART_MODEL_ID</span>        =
 <span class="default_value">&#39;jumpstart_model_id&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JUMPSTART_MODEL_ID"></a>
-
-
+    
+    
 
                 </section>
                 <section id="JUMPSTART_MODEL_VERSION">
@@ -695,11 +667,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">JUMPSTART_MODEL_VERSION</span>        =
 <span class="default_value">&#39;jumpstart_model_version&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JUMPSTART_MODEL_VERSION"></a>
-
-
+    
+    
 
                 </section>
                 <section id="MODEL_ID">
@@ -707,11 +679,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">MODEL_ID</span>        =
 <span class="default_value">&#39;model_id&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#MODEL_ID"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SPEC_KEY">
@@ -719,11 +691,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SPEC_KEY</span>        =
 <span class="default_value">&#39;spec_key&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SPEC_KEY"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DEFAULT_PAYLOADS">
@@ -731,11 +703,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">DEFAULT_PAYLOADS</span>        =
 <span class="default_value">&#39;default_payloads&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DEFAULT_PAYLOADS"></a>
-
-
+    
+    
 
                 </section>
                 <section id="SDK_MANIFEST_FILE">
@@ -743,11 +715,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">SDK_MANIFEST_FILE</span>        =
 <span class="default_value">&#39;models_manifest.json&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#SDK_MANIFEST_FILE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="JUMPSTART_BUCKET_BASE_URL_FORMAT">
@@ -755,11 +727,23 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">JUMPSTART_BUCKET_BASE_URL_FORMAT</span>        =
 <span class="default_value">&#39;https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JUMPSTART_BUCKET_BASE_URL_FORMAT"></a>
+    
+    
 
+                </section>
+                <section id="JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR">
+                    <div class="attr variable">
+            <span class="name">JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR</span>        =
+<span class="default_value">&#39;JUMPSTART_BUCKET_BASE_URL_FORMAT&#39;</span>
 
+        
+    </div>
+    <a class="headerlink" href="#JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR"></a>
+    
+    
 
                 </section>
                 <section id="GENERATED_TEXT_JMESPATH_EXPRESSION">
@@ -767,11 +751,11 @@ src<wbr>.<a href="./../fmeval.html">fmeval</a><wbr>.constants    </h1>
             <span class="name">GENERATED_TEXT_JMESPATH_EXPRESSION</span>        =
 <span class="default_value">&#39;*.output_keys.generated_text&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#GENERATED_TEXT_JMESPATH_EXPRESSION"></a>
-
-
+    
+    
 
                 </section>
     </main>

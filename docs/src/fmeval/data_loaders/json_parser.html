@@ -82,12 +82,12 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loaders.html">data_loaders</a><wbr>.json_parser    </h1>
 
-
+                
                         <input id="mod-json_parser-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-json_parser-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="kn">from</span> <span class="nn">jmespath.parser</span> <span class="kn">import</span> <span class="n">ParsedResult</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="kn">from</span> <span class="nn">fmeval.exceptions</span> <span class="kn">import</span> <span class="n">EvalAlgorithmInternalError</span>
@@ -199,93 +199,102 @@ src<wbr>.<a href="./../../fmeval.html">fmeval</a><wbr>.<a href="./../data_loader
 </span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>            <span class="p">)</span>
 </span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>            <span class="k">for</span> <span class="n">parser_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parsers</span>
 </span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>        <span class="p">}</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">)</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>        <span class="k">return</span> <span class="n">parsed_columns_dict</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="k">def</span> <span class="nf">_parse_column</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses a single column, specified by `args`, from a dataset.</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">        :param args: See ColumnParseArgs docstring.</span>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">        :returns: If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value</span>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">            is a list representing the parsed column. This list is always a 1D array.</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">            If MIME_TYPE_JSON_LINES, then the dataset being parsed is assumed to be</span>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">            a single JSON Lines row, in which case the return value is a single scalar</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="sd">            value representing the sole value in the &quot;column&quot;.</span>
-</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">search_jmespath</span><span class="p">(</span>
-</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>            <span class="n">jmespath_parser</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="p">,</span>
-</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>            <span class="n">jmespath_query_type</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="p">,</span>
-</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>            <span class="n">dataset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>            <span class="n">dataset_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">,</span>
-</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>        <span class="p">)</span>
-</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>        <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>        <span class="k">return</span> <span class="n">result</span>
-</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>
-</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>    <span class="k">def</span> <span class="nf">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates that the JMESPath result is as expected.</span>
-</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>
-</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a><span class="sd">        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected</span>
-</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a><span class="sd">        to be a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected</span>
-</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a><span class="sd">        to be a single scalar value.</span>
-</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>
-</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="sd">        :param result: JMESPath query result to be validated.</span>
-</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a><span class="sd">        :param args: See ColumnParseArguments docstring.</span>
-</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
-</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>                <span class="n">result</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
-</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a non-empty list of samples for the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column using &quot;</span>
-</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>                <span class="sa">f</span><span class="s2">&quot;JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
-</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>            <span class="p">)</span>
-</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>                <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>  <span class="c1"># explicitly using &quot;is not None&quot; since values like 0 are false-y</span>
-</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected an array of non-null values using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; for &quot;</span>
-</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>                <span class="sa">f</span><span class="s2">&quot;the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column of dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found at least &quot;</span>
-</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>                <span class="s2">&quot;one value that is None.&quot;</span><span class="p">,</span>
-</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>            <span class="p">)</span>
-</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>                <span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>
-</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected a 1D array using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on dataset &quot;</span>
-</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, where each element of the array is a sample&#39;s </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2">, &quot;</span>
-</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>                <span class="sa">f</span><span class="s2">&quot;but found at least one nested array.&quot;</span><span class="p">,</span>
-</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>            <span class="p">)</span>
-</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">:</span>
-</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>                <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>                <span class="sa">f</span><span class="s2">&quot;Found no values using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
-</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>                <span class="sa">f</span><span class="s2">&quot;on dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">,</span>
-</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>            <span class="p">)</span>
-</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
-</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a single value using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &quot;</span>
-</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on a dataset line in &quot;</span>
-</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>                <span class="sa">f</span><span class="s2">&quot;dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found a list instead.&quot;</span><span class="p">,</span>
-</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>            <span class="p">)</span>
-</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>            <span class="k">raise</span> <span class="n">EvalAlgorithmInternalError</span><span class="p">(</span>
-</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>                <span class="sa">f</span><span class="s2">&quot;args.dataset_mime_type is </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span><span class="si">}</span><span class="s2">, but only JSON &quot;</span> <span class="s2">&quot;and JSON Lines are supported.&quot;</span>
-</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>            <span class="p">)</span>
-</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>
-</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>    <span class="k">def</span> <span class="nf">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]):</span>
-</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a><span class="sd">        Validates that every column (represented by a list) in `parsed_columns_dict`</span>
-</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a><span class="sd">        has the same number of elements.</span>
-</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>
-</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a><span class="sd">        :param parsed_columns_dict: The dict returned by the parse_dataset_columns method assuming</span>
-</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a><span class="sd">            that this validation succeeds.</span>
-</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a><span class="sd">        :raises: EvalAlgorithmClientError if validation fails</span>
-</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">))])</span>
-</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>        <span class="n">require</span><span class="p">(</span>
-</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>            <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_samples</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
-</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>            <span class="s2">&quot;Expected the number of samples that were parsed by provided JMESPath queries&quot;</span>
-</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>            <span class="s2">&quot;to be the same for the result of every JMESPath query, but not all queries&quot;</span>
-</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>            <span class="s2">&quot;resulted in the same number of samples.&quot;</span><span class="p">,</span>
-</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>        <span class="p">)</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="n">filtered_parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>            <span class="n">parser_name</span><span class="p">:</span> <span class="n">parsed_columns</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>            <span class="k">for</span> <span class="n">parser_name</span><span class="p">,</span> <span class="n">parsed_columns</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>            <span class="k">if</span> <span class="n">parsed_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>        <span class="p">}</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">filtered_parsed_columns_dict</span><span class="p">)</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>        <span class="k">return</span> <span class="n">filtered_parsed_columns_dict</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>    <span class="k">def</span> <span class="nf">_parse_column</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses a single column, specified by `args`, from a dataset.</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a><span class="sd">        :param args: See ColumnParseArgs docstring.</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">        :returns: If search_jmespath returns None, this function returns None.</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">            Otherwise, If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a><span class="sd">            is a list representing the parsed column. This list is always a 1D array.</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">            If MIME_TYPE_JSON_LINES, then the dataset being parsed is assumed to be</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">            a single JSON Lines row, in which case the return value is a single scalar</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">            value representing the sole value in the &quot;column&quot;.</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">search_jmespath</span><span class="p">(</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>            <span class="n">jmespath_parser</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="p">,</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>            <span class="n">jmespath_query_type</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="p">,</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>            <span class="n">dataset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>            <span class="n">dataset_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">,</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>        <span class="p">)</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>        <span class="k">return</span> <span class="n">result</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>    <span class="k">def</span> <span class="nf">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates that the JMESPath result is as expected.</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="sd">        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="sd">        to be a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="sd">        to be a single scalar value.</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a><span class="sd">        :param result: JMESPath query result to be validated.</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a><span class="sd">        :param args: See ColumnParseArguments docstring.</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>                <span class="n">result</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a non-empty list of samples for the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column using &quot;</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>                <span class="sa">f</span><span class="s2">&quot;JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>            <span class="p">)</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>                <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>  <span class="c1"># explicitly using &quot;is not None&quot; since values like 0 are false-y</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected an array of non-null values using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; for &quot;</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>                <span class="sa">f</span><span class="s2">&quot;the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column of dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found at least &quot;</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>                <span class="s2">&quot;one value that is None.&quot;</span><span class="p">,</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>            <span class="p">)</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>                <span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected a 1D array using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on dataset &quot;</span>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, where each element of the array is a sample&#39;s </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2">, &quot;</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>                <span class="sa">f</span><span class="s2">&quot;but found at least one nested array.&quot;</span><span class="p">,</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>            <span class="p">)</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">:</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>                <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>                <span class="sa">f</span><span class="s2">&quot;Found no values using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>                <span class="sa">f</span><span class="s2">&quot;on dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">,</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>            <span class="p">)</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a single value using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &quot;</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on a dataset line in &quot;</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>                <span class="sa">f</span><span class="s2">&quot;dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found a list instead.&quot;</span><span class="p">,</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>            <span class="p">)</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>            <span class="k">raise</span> <span class="n">EvalAlgorithmInternalError</span><span class="p">(</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>                <span class="sa">f</span><span class="s2">&quot;args.dataset_mime_type is </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span><span class="si">}</span><span class="s2">, but only JSON &quot;</span> <span class="s2">&quot;and JSON Lines are supported.&quot;</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>            <span class="p">)</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="k">def</span> <span class="nf">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]):</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a><span class="sd">        Validates that every column (represented by a list) in `parsed_columns_dict`</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a><span class="sd">        has the same number of elements.</span>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a><span class="sd">        :param parsed_columns_dict: The dict returned by the parse_dataset_columns method assuming</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a><span class="sd">            that this validation succeeds.</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a><span class="sd">        :raises: EvalAlgorithmClientError if validation fails</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">))])</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>        <span class="n">require</span><span class="p">(</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>            <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_samples</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>            <span class="s2">&quot;Expected the number of samples that were parsed by provided JMESPath queries&quot;</span>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>            <span class="s2">&quot;to be the same for the result of every JMESPath query, but not all queries&quot;</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>            <span class="s2">&quot;resulted in the same number of samples.&quot;</span><span class="p">,</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>        <span class="p">)</span>
 </span></pre></div>
 
 
@@ -345,76 +354,76 @@ is expected to be a list or a single value.</li>
 
                             <div id="ColumnParseArguments.__init__" class="classattr">
                                 <div class="attr function">
-
+            
         <span class="name">ColumnParseArguments</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">jmespath_parser</span><span class="p">:</span> <span class="n">jmespath</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">ParsedResult</span>,</span><span class="param">	<span class="n">jmespath_query_type</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">List</span><span class="p">]</span>,</span><span class="param">	<span class="n">dataset_mime_type</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.__init__"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ColumnParseArguments.jmespath_parser" class="classattr">
                                 <div class="attr variable">
             <span class="name">jmespath_parser</span><span class="annotation">: jmespath.parser.ParsedResult</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.jmespath_parser"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ColumnParseArguments.jmespath_query_type" class="classattr">
                                 <div class="attr variable">
             <span class="name">jmespath_query_type</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.jmespath_query_type"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ColumnParseArguments.dataset" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset</span><span class="annotation">: Union[Dict[str, Any], List]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.dataset"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ColumnParseArguments.dataset_mime_type" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_mime_type</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.dataset_mime_type"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ColumnParseArguments.dataset_name" class="classattr">
                                 <div class="attr variable">
             <span class="name">dataset_name</span><span class="annotation">: str</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ColumnParseArguments.dataset_name"></a>
-
-
+    
+    
 
                             </div>
                 </section>
                 <section id="JsonParser">
                             <input id="JsonParser-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">JsonParser</span>:
 
@@ -501,93 +510,102 @@ is expected to be a list or a single value.</li>
 </span><span id="JsonParser-111"><a href="#JsonParser-111"><span class="linenos">111</span></a>            <span class="p">)</span>
 </span><span id="JsonParser-112"><a href="#JsonParser-112"><span class="linenos">112</span></a>            <span class="k">for</span> <span class="n">parser_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parsers</span>
 </span><span id="JsonParser-113"><a href="#JsonParser-113"><span class="linenos">113</span></a>        <span class="p">}</span>
-</span><span id="JsonParser-114"><a href="#JsonParser-114"><span class="linenos">114</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
-</span><span id="JsonParser-115"><a href="#JsonParser-115"><span class="linenos">115</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">)</span>
-</span><span id="JsonParser-116"><a href="#JsonParser-116"><span class="linenos">116</span></a>        <span class="k">return</span> <span class="n">parsed_columns_dict</span>
-</span><span id="JsonParser-117"><a href="#JsonParser-117"><span class="linenos">117</span></a>
-</span><span id="JsonParser-118"><a href="#JsonParser-118"><span class="linenos">118</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="JsonParser-119"><a href="#JsonParser-119"><span class="linenos">119</span></a>    <span class="k">def</span> <span class="nf">_parse_column</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-</span><span id="JsonParser-120"><a href="#JsonParser-120"><span class="linenos">120</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses a single column, specified by `args`, from a dataset.</span>
-</span><span id="JsonParser-121"><a href="#JsonParser-121"><span class="linenos">121</span></a>
-</span><span id="JsonParser-122"><a href="#JsonParser-122"><span class="linenos">122</span></a><span class="sd">        :param args: See ColumnParseArgs docstring.</span>
-</span><span id="JsonParser-123"><a href="#JsonParser-123"><span class="linenos">123</span></a><span class="sd">        :returns: If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value</span>
-</span><span id="JsonParser-124"><a href="#JsonParser-124"><span class="linenos">124</span></a><span class="sd">            is a list representing the parsed column. This list is always a 1D array.</span>
-</span><span id="JsonParser-125"><a href="#JsonParser-125"><span class="linenos">125</span></a><span class="sd">            If MIME_TYPE_JSON_LINES, then the dataset being parsed is assumed to be</span>
-</span><span id="JsonParser-126"><a href="#JsonParser-126"><span class="linenos">126</span></a><span class="sd">            a single JSON Lines row, in which case the return value is a single scalar</span>
-</span><span id="JsonParser-127"><a href="#JsonParser-127"><span class="linenos">127</span></a><span class="sd">            value representing the sole value in the &quot;column&quot;.</span>
-</span><span id="JsonParser-128"><a href="#JsonParser-128"><span class="linenos">128</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonParser-129"><a href="#JsonParser-129"><span class="linenos">129</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">search_jmespath</span><span class="p">(</span>
-</span><span id="JsonParser-130"><a href="#JsonParser-130"><span class="linenos">130</span></a>            <span class="n">jmespath_parser</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="p">,</span>
-</span><span id="JsonParser-131"><a href="#JsonParser-131"><span class="linenos">131</span></a>            <span class="n">jmespath_query_type</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="p">,</span>
-</span><span id="JsonParser-132"><a href="#JsonParser-132"><span class="linenos">132</span></a>            <span class="n">dataset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-</span><span id="JsonParser-133"><a href="#JsonParser-133"><span class="linenos">133</span></a>            <span class="n">dataset_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">,</span>
-</span><span id="JsonParser-134"><a href="#JsonParser-134"><span class="linenos">134</span></a>        <span class="p">)</span>
-</span><span id="JsonParser-135"><a href="#JsonParser-135"><span class="linenos">135</span></a>        <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-</span><span id="JsonParser-136"><a href="#JsonParser-136"><span class="linenos">136</span></a>        <span class="k">return</span> <span class="n">result</span>
-</span><span id="JsonParser-137"><a href="#JsonParser-137"><span class="linenos">137</span></a>
-</span><span id="JsonParser-138"><a href="#JsonParser-138"><span class="linenos">138</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="JsonParser-139"><a href="#JsonParser-139"><span class="linenos">139</span></a>    <span class="k">def</span> <span class="nf">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="JsonParser-140"><a href="#JsonParser-140"><span class="linenos">140</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates that the JMESPath result is as expected.</span>
-</span><span id="JsonParser-141"><a href="#JsonParser-141"><span class="linenos">141</span></a>
-</span><span id="JsonParser-142"><a href="#JsonParser-142"><span class="linenos">142</span></a><span class="sd">        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected</span>
-</span><span id="JsonParser-143"><a href="#JsonParser-143"><span class="linenos">143</span></a><span class="sd">        to be a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected</span>
-</span><span id="JsonParser-144"><a href="#JsonParser-144"><span class="linenos">144</span></a><span class="sd">        to be a single scalar value.</span>
-</span><span id="JsonParser-145"><a href="#JsonParser-145"><span class="linenos">145</span></a>
-</span><span id="JsonParser-146"><a href="#JsonParser-146"><span class="linenos">146</span></a><span class="sd">        :param result: JMESPath query result to be validated.</span>
-</span><span id="JsonParser-147"><a href="#JsonParser-147"><span class="linenos">147</span></a><span class="sd">        :param args: See ColumnParseArguments docstring.</span>
-</span><span id="JsonParser-148"><a href="#JsonParser-148"><span class="linenos">148</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonParser-149"><a href="#JsonParser-149"><span class="linenos">149</span></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
-</span><span id="JsonParser-150"><a href="#JsonParser-150"><span class="linenos">150</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-151"><a href="#JsonParser-151"><span class="linenos">151</span></a>                <span class="n">result</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
-</span><span id="JsonParser-152"><a href="#JsonParser-152"><span class="linenos">152</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a non-empty list of samples for the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column using &quot;</span>
-</span><span id="JsonParser-153"><a href="#JsonParser-153"><span class="linenos">153</span></a>                <span class="sa">f</span><span class="s2">&quot;JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-154"><a href="#JsonParser-154"><span class="linenos">154</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-155"><a href="#JsonParser-155"><span class="linenos">155</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-156"><a href="#JsonParser-156"><span class="linenos">156</span></a>                <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>  <span class="c1"># explicitly using &quot;is not None&quot; since values like 0 are false-y</span>
-</span><span id="JsonParser-157"><a href="#JsonParser-157"><span class="linenos">157</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected an array of non-null values using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; for &quot;</span>
-</span><span id="JsonParser-158"><a href="#JsonParser-158"><span class="linenos">158</span></a>                <span class="sa">f</span><span class="s2">&quot;the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column of dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found at least &quot;</span>
-</span><span id="JsonParser-159"><a href="#JsonParser-159"><span class="linenos">159</span></a>                <span class="s2">&quot;one value that is None.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-160"><a href="#JsonParser-160"><span class="linenos">160</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-161"><a href="#JsonParser-161"><span class="linenos">161</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-162"><a href="#JsonParser-162"><span class="linenos">162</span></a>                <span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>
-</span><span id="JsonParser-163"><a href="#JsonParser-163"><span class="linenos">163</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected a 1D array using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on dataset &quot;</span>
-</span><span id="JsonParser-164"><a href="#JsonParser-164"><span class="linenos">164</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, where each element of the array is a sample&#39;s </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2">, &quot;</span>
-</span><span id="JsonParser-165"><a href="#JsonParser-165"><span class="linenos">165</span></a>                <span class="sa">f</span><span class="s2">&quot;but found at least one nested array.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-166"><a href="#JsonParser-166"><span class="linenos">166</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-167"><a href="#JsonParser-167"><span class="linenos">167</span></a>        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">:</span>
-</span><span id="JsonParser-168"><a href="#JsonParser-168"><span class="linenos">168</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-169"><a href="#JsonParser-169"><span class="linenos">169</span></a>                <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="JsonParser-170"><a href="#JsonParser-170"><span class="linenos">170</span></a>                <span class="sa">f</span><span class="s2">&quot;Found no values using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
-</span><span id="JsonParser-171"><a href="#JsonParser-171"><span class="linenos">171</span></a>                <span class="sa">f</span><span class="s2">&quot;on dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-172"><a href="#JsonParser-172"><span class="linenos">172</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-173"><a href="#JsonParser-173"><span class="linenos">173</span></a>            <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-174"><a href="#JsonParser-174"><span class="linenos">174</span></a>                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
-</span><span id="JsonParser-175"><a href="#JsonParser-175"><span class="linenos">175</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a single value using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &quot;</span>
-</span><span id="JsonParser-176"><a href="#JsonParser-176"><span class="linenos">176</span></a>                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on a dataset line in &quot;</span>
-</span><span id="JsonParser-177"><a href="#JsonParser-177"><span class="linenos">177</span></a>                <span class="sa">f</span><span class="s2">&quot;dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found a list instead.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-178"><a href="#JsonParser-178"><span class="linenos">178</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-179"><a href="#JsonParser-179"><span class="linenos">179</span></a>        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-</span><span id="JsonParser-180"><a href="#JsonParser-180"><span class="linenos">180</span></a>            <span class="k">raise</span> <span class="n">EvalAlgorithmInternalError</span><span class="p">(</span>
-</span><span id="JsonParser-181"><a href="#JsonParser-181"><span class="linenos">181</span></a>                <span class="sa">f</span><span class="s2">&quot;args.dataset_mime_type is </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span><span class="si">}</span><span class="s2">, but only JSON &quot;</span> <span class="s2">&quot;and JSON Lines are supported.&quot;</span>
-</span><span id="JsonParser-182"><a href="#JsonParser-182"><span class="linenos">182</span></a>            <span class="p">)</span>
-</span><span id="JsonParser-183"><a href="#JsonParser-183"><span class="linenos">183</span></a>
-</span><span id="JsonParser-184"><a href="#JsonParser-184"><span class="linenos">184</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="JsonParser-185"><a href="#JsonParser-185"><span class="linenos">185</span></a>    <span class="k">def</span> <span class="nf">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]):</span>
-</span><span id="JsonParser-186"><a href="#JsonParser-186"><span class="linenos">186</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="JsonParser-187"><a href="#JsonParser-187"><span class="linenos">187</span></a><span class="sd">        Validates that every column (represented by a list) in `parsed_columns_dict`</span>
-</span><span id="JsonParser-188"><a href="#JsonParser-188"><span class="linenos">188</span></a><span class="sd">        has the same number of elements.</span>
-</span><span id="JsonParser-189"><a href="#JsonParser-189"><span class="linenos">189</span></a>
-</span><span id="JsonParser-190"><a href="#JsonParser-190"><span class="linenos">190</span></a><span class="sd">        :param parsed_columns_dict: The dict returned by the parse_dataset_columns method assuming</span>
-</span><span id="JsonParser-191"><a href="#JsonParser-191"><span class="linenos">191</span></a><span class="sd">            that this validation succeeds.</span>
-</span><span id="JsonParser-192"><a href="#JsonParser-192"><span class="linenos">192</span></a><span class="sd">        :raises: EvalAlgorithmClientError if validation fails</span>
-</span><span id="JsonParser-193"><a href="#JsonParser-193"><span class="linenos">193</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="JsonParser-194"><a href="#JsonParser-194"><span class="linenos">194</span></a>        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">))])</span>
-</span><span id="JsonParser-195"><a href="#JsonParser-195"><span class="linenos">195</span></a>        <span class="n">require</span><span class="p">(</span>
-</span><span id="JsonParser-196"><a href="#JsonParser-196"><span class="linenos">196</span></a>            <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_samples</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
-</span><span id="JsonParser-197"><a href="#JsonParser-197"><span class="linenos">197</span></a>            <span class="s2">&quot;Expected the number of samples that were parsed by provided JMESPath queries&quot;</span>
-</span><span id="JsonParser-198"><a href="#JsonParser-198"><span class="linenos">198</span></a>            <span class="s2">&quot;to be the same for the result of every JMESPath query, but not all queries&quot;</span>
-</span><span id="JsonParser-199"><a href="#JsonParser-199"><span class="linenos">199</span></a>            <span class="s2">&quot;resulted in the same number of samples.&quot;</span><span class="p">,</span>
-</span><span id="JsonParser-200"><a href="#JsonParser-200"><span class="linenos">200</span></a>        <span class="p">)</span>
+</span><span id="JsonParser-114"><a href="#JsonParser-114"><span class="linenos">114</span></a>
+</span><span id="JsonParser-115"><a href="#JsonParser-115"><span class="linenos">115</span></a>        <span class="n">filtered_parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="JsonParser-116"><a href="#JsonParser-116"><span class="linenos">116</span></a>            <span class="n">parser_name</span><span class="p">:</span> <span class="n">parsed_columns</span>
+</span><span id="JsonParser-117"><a href="#JsonParser-117"><span class="linenos">117</span></a>            <span class="k">for</span> <span class="n">parser_name</span><span class="p">,</span> <span class="n">parsed_columns</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span id="JsonParser-118"><a href="#JsonParser-118"><span class="linenos">118</span></a>            <span class="k">if</span> <span class="n">parsed_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span id="JsonParser-119"><a href="#JsonParser-119"><span class="linenos">119</span></a>        <span class="p">}</span>
+</span><span id="JsonParser-120"><a href="#JsonParser-120"><span class="linenos">120</span></a>
+</span><span id="JsonParser-121"><a href="#JsonParser-121"><span class="linenos">121</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
+</span><span id="JsonParser-122"><a href="#JsonParser-122"><span class="linenos">122</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">filtered_parsed_columns_dict</span><span class="p">)</span>
+</span><span id="JsonParser-123"><a href="#JsonParser-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="n">filtered_parsed_columns_dict</span>
+</span><span id="JsonParser-124"><a href="#JsonParser-124"><span class="linenos">124</span></a>
+</span><span id="JsonParser-125"><a href="#JsonParser-125"><span class="linenos">125</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="JsonParser-126"><a href="#JsonParser-126"><span class="linenos">126</span></a>    <span class="k">def</span> <span class="nf">_parse_column</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+</span><span id="JsonParser-127"><a href="#JsonParser-127"><span class="linenos">127</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses a single column, specified by `args`, from a dataset.</span>
+</span><span id="JsonParser-128"><a href="#JsonParser-128"><span class="linenos">128</span></a>
+</span><span id="JsonParser-129"><a href="#JsonParser-129"><span class="linenos">129</span></a><span class="sd">        :param args: See ColumnParseArgs docstring.</span>
+</span><span id="JsonParser-130"><a href="#JsonParser-130"><span class="linenos">130</span></a><span class="sd">        :returns: If search_jmespath returns None, this function returns None.</span>
+</span><span id="JsonParser-131"><a href="#JsonParser-131"><span class="linenos">131</span></a><span class="sd">            Otherwise, If `args.dataset_mime_type` is MIME_TYPE_JSON, then the return value</span>
+</span><span id="JsonParser-132"><a href="#JsonParser-132"><span class="linenos">132</span></a><span class="sd">            is a list representing the parsed column. This list is always a 1D array.</span>
+</span><span id="JsonParser-133"><a href="#JsonParser-133"><span class="linenos">133</span></a><span class="sd">            If MIME_TYPE_JSON_LINES, then the dataset being parsed is assumed to be</span>
+</span><span id="JsonParser-134"><a href="#JsonParser-134"><span class="linenos">134</span></a><span class="sd">            a single JSON Lines row, in which case the return value is a single scalar</span>
+</span><span id="JsonParser-135"><a href="#JsonParser-135"><span class="linenos">135</span></a><span class="sd">            value representing the sole value in the &quot;column&quot;.</span>
+</span><span id="JsonParser-136"><a href="#JsonParser-136"><span class="linenos">136</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JsonParser-137"><a href="#JsonParser-137"><span class="linenos">137</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">search_jmespath</span><span class="p">(</span>
+</span><span id="JsonParser-138"><a href="#JsonParser-138"><span class="linenos">138</span></a>            <span class="n">jmespath_parser</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="p">,</span>
+</span><span id="JsonParser-139"><a href="#JsonParser-139"><span class="linenos">139</span></a>            <span class="n">jmespath_query_type</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="p">,</span>
+</span><span id="JsonParser-140"><a href="#JsonParser-140"><span class="linenos">140</span></a>            <span class="n">dataset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+</span><span id="JsonParser-141"><a href="#JsonParser-141"><span class="linenos">141</span></a>            <span class="n">dataset_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">,</span>
+</span><span id="JsonParser-142"><a href="#JsonParser-142"><span class="linenos">142</span></a>        <span class="p">)</span>
+</span><span id="JsonParser-143"><a href="#JsonParser-143"><span class="linenos">143</span></a>        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="JsonParser-144"><a href="#JsonParser-144"><span class="linenos">144</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+</span><span id="JsonParser-145"><a href="#JsonParser-145"><span class="linenos">145</span></a>        <span class="k">return</span> <span class="n">result</span>
+</span><span id="JsonParser-146"><a href="#JsonParser-146"><span class="linenos">146</span></a>
+</span><span id="JsonParser-147"><a href="#JsonParser-147"><span class="linenos">147</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="JsonParser-148"><a href="#JsonParser-148"><span class="linenos">148</span></a>    <span class="k">def</span> <span class="nf">_validate_jmespath_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">args</span><span class="p">:</span> <span class="n">ColumnParseArguments</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="JsonParser-149"><a href="#JsonParser-149"><span class="linenos">149</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates that the JMESPath result is as expected.</span>
+</span><span id="JsonParser-150"><a href="#JsonParser-150"><span class="linenos">150</span></a>
+</span><span id="JsonParser-151"><a href="#JsonParser-151"><span class="linenos">151</span></a><span class="sd">        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected</span>
+</span><span id="JsonParser-152"><a href="#JsonParser-152"><span class="linenos">152</span></a><span class="sd">        to be a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected</span>
+</span><span id="JsonParser-153"><a href="#JsonParser-153"><span class="linenos">153</span></a><span class="sd">        to be a single scalar value.</span>
+</span><span id="JsonParser-154"><a href="#JsonParser-154"><span class="linenos">154</span></a>
+</span><span id="JsonParser-155"><a href="#JsonParser-155"><span class="linenos">155</span></a><span class="sd">        :param result: JMESPath query result to be validated.</span>
+</span><span id="JsonParser-156"><a href="#JsonParser-156"><span class="linenos">156</span></a><span class="sd">        :param args: See ColumnParseArguments docstring.</span>
+</span><span id="JsonParser-157"><a href="#JsonParser-157"><span class="linenos">157</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JsonParser-158"><a href="#JsonParser-158"><span class="linenos">158</span></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
+</span><span id="JsonParser-159"><a href="#JsonParser-159"><span class="linenos">159</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-160"><a href="#JsonParser-160"><span class="linenos">160</span></a>                <span class="n">result</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+</span><span id="JsonParser-161"><a href="#JsonParser-161"><span class="linenos">161</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a non-empty list of samples for the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column using &quot;</span>
+</span><span id="JsonParser-162"><a href="#JsonParser-162"><span class="linenos">162</span></a>                <span class="sa">f</span><span class="s2">&quot;JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-163"><a href="#JsonParser-163"><span class="linenos">163</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-164"><a href="#JsonParser-164"><span class="linenos">164</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-165"><a href="#JsonParser-165"><span class="linenos">165</span></a>                <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>  <span class="c1"># explicitly using &quot;is not None&quot; since values like 0 are false-y</span>
+</span><span id="JsonParser-166"><a href="#JsonParser-166"><span class="linenos">166</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected an array of non-null values using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; for &quot;</span>
+</span><span id="JsonParser-167"><a href="#JsonParser-167"><span class="linenos">167</span></a>                <span class="sa">f</span><span class="s2">&quot;the </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> column of dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found at least &quot;</span>
+</span><span id="JsonParser-168"><a href="#JsonParser-168"><span class="linenos">168</span></a>                <span class="s2">&quot;one value that is None.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-169"><a href="#JsonParser-169"><span class="linenos">169</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-170"><a href="#JsonParser-170"><span class="linenos">170</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-171"><a href="#JsonParser-171"><span class="linenos">171</span></a>                <span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">),</span>
+</span><span id="JsonParser-172"><a href="#JsonParser-172"><span class="linenos">172</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected a 1D array using JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on dataset &quot;</span>
+</span><span id="JsonParser-173"><a href="#JsonParser-173"><span class="linenos">173</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, where each element of the array is a sample&#39;s </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2">, &quot;</span>
+</span><span id="JsonParser-174"><a href="#JsonParser-174"><span class="linenos">174</span></a>                <span class="sa">f</span><span class="s2">&quot;but found at least one nested array.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-175"><a href="#JsonParser-175"><span class="linenos">175</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-176"><a href="#JsonParser-176"><span class="linenos">176</span></a>        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSONLINES</span><span class="p">:</span>
+</span><span id="JsonParser-177"><a href="#JsonParser-177"><span class="linenos">177</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-178"><a href="#JsonParser-178"><span class="linenos">178</span></a>                <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="JsonParser-179"><a href="#JsonParser-179"><span class="linenos">179</span></a>                <span class="sa">f</span><span class="s2">&quot;Found no values using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+</span><span id="JsonParser-180"><a href="#JsonParser-180"><span class="linenos">180</span></a>                <span class="sa">f</span><span class="s2">&quot;on dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-181"><a href="#JsonParser-181"><span class="linenos">181</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-182"><a href="#JsonParser-182"><span class="linenos">182</span></a>            <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-183"><a href="#JsonParser-183"><span class="linenos">183</span></a>                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+</span><span id="JsonParser-184"><a href="#JsonParser-184"><span class="linenos">184</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected to find a single value using </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_query_type</span><span class="si">}</span><span class="s2"> JMESPath &quot;</span>
+</span><span id="JsonParser-185"><a href="#JsonParser-185"><span class="linenos">185</span></a>                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">jmespath_parser</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39; on a dataset line in &quot;</span>
+</span><span id="JsonParser-186"><a href="#JsonParser-186"><span class="linenos">186</span></a>                <span class="sa">f</span><span class="s2">&quot;dataset `</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">`, but found a list instead.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-187"><a href="#JsonParser-187"><span class="linenos">187</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-188"><a href="#JsonParser-188"><span class="linenos">188</span></a>        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="JsonParser-189"><a href="#JsonParser-189"><span class="linenos">189</span></a>            <span class="k">raise</span> <span class="n">EvalAlgorithmInternalError</span><span class="p">(</span>
+</span><span id="JsonParser-190"><a href="#JsonParser-190"><span class="linenos">190</span></a>                <span class="sa">f</span><span class="s2">&quot;args.dataset_mime_type is </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_mime_type</span><span class="si">}</span><span class="s2">, but only JSON &quot;</span> <span class="s2">&quot;and JSON Lines are supported.&quot;</span>
+</span><span id="JsonParser-191"><a href="#JsonParser-191"><span class="linenos">191</span></a>            <span class="p">)</span>
+</span><span id="JsonParser-192"><a href="#JsonParser-192"><span class="linenos">192</span></a>
+</span><span id="JsonParser-193"><a href="#JsonParser-193"><span class="linenos">193</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="JsonParser-194"><a href="#JsonParser-194"><span class="linenos">194</span></a>    <span class="k">def</span> <span class="nf">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]):</span>
+</span><span id="JsonParser-195"><a href="#JsonParser-195"><span class="linenos">195</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="JsonParser-196"><a href="#JsonParser-196"><span class="linenos">196</span></a><span class="sd">        Validates that every column (represented by a list) in `parsed_columns_dict`</span>
+</span><span id="JsonParser-197"><a href="#JsonParser-197"><span class="linenos">197</span></a><span class="sd">        has the same number of elements.</span>
+</span><span id="JsonParser-198"><a href="#JsonParser-198"><span class="linenos">198</span></a>
+</span><span id="JsonParser-199"><a href="#JsonParser-199"><span class="linenos">199</span></a><span class="sd">        :param parsed_columns_dict: The dict returned by the parse_dataset_columns method assuming</span>
+</span><span id="JsonParser-200"><a href="#JsonParser-200"><span class="linenos">200</span></a><span class="sd">            that this validation succeeds.</span>
+</span><span id="JsonParser-201"><a href="#JsonParser-201"><span class="linenos">201</span></a><span class="sd">        :raises: EvalAlgorithmClientError if validation fails</span>
+</span><span id="JsonParser-202"><a href="#JsonParser-202"><span class="linenos">202</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JsonParser-203"><a href="#JsonParser-203"><span class="linenos">203</span></a>        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">))])</span>
+</span><span id="JsonParser-204"><a href="#JsonParser-204"><span class="linenos">204</span></a>        <span class="n">require</span><span class="p">(</span>
+</span><span id="JsonParser-205"><a href="#JsonParser-205"><span class="linenos">205</span></a>            <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_samples</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+</span><span id="JsonParser-206"><a href="#JsonParser-206"><span class="linenos">206</span></a>            <span class="s2">&quot;Expected the number of samples that were parsed by provided JMESPath queries&quot;</span>
+</span><span id="JsonParser-207"><a href="#JsonParser-207"><span class="linenos">207</span></a>            <span class="s2">&quot;to be the same for the result of every JMESPath query, but not all queries&quot;</span>
+</span><span id="JsonParser-208"><a href="#JsonParser-208"><span class="linenos">208</span></a>            <span class="s2">&quot;resulted in the same number of samples.&quot;</span><span class="p">,</span>
+</span><span id="JsonParser-209"><a href="#JsonParser-209"><span class="linenos">209</span></a>        <span class="p">)</span>
 </span></pre></div>
 
 
@@ -606,7 +624,7 @@ perform the JMESPath searching in the <code>search_jmespath</code> util function
                             <div id="JsonParser.__init__" class="classattr">
                                         <input id="JsonParser.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">JsonParser</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">fmeval</span><span class="o">.</span><span class="n">data_loaders</span><span class="o">.</span><span class="n">data_config</span><span class="o">.</span><span class="n">DataConfig</span></span>)</span>
 
                 <label class="view-source-button" for="JsonParser.__init__-view-source"><span>View Source</span></label>
@@ -691,7 +709,7 @@ in the *_COLUMN_NAME constants, since downstream code assumes that these constan
                             <div id="JsonParser.parse_dataset_columns" class="classattr">
                                         <input id="JsonParser.parse_dataset_columns-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">parse_dataset_columns</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">List</span><span class="p">]</span>,</span><span class="param">	<span class="n">dataset_mime_type</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span>:</span></span>
 
@@ -729,9 +747,16 @@ in the *_COLUMN_NAME constants, since downstream code assumes that these constan
 </span><span id="JsonParser.parse_dataset_columns-111"><a href="#JsonParser.parse_dataset_columns-111"><span class="linenos">111</span></a>            <span class="p">)</span>
 </span><span id="JsonParser.parse_dataset_columns-112"><a href="#JsonParser.parse_dataset_columns-112"><span class="linenos">112</span></a>            <span class="k">for</span> <span class="n">parser_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parsers</span>
 </span><span id="JsonParser.parse_dataset_columns-113"><a href="#JsonParser.parse_dataset_columns-113"><span class="linenos">113</span></a>        <span class="p">}</span>
-</span><span id="JsonParser.parse_dataset_columns-114"><a href="#JsonParser.parse_dataset_columns-114"><span class="linenos">114</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
-</span><span id="JsonParser.parse_dataset_columns-115"><a href="#JsonParser.parse_dataset_columns-115"><span class="linenos">115</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">parsed_columns_dict</span><span class="p">)</span>
-</span><span id="JsonParser.parse_dataset_columns-116"><a href="#JsonParser.parse_dataset_columns-116"><span class="linenos">116</span></a>        <span class="k">return</span> <span class="n">parsed_columns_dict</span>
+</span><span id="JsonParser.parse_dataset_columns-114"><a href="#JsonParser.parse_dataset_columns-114"><span class="linenos">114</span></a>
+</span><span id="JsonParser.parse_dataset_columns-115"><a href="#JsonParser.parse_dataset_columns-115"><span class="linenos">115</span></a>        <span class="n">filtered_parsed_columns_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="JsonParser.parse_dataset_columns-116"><a href="#JsonParser.parse_dataset_columns-116"><span class="linenos">116</span></a>            <span class="n">parser_name</span><span class="p">:</span> <span class="n">parsed_columns</span>
+</span><span id="JsonParser.parse_dataset_columns-117"><a href="#JsonParser.parse_dataset_columns-117"><span class="linenos">117</span></a>            <span class="k">for</span> <span class="n">parser_name</span><span class="p">,</span> <span class="n">parsed_columns</span> <span class="ow">in</span> <span class="n">parsed_columns_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span id="JsonParser.parse_dataset_columns-118"><a href="#JsonParser.parse_dataset_columns-118"><span class="linenos">118</span></a>            <span class="k">if</span> <span class="n">parsed_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span id="JsonParser.parse_dataset_columns-119"><a href="#JsonParser.parse_dataset_columns-119"><span class="linenos">119</span></a>        <span class="p">}</span>
+</span><span id="JsonParser.parse_dataset_columns-120"><a href="#JsonParser.parse_dataset_columns-120"><span class="linenos">120</span></a>
+</span><span id="JsonParser.parse_dataset_columns-121"><a href="#JsonParser.parse_dataset_columns-121"><span class="linenos">121</span></a>        <span class="k">if</span> <span class="n">dataset_mime_type</span> <span class="o">==</span> <span class="n">MIME_TYPE_JSON</span><span class="p">:</span>
+</span><span id="JsonParser.parse_dataset_columns-122"><a href="#JsonParser.parse_dataset_columns-122"><span class="linenos">122</span></a>            <span class="n">JsonParser</span><span class="o">.</span><span class="n">_validate_parsed_columns_lengths</span><span class="p">(</span><span class="n">filtered_parsed_columns_dict</span><span class="p">)</span>
+</span><span id="JsonParser.parse_dataset_columns-123"><a href="#JsonParser.parse_dataset_columns-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="n">filtered_parsed_columns_dict</span>
 </span></pre></div>
 
 

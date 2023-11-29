@@ -127,7 +127,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_algorithms.html">eval_algorithms</a><wbr>.<a href="./../helper_models.html">helper_models</a><wbr>.helper_model    </h1>
 
-
+                
                         <input id="mod-helper_model-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-helper_model-view-source"><span>View Source</span></label>
@@ -281,7 +281,7 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
 </span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>        <span class="k">return</span> <span class="n">DETOXIFY_SCORE_NAMES</span>
 </span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
 </span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>
-</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="nd">@ray</span><span class="o">.</span><span class="n">remote</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="nd">@ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">num_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="k">class</span> <span class="nc">BertscoreHelperModel</span><span class="p">(</span><span class="n">BaseHelperModel</span><span class="p">):</span>
 </span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="sd">    BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences</span>
@@ -290,38 +290,43 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
 </span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="sd">    semantically similar sentences are (typically) embedded similarly.</span>
 </span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>
 </span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a><span class="sd">    https://huggingface.co/spaces/evaluate-metric/bertscore</span>
-</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>
-</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="sd">        Default constructor</span>
-</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>
-</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a><span class="sd">        :param model_type: Model type to be used for bertscore</span>
-</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span> <span class="o">=</span> <span class="n">hf_evaluate</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">)</span>
-</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span> <span class="o">=</span> <span class="n">model_type</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="sd">    Note: we specify that this Ray actor requires num_cpus=1 in order to limit the number of concurrently</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a><span class="sd">    running tasks or actors to avoid out of memory issues.</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="sd">    See https://docs.ray.io/en/latest/ray-core/patterns/limit-running-tasks.html#core-patterns-limit-running-tasks</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="sd">    for a detailed explanation.</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a><span class="sd">        Default constructor</span>
 </span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>
-</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>        <span class="c1"># Dummy call to download the model within constructor</span>
-</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span>
-</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>            <span class="n">predictions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dummy_prediction&quot;</span><span class="p">],</span>
-</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>            <span class="n">references</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dummy_reference&quot;</span><span class="p">],</span>
-</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>            <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span><span class="p">,</span>
-</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="p">)</span>
-</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>
-</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>    <span class="k">def</span> <span class="nf">get_helper_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
-</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a><span class="sd">        Method to invoke the concerned model and get bertscore</span>
-</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a><span class="sd">        :param target_output: Reference text</span>
-</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a><span class="sd">        :model_output: Model prediction text</span>
-</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>        <span class="c1"># Note: the following code is covered by unit tests,</span>
-</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>        <span class="c1"># but since it gets executed by Ray, Mypy marks it</span>
-</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>        <span class="c1"># as not covered.</span>
-</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span>  <span class="c1"># pragma: no cover</span>
-</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>            <span class="n">predictions</span><span class="o">=</span><span class="p">[</span><span class="n">model_output</span><span class="p">],</span>
-</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>            <span class="n">references</span><span class="o">=</span><span class="p">[</span><span class="n">target_output</span><span class="p">],</span>
-</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>            <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span><span class="p">,</span>
-</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>        <span class="p">)[</span><span class="s2">&quot;f1&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a><span class="sd">        :param model_type: Model type to be used for bertscore</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span> <span class="o">=</span> <span class="n">hf_evaluate</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;bertscore&quot;</span><span class="p">)</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span> <span class="o">=</span> <span class="n">model_type</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="c1"># Dummy call to download the model within constructor</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>            <span class="n">predictions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dummy_prediction&quot;</span><span class="p">],</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>            <span class="n">references</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dummy_reference&quot;</span><span class="p">],</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>            <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span><span class="p">,</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>        <span class="p">)</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>    <span class="k">def</span> <span class="nf">get_helper_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a><span class="sd">        Method to invoke the concerned model and get bertscore</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a><span class="sd">        :param target_output: Reference text</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a><span class="sd">        :model_output: Model prediction text</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>        <span class="c1"># Note: the following code is covered by unit tests,</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>        <span class="c1"># but since it gets executed by Ray, Mypy marks it</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>        <span class="c1"># as not covered.</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bertscore</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>            <span class="n">predictions</span><span class="o">=</span><span class="p">[</span><span class="n">model_output</span><span class="p">],</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>            <span class="n">references</span><span class="o">=</span><span class="p">[</span><span class="n">target_output</span><span class="p">],</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>            <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_type</span><span class="p">,</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>        <span class="p">)[</span><span class="s2">&quot;f1&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 </span></pre></div>
 
 
@@ -331,11 +336,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">TOXIGEN_SCORE_NAME</span>        =
 <span class="default_value">&#39;toxicity&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#TOXIGEN_SCORE_NAME"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_TOXICITY">
@@ -343,11 +348,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_TOXICITY</span>        =
 <span class="default_value">&#39;toxicity&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_TOXICITY"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_SEVERE_TOXICITY">
@@ -355,11 +360,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_SEVERE_TOXICITY</span>        =
 <span class="default_value">&#39;severe_toxicity&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_SEVERE_TOXICITY"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_OBSCENE">
@@ -367,11 +372,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_OBSCENE</span>        =
 <span class="default_value">&#39;obscene&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_OBSCENE"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_IDENTITY_ATTACK">
@@ -379,11 +384,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_IDENTITY_ATTACK</span>        =
 <span class="default_value">&#39;identity_attack&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_IDENTITY_ATTACK"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_INSULT">
@@ -391,11 +396,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_INSULT</span>        =
 <span class="default_value">&#39;insult&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_INSULT"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_THREAT">
@@ -403,11 +408,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_THREAT</span>        =
 <span class="default_value">&#39;threat&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_THREAT"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_SEXUAL_EXPLICIT">
@@ -415,11 +420,11 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_SEXUAL_EXPLICIT</span>        =
 <span class="default_value">&#39;sexual_explicit&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_SEXUAL_EXPLICIT"></a>
-
-
+    
+    
 
                 </section>
                 <section id="DETOXIFY_SCORE_NAMES">
@@ -427,17 +432,17 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../eval_
             <span class="name">DETOXIFY_SCORE_NAMES</span>        =
 <span class="default_value">[&#39;toxicity&#39;, &#39;severe_toxicity&#39;, &#39;obscene&#39;, &#39;identity_attack&#39;, &#39;insult&#39;, &#39;threat&#39;, &#39;sexual_explicit&#39;]</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DETOXIFY_SCORE_NAMES"></a>
-
-
+    
+    
 
                 </section>
                 <section id="BaseHelperModel">
                             <input id="BaseHelperModel-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">BaseHelperModel</span><wbr>(<span class="base">abc.ABC</span>):
 
@@ -504,7 +509,7 @@ Machine learning models being used by Evaluation algorithms.</p>
                 <section id="ToxigenHelperModel">
                             <input id="ToxigenHelperModel-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">ToxigenHelperModel</span><wbr>(<span class="base"><a href="#BaseHelperModel">BaseHelperModel</a></span>):
 
@@ -573,7 +578,7 @@ Machine learning models being used by Evaluation algorithms.</p>
                             <div id="ToxigenHelperModel.__init__" class="classattr">
                                         <input id="ToxigenHelperModel.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">ToxigenHelperModel</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model_output&#39;</span></span>)</span>
 
                 <label class="view-source-button" for="ToxigenHelperModel.__init__-view-source"><span>View Source</span></label>
@@ -607,11 +612,11 @@ Machine learning models being used by Evaluation algorithms.</p>
             <span class="name">TOXIGEN_MODEL_NAME</span>        =
 <span class="default_value">&#39;tomh/toxigen_roberta&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ToxigenHelperModel.TOXIGEN_MODEL_NAME"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ToxigenHelperModel.COLUMN_NAME" class="classattr">
@@ -619,17 +624,17 @@ Machine learning models being used by Evaluation algorithms.</p>
             <span class="name">COLUMN_NAME</span>        =
 <span class="default_value">&#39;model_output&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#ToxigenHelperModel.COLUMN_NAME"></a>
-
-
+    
+    
 
                             </div>
                             <div id="ToxigenHelperModel.get_helper_scores" class="classattr">
                                         <input id="ToxigenHelperModel.get_helper_scores-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">get_helper_scores</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">text_input</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>:</span></span>
 
@@ -699,7 +704,7 @@ Machine learning models being used by Evaluation algorithms.</p>
                 <section id="DetoxifyHelperModel">
                             <input id="DetoxifyHelperModel-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">DetoxifyHelperModel</span><wbr>(<span class="base"><a href="#BaseHelperModel">BaseHelperModel</a></span>):
 
@@ -770,7 +775,7 @@ update transformers version we are consuming.</p>
                             <div id="DetoxifyHelperModel.__init__" class="classattr">
                                         <input id="DetoxifyHelperModel.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">DetoxifyHelperModel</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model_output&#39;</span></span>)</span>
 
                 <label class="view-source-button" for="DetoxifyHelperModel.__init__-view-source"><span>View Source</span></label>
@@ -804,11 +809,11 @@ update transformers version we are consuming.</p>
             <span class="name">DETOXIFY_MODEL_TYPE</span>        =
 <span class="default_value">&#39;unbiased&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DetoxifyHelperModel.DETOXIFY_MODEL_TYPE"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DetoxifyHelperModel.COLUMN_NAME" class="classattr">
@@ -816,17 +821,17 @@ update transformers version we are consuming.</p>
             <span class="name">COLUMN_NAME</span>        =
 <span class="default_value">&#39;model_output&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#DetoxifyHelperModel.COLUMN_NAME"></a>
-
-
+    
+    
 
                             </div>
                             <div id="DetoxifyHelperModel.get_helper_scores" class="classattr">
                                         <input id="DetoxifyHelperModel.get_helper_scores-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">get_helper_scores</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">text_input</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>:</span></span>
 
@@ -890,11 +895,11 @@ update transformers version we are consuming.</p>
             <span class="name">BertscoreHelperModel</span>        =
 <span class="default_value">&lt;src.fmeval.eval_algorithms.helper_models.helper_model.ActorClass(BertscoreHelperModel) object&gt;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#BertscoreHelperModel"></a>
-
-
+    
+    
 
                 </section>
     </main>

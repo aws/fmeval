@@ -94,7 +94,7 @@
                     <h1 class="modulename">
 src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model_runners.html">model_runners</a><wbr>.<a href="./../composers.html">composers</a><wbr>.composers    </h1>
 
-
+                
                         <input id="mod-composers-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-composers-view-source"><span>View Source</span></label>
@@ -199,7 +199,7 @@ src<wbr>.<a href="./../../../fmeval.html">fmeval</a><wbr>.<a href="./../../model
                 <section id="Composer">
                             <input id="Composer-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">Composer</span><wbr>(<span class="base">abc.ABC</span>):
 
@@ -247,7 +247,7 @@ inheritance.</p>
                             <div id="Composer.__init__" class="classattr">
                                         <input id="Composer.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">Composer</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">template</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">placeholder</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="Composer.__init__-view-source"><span>View Source</span></label>
@@ -282,22 +282,22 @@ the placeholder is "prompt".</li>
                                 <div class="attr variable">
             <span class="name">placeholder</span>
 
-
+        
     </div>
     <a class="headerlink" href="#Composer.placeholder"></a>
-
-
+    
+    
 
                             </div>
                             <div id="Composer.vanilla_template" class="classattr">
                                 <div class="attr variable">
             <span class="name">vanilla_template</span>
 
-
+        
     </div>
     <a class="headerlink" href="#Composer.vanilla_template"></a>
-
-
+    
+    
 
                             </div>
                             <div id="Composer.compose" class="classattr">
@@ -344,7 +344,7 @@ the placeholder is "prompt".</li>
                 <section id="JsonContentComposer">
                             <input id="JsonContentComposer-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">JsonContentComposer</span><wbr>(<span class="base"><a href="#Composer">Composer</a></span>):
 
@@ -392,7 +392,7 @@ with content_type == "application/json".</p>
                             <div id="JsonContentComposer.__init__" class="classattr">
                                         <input id="JsonContentComposer.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">JsonContentComposer</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">template</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="JsonContentComposer.__init__-view-source"><span>View Source</span></label>
@@ -421,17 +421,17 @@ the placeholder is "prompt".</li>
             <span class="name">PLACEHOLDER</span>        =
 <span class="default_value">&#39;prompt&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#JsonContentComposer.PLACEHOLDER"></a>
-
-
+    
+    
 
                             </div>
                             <div id="JsonContentComposer.compose" class="classattr">
                                         <input id="JsonContentComposer.compose-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">compose</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">data</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span>:</span></span>
 
@@ -495,7 +495,7 @@ This composer uses json.dumps to make sure the double quotes included are proper
                 <section id="PromptComposer">
                             <input id="PromptComposer-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr class">
-
+            
     <span class="def">class</span>
     <span class="name">PromptComposer</span><wbr>(<span class="base"><a href="#Composer">Composer</a></span>):
 
@@ -536,7 +536,7 @@ This composer uses json.dumps to make sure the double quotes included are proper
                             <div id="PromptComposer.__init__" class="classattr">
                                         <input id="PromptComposer.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="name">PromptComposer</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">template</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
 
                 <label class="view-source-button" for="PromptComposer.__init__-view-source"><span>View Source</span></label>
@@ -565,17 +565,17 @@ the placeholder is "prompt".</li>
             <span class="name">PLACEHOLDER</span>        =
 <span class="default_value">&#39;feature&#39;</span>
 
-
+        
     </div>
     <a class="headerlink" href="#PromptComposer.PLACEHOLDER"></a>
-
-
+    
+    
 
                             </div>
                             <div id="PromptComposer.compose" class="classattr">
                                         <input id="PromptComposer.compose-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-
+            
         <span class="def">def</span>
         <span class="name">compose</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">data</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
