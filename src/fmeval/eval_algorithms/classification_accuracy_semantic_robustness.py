@@ -240,17 +240,13 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-                    try:
-                        scores = self.evaluate_sample(
-                            model_input=row[MODEL_INPUT_COLUMN_NAME],
-                            model=model,
-                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                            model_output=row[MODEL_OUTPUT_COLUMN_NAME],
-                            prompt_template=dataset_prompt_template,
-                        )
-                    except Exception as e:
-                        breakpoint()
-                        logger.error(f"Errpr {e}")
+                    scores = self.evaluate_sample(
+                        model_input=row[MODEL_INPUT_COLUMN_NAME],
+                        model=model,
+                        target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                        model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                        prompt_template=dataset_prompt_template,
+                    )
                     for score in scores:
                         row[score.name] = score.value
                     return row
