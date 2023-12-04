@@ -5,7 +5,7 @@ import pytest
 from _pytest.fixtures import fixture
 from _pytest.python_api import approx
 
-from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.model_runners.extractors.jumpstart_extractor import JumpStartExtractor
 
 EXAMPLE_JUMPSTART_RESPONSE = [
@@ -93,5 +93,19 @@ class TestJumpStartExtractor:
         assert extractor.extract_log_probability(EXAMPLE_JUMPSTART_RESPONSE) == approx(-13.3945313)
 
     def test_log_probability_missing_log_prob(self, extractor):
-        with pytest.raises(EvalAlgorithmClientError, match="Unable to extract output from Jumpstart model:"):
+        with pytest.raises(EvalAlgorithmClientError, match="Unable to extract log probability from Jumpstart model:"):
             extractor.extract_log_probability({})
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_with_bad_output_expression(self, sagemaker_session):
+        sagemaker_session.boto_region_name = "us-west-2"
+        bad_output_expression = {"default_payloads": {"test": {"output_keys": {"generated_text": "{"}}}}
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=bad_output_expression,
+        ), pytest.raises(EvalAlgorithmInternalError, match="Unable to compile JMESPath {"):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                sagemaker_session=sagemaker_session,
+            )
