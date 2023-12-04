@@ -135,14 +135,20 @@ install_poetry_version() {
     poetry config installer.max-workers 2
 }
 
+unit_tests(){
+  echo "Unit Tests"
+  echo "=================="
+   pytest --pspec test/unit
+}
+
 unit_test_with_coverage() {
      echo "Test with coverage"
      echo "=================="
      coverage run -m pytest -x --pspec test/unit
      coverage report -m --fail-under=100
- }
+}
 
- run_integ_tests() {
+run_integ_tests() {
    pytest test/integration/
  }
 
