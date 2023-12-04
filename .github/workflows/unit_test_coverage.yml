@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ./devtool install_deps_dev
+          ./devtool install_deps
 
       - name: Test
         run: |
