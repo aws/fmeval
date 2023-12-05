@@ -103,7 +103,11 @@ class TestJumpStartExtractor:
         with patch(
             "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
             return_value=bad_output_expression,
-        ), pytest.raises(EvalAlgorithmInternalError, match="Unable to compile JMESPath {"):
+        ), pytest.raises(
+            EvalAlgorithmInternalError,
+            match="Unable to infer output jmespath expression for Jumpstart model huggingface-llm-falcon-7b-bf16: "
+            "Invalid jmespath expression: Incomplete expression:",
+        ):
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
                 jumpstart_model_version="*",
