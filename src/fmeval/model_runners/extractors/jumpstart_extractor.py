@@ -66,20 +66,20 @@ class JumpStartExtractor(Extractor):
                 model_spec_key[DEFAULT_PAYLOADS]
             )
         except (TypeError, JMESPathError) as e:
-            raise EvalAlgorithmClientError(
-                f"Unable to infer output jmespath expression for Jumpstart model {jumpstart_model_id} "
+            raise EvalAlgorithmInternalError(
+                f"Unable find the generated_text key in the default payload for JumpStart model: {jumpstart_model_id}. "
                 f"Please provide output jmespath to the JumpStartModelRunner"
             ) from e
         util.assert_condition(
             output_jmespath_expressions,
-            f"Unable to infer output jmespath expression for Jumpstart model {jumpstart_model_id}. "
+            f"Output jmespath expression for Jumpstart model {jumpstart_model_id} is empty. "
             f"Please provide output jmespath to the JumpStartModelRunner",
         )
         try:
             self._output_jmespath_compiler = jmespath.compile(output_jmespath_expressions[0])
         except (TypeError, JMESPathError) as e:
             raise EvalAlgorithmInternalError(
-                f"Unable to infer output jmespath expression for Jumpstart model {jumpstart_model_id}: {e}. "
+                f"Output jmespath expression found for Jumpstart model {jumpstart_model_id} is not valid jmespath. "
                 f"Please provide output jmespath to the JumpStartModelRunner"
             ) from e
 

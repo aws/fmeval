@@ -105,8 +105,24 @@ class TestJumpStartExtractor:
             return_value=bad_output_expression,
         ), pytest.raises(
             EvalAlgorithmInternalError,
-            match="Unable to infer output jmespath expression for Jumpstart model huggingface-llm-falcon-7b-bf16: "
-            "Invalid jmespath expression: Incomplete expression:",
+            match="Output jmespath expression found for Jumpstart model huggingface-llm-falcon-7b-bf16 is not valid "
+            "jmespath. Please provide output jmespath to the JumpStartModelRunner",
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                sagemaker_session=sagemaker_session,
+            )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_with_invalid_default_payload(self, sagemaker_session):
+        sagemaker_session.boto_region_name = "us-west-2"
+
+        exception_mock = mock.Mock()
+        exception_mock.side_effect = TypeError
+        with patch("jmespath.parser.ParsedResult.search", side_effect=exception_mock), pytest.raises(
+            EvalAlgorithmInternalError,
+            match="Unable find the generated_text key in the default payload for JumpStart model",
         ):
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
