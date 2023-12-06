@@ -109,7 +109,7 @@ def _f1_score(model_output: str, target_output: str, *, normalize_text: bool = F
     """
     if normalize_text:  # pragma: no branch
         model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
-    ret = f_measure(set(model_output.split(" ")), set(target_output.split(" ")))
+    ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
