@@ -3,7 +3,9 @@ import os
 from typing import Union, List, Dict, Optional
 from urllib import request
 
+import jmespath
 from functional import seq
+from jmespath.exceptions import JMESPathError
 from sagemaker import Session
 
 from fmeval import util
@@ -16,7 +18,7 @@ from fmeval.constants import (
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
 )
-from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.data_loaders.jmespath_util import compile_jmespath
 from fmeval.model_runners.extractors.extractor import Extractor
 
@@ -55,16 +57,31 @@ class JumpStartExtractor(Extractor):
             model_manifest.get(SPEC_KEY, None),
             self._sagemaker_session.boto_region_name,
         )
-        util.require(DEFAULT_PAYLOADS in model_spec_key, f"Model: {jumpstart_model_id} is not supported at this time")
-        output_jmespath_expressions = compile_jmespath(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
-            model_spec_key[DEFAULT_PAYLOADS]
-        )
         util.require(
-            output_jmespath_expressions,
-            f"Jumpstart model {jumpstart_model_id} is likely not supported. If you know it is generates text, "
-            f"please provide output and log_probability jmespaths to the JumpStartModelRunner",
+            DEFAULT_PAYLOADS in model_spec_key, f"JumpStart Model: {jumpstart_model_id} is not supported at this time"
         )
-        self._output_jmespath_compiler = compile_jmespath(output_jmespath_expressions[0])
+
+        try:
+            output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
+                model_spec_key[DEFAULT_PAYLOADS]
+            )
+        except (TypeError, JMESPathError) as e:
+            raise EvalAlgorithmInternalError(
+                f"Unable find the generated_text key in the default payload for JumpStart model: {jumpstart_model_id}. "
+                f"Please provide output jmespath to the JumpStartModelRunner"
+            ) from e
+        util.assert_condition(
+            output_jmespath_expressions,
+            f"Output jmespath expression for Jumpstart model {jumpstart_model_id} is empty. "
+            f"Please provide output jmespath to the JumpStartModelRunner",
+        )
+        try:
+            self._output_jmespath_compiler = jmespath.compile(output_jmespath_expressions[0])
+        except (TypeError, JMESPathError) as e:
+            raise EvalAlgorithmInternalError(
+                f"Output jmespath expression found for Jumpstart model {jumpstart_model_id} is not valid jmespath. "
+                f"Please provide output jmespath to the JumpStartModelRunner"
+            ) from e
 
     def extract_log_probability(self, data: Union[List, Dict], num_records: int = 1) -> float:
         """
@@ -77,10 +94,14 @@ class JumpStartExtractor(Extractor):
         try:
             log_probs = self._log_prob_compiler.search(data)
             if log_probs is None and not isinstance(log_probs, list):
-                raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}")
+                raise EvalAlgorithmClientError(
+                    f"Unable to extract log probability from Jumpstart model: {self._model_id}"
+                )
             return sum(log_probs)
         except ValueError as e:
-            raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
+            raise EvalAlgorithmClientError(
+                f"Unable to extract log probability from Jumpstart model: {self._model_id}", e
+            )
 
     def extract_output(self, data: Union[List, Dict], num_records: int = 1) -> str:
         """
