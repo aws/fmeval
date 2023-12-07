@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fmeval"
-version = "0.2.0"
+version = "0.2.1"
 description = "Amazon Foundation Model Evaluations"
 license = "Apache License 2.0"
 authors = ["Amazon FMEval Team <amazon-fmeval-team@amazon.com>"]
@@ -20,9 +20,9 @@ classifiers=[
 [tool.poetry.dependencies]
 python = "^3.10"
 urllib3 = "1.26.18"
-semantic-version = "2.10.0"
-ray = "2.7.0"
+ray = "2.7.1"
 s3fs = ">=2023.12.0"
+semantic-version = "2.10.0"
 pyarrow = "*"
 pyfunctional = "1.4.3"
 torch = ">=2.0.0, !=2.0.1, !=2.1.0"
