@@ -10,6 +10,7 @@ from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
+INFERENCE_COMPONENT_NAME = "valid_inference_component_name"
 MODEL_ID = "AwesomeModel"
 MODEL_VERSION = "v1.2.3"
 
@@ -109,6 +110,7 @@ class TestJumpStartModelRunner:
                 custom_attributes=CUSTOM_ATTRIBUTES,
                 output=test_case.output_jmespath,
                 log_probability=test_case.log_probability_jmespath,
+                component_name=INFERENCE_COMPONENT_NAME,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
             js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
@@ -122,6 +124,7 @@ class TestJumpStartModelRunner:
                 "ContentType": MIME_TYPE_JSON,
                 "CustomAttributes": CUSTOM_ATTRIBUTES,
                 "EndpointName": ENDPOINT_NAME,
+                "InferenceComponentName": INFERENCE_COMPONENT_NAME,
             }
             assert result == (test_case.output, test_case.log_probability)
 
