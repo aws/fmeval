@@ -21,7 +21,6 @@ classifiers=[
 python = "^3.10"
 urllib3 = "1.26.18"
 ray = "2.7.1"
-s3fs = ">=2023.12.0"
 semantic-version = "2.10.0"
 pyarrow = "*"
 pyfunctional = "1.4.3"
@@ -41,6 +40,7 @@ transformers = "4.22.1"
 sagemaker = "^2.198.0"
 testbook = "^0.4.2"
 ipykernel = "^6.26.0"
+boto3-stubs = {extras = ["boto3"], version = "^1.33.11"}
 
 [tool.poetry.dev-dependencies]
 fire = "*"

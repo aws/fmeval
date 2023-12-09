@@ -1,7 +1,9 @@
+import boto3
+import botocore.response
+import botocore.errorfactory
+import urllib.parse
 from typing import IO
 from abc import ABC, abstractmethod
-from s3fs import S3FileSystem
-
 from fmeval.exceptions import EvalAlgorithmClientError
 
 
@@ -54,19 +56,52 @@ class LocalDataFile(DataFile):
             ) from e
 
 
+class S3Uri:
+    """
+    This class represents an S3 URI, encapsulating the logic
+    for parsing the S3 bucket and key from the raw URI.
+    """
+
+    def __init__(self, uri):
+        self._parsed = urllib.parse.urlparse(uri, allow_fragments=False)
+
+    @property
+    def bucket(self):
+        return self._parsed.netloc
+
+    @property
+    def key(self):
+        if self._parsed.query:
+            return self._parsed.path.lstrip("/") + "?" + self._parsed.query
+        else:
+            return self._parsed.path.lstrip("/")
+
+
 class S3DataFile(DataFile):
     """
     DataFile class for s3 files
     """
 
-    def __init__(self, s3: S3FileSystem, file_path: str):
-        self._s3 = s3
+    def __init__(self, file_path: str):
+        # We cannot inject the client b/c
+        # it is not serializable by Ray.
+        self._client = boto3.client("s3")
         super().__init__(file_path)
 
-    def open(self, mode="r") -> IO:
+    def open(self, mode="r") -> botocore.response.StreamingBody:  # type: ignore
         try:
-            return self._s3.open(self.uri, mode=mode)
-        except Exception as e:
+            s3_uri = S3Uri(self.uri)
+            return self._client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)["Body"]
+        except botocore.errorfactory.ClientError as e:
             raise EvalAlgorithmClientError(
                 f"Unable to open '{self.uri}'. Please make sure the s3 file path is valid."
             ) from e
+
+    def __reduce__(self):
+        """
+        Custom serializer method used by Ray when it serializes
+        JsonDataLoaderConfig objects during data loading
+        (see the load_dataset method in src.fmeval.data_loaders.json_data_loader.py).
+        """
+        serialized_data = (self.uri,)
+        return S3DataFile, serialized_data
