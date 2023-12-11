@@ -167,15 +167,6 @@ install_poetry() {
 install_deps() {
     install_poetry
     poetry install
-    install_boto_3_stubs_package
-}
-
-install_boto_3_stubs_package() {
-  # For some reason, simply adding boto3-stubs to poetry.lock
-  # isn't sufficient. We need to run the following commands
-  # for the mypy type annotations to work.
-  python -m pip install 'boto3-stubs[boto3]'
-  python -m pip install 'boto3-stubs[bedrock]'
 }
 
 install_deps_dev() {

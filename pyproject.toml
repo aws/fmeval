@@ -37,10 +37,10 @@ scikit-learn = "^1.3.1"
 jiwer = "^3.0.3"
 detoxify = "^0.5.1"
 transformers = "4.22.1"
-sagemaker = "^2.198.0"
+sagemaker = "^2.199.0"
 testbook = "^0.4.2"
 ipykernel = "^6.26.0"
-boto3-stubs = {extras = ["boto3"], version = "^1.33.11"}
+mypy-boto3-bedrock = "^1.33.2"
 
 [tool.poetry.dev-dependencies]
 fire = "*"
