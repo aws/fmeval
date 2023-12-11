@@ -9,6 +9,7 @@ import botocore
 import sagemaker
 
 from fmeval.constants import SAGEMAKER_SERVICE_ENDPOINT_URL, SAGEMAKER_RUNTIME_ENDPOINT_URL
+from mypy_boto3_bedrock.client import BedrockClient
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ def get_sagemaker_session(
 def get_bedrock_runtime_client(
     boto_retry_mode: Literal["legacy", "standard", "adaptive"] = "adaptive",
     retry_attempts: int = 10,
-) -> boto3.session.Session.client:
+) -> BedrockClient:
     """
     Get Bedrock runtime client with adaptive retry config.
     :param boto_retry_mode: retry mode used for botocore config (legacy/standard/adaptive).

@@ -1,15 +1,23 @@
 import random
 
+import botocore.errorfactory
 import pytest
+import ray.data
+
 from typing import NamedTuple
 from unittest.mock import call, Mock, patch
-
-import ray.data
 
 from fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
 from fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, DataSource
 from fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
-from fmeval.data_loaders.util import _get_data_loader, _get_data_loader_config, get_data_source, get_dataset
+from fmeval.data_loaders.util import (
+    _get_data_loader,
+    _get_data_loader_config,
+    _is_valid_s3_uri,
+    _is_valid_local_path,
+    get_data_source,
+    get_dataset,
+)
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 
@@ -162,6 +170,11 @@ class TestDataLoaderUtil:
         assert _get_data_loader(dataset_mime_type) == expected_class
 
     def test_get_data_source_provides_local_data_source(self):
+        """
+        GIVEN a dataset URI corresponding to a local file
+        WHEN get_data_source is called
+        THEN a LocalDataFile with the correct URI is returned
+        """
         dataset_uri = LOCAL_PREFIX + DATASET_URI
         with (
             patch("os.path.isfile", return_value=True),
@@ -173,15 +186,24 @@ class TestDataLoaderUtil:
             assert data_source.uri == dataset_uri
 
     def test_get_data_source_provides_s3_data_source(self):
-        with patch("fmeval.data_loaders.util.s3") as mock_s3fs:
-            mock_s3fs.info = Mock(return_value={"type": "file"})
-            mock_s3fs.exists = Mock(return_value=True)
+        """
+        GIVEN a dataset URI corresponding to an S3 file
+        WHEN get_data_source is called
+        THEN an S3DataFile with the correct URI is returned
+        """
+        with patch("fmeval.data_loaders.util.client") as mock_s3_client:
+            mock_s3_client.get_object = Mock(return_value={"ContentType": "binary/octet-stream"})
             dataset_uri = S3_PREFIX + DATASET_URI
             data_source = get_data_source(dataset_uri)
             assert isinstance(data_source, S3DataFile)
             assert data_source.uri == dataset_uri
 
     def test_get_data_sources_local_directory_exception(self):
+        """
+        GIVEN a dataset URI corresponding to a local directory
+        WHEN get_data_source is called
+        THEN the correct exception is raised
+        """
         dataset_uri = LOCAL_PREFIX + DIRECTORY_URI
         with (
             patch("os.path.isdir", return_value=True),
@@ -194,9 +216,13 @@ class TestDataLoaderUtil:
                 get_data_source(dataset_uri)
 
     def test_get_data_sources_s3_directory_exception(self):
-        with patch("fmeval.data_loaders.util.s3") as mock_s3fs:
-            mock_s3fs.info = Mock(return_value={"type": "directory"})
-            mock_s3fs.exists = Mock(return_value=True)
+        """
+        GIVEN a dataset URI corresponding to an S3 directory
+        WHEN get_data_source is called
+        THEN the correct exception is raised
+        """
+        with patch("fmeval.data_loaders.util.client") as mock_s3_client:
+            mock_s3_client.get_object = Mock(return_value={"ContentType": "application/x-directory; charset=UTF-8"})
             dataset_uri = S3_PREFIX + DIRECTORY_URI
             with pytest.raises(
                 EvalAlgorithmClientError, match="Please provide a s3 file path instead of a directory path."
@@ -204,6 +230,11 @@ class TestDataLoaderUtil:
                 get_data_source(dataset_uri)
 
     def test_get_data_source_invalid_local_path(self):
+        """
+        GIVEN a local path that does not correspond to a file or directory
+        WHEN get_data_source is called
+        THEN the correct exception is raised
+        """
         dataset_uri = LOCAL_PREFIX + INVALID_DATASET_URI
         with patch("os.path.exists", return_value=True), patch("os.path.isfile", return_value=False), patch(
             "os.path.isdir", return_value=False
@@ -211,14 +242,70 @@ class TestDataLoaderUtil:
             with pytest.raises(EvalAlgorithmClientError, match="Invalid local path"):
                 get_data_source(dataset_uri)
 
-    def test_get_data_source_invalid_s3_path(self):
-        dataset_uri = S3_PREFIX + INVALID_DATASET_URI
-        with patch("fmeval.data_loaders.util.s3") as mock_s3fs:
-            mock_s3fs.info = Mock(return_value={"type": "Other"})
-            mock_s3fs.exists = Mock(return_value=True)
-            with pytest.raises(EvalAlgorithmClientError, match="Invalid s3 path"):
-                get_data_source(dataset_uri)
-
     def test_get_data_source_invalid_dataset_path(self):
-        with pytest.raises(EvalAlgorithmClientError, match="Invalid dataset path"):
-            get_data_source(INVALID_DATASET_URI)
+        with (
+            patch("src.fmeval.data_loaders.util._is_valid_local_path", return_value=False),
+            patch("src.fmeval.data_loaders.util._is_valid_s3_uri", return_value=False),
+        ):
+            with pytest.raises(EvalAlgorithmClientError, match="Invalid dataset path"):
+                get_data_source("unused")
+
+    def test_is_valid_s3_uri_success(self):
+        """
+        GIVEN a valid S3 URI
+        WHEN _is_valid_s3_uri is called
+        THEN True is returned
+        """
+        dataset_uri = S3_PREFIX + DATASET_URI
+        with patch("fmeval.data_loaders.util.client.get_object", return_value=Mock()):
+            assert _is_valid_s3_uri(dataset_uri)
+
+    def test_is_valid_s3_uri_invalid_scheme(self):
+        """
+        GIVEN a URI whose parsed scheme does not belong to
+            the list ["s3", "s3n", "s3a"]
+        WHEN _is_valid_s3_uri is called
+        THEN False is returned
+        """
+        dataset_uri = "s3b://some/dataset/uri"
+        assert not _is_valid_s3_uri(dataset_uri)
+
+    def test_is_valid_s3_uri_client_error(self):
+        """
+        GIVEN an S3 URI that does not correspond to a real object
+        WHEN _is_valid_s3_uri is called
+        THEN False is returned
+        """
+        with patch(
+            "fmeval.data_loaders.util.client.get_object",
+            side_effect=botocore.errorfactory.ClientError({"error": "blah"}, "blah"),
+        ):
+            assert not _is_valid_s3_uri("s3://non/existent/object")
+
+    @pytest.mark.parametrize("file_path", ["path/to/file", "file://path/to/file"])
+    def test_is_valid_local_path_success(self, file_path):
+        """
+        GIVEN a valid local path
+        WHEN _is_valid_local_path is called
+        THEN True is returned
+        """
+        with patch("os.path.exists", return_value=True):
+            assert _is_valid_local_path(file_path)
+
+    def test_is_valid_local_path_invalid_scheme(self):
+        """
+        GIVEN a path with a parsed scheme that does not belong to ["", "file"]
+        WHEN _is_valid_local_path is called
+        THEN False is returned
+        """
+        assert not _is_valid_local_path("bad_scheme://path/to/file")
+
+    @pytest.mark.parametrize("file_path", ["path/to/file", "file://path/to/file"])
+    def test_is_valid_local_path_file_does_not_exist(self, file_path):
+        """
+        GIVEN a path to a file that doesn't exist
+        WHEN _is_valid_local_path is called
+        THEN False is returned
+        """
+        with patch("os.path.exists", return_value=False):
+            assert not _is_valid_local_path(file_path)
