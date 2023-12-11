@@ -10,6 +10,7 @@ from fmeval.model_runners.sm_model_runner import SageMakerModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
+INFERENCE_COMPONENT_NAME = "valid_inference_component_name"
 
 CONTENT_TEMPLATE = '{"data":$prompt}'
 PROMPT = "This is the model input"
@@ -64,6 +65,7 @@ class TestSageMakerModelRunner:
         log_probability_jmespath: Optional[str]
         output: Optional[str]
         log_probability: Optional[float]
+        component_name: Optional[str]
 
     @pytest.mark.parametrize(
         "test_case",
@@ -73,15 +75,28 @@ class TestSageMakerModelRunner:
                 log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
                 output=OUTPUT,
                 log_probability=LOG_PROBABILITY,
+                component_name=None,
             ),
             TestCasePredict(
                 output_jmespath=None,
                 log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
                 output=None,
                 log_probability=LOG_PROBABILITY,
+                component_name=None,
             ),
             TestCasePredict(
-                output_jmespath=OUTPUT_JMES_PATH, log_probability_jmespath=None, output=OUTPUT, log_probability=None
+                output_jmespath=OUTPUT_JMES_PATH,
+                log_probability_jmespath=None,
+                output=OUTPUT,
+                log_probability=None,
+                component_name=None,
+            ),
+            TestCasePredict(
+                output_jmespath=OUTPUT_JMES_PATH,
+                log_probability_jmespath=LOG_PROBABILITY_JMES_PATH,
+                output=OUTPUT,
+                log_probability=LOG_PROBABILITY,
+                component_name=INFERENCE_COMPONENT_NAME,
             ),
         ],
     )
@@ -104,19 +119,23 @@ class TestSageMakerModelRunner:
             log_probability=test_case.log_probability_jmespath,
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
+            component_name=test_case.component_name,
         )
         # Mocking sagemaker.predictor serializing byte into JSON
         sm_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
         result = sm_model_runner.predict(PROMPT)
         assert mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.called
         call_args, kwargs = mock_sagemaker_session.sagemaker_runtime_client.invoke_endpoint.call_args
-        assert kwargs == {
+        expected_kwargs = {
             "Accept": MIME_TYPE_JSON,
             "Body": MODEL_INPUT,
             "ContentType": MIME_TYPE_JSON,
             "CustomAttributes": CUSTOM_ATTRIBUTES,
             "EndpointName": ENDPOINT_NAME,
         }
+        if test_case.component_name:
+            expected_kwargs["InferenceComponentName"] = test_case.component_name
+        assert kwargs == expected_kwargs
         assert result == (test_case.output, test_case.log_probability)
 
     @patch("sagemaker.session.Session")
@@ -138,6 +157,7 @@ class TestSageMakerModelRunner:
             log_probability=LOG_PROBABILITY_JMES_PATH,
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
+            component_name=INFERENCE_COMPONENT_NAME,
         )
         deserialized: SageMakerModelRunner = pickle.loads(pickle.dumps(sm_model_runner))
         assert deserialized._endpoint_name == sm_model_runner._endpoint_name
@@ -147,4 +167,5 @@ class TestSageMakerModelRunner:
         assert deserialized._log_probability == sm_model_runner._log_probability
         assert deserialized._content_type == sm_model_runner._content_type
         assert deserialized._accept_type == sm_model_runner._accept_type
+        assert deserialized._component_name == sm_model_runner._component_name
         assert isinstance(deserialized._predictor, sagemaker.predictor.Predictor)

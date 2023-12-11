@@ -109,5 +109,6 @@ class JumpStartModelRunner(ModelRunner):
             self._custom_attributes,
             self._output,
             self._log_probability,
+            self._component_name,
         )
         return JumpStartModelRunner, serialized_data
