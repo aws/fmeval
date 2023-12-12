@@ -32,6 +32,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
     EXACT_MATCH_SCORE,
     QUASI_EXACT_MATCH_SCORE,
+    PRECISION,
+    RECALL,
     _f1_score,
     _exact_match_score,
 )
@@ -74,6 +76,13 @@ QA_DATASET = ray.data.from_items(
             MODEL_OUTPUT_COLUMN_NAME: "2022",
             CATEGORY_COLUMN_NAME: "sports",
         },
+        # Answer is longer than the model output.
+        {
+            MODEL_INPUT_COLUMN_NAME: "Did RMS Titanic sink in 1912?",
+            TARGET_OUTPUT_COLUMN_NAME: "yes",
+            MODEL_OUTPUT_COLUMN_NAME: "Yes. That is true.",
+            CATEGORY_COLUMN_NAME: "history",
+        },
     ]
 )
 
@@ -94,6 +103,8 @@ CATEGORY_SCORES = [
             EvalScore(name=F1_SCORE, value=2 / 3),
             EvalScore(name=EXACT_MATCH_SCORE, value=1 / 3),
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=2 / 3),
+            EvalScore(name=PRECISION, value=2 / 3),
+            EvalScore(name=RECALL, value=2 / 3),
         ],
     ),
     CategoryScore(
@@ -102,6 +113,8 @@ CATEGORY_SCORES = [
             EvalScore(name=F1_SCORE, value=2 / 3),
             EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
+            EvalScore(name=PRECISION, value=1.0),
+            EvalScore(name=RECALL, value=1 / 2),
         ],
     ),
     CategoryScore(
@@ -110,14 +123,28 @@ CATEGORY_SCORES = [
             EvalScore(name=F1_SCORE, value=1.0),
             EvalScore(name=EXACT_MATCH_SCORE, value=1.0),
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
+            EvalScore(name=PRECISION, value=1.0),
+            EvalScore(name=RECALL, value=1.0),
+        ],
+    ),
+    CategoryScore(
+        name="history",
+        scores=[
+            EvalScore(name=F1_SCORE, value=2 / 5),
+            EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
+            EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
+            EvalScore(name=PRECISION, value=1 / 4),
+            EvalScore(name=RECALL, value=1.0),
         ],
     ),
 ]
 
 DATASET_SCORES = [
-    EvalScore(name=F1_SCORE, value=11 / 15),
-    EvalScore(name=EXACT_MATCH_SCORE, value=2 / 5),
-    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=3 / 5),
+    EvalScore(name=F1_SCORE, value=61 / 90),
+    EvalScore(name=EXACT_MATCH_SCORE, value=2 / 6),
+    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=3 / 6),
+    EvalScore(name=PRECISION, value=17 / 24),
+    EvalScore(name=RECALL, value=3 / 4),
 ]
 
 EVAL_RESULTS_PATH = DEFAULT_EVAL_RESULTS_PATH
@@ -161,9 +188,11 @@ class TestQAAccuracy:
                 model_output="London",
                 target_output="London",
                 expected_response=[
-                    EvalScore(name=F1_SCORE, value=1),
-                    EvalScore(name=EXACT_MATCH_SCORE, value=1),
-                    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1),
+                    EvalScore(name=F1_SCORE, value=1.0),
+                    EvalScore(name=EXACT_MATCH_SCORE, value=1.0),
+                    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
+                    EvalScore(name=PRECISION, value=1.0),
+                    EvalScore(name=RECALL, value=1.0),
                 ],
             ),
             # Partial match
@@ -175,6 +204,8 @@ class TestQAAccuracy:
                     EvalScore(name=F1_SCORE, value=2 / 3),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=PRECISION, value=1.0),
+                    EvalScore(name=RECALL, value=1 / 2),
                 ],
             ),
             # Wrong answer. All scores should be zero.
@@ -186,6 +217,8 @@ class TestQAAccuracy:
                     EvalScore(name=F1_SCORE, value=0.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=PRECISION, value=0.0),
+                    EvalScore(name=RECALL, value=0.0),
                 ],
             ),
             # Correct answer but with punctuation added.
@@ -197,6 +230,8 @@ class TestQAAccuracy:
                     EvalScore(name=F1_SCORE, value=1.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
+                    EvalScore(name=PRECISION, value=1.0),
+                    EvalScore(name=RECALL, value=1.0),
                 ],
             ),
             # Many correct answers.
@@ -208,6 +243,21 @@ class TestQAAccuracy:
                     EvalScore(name=F1_SCORE, value=1.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
+                    EvalScore(name=PRECISION, value=1.0),
+                    EvalScore(name=RECALL, value=1.0),
+                ],
+            ),
+            # Answer is longer than the model output.
+            TestCaseQAAccuracyEvaluateSample(
+                model_input="Did RMS Titanic sink in 1912?",
+                model_output="Yes. That is true.",
+                target_output="yes",
+                expected_response=[
+                    EvalScore(name=F1_SCORE, value=0.4),
+                    EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
+                    EvalScore(name=PRECISION, value=0.25),
+                    EvalScore(name=RECALL, value=1.0),
                 ],
             ),
         ],
