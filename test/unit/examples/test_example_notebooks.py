@@ -4,7 +4,9 @@ from testbook import testbook
 from fmeval.util import project_root
 
 
-bedrock_example_notebook_path = os.path.join(project_root(__file__), "examples", "bedrock-claude-factual-knowledge.ipynb")
+bedrock_example_notebook_path = os.path.join(
+    project_root(__file__), "examples", "bedrock-claude-factual-knowledge.ipynb"
+)
 
 
 @testbook(bedrock_example_notebook_path)
@@ -35,9 +37,7 @@ def test_bedrock_model_notebook(tb):
     )
 
 
-js_model_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "jumpstart-falcon-stereotyping.ipynb"
-)
+js_model_example_notebook_path = os.path.join(project_root(__file__), "examples", "jumpstart-falcon-stereotyping.ipynb")
 
 
 @testbook(js_model_example_notebook_path)
@@ -106,9 +106,7 @@ def test_custom_model_chat_gpt_notebook(tb):
     )
 
 
-custom_model_hf_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "custom_model_runner_hf.ipynb"
-)
+custom_model_hf_example_notebook_path = os.path.join(project_root(__file__), "examples", "custom_model_runner_hf.ipynb")
 
 
 @testbook(custom_model_hf_example_notebook_path)
