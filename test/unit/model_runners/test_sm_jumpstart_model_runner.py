@@ -10,6 +10,7 @@ from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 
 ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
+INFERENCE_COMPONENT_NAME = "valid_inference_component_name"
 MODEL_ID = "AwesomeModel"
 MODEL_VERSION = "v1.2.3"
 
@@ -109,6 +110,7 @@ class TestJumpStartModelRunner:
                 custom_attributes=CUSTOM_ATTRIBUTES,
                 output=test_case.output_jmespath,
                 log_probability=test_case.log_probability_jmespath,
+                component_name=INFERENCE_COMPONENT_NAME,
             )
             # Mocking sagemaker.predictor serializing byte into JSON
             js_model_runner._predictor.deserializer.deserialize = Mock(return_value=MODEL_OUTPUT)
@@ -122,6 +124,7 @@ class TestJumpStartModelRunner:
                 "ContentType": MIME_TYPE_JSON,
                 "CustomAttributes": CUSTOM_ATTRIBUTES,
                 "EndpointName": ENDPOINT_NAME,
+                "InferenceComponentName": INFERENCE_COMPONENT_NAME,
             }
             assert result == (test_case.output, test_case.log_probability)
 
@@ -197,6 +200,7 @@ class TestJumpStartModelRunner:
                 custom_attributes=CUSTOM_ATTRIBUTES,
                 output=OUTPUT_JMES_PATH,
                 log_probability=LOG_PROBABILITY_JMES_PATH,
+                component_name=INFERENCE_COMPONENT_NAME,
             )
             deserialized: JumpStartModelRunner = pickle.loads(pickle.dumps(js_model_runner))
             assert deserialized._endpoint_name == js_model_runner._endpoint_name
@@ -206,4 +210,5 @@ class TestJumpStartModelRunner:
             assert deserialized._custom_attributes == js_model_runner._custom_attributes
             assert deserialized._output == js_model_runner._output
             assert deserialized._log_probability == js_model_runner._log_probability
+            assert deserialized._component_name == js_model_runner._component_name
             assert isinstance(deserialized._predictor, sagemaker.predictor.Predictor)
