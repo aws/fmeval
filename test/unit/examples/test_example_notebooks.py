@@ -4,7 +4,7 @@ from testbook import testbook
 from fmeval.util import project_root
 
 
-bedrock_example_notebook_path = os.path.join(project_root(__file__), "examples", "run_evaluation_bedrock_model.ipynb")
+bedrock_example_notebook_path = os.path.join(project_root(__file__), "examples", "bedrock-claude-factual-knowledge.ipynb")
 
 
 @testbook(bedrock_example_notebook_path)
@@ -36,7 +36,7 @@ def test_bedrock_model_notebook(tb):
 
 
 js_model_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluation_jumpstart_model.ipynb"
+    project_root(__file__), "examples", "jumpstart-falcon-stereotyping.ipynb"
 )
 
 
@@ -55,7 +55,7 @@ def test_js_model_notebook(tb):
         p2.start()
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p3 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
+        p3 = patch('fmeval.eval_algorithms.prompt_stereotyping.PromptStereotyping', return_value=mock_algo)
         p3.start()
         """
     )
@@ -70,7 +70,7 @@ def test_js_model_notebook(tb):
 
 
 custom_model_chatgpt_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluations_custom_model_chat_gpt.ipynb"
+    project_root(__file__), "examples", "custom_model_runner_chat_gpt.ipynb"
 )
 
 
@@ -107,7 +107,7 @@ def test_custom_model_chat_gpt_notebook(tb):
 
 
 custom_model_hf_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluations_custom_model_hf.ipynb"
+    project_root(__file__), "examples", "custom_model_runner_hf.ipynb"
 )
 
 
