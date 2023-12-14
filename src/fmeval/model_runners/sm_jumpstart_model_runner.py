@@ -111,4 +111,4 @@ class JumpStartModelRunner(ModelRunner):
             self._log_probability,
             self._component_name,
         )
-        return JumpStartModelRunner, serialized_data
+        return self.__class__, serialized_data
