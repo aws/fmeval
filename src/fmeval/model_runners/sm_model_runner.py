@@ -102,4 +102,4 @@ class SageMakerModelRunner(ModelRunner):
             self._accept_type,
             self._component_name,
         )
-        return SageMakerModelRunner, serialized_data
+        return self.__class__, serialized_data
