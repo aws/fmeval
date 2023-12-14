@@ -1,22 +1,23 @@
 import os
 from testbook import testbook
-
 from fmeval.util import project_root
 
 
-bedrock_example_notebook_path = os.path.join(project_root(__file__), "examples", "run_evaluation_bedrock_model.ipynb")
+bedrock_example_notebook_path = os.path.join(
+    project_root(__file__), "examples", "bedrock-claude-factual-knowledge.ipynb"
+)
 
 
-@testbook(bedrock_example_notebook_path)
+@testbook(bedrock_example_notebook_path, timeout=600)
 def test_bedrock_model_notebook(tb):
     tb.inject(
         """
-        from unittest.mock import patch, MagicMock
+        import json
+        from unittest.mock import patch, MagicMock, mock_open
         from io import StringIO
         from botocore.response import StreamingBody
         mock_bedrock = MagicMock()
-        mock_bedrock.get_foundation_model.return_value = {"modelDetails": "test"}
-        body_encoded = '{"results": [{"outputText": "text"}]}'
+        body_encoded = '{"completion": "some text"}'
         mock_bedrock.invoke_model.return_value = {"body": StreamingBody(StringIO(body_encoded), len(body_encoded))}
         p1 = patch('boto3.client', return_value=mock_bedrock)
         p1.start()
@@ -24,74 +25,12 @@ def test_bedrock_model_notebook(tb):
         mock_algo.evaluate.return_value = []
         p2 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
         p2.start()
-        """
-    )
-    tb.execute()
-    tb.inject(
-        """
-        p1.stop()
-        p2.stop()
-        """
-    )
-
-
-js_model_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluation_jumpstart_model.ipynb"
-)
-
-
-@testbook(js_model_example_notebook_path)
-def test_js_model_notebook(tb):
-    tb.inject(
-        """
-        from unittest.mock import patch, MagicMock
-        js_model = MagicMock()
-        mock_predictor = MagicMock()
-        js_model.deploy.return_value = mock_predictor
-        p1 = patch('sagemaker.jumpstart.model.JumpStartModel', return_value=js_model)
-        p1.start()
-        mock_js_model_runner = MagicMock()
-        p2 = patch('fmeval.model_runners.sm_jumpstart_model_runner.JumpStartModelRunner', return_value=mock_js_model_runner)
-        p2.start()
-        mock_algo = MagicMock()
-        mock_algo.evaluate.return_value = []
-        p3 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
+        mock_br_model_runner = MagicMock()
+        p3 = patch('fmeval.model_runners.bedrock_model_runner.BedrockModelRunner', return_value=mock_br_model_runner)
         p3.start()
-        """
-    )
-    tb.execute()
-    tb.inject(
-        """
-        p1.stop()
-        p2.stop()
-        p3.stop()
-        """
-    )
-
-
-custom_model_chatgpt_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluations_custom_model_chat_gpt.ipynb"
-)
-
-
-@testbook(custom_model_chatgpt_example_notebook_path)
-def test_custom_model_chat_gpt_notebook(tb):
-    tb.inject(
-        """
-        from unittest.mock import patch, MagicMock, mock_open
-        from requests.models import Response
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = str.encode('{"choices": [{"message": {"content": "text"}}]}')
-        p1 = patch('requests.request', return_value=mock_response)
-        p1.start()
-        mock_algo = MagicMock()
-        mock_algo.evaluate.return_value = []
-        p2 = patch('fmeval.eval.get_eval_algorithm', return_value=mock_algo)
-        p2.start()
-        p3 = patch('__main__.open', mock_open(read_data=None))
-        p3.start()
-        p4 = patch('__main__.next', return_value="")
+        data = {"scores": [{'name': 'factual_knowledge', 'value': 0}]}
+        # This is the equivalent of patching 'builtins.open' but for notebooks
+        p4 = patch('IPython.core.interactiveshell.io_open', mock_open(read_data=json.dumps(data)))
         p4.start()
         """
     )
@@ -106,20 +45,94 @@ def test_custom_model_chat_gpt_notebook(tb):
     )
 
 
-custom_model_hf_example_notebook_path = os.path.join(
-    project_root(__file__), "examples", "run_evaluations_custom_model_hf.ipynb"
+js_model_example_notebook_path = os.path.join(project_root(__file__), "examples", "jumpstart-falcon-stereotyping.ipynb")
+
+
+@testbook(js_model_example_notebook_path, timeout=600)
+def test_js_model_notebook(tb):
+    tb.inject(
+        """
+        import json
+        from unittest.mock import patch, MagicMock, mock_open
+        js_model = MagicMock()
+        mock_predictor = MagicMock()
+        js_model.deploy.return_value = mock_predictor
+        p1 = patch('sagemaker.jumpstart.model.JumpStartModel', return_value=js_model)
+        p1.start()
+        mock_js_model_runner = MagicMock()
+        p2 = patch('fmeval.model_runners.sm_jumpstart_model_runner.JumpStartModelRunner', return_value=mock_js_model_runner)
+        p2.start()
+        mock_algo = MagicMock()
+        mock_algo.evaluate.return_value = []
+        p3 = patch('fmeval.eval_algorithms.prompt_stereotyping.PromptStereotyping', return_value=mock_algo)
+        p3.start()
+        data = {"scores": [{'name': 'prompt_stereotyping', 'value': 0}]}
+        # This is the equivalent of patching 'builtins.open' but for notebooks
+        p4 = patch('IPython.core.interactiveshell.io_open', mock_open(read_data=json.dumps(data)))
+        p4.start()
+        """
+    )
+    tb.execute()
+    tb.inject(
+        """
+        p1.stop()
+        p2.stop()
+        p3.stop()
+        p4.stop()
+        """
+    )
+
+
+custom_model_chatgpt_example_notebook_path = os.path.join(
+    project_root(__file__), "examples", "custom_model_runner_chat_gpt.ipynb"
 )
 
 
-@testbook(custom_model_hf_example_notebook_path)
+@testbook(custom_model_chatgpt_example_notebook_path, timeout=600)
+def test_custom_model_chat_gpt_notebook(tb):
+    tb.inject(
+        """
+        import json
+        from unittest.mock import patch, MagicMock, mock_open
+        from requests.models import Response
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = str.encode('{"choices": [{"message": {"content": "text"}}]}')
+        p1 = patch('requests.request', return_value=mock_response)
+        p1.start()
+        mock_algo = MagicMock()
+        mock_algo.evaluate.return_value = []
+        p2 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
+        p2.start()
+        data = {"scores": [{'name': 'factual_knowledge', 'value': 0}]}
+        # This is the equivalent of patching 'builtins.open' but for notebooks
+        p3 = patch('IPython.core.interactiveshell.io_open', mock_open(read_data=json.dumps(data)))
+        p3.start()
+        """
+    )
+    tb.execute()
+    tb.inject(
+        """
+        p1.stop()
+        p2.stop()
+        p3.stop()
+        """
+    )
+
+
+custom_model_hf_example_notebook_path = os.path.join(project_root(__file__), "examples", "custom_model_runner_hf.ipynb")
+
+
+@testbook(custom_model_hf_example_notebook_path, timeout=600)
 def test_custom_model_hf_notebook(tb):
     tb.inject(
         """
-        from unittest.mock import patch, MagicMock, mock_open
+        import json
         import torch
+        from unittest.mock import patch, MagicMock, mock_open
         mock_algo = MagicMock()
         mock_algo.evaluate.return_value = []
-        p1 = patch('fmeval.eval.get_eval_algorithm', return_value=mock_algo)
+        p1 = patch('fmeval.eval_algorithms.factual_knowledge.FactualKnowledge', return_value=mock_algo)
         p1.start()
 
         mock_model = MagicMock()
@@ -134,11 +147,10 @@ def test_custom_model_hf_notebook(tb):
         p3 = patch('transformers.AutoTokenizer.from_pretrained', return_value=mock_tokenizer)
         p3.start()
 
-        p4 = patch('__main__.open', mock_open(read_data='data'))
+        data = {"scores": [{'name': 'factual_knowledge', 'value': 0}]}
+        # This is the equivalent of patching 'builtins.open' but for notebooks
+        p4 = patch('IPython.core.interactiveshell.io_open', mock_open(read_data=json.dumps(data)))
         p4.start()
-
-        p5 = patch('__main__.next', return_value="")
-        p5.start()
         """
     )
     tb.execute()
@@ -148,6 +160,5 @@ def test_custom_model_hf_notebook(tb):
         p2.stop()
         p3.stop()
         p4.stop()
-        p5.stop()
         """
     )
