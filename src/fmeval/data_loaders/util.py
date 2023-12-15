@@ -1,13 +1,14 @@
 import logging
 import os
+import boto3
+import botocore.errorfactory
 import ray.data
 import urllib.parse
-from typing import Type, Optional
-from s3fs import S3FileSystem
 
+from typing import Type, Optional
 from fmeval import util
 from fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES, PARTITION_MULTIPLIER, SEED, MAX_ROWS_TO_TAKE
-from fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile
+from fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile, S3Uri
 from fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from fmeval.data_loaders.json_parser import JsonParser
 from fmeval.data_loaders.data_config import DataConfig
@@ -15,7 +16,7 @@ from fmeval.util import get_num_actors
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.perf_util import timed_block
 
-s3 = S3FileSystem()
+client = boto3.client("s3")
 logger = logging.getLogger(__name__)
 
 
@@ -146,13 +147,15 @@ def _get_s3_data_source(dataset_uri) -> S3DataFile:
     :param dataset_uri: s3 dataset uri
     :return: S3DataFile object with dataset uri
     """
-    s3_info = s3.info(dataset_uri)
-    if s3_info["type"] == "file":
-        return S3DataFile(s3, dataset_uri)
-    if s3_info["type"] == "directory":
+    s3_uri = S3Uri(dataset_uri)
+    s3_obj = client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
+    if "application/x-directory" in s3_obj["ContentType"]:
         # TODO: extend support to directories
         raise EvalAlgorithmClientError("Please provide a s3 file path instead of a directory path.")
-    raise EvalAlgorithmClientError(f"Invalid s3 path: {dataset_uri}")
+    else:
+        # There isn't a good way to check if s3_obj corresponds specifically to a file,
+        # so we treat anything that is not a directory as a file.
+        return S3DataFile(dataset_uri)
 
 
 def _is_valid_s3_uri(uri: str) -> bool:
@@ -161,7 +164,14 @@ def _is_valid_s3_uri(uri: str) -> bool:
     :return: True if uri is a valid s3 path, False otherwise
     """
     parsed_url = urllib.parse.urlparse(uri)
-    return parsed_url.scheme.lower() in ["s3", "s3n", "s3a"] and s3.exists(uri)
+    if parsed_url.scheme.lower() not in ["s3", "s3n", "s3a"]:
+        return False
+    try:
+        s3_uri = S3Uri(uri)
+        client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
+        return True
+    except botocore.errorfactory.ClientError:
+        return False
 
 
 def _is_valid_local_path(path: str) -> bool:

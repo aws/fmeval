@@ -216,7 +216,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
 DEFAULT_PROMPT_TEMPLATE = "$feature"
 
 BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
-    BOOLQ: 'Respond to the following question. Valid answers are "true" or "false". $feature Answer:',
+    BOOLQ: 'Respond to the following question. Valid answers are "True" or "False". $feature Answer:',
     TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
     NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
     XSUM: "Summarise the following text in one sentence: $feature",

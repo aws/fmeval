@@ -83,7 +83,7 @@ DATASET_SCORE_LABEL = "Overall"
 AGGREGATE_ONLY_SCORES = [BALANCED_ACCURACY_SCORE, PRECISION_SCORE, RECALL_SCORE]
 
 # For string formatting in eval names/score names
-GENERAL_STRING_REPLACEMENTS: List[Tuple[str, str]] = [("qa", "Q&A"), ("f1", "F1")]
+GENERAL_STRING_REPLACEMENTS: List[Tuple[str, str]] = [("qa", "Q&A"), ("f1", "F1"), ("sagemaker", "SageMaker")]
 SCORE_STRING_REPLACEMENTS: List[Tuple[str, str]] = [
     ("prompt stereotyping", "is_biased"),
     ("meteor", "METEOR"),

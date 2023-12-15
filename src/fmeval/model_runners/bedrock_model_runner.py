@@ -90,4 +90,4 @@ class BedrockModelRunner(ModelRunner):
             self._content_type,
             self._accept_type,
         )
-        return BedrockModelRunner, serialized_data
+        return self.__class__, serialized_data

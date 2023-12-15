@@ -30,6 +30,7 @@ class JumpStartModelRunner(ModelRunner):
         custom_attributes: Optional[str] = None,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
+        component_name: Optional[str] = None,
     ):
         """
         :param endpoint_name: Name of the SageMaker endpoint to be used for model predictions
@@ -40,6 +41,8 @@ class JumpStartModelRunner(ModelRunner):
                                   SageMaker endpoint invocation
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
+        :param component_name: Name of the Amazon SageMaker inference component corresponding
+                            the predictor
         """
         super().__init__(
             content_template=content_template,
@@ -57,6 +60,7 @@ class JumpStartModelRunner(ModelRunner):
         self._custom_attributes = custom_attributes
         self._output = output
         self._log_probability = log_probability
+        self._component_name = component_name
         sagemaker_session = get_sagemaker_session()
         util.require(
             is_endpoint_in_service(sagemaker_session, self._endpoint_name),
@@ -77,7 +81,11 @@ class JumpStartModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
+        model_output = self._predictor.predict(
+            data=composed_data,
+            custom_attributes=self._custom_attributes,
+            component_name=self._component_name,
+        )
         # expect output from all model responses in JS
         output = self._extractor.extract_output(data=model_output, num_records=1)
         log_probability = None
@@ -101,5 +109,6 @@ class JumpStartModelRunner(ModelRunner):
             self._custom_attributes,
             self._output,
             self._log_probability,
+            self._component_name,
         )
-        return JumpStartModelRunner, serialized_data
+        return self.__class__, serialized_data

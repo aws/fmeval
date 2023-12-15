@@ -27,6 +27,7 @@ class SageMakerModelRunner(ModelRunner):
         log_probability: Optional[str] = None,
         content_type: str = MIME_TYPE_JSON,
         accept_type: str = MIME_TYPE_JSON,
+        component_name: Optional[str] = None,
     ):
         """
         :param endpoint_name: Name of the SageMaker endpoint to be used for model predictions
@@ -37,6 +38,8 @@ class SageMakerModelRunner(ModelRunner):
         :param log_probability: JMESPath expression of log probability in the model output
         :param content_type: The content type of the request sent to the model for inference
         :param accept_type: The accept type of the request sent to the model for inference
+        :param component_name: Name of the Amazon SageMaker inference component corresponding
+                            the predictor
         """
         super().__init__(content_template, output, log_probability, content_type, accept_type)
         self._endpoint_name = endpoint_name
@@ -46,6 +49,7 @@ class SageMakerModelRunner(ModelRunner):
         self._log_probability = log_probability
         self._content_type = content_type
         self._accept_type = accept_type
+        self._component_name = component_name
 
         sagemaker_session = get_sagemaker_session()
         util.require(
@@ -66,7 +70,11 @@ class SageMakerModelRunner(ModelRunner):
         :param prompt: Input data for which you want the model to provide inference.
         """
         composed_data = self._composer.compose(prompt)
-        model_output = self._predictor.predict(data=composed_data, custom_attributes=self._custom_attributes)
+        model_output = self._predictor.predict(
+            data=composed_data,
+            custom_attributes=self._custom_attributes,
+            component_name=self._component_name,
+        )
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
@@ -92,5 +100,6 @@ class SageMakerModelRunner(ModelRunner):
             self._log_probability,
             self._content_type,
             self._accept_type,
+            self._component_name,
         )
-        return SageMakerModelRunner, serialized_data
+        return self.__class__, serialized_data
