@@ -126,7 +126,7 @@ def _precision(model_output: str, target_output: str, *, normalize_text: bool = 
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing precision.
     :returns: Precision.
     """
     if normalize_text:  # pragma: no branch
@@ -146,7 +146,7 @@ def _recall(model_output: str, target_output: str, *, normalize_text: bool = Fal
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing recall.
     :returns: Recall.
     """
     if normalize_text:  # pragma: no branch
