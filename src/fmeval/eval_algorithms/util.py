@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import pandas as pd
 import ray.data
 
 import fmeval.util as util
@@ -93,15 +92,14 @@ def generate_prompt_column_for_dataset(
     with timed_block(f"Generating prompt column", logger):
         prompt_composer = PromptComposer(prompt_template)
 
-        def _generate_prompt_column(df: pd.DataFrame) -> pd.Series:  # pragma: no cover
+        def _generate_prompt_column(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
             """
-            Map function generating the prompt column values given a batch of records in pandas format.
+            Map function for generating the prompt column value given a dataset row.
             """
-            return pd.Series(
-                data=[prompt_composer.compose(row[model_input_column_name]) for index, row in df.iterrows()]
-            )
+            row[prompt_column_name] = prompt_composer.compose(row[model_input_column_name])
+            return row
 
-        data = data.add_column(prompt_column_name, _generate_prompt_column).materialize()
+        data = data.map(_generate_prompt_column).materialize()
     return data
 
 
