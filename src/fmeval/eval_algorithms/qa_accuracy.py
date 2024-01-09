@@ -223,7 +223,7 @@ class QAAccuracy(EvalAlgorithmInterface):
                     """
                     for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
                         row[eval_score] = self._get_score(
-                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                            target_output=str(row[TARGET_OUTPUT_COLUMN_NAME]),
                             model_output=row[MODEL_OUTPUT_COLUMN_NAME],
                             eval_fn=eval_fn,
                         )
@@ -293,7 +293,7 @@ class QAAccuracy(EvalAlgorithmInterface):
         return [
             EvalScore(
                 name=eval_score,
-                value=self._get_score(target_output=target_output, model_output=model_output, eval_fn=eval_fn),
+                value=self._get_score(target_output=str(target_output), model_output=model_output, eval_fn=eval_fn),
             )
             for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items()
         ]
