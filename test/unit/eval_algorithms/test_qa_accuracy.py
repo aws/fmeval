@@ -540,11 +540,21 @@ class TestQAAccuracy:
                 target_output="Hated that film",
                 expected_score=0.0,
             ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                expected_score=1.0,
+            ),
         ],
     )
     def test_f1_score(self, test_case):
         assert (
-            _f1_score(model_output=test_case.model_output, target_output=test_case.target_output, normalize_text=True)
+            _f1_score(
+                model_output=test_case.model_output,
+                target_output=test_case.target_output,
+                normalize_text=True,
+                strip_text=True,
+            )
             == test_case.expected_score
         )
 

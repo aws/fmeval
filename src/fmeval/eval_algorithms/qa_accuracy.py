@@ -92,7 +92,9 @@ def _normalize_text_quac_protocol(text: str) -> str:
     return " ".join([word for word in text.split(" ") if (word != "" and word not in ENGLISH_ARTICLES)])
 
 
-def _f1_score(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _f1_score(
+    model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
+) -> float:
     """
     Inspired by the implementation in HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L182
 
@@ -105,8 +107,11 @@ def _f1_score(model_output: str, target_output: str, *, normalize_text: bool = F
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
     :param normalize_text: Normalize the text before computing f1.
+    :param strip_text: Strip the model_output and the target_output before computing the f1 score.
     :returns: The F1 score.
     """
+    if strip_text:
+        model_output, target_output = (text.strip() for text in (model_output, target_output))
     if normalize_text:  # pragma: no branch
         model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
     ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
@@ -143,7 +148,7 @@ def _quasi_exact_match_score(model_output: str, target_output: str) -> float:
 
 
 QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
-    F1_SCORE: partial(_f1_score, normalize_text=True),
+    F1_SCORE: partial(_f1_score, normalize_text=True, strip_text=True),
     EXACT_MATCH_SCORE: _exact_match_score,
     QUASI_EXACT_MATCH_SCORE: _quasi_exact_match_score,
 }
