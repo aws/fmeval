@@ -100,7 +100,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         return [
             EvalScore(
                 name=self.eval_name,
-                value=self._get_score(target_output=target_output, model_output=model_output),
+                value=self._get_score(target_output=str(target_output), model_output=model_output),
             )
         ]
 
@@ -164,7 +164,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     Map function generating the scores for every input record in input dataset
                     """
                     row[FACTUAL_KNOWLEDGE] = self._get_score(
-                        row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME]
+                        str(row[TARGET_OUTPUT_COLUMN_NAME]), row[MODEL_OUTPUT_COLUMN_NAME]
                     )
                     return row
 
