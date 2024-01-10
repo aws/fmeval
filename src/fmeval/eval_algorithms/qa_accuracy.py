@@ -76,7 +76,7 @@ class QAAccuracyConfig(EvalAlgorithmConfig):
 def _normalize_text_quac_protocol(text: str) -> str:
     """
     Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py
-    Given a text, normalize it using the SQUAD / QUAC protocol. That is remove punctuations, excess whitespaces and articles, and return the lowercased tokens.
+    Given a text, normalize it using the SQUAD / QUAC protocol. That is remove punctuations, excess spaces and articles, and return the lowercased tokens.
     SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
     QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before evaluating it.
     HELM (https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L116)
