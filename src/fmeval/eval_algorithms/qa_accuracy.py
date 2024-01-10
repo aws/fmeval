@@ -101,13 +101,12 @@ def _f1_score(
     Given the model output and the target output, compute the f1 score between the two.
     F1-score is the harmonic mean of precision and recall where precision is the number of
     words in the prediction that are also found in the target output and recall is the number
-    of words in the target output that are also found in the answer. We normalize the text following
-    the QuAC protocol above.
+    of words in the target output that are also found in the answer.
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
-    :param strip_text: Strip the model_output and the target_output before computing the f1 score.
+    :param normalize_text: Normalize the text before computing f1. We normalize the text following the QuAC protocol.
+    :param strip_text: Strip the model_output and the target_output before computing the f1 score. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: The F1 score.
     """
     if strip_text:
