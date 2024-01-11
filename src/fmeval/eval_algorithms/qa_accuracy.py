@@ -76,7 +76,7 @@ class QAAccuracyConfig(EvalAlgorithmConfig):
 def _normalize_text_quac_protocol(text: str) -> str:
     """
     Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py
-    Given a text, normalize it using the SQUAD / QUAC protocol. That is remove punctuations, excess whitespaces and articles, and return the lowercased tokens.
+    Given a text, normalize it using the SQUAD / QUAC protocol. That is remove punctuations, excess spaces and articles, and return the lowercased tokens.
     SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
     QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before evaluating it.
     HELM (https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L116)
@@ -92,21 +92,25 @@ def _normalize_text_quac_protocol(text: str) -> str:
     return " ".join([word for word in text.split(" ") if (word != "" and word not in ENGLISH_ARTICLES)])
 
 
-def _f1_score(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _f1_score(
+    model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
+) -> float:
     """
     Inspired by the implementation in HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L182
 
     Given the model output and the target output, compute the f1 score between the two.
     F1-score is the harmonic mean of precision and recall where precision is the number of
     words in the prediction that are also found in the target output and recall is the number
-    of words in the target output that are also found in the answer. We normalize the text following
-    the QuAC protocol above.
+    of words in the target output that are also found in the answer.
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing f1. We normalize the text following the QuAC protocol.
+    :param strip_text: Strip the model_output and the target_output before computing the f1 score. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: The F1 score.
     """
+    if strip_text:
+        model_output, target_output = (text.strip() for text in (model_output, target_output))
     if normalize_text:  # pragma: no branch
         model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
     ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
@@ -143,7 +147,7 @@ def _quasi_exact_match_score(model_output: str, target_output: str) -> float:
 
 
 QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
-    F1_SCORE: partial(_f1_score, normalize_text=True),
+    F1_SCORE: partial(_f1_score, normalize_text=True, strip_text=True),
     EXACT_MATCH_SCORE: _exact_match_score,
     QUASI_EXACT_MATCH_SCORE: _quasi_exact_match_score,
 }
