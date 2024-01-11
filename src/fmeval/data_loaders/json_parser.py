@@ -1,12 +1,18 @@
 from typing import Any, Dict, List, Union, Optional
 from jmespath.parser import ParsedResult
 from dataclasses import dataclass
-from fmeval.exceptions import EvalAlgorithmInternalError
+from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 
 from fmeval.data_loaders.jmespath_util import compile_jmespath, search_jmespath
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.util import require, assert_condition
-from fmeval.constants import COLUMN_NAMES, DATA_CONFIG_LOCATION_SUFFIX, MIME_TYPE_JSON, MIME_TYPE_JSONLINES
+from fmeval.constants import (
+    DatasetColumns,
+    DATASET_COLUMNS,
+    DATA_CONFIG_LOCATION_SUFFIX,
+    MIME_TYPE_JSON,
+    MIME_TYPE_JSONLINES,
+)
 
 
 @dataclass(frozen=True)
@@ -15,8 +21,7 @@ class ColumnParseArguments:
 
     :param jmespath_parser: The JMESPath parser that parses columns from the dataset
             using JMESPath queries.
-    :param jmespath_query_type: Used for error logging. Will always be one of the *_COLUMN_NAME
-            constants (ex: MODEL_INPUT_COLUMN_NAME).
+    :param column: An enum representing the column that is being parsed.
     :param dataset: The data to be searched, already deserialized into a dict/list.
     :param dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSON_LINES.
             Used to determine whether the result parsed by `jmespath_parser`
@@ -25,7 +30,7 @@ class ColumnParseArguments:
     """
 
     jmespath_parser: ParsedResult
-    jmespath_query_type: str
+    column: DatasetColumns
     dataset: Union[Dict[str, Any], List]
     dataset_mime_type: str
     dataset_name: str
@@ -34,7 +39,7 @@ class ColumnParseArguments:
 class JsonParser:
     """Parser for JSON and JSON Lines datasets using JMESPath queries supplied by the DataConfig class.
 
-    :param _parsers: A dict that maps keys (which must be one of the *_COLUMN_NAME constants)
+    :param _parsers: A dict that maps column names (valid column names are defined by fmeval.constants.DatasetColumns)
         to ParsedResult objects. These ParsedResult objects (from the jmespath library)
         perform the JMESPath searching in the `search_jmespath` util function.
     """
@@ -55,16 +60,17 @@ class JsonParser:
         )
 
         When we create a JsonParser from this config, we find the attributes ending in DATA_CONFIG_LOCATION_SUFFIX
-        (which is "_location" at the time of this writing) that are not None: model_input_location,
-        model_output_location, and category_location.
+        (which is "_location" at the time of this writing) that are not None:
+        model_input_location, model_output_location, and category_location.
         Note that all optional attributes in DataConfig have default value None.
 
-        The keys we use for `self._parsers` will be "model_input", "model_output", and "sent_more_input"
-        (we strip away DATA_CONFIG_LOCATION_SUFFIX when generating the key). We validate that these keys are included
-        in the *_COLUMN_NAME constants, since downstream code assumes that these constants are always used.
+        The keys we use for `self._parsers` will be "model_input", "model_output", and "category"
+        (we strip away DATA_CONFIG_LOCATION_SUFFIX when generating the key).
+        We validate that these keys match the `name` attribute of enumerations defined in
+        fmeval.constants.DatasetColumns, since downstream code assumes that these names are always used.
 
         The values corresponding to these keys will be ParsedResult objects that get created by calling
-        `compile_jmespath` on "my_model_input_jmespath", "my_model_output_jmespath", and "my_sent_more_input_jmespath".
+        `compile_jmespath` on "my_model_input_jmespath", "my_model_output_jmespath", and "my_category_jmespath".
 
         :param config: see DataConfig docstring
         """
@@ -72,17 +78,17 @@ class JsonParser:
 
         for attribute_name, attribute_value in config.__dict__.items():
             if attribute_name.endswith(DATA_CONFIG_LOCATION_SUFFIX) and attribute_value is not None:
-                key = attribute_name.replace(DATA_CONFIG_LOCATION_SUFFIX, "")
+                column_name = attribute_name.replace(DATA_CONFIG_LOCATION_SUFFIX, "")
                 assert_condition(
-                    key in COLUMN_NAMES,
+                    column_name in DATASET_COLUMNS,
                     f"Found a DataConfig attribute `{attribute_name}` that ends in `{DATA_CONFIG_LOCATION_SUFFIX}` "
-                    "but does not have a corresponding *_COLUMN_NAME constant.",
+                    "but does not correspond to any enumeration defined in fmeval.constants.DatasetColumns.",
                 )
-                self._parsers[key] = compile_jmespath(attribute_value)
+                self._parsers[column_name] = compile_jmespath(attribute_value)
 
     def parse_dataset_columns(
         self, dataset: Union[Dict[str, Any], List], dataset_mime_type: str, dataset_name: str
-    ) -> Dict[str, List[Any]]:
+    ) -> Dict[str, List[str]]:
         """Parses a JSON dataset (which could be a single line in a JSON Lines dataset)
            using the parsers stored in self._parsers to extract the desired columns.
            In the case that `dataset` corresponds to a single JSON Lines line, the
@@ -91,29 +97,29 @@ class JsonParser:
         :param dataset: The dataset's data, already deserialized into a dict/list.
         :param dataset_mime_type: Either MIME_TYPE_JSON or MIME_TYPE_JSONLINES.
         :param dataset_name: The name of the dataset, to be used for error logging.
-        :returns: A dict that maps keys to extracted columns. The keys used are
-            exactly the same as the keys used in self._parsers.
+        :returns: A dict that maps column names to extracted columns. The column names
+            are exactly the same as the keys in self._parsers.
         """
         if not isinstance(dataset, (dict, list)):
             raise EvalAlgorithmInternalError(
                 f"parse_dataset_columns requires dataset `{dataset_name}` to be deserialized into a dict/list."
             )
         parsed_columns_dict = {
-            parser_name: JsonParser._parse_column(
+            column_name: JsonParser._parse_column(
                 ColumnParseArguments(
-                    jmespath_parser=self._parsers[parser_name],
-                    jmespath_query_type=parser_name,
+                    jmespath_parser=self._parsers[column_name],
+                    column=DATASET_COLUMNS[column_name],
                     dataset=dataset,
                     dataset_mime_type=dataset_mime_type,
                     dataset_name=dataset_name,
                 )
             )
-            for parser_name in self._parsers
+            for column_name in self._parsers
         }
 
-        filtered_parsed_columns_dict: Dict[str, List[Any]] = {
-            parser_name: parsed_columns
-            for parser_name, parsed_columns in parsed_columns_dict.items()
+        filtered_parsed_columns_dict: Dict[str, List[str]] = {
+            column_name: parsed_columns
+            for column_name, parsed_columns in parsed_columns_dict.items()
             if parsed_columns is not None
         }
 
@@ -122,8 +128,9 @@ class JsonParser:
         return filtered_parsed_columns_dict
 
     @staticmethod
-    def _parse_column(args: ColumnParseArguments) -> Optional[List[Any]]:
-        """Parses a single column, specified by `args`, from a dataset.
+    def _parse_column(args: ColumnParseArguments) -> Optional[List[str]]:
+        """Parses a single column, specified by `args`, from a dataset
+           and converts the contents of the column to strings if needed.
 
         :param args: See ColumnParseArgs docstring.
         :returns: If search_jmespath returns None, this function returns None.
@@ -135,12 +142,14 @@ class JsonParser:
         """
         result = search_jmespath(
             jmespath_parser=args.jmespath_parser,
-            jmespath_query_type=args.jmespath_query_type,
+            jmespath_query_type=args.column.value.name,
             dataset=args.dataset,
             dataset_name=args.dataset_name,
         )
         if result is not None:
             JsonParser._validate_jmespath_result(result, args)
+            if args.column.value.should_cast:
+                result = JsonParser._cast_to_string(result, args)
         return result
 
     @staticmethod
@@ -157,30 +166,30 @@ class JsonParser:
         if args.dataset_mime_type == MIME_TYPE_JSON:
             require(
                 result and isinstance(result, list),
-                f"Expected to find a non-empty list of samples for the {args.jmespath_query_type} column using "
+                f"Expected to find a non-empty list of samples for the {args.column.value.name} column using "
                 f"JMESPath '{args.jmespath_parser.expression}' on {args.dataset_name}.",
             )
             require(
                 all(x is not None for x in result),  # explicitly using "is not None" since values like 0 are false-y
                 f"Expected an array of non-null values using JMESPath '{args.jmespath_parser.expression}' for "
-                f"the {args.jmespath_query_type} column of dataset `{args.dataset_name}`, but found at least "
+                f"the {args.column.value.name} column of dataset `{args.dataset_name}`, but found at least "
                 "one value that is None.",
             )
             require(
                 all(not isinstance(x, list) for x in result),
                 f"Expected a 1D array using JMESPath '{args.jmespath_parser.expression}' on dataset "
-                f"`{args.dataset_name}`, where each element of the array is a sample's {args.jmespath_query_type}, "
+                f"`{args.dataset_name}`, where each element of the array is a sample's {args.column.value.name}, "
                 f"but found at least one nested array.",
             )
         elif args.dataset_mime_type == MIME_TYPE_JSONLINES:
             require(
                 result is not None,
-                f"Found no values using {args.jmespath_query_type} JMESPath '{args.jmespath_parser.expression}' "
+                f"Found no values using {args.column.value.name} JMESPath '{args.jmespath_parser.expression}' "
                 f"on dataset `{args.dataset_name}`.",
             )
             require(
                 not isinstance(result, list),
-                f"Expected to find a single value using {args.jmespath_query_type} JMESPath "
+                f"Expected to find a single value using {args.column.value.name} JMESPath "
                 f"'{args.jmespath_parser.expression}' on a dataset line in "
                 f"dataset `{args.dataset_name}`, but found a list instead.",
             )
@@ -206,3 +215,35 @@ class JsonParser:
             "to be the same for the result of every JMESPath query, but not all queries"
             "resulted in the same number of samples.",
         )
+
+    @staticmethod
+    def _cast_to_string(result: Union[Any, List[Any]], args: ColumnParseArguments) -> Union[str, List[str]]:
+        """
+        Casts the contents of `result` to string(s), raising an error if casting fails.
+        It is extremely unlikely that the str() operation should fail; this basically
+        only happens if the object has explicitly overwritten the __str__ method to raise
+        an exception.
+
+        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected
+        to be a 1D array (list) of objects. If MIME_TYPE_JSON_LINES, then `result`
+        is expected to be a single object.
+
+        :param result: JMESPath query result to be casted.
+        :param args: See ColumnParseArguments docstring.
+        :returns: `result` casted to a string or list of strings.
+        """
+        try:
+            if args.dataset_mime_type == MIME_TYPE_JSON:
+                return [str(x) for x in result]
+            elif args.dataset_mime_type == MIME_TYPE_JSONLINES:
+                return str(result)
+            else:
+                raise EvalAlgorithmInternalError(  # pragma: no cover
+                    f"args.dataset_mime_type is {args.dataset_mime_type}, but only JSON and JSON Lines are supported."
+                )
+        except Exception:
+            raise EvalAlgorithmClientError(
+                "Failed to cast object to string in json_parser._cast_to_string. "
+                f"Please inspect dataset {args.dataset_name} for columns containing "
+                "objects that cannot be converted to strings."
+            )

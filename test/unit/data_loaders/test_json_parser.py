@@ -5,7 +5,7 @@ from fmeval.data_loaders.json_parser import JsonParser, ColumnParseArguments
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
     MIME_TYPE_JSONLINES,
 )
@@ -28,7 +28,7 @@ class TestJsonParser:
                     model_input_location="model_input_jmespath",
                 ),
                 expected_call_args=["model_input_jmespath"],
-                expected_keys=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
+                expected_keys=[DatasetColumns.MODEL_INPUT.value.name],
             ),
             TestCaseInit(
                 config=DataConfig(
@@ -47,10 +47,10 @@ class TestJsonParser:
                     "category_jmespath",
                 ],
                 expected_keys=[
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                    ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-                    ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
-                    ColumnNames.CATEGORY_COLUMN_NAME.value,
+                    DatasetColumns.MODEL_INPUT.value.name,
+                    DatasetColumns.MODEL_OUTPUT.value.name,
+                    DatasetColumns.TARGET_OUTPUT.value.name,
+                    DatasetColumns.CATEGORY.value.name,
                 ],
             ),
         ],
@@ -116,7 +116,7 @@ class TestJsonParser:
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             args = ColumnParseArguments(
                 jmespath_parser=Mock(),
-                jmespath_query_type="unused",
+                column=Mock(),
                 dataset={},
                 dataset_mime_type=MIME_TYPE_JSON,
                 dataset_name="dataset",
@@ -146,7 +146,7 @@ class TestJsonParser:
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             args = ColumnParseArguments(
                 jmespath_parser=Mock(),
-                jmespath_query_type="unused",
+                column=Mock(),
                 dataset={},
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 dataset_name="dataset",
@@ -182,7 +182,7 @@ class TestJsonParser:
                         ],
                     },
                     "model_output": {"sample_1": "positive", "sample_2": "negative"},
-                    "category": [0, 1],
+                    "category": ["category_0", "category_1"],
                 },
             ),
             # dataset is a list
@@ -203,13 +203,13 @@ class TestJsonParser:
                         "model_input_col": "A",
                         "model_output_col": "positive",
                         "target_output_col": "negative",
-                        "category_col": 0,
+                        "category_col": "category_0",
                     },
                     {
                         "model_input_col": "B",
                         "model_output_col": "negative",
                         "target_output_col": "positive",
-                        "category_col": 1,
+                        "category_col": "category_1",
                     },
                 ],
             ),
@@ -227,28 +227,28 @@ class TestJsonParser:
         expected_model_inputs = ["A", "B"]
         expected_model_outputs = ["positive", "negative"]
         expected_target_outputs = ["negative", "positive"]
-        expected_categories = [0, 1]
+        expected_categories = ["category_0", "category_1"]
 
         parser = JsonParser(config)
         cols = parser.parse_dataset_columns(dataset=dataset, dataset_mime_type=MIME_TYPE_JSON, dataset_name="dataset")
 
-        assert cols[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == expected_model_inputs
-        assert cols[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value] == expected_model_outputs
-        assert cols[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value] == expected_target_outputs
-        assert cols[ColumnNames.CATEGORY_COLUMN_NAME.value] == expected_categories
+        assert cols[DatasetColumns.MODEL_INPUT.value.name] == expected_model_inputs
+        assert cols[DatasetColumns.MODEL_OUTPUT.value.name] == expected_model_outputs
+        assert cols[DatasetColumns.TARGET_OUTPUT.value.name] == expected_target_outputs
+        assert cols[DatasetColumns.CATEGORY.value.name] == expected_categories
 
-        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value does not show up in `cols`
+        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN.value.name does not show up in `cols`
         assert set(cols.keys()) == {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
-            ColumnNames.CATEGORY_COLUMN_NAME.value,
+            DatasetColumns.MODEL_INPUT.value.name,
+            DatasetColumns.MODEL_OUTPUT.value.name,
+            DatasetColumns.TARGET_OUTPUT.value.name,
+            DatasetColumns.CATEGORY.value.name,
         }
 
         # ensure that logger generated a warning when search_jmespath
-        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value.
+        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN.value.name.
         mock_logger.assert_called_with(
-            f"Failed to find {ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value} columns in dataset `dataset` "
+            f"Failed to find {DatasetColumns.SENT_MORE_INPUT.value.name} columns in dataset `dataset` "
             f"using JMESPath query '{config.sent_more_input_location}'."
         )
 
@@ -282,25 +282,71 @@ class TestJsonParser:
         cols = parser.parse_dataset_columns(
             dataset=dataset_line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name="dataset_line"
         )
-        assert cols[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == expected_model_input
-        assert cols[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value] == expected_model_output
-        assert cols[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value] == expected_target_output
-        assert cols[ColumnNames.CATEGORY_COLUMN_NAME.value] == expected_category
+        assert cols[DatasetColumns.MODEL_INPUT.value.name] == expected_model_input
+        assert cols[DatasetColumns.MODEL_OUTPUT.value.name] == expected_model_output
+        assert cols[DatasetColumns.TARGET_OUTPUT.value.name] == expected_target_output
+        assert cols[DatasetColumns.CATEGORY.value.name] == expected_category
 
-        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value does not show up in `cols`
+        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN.value.name does not show up in `cols`
         assert set(cols.keys()) == {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
-            ColumnNames.CATEGORY_COLUMN_NAME.value,
+            DatasetColumns.MODEL_INPUT.value.name,
+            DatasetColumns.MODEL_OUTPUT.value.name,
+            DatasetColumns.TARGET_OUTPUT.value.name,
+            DatasetColumns.CATEGORY.value.name,
         }
 
         # ensure that logger generated a warning when search_jmespath
-        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value.
+        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN.value.name.
         mock_logger.assert_called_with(
-            f"Failed to find {ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value} columns in dataset `dataset_line` "
+            f"Failed to find {DatasetColumns.SENT_MORE_INPUT.value.name} columns in dataset `dataset_line` "
             f"using JMESPath query '{config.sent_more_input_location}'."
         )
+
+    def test_parse_dataset_columns_casting_to_string(self):
+        """
+        GIVEN a DataConfig that specifies both columns that should be casted
+            to strings and columns that shouldn't be casted
+        WHEN parse_dataset_columns is called
+        THEN the returned results are casted and not casted appropriately
+        """
+        config = DataConfig(
+            dataset_name="dataset",
+            dataset_uri="uri",
+            dataset_mime_type=MIME_TYPE_JSONLINES,
+            # these columns should be casted to string
+            model_input_location="input",
+            model_output_location="output",
+            target_output_location="target",
+            category_location="category",
+            # these columns shouldn't be casted
+            sent_more_log_prob_location="sent_more_lp",
+            sent_less_log_prob_location="sent_less_lp",
+        )
+        parser = JsonParser(config)
+        expected_model_input = "1.0"
+        expected_model_output = "True"
+        expected_target_output = "False"
+        expected_category = "2"
+        expected_sent_more_log_prob = -162
+        expected_sent_less_log_prob = -1.89
+
+        dataset_line = {
+            "input": 1.0,
+            "output": True,
+            "target": False,
+            "category": 2,
+            "sent_more_lp": -162,
+            "sent_less_lp": -1.89,
+        }
+        cols = parser.parse_dataset_columns(
+            dataset=dataset_line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name="dataset_line"
+        )
+        assert cols[DatasetColumns.MODEL_INPUT.value.name] == expected_model_input
+        assert cols[DatasetColumns.MODEL_OUTPUT.value.name] == expected_model_output
+        assert cols[DatasetColumns.TARGET_OUTPUT.value.name] == expected_target_output
+        assert cols[DatasetColumns.CATEGORY.value.name] == expected_category
+        assert cols[DatasetColumns.SENT_MORE_LOG_PROB.value.name] == expected_sent_more_log_prob
+        assert cols[DatasetColumns.SENT_LESS_LOG_PROB.value.name] == expected_sent_less_log_prob
 
     def test_parse_dataset_columns_invalid_dataset(self):
         """
@@ -315,7 +361,7 @@ class TestJsonParser:
             parser = JsonParser(Mock())
             parser.parse_dataset_columns(dataset=17, dataset_mime_type=MIME_TYPE_JSON, dataset_name="dataset")
 
-    def test__validate_parsed_columns_lengths(self):
+    def test_validate_parsed_columns_lengths(self):
         """
         GIVEN a dict storing lists of differing lengths
         WHEN _validate_parsed_columns_lengths is called
@@ -327,3 +373,44 @@ class TestJsonParser:
                 "model_output": {"sample_1": "d", "sample_2": "e"},
             }
             JsonParser._validate_parsed_columns_lengths(dataset)
+
+    def test_cast_to_string_success(self):
+        """
+        GIVEN an input that can be cast to a string/list of strings without issues
+        WHEN JsonParser._cast_to_string is called
+        THEN the correct output is returned
+        """
+        original_data = ["a", True, False, 1, 2.0]
+        expected = ["a", "True", "False", "1", "2.0"]
+
+        # JSON case
+        args = Mock()
+        args.dataset_mime_type = MIME_TYPE_JSON
+        assert JsonParser._cast_to_string(original_data, args) == expected
+
+        # JSON Lines case
+        args.dataset_mime_type = MIME_TYPE_JSONLINES
+        for data, expected_data in zip(original_data, expected):
+            assert JsonParser._cast_to_string(data, args) == expected_data
+
+    def test_cast_to_string_failure(self):
+        class BadObject:
+            def __str__(self):
+                raise Exception
+
+        bad_object = BadObject()
+        args = Mock()
+
+        # JSON case
+        with pytest.raises(
+            EvalAlgorithmClientError, match="Failed to cast object to string in json_parser._cast_to_string."
+        ):
+            args.dataset_mime_type = MIME_TYPE_JSON
+            JsonParser._cast_to_string([1, False, "hello", bad_object], args)
+
+        # JSON Lines case
+        with pytest.raises(
+            EvalAlgorithmClientError, match="Failed to cast object to string in json_parser._cast_to_string."
+        ):
+            args.dataset_mime_type = MIME_TYPE_JSONLINES
+            JsonParser._cast_to_string(bad_object, args)

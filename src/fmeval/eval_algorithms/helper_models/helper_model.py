@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 from detoxify import Detoxify
 from transformers import pipeline
-from fmeval.constants import ColumnNames
+from fmeval.constants import DatasetColumns
 
 TOXIGEN_SCORE_NAME = "toxicity"
 
@@ -49,7 +49,7 @@ class ToxigenHelperModel(BaseHelperModel):
     """
 
     TOXIGEN_MODEL_NAME = "tomh/toxigen_roberta"
-    COLUMN_NAME = ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
+    COLUMN_NAME = DatasetColumns.MODEL_OUTPUT.value.name
 
     def __init__(self, column_name: str = COLUMN_NAME):
         """
@@ -106,7 +106,7 @@ class DetoxifyHelperModel(BaseHelperModel):
     """
 
     DETOXIFY_MODEL_TYPE = "unbiased"
-    COLUMN_NAME = ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
+    COLUMN_NAME = DatasetColumns.MODEL_OUTPUT.value.name
 
     def __init__(self, column_name: str = COLUMN_NAME):
         """

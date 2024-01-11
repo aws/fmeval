@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import fmeval.util as util
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
@@ -193,33 +193,31 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(
-                dataset, [ColumnNames.MODEL_INPUT_COLUMN_NAME.value, ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]
-            )
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = generate_prompt_column_for_dataset(
                 prompt_template=dataset_prompt_template,
                 data=dataset,
-                model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
+                prompt_column_name=DatasetColumns.PROMPT.value.name,
             )
 
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
-                model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
-                model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                model_input_column_name=DatasetColumns.PROMPT.value.name,
+                model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     scores = self.evaluate_sample(
-                        model_input=row[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
+                        model_input=row[DatasetColumns.MODEL_INPUT.value.name],
                         model=model,
-                        target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
-                        model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                        target_output=row[DatasetColumns.TARGET_OUTPUT.value.name],
+                        model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
                         prompt_template=dataset_prompt_template,
                     )
                     for score in scores:

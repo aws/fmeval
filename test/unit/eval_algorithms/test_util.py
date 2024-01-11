@@ -12,7 +12,7 @@ import ray
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
 )
@@ -70,34 +70,34 @@ def model_runner_return_value():
             input_dataset=[
                 {
                     "id": 1,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
+                    DatasetColumns.MODEL_INPUT.value.name: "a",
                 },
                 {
                     "id": 2,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
+                    DatasetColumns.MODEL_INPUT.value.name: "b",
                 },
                 {
                     "id": 3,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
+                    DatasetColumns.MODEL_INPUT.value.name: "c",
                 },
             ],
             num_rows=3,
             expected_dataset=[
                 {
                     "id": 1,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
+                    DatasetColumns.MODEL_INPUT.value.name: "a",
                     "model_output": "output",
                     "model_log_probability": 1.0,
                 },
                 {
                     "id": 2,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
+                    DatasetColumns.MODEL_INPUT.value.name: "b",
                     "model_output": "output",
                     "model_log_probability": 1.0,
                 },
                 {
                     "id": 3,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
+                    DatasetColumns.MODEL_INPUT.value.name: "c",
                     "model_output": "output",
                     "model_log_probability": 1.0,
                 },
@@ -120,9 +120,9 @@ def test_generate_model_predict_response_for_dataset(test_case):
     returned_dataset = generate_model_predict_response_for_dataset(
         model=mock_model_runner,
         data=dataset,
-        model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-        model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-        model_log_probability_column_name=ColumnNames.MODEL_LOG_PROBABILITY_COLUMN_NAME.value,
+        model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
+        model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
+        model_log_probability_column_name=DatasetColumns.MODEL_LOG_PROBABILITY.value.name,
     )
     # THEN
     assert returned_dataset.count() == test_case.num_rows
@@ -143,15 +143,15 @@ class TestCaseGeneratePromptColumn(NamedTuple):
             input_dataset=[
                 {
                     "id": 1,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
+                    DatasetColumns.MODEL_INPUT.value.name: "a",
                 },
                 {
                     "id": 2,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
+                    DatasetColumns.MODEL_INPUT.value.name: "b",
                 },
                 {
                     "id": 3,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
+                    DatasetColumns.MODEL_INPUT.value.name: "c",
                 },
             ],
             num_rows=3,
@@ -159,18 +159,18 @@ class TestCaseGeneratePromptColumn(NamedTuple):
             expected_dataset=[
                 {
                     "id": 1,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
-                    ColumnNames.PROMPT_COLUMN_NAME.value: "Summarise: a",
+                    DatasetColumns.MODEL_INPUT.value.name: "a",
+                    DatasetColumns.PROMPT.value.name: "Summarise: a",
                 },
                 {
                     "id": 2,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
-                    ColumnNames.PROMPT_COLUMN_NAME.value: "Summarise: b",
+                    DatasetColumns.MODEL_INPUT.value.name: "b",
+                    DatasetColumns.PROMPT.value.name: "Summarise: b",
                 },
                 {
                     "id": 3,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
-                    ColumnNames.PROMPT_COLUMN_NAME.value: "Summarise: c",
+                    DatasetColumns.MODEL_INPUT.value.name: "c",
+                    DatasetColumns.PROMPT.value.name: "Summarise: c",
                 },
             ],
         ),
@@ -186,8 +186,8 @@ def test_generate_prompt_column_for_dataset(test_case):
     returned_dataset = generate_prompt_column_for_dataset(
         prompt_template=test_case.prompt_template,
         data=dataset,
-        model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-        prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+        model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
+        prompt_column_name=DatasetColumns.PROMPT.value.name,
     )
     assert returned_dataset.count() == test_case.num_rows
     assert sorted(returned_dataset.take(test_case.num_rows), key=lambda x: x["id"]) == test_case.expected_dataset
@@ -201,11 +201,11 @@ def test_num_actors_in_generate_prompt_column_for_dataset(dataset, actor_pool_st
     mock_model_runner = Mock()
     mock_model_runner.predict.return_value = model_runner_return_value()
     dataset.map.return_value = dataset
-    generate_model_predict_response_for_dataset(mock_model_runner, dataset, ColumnNames.MODEL_INPUT_COLUMN_NAME.value)
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, DatasetColumns.MODEL_INPUT.value.name)
     actor_pool_strategy.assert_called_with(size=num_actors)
 
     os.environ.pop(PARALLELIZATION_FACTOR)
-    generate_model_predict_response_for_dataset(mock_model_runner, dataset, ColumnNames.MODEL_INPUT_COLUMN_NAME.value)
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, DatasetColumns.MODEL_INPUT.value.name)
     actor_pool_strategy.assert_called_with(size=mp.cpu_count() - 1)
 
 
@@ -216,7 +216,7 @@ def test_num_actors_in_generate_prompt_column_for_dataset_bad_value(dataset, act
     mock_model_runner = Mock()
     mock_model_runner.predict.return_value = model_runner_return_value()
     dataset.map.return_value = dataset
-    generate_model_predict_response_for_dataset(mock_model_runner, dataset, ColumnNames.MODEL_INPUT_COLUMN_NAME.value)
+    generate_model_predict_response_for_dataset(mock_model_runner, dataset, DatasetColumns.MODEL_INPUT.value.name)
     actor_pool_strategy.assert_called_with(size=mp.cpu_count() - 1)
 
 
@@ -232,7 +232,7 @@ def test_aggregate_dataset_invalid_agg():
 def test_category_wise_aggregate_invalid_agg():
     pandas_df = pd.DataFrame(np.random.rand(10, 4), columns=["a", "b", "c", "d"])
     category = pd.Series(["A", "A", "C", "B", "B", "C", "C", "A", "B", "C"])
-    pandas_df[ColumnNames.CATEGORY_COLUMN_NAME.value] = category
+    pandas_df[DatasetColumns.CATEGORY.value.name] = category
     with pytest.raises(EvalAlgorithmInternalError, match="Aggregation method median is not supported"):
         category_wise_aggregation(dataset=ray.data.from_pandas(pandas_df), score_column_name="a", agg_method="median")
 
@@ -240,14 +240,13 @@ def test_category_wise_aggregate_invalid_agg():
 def test_category_wise_aggregate():
     pandas_df = pd.DataFrame(np.random.rand(10, 4), columns=["a", "b", "c", "d"])
     category = pd.Series(["A", "A", "C", "B", "B", "C", "C", "A", "B", "C"])
-    pandas_df[ColumnNames.CATEGORY_COLUMN_NAME.value] = category
+    pandas_df[DatasetColumns.CATEGORY.value.name] = category
     category_aggregates = category_wise_aggregation(
         dataset=ray.data.from_pandas(pandas_df), score_column_name="a", agg_method="mean"
     )
     for row in category_aggregates.iter_rows():
         assert (
-            row[f"mean(a)"]
-            == pandas_df.loc[pandas_df.category == row[ColumnNames.CATEGORY_COLUMN_NAME.value]]["a"].mean()
+            row[f"mean(a)"] == pandas_df.loc[pandas_df.category == row[DatasetColumns.CATEGORY.value.name]]["a"].mean()
         )
 
 
@@ -265,8 +264,8 @@ def test_eval_output_record_post_init():
         EvalOutputRecord(
             scores=[EvalScore(name="score1", value=0.162)],
             dataset_columns={
-                ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "my input",
-                ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "my output",
+                DatasetColumns.MODEL_INPUT.value.name: "my input",
+                DatasetColumns.MODEL_OUTPUT.value.name: "my output",
                 invalid_col: "blah",
             },
         )
@@ -284,14 +283,14 @@ def test_eval_output_record_str():
     record = EvalOutputRecord(
         scores=[EvalScore(name="rouge", value=0.5), EvalScore(name="bert", value=0.4)],
         dataset_columns={
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output",
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input",
+            DatasetColumns.MODEL_OUTPUT.value.name: "output",
+            DatasetColumns.MODEL_INPUT.value.name: "input",
         },
     )
     expected_record = OrderedDict(
         [
-            (ColumnNames.MODEL_INPUT_COLUMN_NAME.value, "input"),
-            (ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value, "output"),
+            (DatasetColumns.MODEL_INPUT.value.name, "input"),
+            (DatasetColumns.MODEL_OUTPUT.value.name, "output"),
             ("scores", [{"name": "rouge", "value": 0.5}, {"name": "bert", "value": 0.4}]),
         ]
     )
@@ -307,17 +306,17 @@ def test_eval_output_record_from_row():
     """
     row = {
         "rouge": 0.42,
-        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output",
+        DatasetColumns.MODEL_OUTPUT.value.name: "output",
         "bert": 0.162,
         "invalid_col_1": "hello",
-        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input",
+        DatasetColumns.MODEL_INPUT.value.name: "input",
         "invalid_col_2": "world",
     }
     expected_record = EvalOutputRecord(
         scores=[EvalScore(name="rouge", value=0.42), EvalScore(name="bert", value=0.162)],
         dataset_columns={
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output",
+            DatasetColumns.MODEL_INPUT.value.name: "input",
+            DatasetColumns.MODEL_OUTPUT.value.name: "output",
         },
     )
 
@@ -344,15 +343,15 @@ def test_save_dataset(tmp_path, file_name):
     # GIVEN
     ds_items = [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "hello",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "Age",
+            DatasetColumns.MODEL_INPUT.value.name: "hello",
+            DatasetColumns.CATEGORY.value.name: "Age",
             unused_column_name: "Arch",
             "rouge": 0.5,
             "bert_score": 0.42,
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "world",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "Gender",
+            DatasetColumns.MODEL_INPUT.value.name: "world",
+            DatasetColumns.CATEGORY.value.name: "Gender",
             unused_column_name: "btw",
             "rouge": 0.314,
             "bert_score": 0.271,
@@ -374,18 +373,18 @@ def test_save_dataset(tmp_path, file_name):
         for json_obj in json_objects:
             # want to ensure ordering of keys is correct, so we use list instead of set
             assert list(json_obj.keys()) == [
-                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                ColumnNames.CATEGORY_COLUMN_NAME.value,
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.CATEGORY.value.name,
                 "scores",
             ]
-            assert json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] in {"hello", "world"}
+            assert json_obj[DatasetColumns.MODEL_INPUT.value.name] in {"hello", "world"}
 
-            if json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == "hello":
-                assert json_obj[ColumnNames.CATEGORY_COLUMN_NAME.value] == "Age"
+            if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "hello":
+                assert json_obj[DatasetColumns.CATEGORY.value.name] == "Age"
                 assert json_obj["scores"] == [{"name": "rouge", "value": 0.5}, {"name": "bert_score", "value": 0.42}]
 
-            if json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == "world":
-                assert json_obj[ColumnNames.CATEGORY_COLUMN_NAME.value] == "Gender"
+            if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "world":
+                assert json_obj[DatasetColumns.CATEGORY.value.name] == "Gender"
                 assert json_obj["scores"] == [{"name": "rouge", "value": 0.314}, {"name": "bert_score", "value": 0.271}]
 
 
@@ -398,8 +397,8 @@ def test_save_dataset_many_rows(tmp_path):
     # GIVEN
     ds_items = [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: f"input_{i}",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: f"category_{i}",
+            DatasetColumns.MODEL_INPUT.value.name: f"input_{i}",
+            DatasetColumns.CATEGORY.value.name: f"category_{i}",
             "rouge": 0.5,
             "bert_score": 0.42,
         }
@@ -417,12 +416,12 @@ def test_save_dataset_many_rows(tmp_path):
         for i, json_obj in enumerate(json_objects):
             # want to ensure ordering of keys is correct, so we use list instead of set
             assert list(json_obj.keys()) == [
-                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                ColumnNames.CATEGORY_COLUMN_NAME.value,
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.CATEGORY.value.name,
                 "scores",
             ]
-            assert json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == f"input_{i}"
-            assert json_obj[ColumnNames.CATEGORY_COLUMN_NAME.value] == f"category_{i}"
+            assert json_obj[DatasetColumns.MODEL_INPUT.value.name] == f"input_{i}"
+            assert json_obj[DatasetColumns.CATEGORY.value.name] == f"category_{i}"
 
 
 class TestCaseGenerateMeanDeltaScore(NamedTuple):
@@ -478,12 +477,12 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
             dataset=ray.data.from_items(
                 [
                     {
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+                        DatasetColumns.MODEL_INPUT.value.name: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
                         "another prompt column": "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "I like cake.",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "I like cake.",
                     },
                     {
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
+                        DatasetColumns.MODEL_INPUT.value.name: "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
                         "museum landscape and numerous UNESCO World Heritage sites."
                         " It is also an international exhibition venue. "
                         "You will find a selection of current and upcoming exhibitions here.",
@@ -491,7 +490,7 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
                         "museum landscape and numerous UNESCO World Heritage sites."
                         " It is also an international exhibition venue. "
                         "You will find a selection of current and upcoming exhibitions here.",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Berlin: an art metropolis.",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "Berlin: an art metropolis.",
                     },
                 ]
             ),
@@ -505,28 +504,28 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
             dataset=ray.data.from_items(
                 [
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: What is the capital of Italy?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Rome",
+                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of Italy?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: When did Argentina win the FIFA World Cup?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022.",
+                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: What is the capital of England?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "London",
+                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of England?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "London",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: What is the color of blood?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Red",
+                        DatasetColumns.PROMPT.value.name: "Answer: What is the color of blood?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "Red",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: Who directed Pulp Fiction?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+                        DatasetColumns.PROMPT.value.name: "Answer: Who directed Pulp Fiction?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "Quentin Tarantino",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: When did Argentina win the FIFA World Cup?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022",
+                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022",
                     },
                 ]
             ),
@@ -543,7 +542,7 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
                 ("model output 5",),
             ],
             expect_num_predict_calls=10,
-            prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+            prompt_column_name=DatasetColumns.PROMPT.value.name,
             expect_response=True,
         ),
         # dataset fewer than 5 rows
@@ -551,12 +550,12 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
             dataset=ray.data.from_items(
                 [
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: What is the capital of Italy?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Rome",
+                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of Italy?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
                     },
                     {
-                        ColumnNames.PROMPT_COLUMN_NAME.value: "Answer: When did Argentina win the FIFA World Cup?",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022.",
+                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
                     },
                 ]
             ),
@@ -567,7 +566,7 @@ class TestCaseVerifyModelDeterminism(NamedTuple):
                 ("different model output 2",),
             ],
             expect_num_predict_calls=2,
-            prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+            prompt_column_name=DatasetColumns.PROMPT.value.name,
             expect_response=False,
         ),
     ],

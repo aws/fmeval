@@ -10,11 +10,11 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     MEAN,
     NUM_ROWS_DETERMINISTIC,
-    COLUMN_NAMES,
+    DATASET_COLUMNS,
 )
 from fmeval.eval_algorithms import EvalScore, CategoryScore
 from fmeval.exceptions import EvalAlgorithmInternalError
@@ -137,14 +137,14 @@ def aggregate_evaluation_scores(
         for score_column_name in score_column_names
     ]
     category_scores: Optional[Dict[str, CategoryScore]] = None
-    if ColumnNames.CATEGORY_COLUMN_NAME.value in dataset.columns():
+    if DatasetColumns.CATEGORY.value.name in dataset.columns():
         category_scores = {
-            name: CategoryScore(name=name, scores=[]) for name in dataset.unique(ColumnNames.CATEGORY_COLUMN_NAME.value)
+            name: CategoryScore(name=name, scores=[]) for name in dataset.unique(DatasetColumns.CATEGORY.value.name)
         }
         for score_column_name in score_column_names:
             category_aggregate: Dataset = category_wise_aggregation(dataset, score_column_name, agg_method)
             for row in category_aggregate.iter_rows():
-                category_scores[row[ColumnNames.CATEGORY_COLUMN_NAME.value]].scores.append(
+                category_scores[row[DatasetColumns.CATEGORY.value.name]].scores.append(
                     EvalScore(name=score_column_name, value=row[f"mean({score_column_name})"])
                 )
 
@@ -161,7 +161,7 @@ def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: st
 
 
 def category_wise_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> Dataset:
-    category_aggregate: Dataset = dataset.groupby(ColumnNames.CATEGORY_COLUMN_NAME.value)  # type: ignore
+    category_aggregate: Dataset = dataset.groupby(DatasetColumns.CATEGORY.value.name)  # type: ignore
     if agg_method == MEAN:
         category_aggregate = category_aggregate.mean(score_column_name)
     else:
@@ -191,7 +191,7 @@ class EvalOutputRecord:
     def __post_init__(self):
         for col in self.dataset_columns:
             util.assert_condition(
-                col in COLUMN_NAMES,
+                col in DATASET_COLUMNS,
                 f"Attempting to initialize an EvalOutputRecord with invalid non-score column {col}.",
             )
 
@@ -209,7 +209,9 @@ class EvalOutputRecord:
         to constants.COLUMN_NAMES.
         """
         json_obj = OrderedDict(
-            (col_name, self.dataset_columns[col_name]) for col_name in COLUMN_NAMES if col_name in self.dataset_columns
+            (col_name, self.dataset_columns[col_name])
+            for col_name in DATASET_COLUMNS
+            if col_name in self.dataset_columns
         )
         json_obj["scores"] = [eval_score.__dict__ for eval_score in self.scores]
         return json_obj
@@ -257,7 +259,7 @@ class EvalOutputRecord:
         scores = []
         for column_name, value in row.items():
             if column_name not in score_names:  # pragma: no branch
-                if column_name in COLUMN_NAMES:  # pragma: no branch
+                if column_name in DATASET_COLUMNS:  # pragma: no branch
                     dataset_columns[column_name] = value
             else:
                 assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy

@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
 )
 import fmeval.util as util
@@ -136,11 +136,9 @@ class FactualKnowledge(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(
-                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
-            )
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = None
-            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
+            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -148,15 +146,15 @@ class FactualKnowledge(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     dataset_prompt_template,
                     dataset,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                    ColumnNames.PROMPT_COLUMN_NAME.value,
+                    DatasetColumns.MODEL_INPUT.value.name,
+                    DatasetColumns.PROMPT.value.name,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
-                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    model_input_column_name=DatasetColumns.PROMPT.value.name,
+                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -165,8 +163,8 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     Map function generating the scores for every input record in input dataset
                     """
                     row[FACTUAL_KNOWLEDGE] = self._get_score(
-                        row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
-                        row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                        row[DatasetColumns.TARGET_OUTPUT.value.name],
+                        row[DatasetColumns.MODEL_OUTPUT.value.name],
                     )
                     return row
 

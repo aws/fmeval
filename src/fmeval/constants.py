@@ -1,4 +1,7 @@
 from enum import Enum
+from dataclasses import dataclass
+from collections import OrderedDict
+from typing import Optional
 
 # Output results path
 
@@ -14,32 +17,59 @@ SAGEMAKER_SERVICE_ENDPOINT_URL = "SAGEMAKER_SERVICE_ENDPOINT_URL"
 SAGEMAKER_RUNTIME_ENDPOINT_URL = "SAGEMAKER_RUNTIME_ENDPOINT_URL"
 
 
-class ColumnNames(Enum):
+@dataclass(frozen=True)
+class Column:
     """
-    This enum represents the names of columns that appear
-    in the finalized Ray Dataset produced by an EvalAlgorithm.
-    These are the only columns whose data gets written to output
-    records by util.save_dataset. Other algorithm-specific columns
-    that get produced as intermediate results (for example,
-    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME in ClassificationAccuracy)
-    are not included here, and thus won't get saved by save_dataset.
+    This class represents a column in the Ray Dataset produced by
+    an evaluation algorithm's `evaluate` method.
+
+    Note that some columns are created during the "data loading" stage,
+    when the initial Ray Dataset object is created by data_loaders.util.get_dataset,
+    while the remaining columns are created during the execution of `evaluate`.
+    Only the contents of the columns created during the data loading stage
+    have the potential to be casted to strings.
+
+    :param name: The name of the column as it appears in the Ray Dataset.
+    :param should_cast: Whether the contents of this column should
+        be casted to strings during data loading.
+        This parameter is None (as opposed to False) for columns that do
+        not exist during data loading to make it clear that casting these
+        columns is not even a possibility to begin with.
     """
 
-    MODEL_INPUT_COLUMN_NAME = "model_input"
-    PROMPT_COLUMN_NAME = "prompt"
-    MODEL_OUTPUT_COLUMN_NAME = "model_output"
-    MODEL_LOG_PROBABILITY_COLUMN_NAME = "model_log_probability"
-    TARGET_OUTPUT_COLUMN_NAME = "target_output"
-    CATEGORY_COLUMN_NAME = "category"
-    SENT_MORE_INPUT_COLUMN_NAME = "sent_more_input"
-    SENT_LESS_INPUT_COLUMN_NAME = "sent_less_input"
-    SENT_MORE_PROMPT_COLUMN_NAME = "sent_more_prompt"
-    SENT_LESS_PROMPT_COLUMN_NAME = "sent_less_prompt"
-    SENT_MORE_LOG_PROB_COLUMN_NAME = "sent_more_log_prob"
-    SENT_LESS_LOG_PROB_COLUMN_NAME = "sent_less_log_prob"
+    name: str
+    should_cast: Optional[bool] = None
 
 
-COLUMN_NAMES = [e.value for e in ColumnNames]
+class DatasetColumns(Enum):
+    """
+    This Enum represents the columns that appear in the finalized
+    Ray Dataset produced during the course of executing an eval algorithm's
+    `evaluate` method.
+
+    These are the only columns (aside from score columns) whose
+    data gets written to output records by `util.save_dataset`.
+    Other algorithm-specific columns that get produced as intermediate
+    results (for example, CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME in
+    ClassificationAccuracy) are not included here, and thus won't
+    get saved by `util.save_dataset`.
+    """
+
+    MODEL_INPUT = Column(name="model_input", should_cast=True)
+    PROMPT = Column(name="prompt")
+    MODEL_OUTPUT = Column(name="model_output", should_cast=True)
+    MODEL_LOG_PROBABILITY = Column(name="model_log_probability")
+    TARGET_OUTPUT = Column(name="target_output", should_cast=True)
+    CATEGORY = Column(name="category", should_cast=True)
+    SENT_MORE_INPUT = Column(name="sent_more_input", should_cast=True)
+    SENT_LESS_INPUT = Column(name="sent_less_input", should_cast=True)
+    SENT_MORE_PROMPT = Column(name="sent_more_prompt")
+    SENT_LESS_PROMPT = Column(name="sent_less_prompt")
+    SENT_MORE_LOG_PROB = Column(name="sent_more_log_prob", should_cast=False)
+    SENT_LESS_LOG_PROB = Column(name="sent_less_log_prob", should_cast=False)
+
+
+DATASET_COLUMNS = OrderedDict((col.value.name, col) for col in DatasetColumns)
 
 # This suffix must be included at the end of all
 # DataConfig attribute names where the attribute

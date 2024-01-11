@@ -15,7 +15,7 @@ from fmeval.data_loaders.json_data_loader import (
 from fmeval.data_loaders.util import DataConfig
 from typing import Any, Dict, List, NamedTuple, Optional
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
     MIME_TYPE_JSONLINES,
 )
@@ -61,9 +61,9 @@ class TestJsonDataLoader:
             TestCaseReadDataset(
                 input_dataset={"model_input_col": ["a", "b", "c"]},
                 expected_dataset=[
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a"},
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b"},
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "a"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "b"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "c"},
                 ],
                 dataset_mime_type=MIME_TYPE_JSON,
                 model_input_jmespath="model_input_col",
@@ -73,46 +73,46 @@ class TestJsonDataLoader:
             # containing heterogeneous lists.
             TestCaseReadDataset(
                 input_dataset={
-                    "row_1": ["a", "positive", "positive", 0],
-                    "row_2": ["b", "negative", "negative", 1],
-                    "row_3": ["c", "negative", "positive", 2],
+                    "row_1": ["a", True, False, 0],
+                    "row_2": ["b", False, False, 1],
+                    "row_3": ["c", False, True, 2],
                 },
                 expected_dataset=[
                     {
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "positive",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "positive",
-                        ColumnNames.CATEGORY_COLUMN_NAME.value: 0,
+                        DatasetColumns.MODEL_INPUT.value.name: "a",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "True",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "False",
+                        DatasetColumns.CATEGORY.value.name: "0",
                     },
                     {
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "negative",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "negative",
-                        ColumnNames.CATEGORY_COLUMN_NAME.value: 1,
+                        DatasetColumns.MODEL_INPUT.value.name: "b",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "False",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "False",
+                        DatasetColumns.CATEGORY.value.name: "1",
                     },
                     {
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "positive",
-                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "negative",
-                        ColumnNames.CATEGORY_COLUMN_NAME.value: 2,
+                        DatasetColumns.MODEL_INPUT.value.name: "c",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "False",
+                        DatasetColumns.TARGET_OUTPUT.value.name: "True",
+                        DatasetColumns.CATEGORY.value.name: "2",
                     },
                 ],
                 dataset_mime_type=MIME_TYPE_JSON,
                 model_input_jmespath="[row_1[0], row_2[0], row_3[0]]",
-                model_output_jmespath="[row_1[2], row_2[2], row_3[2]]",
-                target_output_jmespath="[row_1[1], row_2[1], row_3[1]]",
+                model_output_jmespath="[row_1[1], row_2[1], row_3[1]]",
+                target_output_jmespath="[row_1[2], row_2[2], row_3[2]]",
                 category_jmespath="[row_1[3], row_2[3], row_3[3]]",
             ),
             TestCaseReadDataset(
                 input_dataset=[
-                    {"input": "a", "output": "b"},
-                    {"input": "c", "output": "d"},
-                    {"input": "e", "output": "f"},
+                    {"input": "a", "output": 3.14},
+                    {"input": "c", "output": 2.718},
+                    {"input": "e", "output": 1.00},
                 ],
                 expected_dataset=[
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "b"},
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "d"},
-                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "e", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "f"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "a", DatasetColumns.MODEL_OUTPUT.value.name: "3.14"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "c", DatasetColumns.MODEL_OUTPUT.value.name: "2.718"},
+                    {DatasetColumns.MODEL_INPUT.value.name: "e", DatasetColumns.MODEL_OUTPUT.value.name: "1.0"},
                 ],
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 model_input_jmespath="input",
@@ -120,7 +120,7 @@ class TestJsonDataLoader:
             ),
         ],
     )
-    def test_read_dataset(self, tmp_path, test_case):
+    def test_load_dataset(self, tmp_path, test_case):
         """
         GIVEN a JsonDataLoaderConfig with a valid JsonParser and data_file
         WHEN load_dataset is called
@@ -153,7 +153,7 @@ class TestJsonDataLoader:
         num_rows = 3
         assert dataset.count() == num_rows
         assert (
-            sorted(dataset.take(num_rows), key=lambda x: x[ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+            sorted(dataset.take(num_rows), key=lambda x: x[DatasetColumns.MODEL_INPUT.value.name])
             == test_case.expected_dataset
         )
 

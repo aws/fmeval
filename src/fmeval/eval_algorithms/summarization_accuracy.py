@@ -12,7 +12,7 @@ from nltk.translate import meteor_score
 
 import fmeval.util as util
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
@@ -189,11 +189,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(
-                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
-            )
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = None
-            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
+            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -201,12 +199,12 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     dataset_prompt_template,
                     dataset,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                    ColumnNames.PROMPT_COLUMN_NAME.value,
+                    DatasetColumns.MODEL_INPUT.value.name,
+                    DatasetColumns.PROMPT.value.name,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
-                    model, dataset, ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
+                    model, dataset, DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = add_score_to_dataset(
@@ -335,8 +333,8 @@ def add_score_to_dataset(
         for score_name in score_name_to_func:
             eval_func = score_name_to_func[score_name]
             row[score_name] = eval_func(
-                row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
-                row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                row[DatasetColumns.TARGET_OUTPUT.value.name],
+                row[DatasetColumns.MODEL_OUTPUT.value.name],
                 config,
                 helper_model=helper_model,
             )

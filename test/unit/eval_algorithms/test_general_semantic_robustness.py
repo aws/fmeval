@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -27,25 +27,23 @@ from fmeval.model_runners.model_runner import ModelRunner
 DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_1",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_2",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
         },
     ]
 )
 
-DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value)
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.MODEL_OUTPUT.value.name)
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value)
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
 
-DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(
-    cols=ColumnNames.CATEGORY_COLUMN_NAME.value
-)
+DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
 
 
 class ConstantModel(ModelRunner):
@@ -534,7 +532,7 @@ class TestGeneralSemanticRobustness:
                 "evaluate method",
             ),
             TestCaseSemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

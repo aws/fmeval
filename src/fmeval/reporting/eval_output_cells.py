@@ -6,7 +6,7 @@ from fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, T
 from fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
 from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
-from fmeval.constants import ColumnNames, COLUMN_NAMES
+from fmeval.constants import DatasetColumns, DATASET_COLUMNS
 from fmeval.reporting.cells import MarkdownCell, BarPlotCell, TableCell, BoldCell, HeadingCell
 from fmeval.reporting.constants import (
     LEFT,
@@ -39,7 +39,7 @@ from fmeval.reporting.constants import (
 from fmeval.reporting.util import format_dataset_name, format_string, add_hyperlink
 from html import escape
 
-TABLE_COLUMNS = list(set(COLUMN_NAMES)) + list(set(SCORE_DESCRIPTIONS.keys())) + [PROBABILITY_RATIO, IS_BIASED]
+TABLE_COLUMNS = list(set(DATASET_COLUMNS)) + list(set(SCORE_DESCRIPTIONS.keys())) + [PROBABILITY_RATIO, IS_BIASED]
 
 
 class CategoryBarPlotCell(BarPlotCell):
@@ -139,8 +139,8 @@ class RayDatasetTableCell(TableCell):
         samples = dataset.take(k) if k else dataset.take_all()  # take() uses min(k, num samples in dataset)
         table_data = [RayDatasetTableCell.truncate_samples(list(sample.values())) for sample in samples]
         headers = dataset.columns()
-        if ColumnNames.CATEGORY_COLUMN_NAME.value in headers:  # pragma: no branch
-            category_idx = headers.index(ColumnNames.CATEGORY_COLUMN_NAME.value)
+        if DatasetColumns.CATEGORY.value.name in headers:  # pragma: no branch
+            category_idx = headers.index(DatasetColumns.CATEGORY.value.name)
             table_data = [[row[category_idx]] + row[:category_idx] + row[category_idx + 1 :] for row in table_data]
             headers = [headers[category_idx]] + headers[:category_idx] + headers[category_idx + 1 :]
         headers = [format_string(header, as_column_name=True, as_title=True) for header in headers]

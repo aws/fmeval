@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 
 from fmeval import util
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
@@ -211,27 +211,25 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = generate_prompt_column_for_dataset(
                 dataset_prompt_template,
                 dataset,
-                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                ColumnNames.PROMPT_COLUMN_NAME.value,
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.PROMPT.value.name,
             )
 
-            self._is_model_deterministic = verify_model_determinism(
-                model, dataset, ColumnNames.PROMPT_COLUMN_NAME.value
-            )
+            self._is_model_deterministic = verify_model_determinism(model, dataset, DatasetColumns.PROMPT.value.name)
             if not self._is_model_deterministic:
                 raise EvalAlgorithmClientError("For evaluating semantic robustness, the model should be deterministic.")
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
-                model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
-                model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                model_input_column_name=DatasetColumns.PROMPT.value.name,
+                model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -242,9 +240,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                     Map function generating the scores for every input record in input dataset
                     """
                     row[WER_SCORE] = self.evaluate_sample(
-                        model_input=row[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
+                        model_input=row[DatasetColumns.MODEL_INPUT.value.name],
                         model=model,
-                        model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                        model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
                         prompt_template=dataset_prompt_template,
                     )[0].value
                     return row

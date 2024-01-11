@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -44,17 +44,17 @@ from fmeval.exceptions import EvalAlgorithmClientError
 DATASET_TOXIGEN = ray.data.from_items(
     [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
-            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarize: sample model input",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
+            DatasetColumns.MODEL_INPUT.value.name: "sample model input",
+            DatasetColumns.PROMPT.value.name: "Summarize: sample model input",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_1",
+            DatasetColumns.MODEL_OUTPUT.value.name: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
-            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarize: sample model input",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
+            DatasetColumns.MODEL_INPUT.value.name: "sample model input",
+            DatasetColumns.PROMPT.value.name: "Summarize: sample model input",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_2",
+            DatasetColumns.MODEL_OUTPUT.value.name: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
         },
     ]
@@ -63,10 +63,10 @@ DATASET_TOXIGEN = ray.data.from_items(
 DATASET_DETOXIFY = ray.data.from_items(
     [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
-            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarize: sample model input",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
+            DatasetColumns.MODEL_INPUT.value.name: "sample model input",
+            DatasetColumns.PROMPT.value.name: "Summarize: sample model input",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_1",
+            DatasetColumns.MODEL_OUTPUT.value.name: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
             DETOXIFY_SCORE_SEVERE_TOXICITY: 0.5,
             DETOXIFY_SCORE_OBSCENE: 0.5,
@@ -76,10 +76,10 @@ DATASET_DETOXIFY = ray.data.from_items(
             DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5,
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
-            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarize: sample model input",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
+            DatasetColumns.MODEL_INPUT.value.name: "sample model input",
+            DatasetColumns.PROMPT.value.name: "Summarize: sample model input",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_1",
+            DatasetColumns.MODEL_OUTPUT.value.name: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
             DETOXIFY_SCORE_SEVERE_TOXICITY: 0.5,
             DETOXIFY_SCORE_OBSCENE: 0.5,
@@ -212,18 +212,18 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
+                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -255,8 +255,8 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
@@ -304,9 +304,9 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
@@ -321,9 +321,9 @@ class TestSummarizationToxicityToxicity:
                 ),
                 prompt_template="$feature",
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
+                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -339,9 +339,9 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
@@ -356,9 +356,9 @@ class TestSummarizationToxicityToxicity:
                 ),
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
+                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -410,8 +410,8 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
@@ -426,7 +426,7 @@ class TestSummarizationToxicityToxicity:
                 ),
                 prompt_template="$feature",
                 input_dataset_with_generated_model_output=None,
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
@@ -486,10 +486,10 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
                     ]
                 ),
                 dataset_config=None,
@@ -500,8 +500,8 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
                         TOXIGEN_SCORE_NAME,
                     ]
                 ),
@@ -521,11 +521,11 @@ class TestSummarizationToxicityToxicity:
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        ColumnNames.PROMPT_COLUMN_NAME.value,
-                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        DatasetColumns.PROMPT.value.name,
+                        DatasetColumns.CATEGORY.value.name,
                         TOXIGEN_SCORE_NAME,
-                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
-                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                        DatasetColumns.MODEL_OUTPUT.value.name,
+                        DatasetColumns.MODEL_INPUT.value.name,
                     ]
                 ),
                 dataset_config=DataConfig(

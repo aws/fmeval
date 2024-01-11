@@ -28,9 +28,8 @@ def search_jmespath(
 
     :param jmespath_parser: The JMESPath parser, used for parsing model inputs, model outputs,
         target outputs, or categories.
-    :param jmespath_query_type: Used for error logging. One of the following:
-            constants.MODEL_INPUT_COLUMN_NAME, constants.MODEL_OUTPUT_COLUMN_NAME
-            constants.TARGET_OUTPUT_COLUMN_NAME, constants.CATEGORY_COLUMN_NAME
+    :param jmespath_query_type: Used for error logging. Will always be the `name` attribute
+        of a fmeval.constants.DatasetColumns enumeration.
     :param dataset: The data to be searched, already deserialized into a dict/list.
     :param dataset_name: A name associated with the dataset being parsed for logging purposes.
     :returns: The result of executing the JMESPath query on the dataset.

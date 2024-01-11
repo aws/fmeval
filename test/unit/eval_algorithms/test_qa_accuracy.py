@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
     DEFAULT_EVAL_RESULTS_PATH,
 )
@@ -42,59 +42,59 @@ QA_DATASET = ray.data.from_items(
     [
         # Exact match so all scores should have perfect values.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "London",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "London",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "London",
+            DatasetColumns.MODEL_OUTPUT.value.name: "London",
+            DatasetColumns.CATEGORY.value.name: "capitals",
         },
         # Partial match.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Who directed Pulp Fiction?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "tarantino!",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "movies",
+            DatasetColumns.MODEL_INPUT.value.name: "Who directed Pulp Fiction?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "Quentin Tarantino",
+            DatasetColumns.MODEL_OUTPUT.value.name: "tarantino!",
+            DatasetColumns.CATEGORY.value.name: "movies",
         },
         # Wrong answer. All scores should be zero.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of France?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Paris",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "London",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of France?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "Paris",
+            DatasetColumns.MODEL_OUTPUT.value.name: "London",
+            DatasetColumns.CATEGORY.value.name: "capitals",
         },
         # Correct answer but with punctuation added.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of Italy?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Rome",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "rome!",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of Italy?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
+            DatasetColumns.MODEL_OUTPUT.value.name: "rome!",
+            DatasetColumns.CATEGORY.value.name: "capitals",
         },
         # Many correct answers.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "When did Argentina win the FIFA World Cup?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "2022",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "sports",
+            DatasetColumns.MODEL_INPUT.value.name: "When did Argentina win the FIFA World Cup?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022",
+            DatasetColumns.MODEL_OUTPUT.value.name: "2022",
+            DatasetColumns.CATEGORY.value.name: "sports",
         },
         # Answer is longer than the model output.
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Did RMS Titanic sink in 1912?",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "yes",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Yes. That is true.",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "history",
+            DatasetColumns.MODEL_INPUT.value.name: "Did RMS Titanic sink in 1912?",
+            DatasetColumns.TARGET_OUTPUT.value.name: "yes",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Yes. That is true.",
+            DatasetColumns.CATEGORY.value.name: "history",
         },
     ]
 )
 
-QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value)
+QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(DatasetColumns.MODEL_OUTPUT.value.name)
 
-QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(ColumnNames.MODEL_INPUT_COLUMN_NAME.value)
+QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(DatasetColumns.MODEL_INPUT.value.name)
 
-QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value)
+QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(DatasetColumns.TARGET_OUTPUT.value.name)
 
-QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(ColumnNames.CATEGORY_COLUMN_NAME.value)
+QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(DatasetColumns.CATEGORY.value.name)
 
 QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns(
-    ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
+    DatasetColumns.MODEL_OUTPUT.value.name
 )
 
 CATEGORY_SCORES = [
