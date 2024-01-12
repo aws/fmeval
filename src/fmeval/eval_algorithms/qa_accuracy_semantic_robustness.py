@@ -58,6 +58,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
     EXACT_MATCH_SCORE,
     QUASI_EXACT_MATCH_SCORE,
+    PRECISION,
+    RECALL,
     QAAccuracy,
     QAAccuracyConfig,
 )
@@ -72,6 +74,8 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
 DELTA_F1_SCORE = PREFIX_FOR_DELTA_SCORES + F1_SCORE
 DELTA_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + EXACT_MATCH_SCORE
 DELTA_QUASI_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + QUASI_EXACT_MATCH_SCORE
+DELTA_PRECISION = PREFIX_FOR_DELTA_SCORES + PRECISION
+DELTA_RECALL = PREFIX_FOR_DELTA_SCORES + RECALL
 
 PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
@@ -231,9 +235,13 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                         F1_SCORE,
                         EXACT_MATCH_SCORE,
                         QUASI_EXACT_MATCH_SCORE,
+                        PRECISION,
+                        RECALL,
                         DELTA_F1_SCORE,
                         DELTA_EXACT_MATCH_SCORE,
                         DELTA_QUASI_EXACT_MATCH_SCORE,
+                        DELTA_PRECISION,
+                        DELTA_RECALL,
                     ],
                     agg_method=MEAN,
                 )
@@ -259,9 +267,13 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                         F1_SCORE,
                         EXACT_MATCH_SCORE,
                         QUASI_EXACT_MATCH_SCORE,
+                        PRECISION,
+                        RECALL,
                         DELTA_F1_SCORE,
                         DELTA_EXACT_MATCH_SCORE,
                         DELTA_QUASI_EXACT_MATCH_SCORE,
+                        DELTA_PRECISION,
+                        DELTA_RECALL,
                     ],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
