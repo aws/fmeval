@@ -16,6 +16,7 @@ from fmeval.constants import (
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
     MODEL_OUTPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
@@ -69,7 +70,6 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
 PREFIX_FOR_DELTA_SCORES = "delta_"
 DELTA_CLASSIFICATION_ACCURACY_SCORE = PREFIX_FOR_DELTA_SCORES + CLASSIFICATION_ACCURACY_SCORE
 
-PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 

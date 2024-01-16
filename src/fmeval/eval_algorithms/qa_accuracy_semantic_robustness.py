@@ -17,6 +17,7 @@ from fmeval.constants import (
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
     MODEL_OUTPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
@@ -77,7 +78,6 @@ DELTA_QUASI_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + QUASI_EXACT_MATCH_SCOR
 DELTA_PRECISION = PREFIX_FOR_DELTA_SCORES + PRECISION
 DELTA_RECALL = PREFIX_FOR_DELTA_SCORES + RECALL
 
-PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 

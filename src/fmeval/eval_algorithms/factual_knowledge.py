@@ -7,6 +7,7 @@ from fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
     MEAN,
 )
 import fmeval.util as util
@@ -35,7 +36,6 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 
-PROMPT_COLUMN_NAME = "prompt"
 
 logger = logging.getLogger(__name__)
 

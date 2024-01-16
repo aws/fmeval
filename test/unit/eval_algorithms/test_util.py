@@ -239,41 +239,68 @@ def test_category_wise_aggregate():
         assert row[f"mean(a)"] == pandas_df.loc[pandas_df.category == row[CATEGORY_COLUMN_NAME]]["a"].mean()
 
 
+def test_eval_output_record_post_init():
+    """
+    GIVEN a `non_score_column` argument containing column names that don't belong to constants.COLUMN_NAMES
+    WHEN an EvalOutputRecord is created
+    THEN the EvalOutputRecord's __post_init__ method will raise an exception
+    """
+    invalid_col = "invalid_col"
+    with pytest.raises(
+        EvalAlgorithmInternalError,
+        match=f"Attempting to initialize an EvalOutputRecord with invalid non-score column {invalid_col}.",
+    ):
+        EvalOutputRecord(
+            scores=[EvalScore(name="score1", value=0.162)],
+            non_score_columns={
+                MODEL_INPUT_COLUMN_NAME: "my input",
+                MODEL_OUTPUT_COLUMN_NAME: "my output",
+                invalid_col: "blah",
+            },
+        )
+
+
 def test_eval_output_record_str():
     """
     GIVEN an EvalOutputRecord
     WHEN its __str__ method is called
-    THEN the correct string representation of EvalOutputRecord,
-        where attributes are sorted according to their order
-        in the class definition (but with "scores" coming last)
-        is returned
+    THEN the correct string representation of EvalOutputRecord is returned,
+        where the order of the non-score columns matches their relative ordering
+        in constants.COLUMN_NAMES, rather than their order in the `non_score_columns`
+        list, and "scores" comes at the end.
     """
     record = EvalOutputRecord(
-        model_output="output",
         scores=[EvalScore(name="rouge", value=0.5), EvalScore(name="bert", value=0.4)],
-        model_input="input",
+        non_score_columns={MODEL_OUTPUT_COLUMN_NAME: "output", MODEL_INPUT_COLUMN_NAME: "input"},
     )
     expected_record = OrderedDict(
         [
-            ("model_input", "input"),
-            ("model_output", "output"),
+            (MODEL_INPUT_COLUMN_NAME, "input"),
+            (MODEL_OUTPUT_COLUMN_NAME, "output"),
             ("scores", [{"name": "rouge", "value": 0.5}, {"name": "bert", "value": 0.4}]),
         ]
     )
     assert json.loads(str(record), object_pairs_hook=OrderedDict) == expected_record
 
 
-def test_eval_output_record_from_row_success():
+def test_eval_output_record_from_row():
     """
-    GIVEN a row with valid keys (i.e. column names)
+    GIVEN a row with both valid and invalid column names
+        (a column name is valid if it is a member of the set constants.COLUMN_NAMES)
     WHEN EvalOutputRecord.from_row is called
-    THEN the correct EvalOutputRecord is returned
+    THEN an EvalOutputRecord with only the valid column names is returned
     """
-    row = {MODEL_INPUT_COLUMN_NAME: "input", MODEL_OUTPUT_COLUMN_NAME: "output", "rouge": 0.42, "bert": 0.162}
+    row = {
+        "rouge": 0.42,
+        MODEL_OUTPUT_COLUMN_NAME: "output",
+        "bert": 0.162,
+        "invalid_col_1": "hello",
+        MODEL_INPUT_COLUMN_NAME: "input",
+        "invalid_col_2": "world",
+    }
     expected_record = EvalOutputRecord(
-        model_input="input",
-        model_output="output",
         scores=[EvalScore(name="rouge", value=0.42), EvalScore(name="bert", value=0.162)],
+        non_score_columns={MODEL_INPUT_COLUMN_NAME: "input", MODEL_OUTPUT_COLUMN_NAME: "output"},
     )
 
     assert EvalOutputRecord.from_row(row, score_names=["rouge", "bert"]) == expected_record
@@ -295,10 +322,23 @@ def test_save_dataset(tmp_path, file_name):
     THEN a JSON Lines file that adheres to the correct schema gets
         written to the local path
     """
+    unused_column_name = "unused"
     # GIVEN
     ds_items = [
-        {MODEL_INPUT_COLUMN_NAME: "hello", CATEGORY_COLUMN_NAME: "Age", "rouge": 0.5, "bert_score": 0.42},
-        {MODEL_INPUT_COLUMN_NAME: "world", CATEGORY_COLUMN_NAME: "Gender", "rouge": 0.314, "bert_score": 0.271},
+        {
+            MODEL_INPUT_COLUMN_NAME: "hello",
+            CATEGORY_COLUMN_NAME: "Age",
+            unused_column_name: "Arch",
+            "rouge": 0.5,
+            "bert_score": 0.42,
+        },
+        {
+            MODEL_INPUT_COLUMN_NAME: "world",
+            CATEGORY_COLUMN_NAME: "Gender",
+            unused_column_name: "btw",
+            "rouge": 0.314,
+            "bert_score": 0.271,
+        },
     ]
     dataset = ray.data.from_items(ds_items)
     score_names = ["rouge", "bert_score"]

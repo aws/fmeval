@@ -6,7 +6,7 @@ import ray
 from ray.data import Dataset
 
 from fmeval import util
-from fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MEAN
+from fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, PROMPT_COLUMN_NAME, MEAN
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
@@ -38,8 +38,6 @@ DEFAULT_MODEL_TYPE = DETOXIFY_MODEL
 MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
 
 TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
-
-PROMPT_COLUMN_NAME = "prompt"
 
 logger = logging.getLogger(__name__)
 

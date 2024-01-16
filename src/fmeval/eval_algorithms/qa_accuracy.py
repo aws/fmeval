@@ -15,6 +15,7 @@ from fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
     MODEL_LOG_PROBABILITY_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
     MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
@@ -52,7 +53,6 @@ QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
 PRECISION = "precision"
 RECALL = "recall"
 
-PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 

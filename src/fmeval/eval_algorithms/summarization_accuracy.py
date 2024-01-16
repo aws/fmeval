@@ -15,6 +15,7 @@ from fmeval.constants import (
     TARGET_OUTPUT_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
     MODEL_OUTPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
@@ -43,7 +44,6 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 
-PROMPT_COLUMN_NAME = "prompt"
 METEOR_SCORE = "meteor"
 ROUGE_SCORE = "rouge"
 BERT_SCORE = "bertscore"

@@ -14,6 +14,7 @@ from fmeval.constants import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     MODEL_OUTPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -59,8 +60,6 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
 }
 
 WER_SCORE = "word_error_rate"
-
-PROMPT_COLUMN_NAME = "prompt"
 
 
 @dataclass(frozen=True)

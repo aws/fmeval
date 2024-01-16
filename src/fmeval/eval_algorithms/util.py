@@ -14,6 +14,7 @@ from fmeval.constants import (
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     MEAN,
     NUM_ROWS_DETERMINISTIC,
+    COLUMN_NAMES,
 )
 from fmeval.eval_algorithms import EvalScore, CategoryScore
 from fmeval.exceptions import EvalAlgorithmInternalError
@@ -169,80 +170,52 @@ def category_wise_aggregation(dataset: Dataset, score_column_name: str, agg_meth
 @dataclass
 class EvalOutputRecord:
     """
-    The schema used to define the records that get written
-    to a JSON Lines file when `save_dataset` is called.
+    This class represents a single record that gets written by the `save_dataset` method.
+    In other words, it represents a single row from the Ray Dataset that is being saved.
 
-    :param model_input: the model input
-    :param model_output: the model output
-    :param model_log_probability: the model log probability
-    :param target_output: the target output
-    :param category: the category
-    :param sent_more_input: the "sent more" input (used by Prompt stereotyping)
-    :param sent_less_input: the "sent less" input (used by Prompt stereotyping)
-    :param sent_more_input_prob: the "sent more" input probability (used by Prompt stereotyping)
-    :param sent_less_input_prob: the "sent less" input probability (used by Prompt stereotyping)
-    :param sent_more_output: the "sent more" output (used by Prompt stereotyping)
-    :param sent_less_output: the "sent less" output (used by Prompt stereotyping)
+    :param scores: A list of EvalScores, where each EvalScore corresponds
+        to one of the score columns in the Ray Dataset being saved.
+    :param non_score_columns: Maps a column name to its contents in the current row
+        (recall that an EvalOutputRecord corresponds to a single Ray Dataset row).
 
-    IMPORTANT:
-        The attributes of this class MUST match the values of the
-        column name constants in COLUMN_NAMES in src/constants.py.
-
-        Reason:
-        The `from_row` method validates the column names included
-        in its `row` input, making sure that these column names
-        match the attribute names of this class (this validation
-        only occurs for column names that don't correspond to score
-        names).
-
-        Since the `row` input comes from a Ray Dataset produced by
-        the `evaluate` method of an `EvalAlgorithmInterface`, the column
-        names in the row must come from COLUMN_NAMES in src/constants.py.
-
-        Thus, the attribute names of this class must match the constants
-        in COLUMN_NAMES in order for the validation to make sense.
+        Note: the keys in `non_score_columns` must belong to constants.COLUMN_NAMES,
+        because constants.COLUMN_NAMES defines which columns are allowed to appear in
+        the saved output, i.e. the schema for an output record.
     """
 
     scores: List[EvalScore]
-    model_input: Optional[str] = None
-    model_output: Optional[str] = None
-    model_log_probability: Optional[float] = None
-    target_output: Optional[str] = None
-    category: Optional[str] = None
-    sent_more_input: Optional[str] = None
-    sent_less_input: Optional[str] = None
-    sent_more_input_prob: Optional[str] = None
-    sent_less_input_prob: Optional[str] = None
-    sent_more_output: Optional[str] = None
-    sent_less_output: Optional[str] = None
-    prompt: Optional[str] = None
-    sent_more_prompt: Optional[str] = None
-    sent_less_prompt: Optional[str] = None
+    non_score_columns: Dict[str, Union[str, float, int]]
+
+    def __post_init__(self):
+        for col in self.non_score_columns:
+            util.assert_condition(
+                col in COLUMN_NAMES,
+                f"Attempting to initialize an EvalOutputRecord with invalid non-score column {col}.",
+            )
 
     def __str__(self):
         return json.dumps(self._to_dict())
 
-    def _to_dict(self):
+    def _to_dict(self) -> OrderedDict[str, Union[str, float, int]]:
         """
         Returns a dictionary representation of this instance,
         to be used when writing this object to JSON Lines.
 
-        Note that attributes with value None are not included
-        in the JSON representation. Additionally, we want the
-        key "scores" to appear last in the JSON representation,
-        but this attribute appears first in EvalOutputRecord's
-        class definition, hence the sorting code below.
+        Note that we use an OrderedDict to maintain consistency
+        in the ordering of columns. The score columns always come
+        at the end, and the non-score columns are ordered according
+        to constants.COLUMN_NAMES.
         """
-        attributes = list(self.__dict__.keys())
-        attributes.sort(key=lambda x: x == "scores")
-        json_obj = OrderedDict(  # regular Dicts don't guarantee key order
-            (attr, self.__dict__[attr]) for attr in attributes if self.__dict__[attr] is not None
+        json_obj = OrderedDict(
+            (col_name, self.non_score_columns[col_name])
+            for col_name in COLUMN_NAMES
+            if col_name in self.non_score_columns
         )
-        json_obj["scores"] = [eval_score.__dict__ for eval_score in json_obj["scores"]]
+        json_obj["scores"] = [eval_score.__dict__ for eval_score in self.scores]
         return json_obj
 
     @staticmethod
-    def from_row(row: Dict[str, Union[str, float]], score_names: List[str]) -> "EvalOutputRecord":
+    def from_row(row: Dict[str, Union[str, float, int]], score_names: List[str]) -> "EvalOutputRecord":
         """
         Returns an instance of EvalOutputRecord, created from a Ray Dataset row (represented as a dict).
 
@@ -250,31 +223,41 @@ class EvalOutputRecord:
             row = {
                 "model_input": "input",
                 "model_output": "output",
+                "column_that_wont_be_included": "hello",
                 "rouge": 0.42,
                 "bert": 0.162
             }
 
         Corresponding output:
             EvalOutputRecord(
-                model_input="input",
-                model_output="output",
                 scores=[
                     EvalScore(name="rouge", value=0.42),
                     EvalScore(name="bert", value=0.162)
-                ]
+                ],
+                non_score_columns={
+                    "model_input": "input",
+                    "model_output": "output"
+                }
             )
+
+        Note how "column_that_wont_be_included" is not included in the produced EvalOutputRecord.
+        This is because only columns in constants.COLUMN_NAMES are considered to be valid columns
+        in the saved output file generated by `save_dataset`. The reason why it's even possible
+        for a column name that doesn't belong to constants.COLUMN_NAMES to appear in `row` is that
+        the Ray Dataset that `row` belongs to can contain columns used to store intermediate computations.
+        For example, ClassificationAccuracy generates a column named CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME
+        that is used to compute CLASSIFICATION_ACCURACY_SCORE, which is one of the score columns.
 
         :param row: a Ray Dataset row represented as a dict
         :param score_names: column names included in the Ray Dataset that `row`
             is a sample of that correspond to evaluation algorithm scores
         :returns: an instance of EvalOutputRecord corresponding to `row`
         """
-        eval_output_record_attribute_names = set(EvalOutputRecord.__annotations__.keys())
         non_score_columns = {}
         scores = []
         for column_name, value in row.items():
             if column_name not in score_names:  # pragma: no branch
-                if column_name in eval_output_record_attribute_names:  # pragma: no branch
+                if column_name in COLUMN_NAMES:  # pragma: no branch
                     non_score_columns[column_name] = value
             else:
                 assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy
@@ -282,36 +265,41 @@ class EvalOutputRecord:
 
         return EvalOutputRecord(
             scores=scores,
-            **non_score_columns,  # type: ignore
+            non_score_columns=non_score_columns,
         )
 
 
 def save_dataset(dataset: Dataset, score_names: List[str], path: str) -> None:  # pragma: no cover
     """
     Writes the dataset to a JSON Lines file, where each JSON Lines object
-    follows the schema defined by `EvalOutputRecord`.
+    is the JSON representation of an `EvalOutputRecord`.
 
     :param dataset: a Ray Dataset that is produced during the execution of
         an EvalAlgorithmInterface's `evaluate` method. This dataset is expected
         to include columns for every score computed by the evaluation algorithm.
-    :param score_names: the names of the score columns in `dataset`
+    :param score_names: the names of the score columns in `dataset`.
     :param path: a local file path to write the dataset to. The file name specified
         by this argument may not end in the extension `.jsonl`. In this case,
         we append the extension ourselves.
 
 
         Example Dataset:
-         ________________________________________
-        | "model_input" | "rouge" | "bert_score"|
-        ----------------------------------------
-        |   "hello"    |   0.5   |     0.42    |
-        ---------------------------------------
-        |   "world"   |  0.314  |    0.271    |
-        ---------------------------------------
+         ________________________________________________
+        | "model_input" | "aux" | "rouge" | "bert_score"|
+        -------------------------------------------------
+        |    "hello"    | 0.189 |   0.5   |     0.42    |
+        -------------------------------------------------
+        |    "world"    | 0.162 |  0.314  |    0.271    |
+        -------------------------------------------------
+
+        Note that the "aux" column name does not belong to constants.COLUMN_NAMES, meaning that this column
+        won't get included in the saved outputs. See the docstring for EvalOutputRecord.from_row for more details.
 
         Corresponding Json Lines file contents:
         {"model_input" : "hello", "scores" : [{"name": "rouge", "value": 0.5}, {"name": "bert_score", "value": 0.42}]}
         {"model_input" : "world", "scores" : [{"name": "rouge", "value": 0.314}, {"name": "bert_score", "value": 0.271}]}
+
+
     """
     with timed_block(f"Saving dataset to file", logger):
         # We need the outer dict that wraps the EvalOutputRecord because map() requires

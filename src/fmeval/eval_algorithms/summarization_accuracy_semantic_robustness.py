@@ -17,6 +17,7 @@ from fmeval.constants import (
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
     MODEL_OUTPUT_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -72,8 +73,6 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
     RANDOM_UPPER_CASE: RandomUpperCase,
     WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
 }
-
-PROMPT_COLUMN_NAME = "prompt"
 
 DELTA_ROUGE_SCORE = PREFIX_FOR_DELTA_SCORES + ROUGE_SCORE
 DELTA_METEOR_SCORE = PREFIX_FOR_DELTA_SCORES + METEOR_SCORE

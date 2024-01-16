@@ -11,8 +11,9 @@ from fmeval.constants import (
     MODEL_OUTPUT_COLUMN_NAME,
     MODEL_INPUT_COLUMN_NAME,
     TARGET_OUTPUT_COLUMN_NAME,
-    MEAN,
     CATEGORY_COLUMN_NAME,
+    PROMPT_COLUMN_NAME,
+    MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
@@ -28,7 +29,6 @@ from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     CategoryScore,
     get_default_prompt_template,
-    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
@@ -47,7 +47,6 @@ BALANCED_ACCURACY_SCORE = "balanced_accuracy_score"
 PRECISION_SCORE = "precision_score"
 RECALL_SCORE = "recall_score"
 UNKNOWN_LABEL = "unknown"
-PROMPT_COLUMN_NAME = "prompt"
 CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME = "classified_model_output"
 CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     BALANCED_ACCURACY_SCORE: balanced_accuracy_score,
