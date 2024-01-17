@@ -209,8 +209,8 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     F1_SCORE: partial(_f1_score, normalize_text=True, strip_text=True),
     EXACT_MATCH_SCORE: _exact_match_score,
     QUASI_EXACT_MATCH_SCORE: _quasi_exact_match_score,
-    PRECISION: partial(_precision, normalize_text=True),
-    RECALL: partial(_recall, normalize_text=True),
+    PRECISION: partial(_precision, normalize_text=True, strip_text=True),
+    RECALL: partial(_recall, normalize_text=True, strip_text=True),
 }
 
 
