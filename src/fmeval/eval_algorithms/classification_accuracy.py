@@ -8,11 +8,7 @@ from sklearn.metrics import balanced_accuracy_score, precision_score, recall_sco
 
 import fmeval.util as util
 from fmeval.constants import (
-    MODEL_OUTPUT_COLUMN_NAME,
-    MODEL_INPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
-    PROMPT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
@@ -147,9 +143,11 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -157,19 +155,19 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     prompt_template=dataset_prompt_template,
                     data=dataset,
-                    model_input_column_name=MODEL_INPUT_COLUMN_NAME,
-                    prompt_column_name=PROMPT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=PROMPT_COLUMN_NAME,
-                    model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
                 )
 
             if not self._valid_labels:
-                self._valid_labels = dataset.unique(column=TARGET_OUTPUT_COLUMN_NAME)
+                self._valid_labels = dataset.unique(column=ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value)
                 row_count = dataset.count()
                 assert self._valid_labels is not None  # to satisfy mypy
                 if len(self._valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR:  # pragma: no cover
@@ -185,10 +183,11 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     columns for dataset.
                     """
                     row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
-                        row[MODEL_OUTPUT_COLUMN_NAME], self._valid_labels  # type: ignore
+                        row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value], self._valid_labels  # type: ignore
                     )
                     row[CLASSIFICATION_ACCURACY_SCORE] = int(
-                        row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[TARGET_OUTPUT_COLUMN_NAME])
+                        row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME]
+                        == str(row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value])
                     )
                     return row
 
@@ -206,7 +205,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                             name=eval_score,
                             value=self._get_score(
                                 # TODO dataloader should ensure target output is string
-                                y_true=df[TARGET_OUTPUT_COLUMN_NAME],
+                                y_true=df[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
                                 y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
                                 eval_fn=eval_fn,
                             ),
@@ -214,27 +213,30 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     )
 
                 category_scores: Optional[Dict[str, CategoryScore]] = None
-                if CATEGORY_COLUMN_NAME in dataset.columns():
+                if ColumnNames.CATEGORY_COLUMN_NAME.value in dataset.columns():
                     category_scores = {
-                        name: CategoryScore(name=name, scores=[]) for name in dataset.unique(CATEGORY_COLUMN_NAME)
+                        name: CategoryScore(name=name, scores=[])
+                        for name in dataset.unique(ColumnNames.CATEGORY_COLUMN_NAME.value)
                     }
                     category_aggregate: Dataset = category_wise_aggregation(
                         dataset, CLASSIFICATION_ACCURACY_SCORE, MEAN
                     )
                     for row in category_aggregate.iter_rows():
-                        category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
+                        category_scores[row[ColumnNames.CATEGORY_COLUMN_NAME.value]].scores.append(
                             EvalScore(
                                 name=CLASSIFICATION_ACCURACY_SCORE, value=row[f"mean({CLASSIFICATION_ACCURACY_SCORE})"]
                             )
                         )
                         categorical_y_true = df.loc[
-                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], TARGET_OUTPUT_COLUMN_NAME
+                            df[ColumnNames.CATEGORY_COLUMN_NAME.value] == row[ColumnNames.CATEGORY_COLUMN_NAME.value],
+                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
                         ]
                         categorical_y_pred = df.loc[
-                            df[CATEGORY_COLUMN_NAME] == row[CATEGORY_COLUMN_NAME], CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME
+                            df[ColumnNames.CATEGORY_COLUMN_NAME.value] == row[ColumnNames.CATEGORY_COLUMN_NAME.value],
+                            CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
                         ]
                         for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
-                            category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
+                            category_scores[row[ColumnNames.CATEGORY_COLUMN_NAME.value]].scores.append(
                                 EvalScore(
                                     name=eval_score,
                                     value=self._get_score(

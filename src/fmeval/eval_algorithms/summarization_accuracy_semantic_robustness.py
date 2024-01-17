@@ -9,15 +9,12 @@ from typing import Optional, List, Dict, Any
 
 from fmeval import util
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
-    MODEL_OUTPUT_COLUMN_NAME,
-    PROMPT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -332,19 +329,24 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.MODEL_INPUT_COLUMN_NAME.value, ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = generate_prompt_column_for_dataset(
-                dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+                dataset_prompt_template,
+                dataset,
+                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                ColumnNames.PROMPT_COLUMN_NAME.value,
             )
 
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
-                model_input_column_name=PROMPT_COLUMN_NAME,
-                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+                model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
             )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = self.__add_scores(model, dataset_prompt_template, dataset)
@@ -413,10 +415,10 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
                 assert prompt_template  # to satisfy mypy
                 scores = evaluate_sample_fn(
-                    model_input=row[MODEL_INPUT_COLUMN_NAME],
-                    target_output=row[TARGET_OUTPUT_COLUMN_NAME],
+                    model_input=row[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
+                    target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
                     model=model,
-                    model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                    model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
                     prompt_template=prompt_template,
                 )
                 for score in scores:

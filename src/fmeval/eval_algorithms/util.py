@@ -10,7 +10,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 from fmeval.constants import (
-    CATEGORY_COLUMN_NAME,
+    ColumnNames,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     MEAN,
     NUM_ROWS_DETERMINISTIC,
@@ -137,12 +137,12 @@ def aggregate_evaluation_scores(
         for score_column_name in score_column_names
     ]
     category_scores: Optional[Dict[str, CategoryScore]] = None
-    if CATEGORY_COLUMN_NAME in dataset.columns():
-        category_scores = {name: CategoryScore(name=name, scores=[]) for name in dataset.unique(CATEGORY_COLUMN_NAME)}
+    if ColumnNames.CATEGORY_COLUMN_NAME.value in dataset.columns():
+        category_scores = {name: CategoryScore(name=name, scores=[]) for name in dataset.unique(ColumnNames.CATEGORY_COLUMN_NAME.value)}
         for score_column_name in score_column_names:
             category_aggregate: Dataset = category_wise_aggregation(dataset, score_column_name, agg_method)
             for row in category_aggregate.iter_rows():
-                category_scores[row[CATEGORY_COLUMN_NAME]].scores.append(
+                category_scores[row[ColumnNames.CATEGORY_COLUMN_NAME.value]].scores.append(
                     EvalScore(name=score_column_name, value=row[f"mean({score_column_name})"])
                 )
 
@@ -159,7 +159,7 @@ def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: st
 
 
 def category_wise_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> Dataset:
-    category_aggregate: Dataset = dataset.groupby(CATEGORY_COLUMN_NAME)  # type: ignore
+    category_aggregate: Dataset = dataset.groupby(ColumnNames.CATEGORY_COLUMN_NAME.value)  # type: ignore
     if agg_method == MEAN:
         category_aggregate = category_aggregate.mean(score_column_name)
     else:

@@ -11,11 +11,7 @@ from nltk.metrics.scores import f_measure, precision, recall
 
 import fmeval.util as util
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_LOG_PROBABILITY_COLUMN_NAME,
-    PROMPT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
@@ -259,9 +255,11 @@ class QAAccuracy(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -269,16 +267,16 @@ class QAAccuracy(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     prompt_template=dataset_prompt_template,
                     data=dataset,
-                    model_input_column_name=MODEL_INPUT_COLUMN_NAME,
-                    prompt_column_name=PROMPT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=PROMPT_COLUMN_NAME,
-                    model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
-                    model_log_probability_column_name=MODEL_LOG_PROBABILITY_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    model_log_probability_column_name=ColumnNames.MODEL_LOG_PROBABILITY_COLUMN_NAME.value,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -288,8 +286,8 @@ class QAAccuracy(EvalAlgorithmInterface):
                     """
                     for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
                         row[eval_score] = self._get_score(
-                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                            model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                            target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
+                            model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
                             eval_fn=eval_fn,
                         )
                     return row

@@ -41,21 +41,6 @@ class ColumnNames(Enum):
 
 COLUMN_NAMES = [e.value for e in ColumnNames]
 
-# These constants are included so that eval algorithm code doesn't need
-# to use something verbose like ColumnName.MODEL_INPUT_COLUMN_NAME.value
-MODEL_INPUT_COLUMN_NAME = ColumnNames.MODEL_INPUT_COLUMN_NAME.value
-PROMPT_COLUMN_NAME = ColumnNames.PROMPT_COLUMN_NAME.value
-MODEL_OUTPUT_COLUMN_NAME = ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
-MODEL_LOG_PROBABILITY_COLUMN_NAME = ColumnNames.MODEL_LOG_PROBABILITY_COLUMN_NAME.value
-TARGET_OUTPUT_COLUMN_NAME = ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value
-CATEGORY_COLUMN_NAME = ColumnNames.CATEGORY_COLUMN_NAME.value
-SENT_MORE_INPUT_COLUMN_NAME = ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value
-SENT_LESS_INPUT_COLUMN_NAME = ColumnNames.SENT_LESS_INPUT_COLUMN_NAME.value
-SENT_MORE_PROMPT_COLUMN_NAME = ColumnNames.SENT_MORE_PROMPT_COLUMN_NAME.value
-SENT_LESS_PROMPT_COLUMN_NAME = ColumnNames.SENT_LESS_PROMPT_COLUMN_NAME.value
-SENT_MORE_LOG_PROB_COLUMN_NAME = ColumnNames.SENT_MORE_LOG_PROB_COLUMN_NAME.value
-SENT_LESS_LOG_PROB_COLUMN_NAME = ColumnNames.SENT_LESS_LOG_PROB_COLUMN_NAME.value
-
 # This suffix must be included at the end of all
 # DataConfig attribute names where the attribute
 # represents a mechanism for locating the data for
