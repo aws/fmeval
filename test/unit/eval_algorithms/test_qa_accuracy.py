@@ -36,6 +36,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     RECALL,
     _f1_score,
     _exact_match_score,
+    _precision,
+    _recall,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -611,6 +613,98 @@ class TestQAAccuracy:
     def test_f1_score(self, test_case):
         assert (
             _f1_score(
+                model_output=test_case.model_output,
+                target_output=test_case.target_output,
+                normalize_text=True,
+                strip_text=test_case.strip_text,
+            )
+            == test_case.expected_score
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracyEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="This is a bad movie",
+                target_output="This is a bad movie",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Love this movie",
+                target_output="Hated that film",
+                strip_text=True,
+                expected_score=0.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=False,
+                expected_score=0.0,
+            ),
+        ],
+    )
+    def test_precision(self, test_case):
+        assert (
+            _precision(
+                model_output=test_case.model_output,
+                target_output=test_case.target_output,
+                normalize_text=True,
+                strip_text=test_case.strip_text,
+            )
+            == test_case.expected_score
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracyEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="This is a bad movie",
+                target_output="This is a bad movie",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Love this movie",
+                target_output="Hated that film",
+                strip_text=True,
+                expected_score=0.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=False,
+                expected_score=0.0,
+            ),
+        ],
+    )
+    def test_recall(self, test_case):
+        assert (
+            _recall(
                 model_output=test_case.model_output,
                 target_output=test_case.target_output,
                 normalize_text=True,
