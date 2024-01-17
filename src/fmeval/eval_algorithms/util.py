@@ -138,7 +138,9 @@ def aggregate_evaluation_scores(
     ]
     category_scores: Optional[Dict[str, CategoryScore]] = None
     if ColumnNames.CATEGORY_COLUMN_NAME.value in dataset.columns():
-        category_scores = {name: CategoryScore(name=name, scores=[]) for name in dataset.unique(ColumnNames.CATEGORY_COLUMN_NAME.value)}
+        category_scores = {
+            name: CategoryScore(name=name, scores=[]) for name in dataset.unique(ColumnNames.CATEGORY_COLUMN_NAME.value)
+        }
         for score_column_name in score_column_names:
             category_aggregate: Dataset = category_wise_aggregation(dataset, score_column_name, agg_method)
             for row in category_aggregate.iter_rows():
@@ -175,19 +177,19 @@ class EvalOutputRecord:
 
     :param scores: A list of EvalScores, where each EvalScore corresponds
         to one of the score columns in the Ray Dataset being saved.
-    :param non_score_columns: Maps a column name to its contents in the current row
+    :param dataset_columns: Maps a column name to its contents in the current row
         (recall that an EvalOutputRecord corresponds to a single Ray Dataset row).
 
-        Note: the keys in `non_score_columns` must belong to constants.COLUMN_NAMES,
-        because constants.COLUMN_NAMES defines which columns are allowed to appear in
-        the saved output, i.e. the schema for an output record.
+        Note: the keys in `dataset_columns` must belong to constants.COLUMN_NAMES,
+        because constants.COLUMN_NAMES defines which (non-score) columns are allowed
+        to appear in the saved output, i.e. it defines the schema for an output record.
     """
 
     scores: List[EvalScore]
-    non_score_columns: Dict[str, Union[str, float, int]]
+    dataset_columns: Dict[str, Union[str, float, int]]
 
     def __post_init__(self):
-        for col in self.non_score_columns:
+        for col in self.dataset_columns:
             util.assert_condition(
                 col in COLUMN_NAMES,
                 f"Attempting to initialize an EvalOutputRecord with invalid non-score column {col}.",
@@ -207,9 +209,7 @@ class EvalOutputRecord:
         to constants.COLUMN_NAMES.
         """
         json_obj = OrderedDict(
-            (col_name, self.non_score_columns[col_name])
-            for col_name in COLUMN_NAMES
-            if col_name in self.non_score_columns
+            (col_name, self.dataset_columns[col_name]) for col_name in COLUMN_NAMES if col_name in self.dataset_columns
         )
         json_obj["scores"] = [eval_score.__dict__ for eval_score in self.scores]
         return json_obj
@@ -234,7 +234,7 @@ class EvalOutputRecord:
                     EvalScore(name="rouge", value=0.42),
                     EvalScore(name="bert", value=0.162)
                 ],
-                non_score_columns={
+                dataset_columns={
                     "model_input": "input",
                     "model_output": "output"
                 }
@@ -253,19 +253,19 @@ class EvalOutputRecord:
             is a sample of that correspond to evaluation algorithm scores
         :returns: an instance of EvalOutputRecord corresponding to `row`
         """
-        non_score_columns = {}
+        dataset_columns = {}
         scores = []
         for column_name, value in row.items():
             if column_name not in score_names:  # pragma: no branch
                 if column_name in COLUMN_NAMES:  # pragma: no branch
-                    non_score_columns[column_name] = value
+                    dataset_columns[column_name] = value
             else:
                 assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy
                 scores.append(EvalScore(name=column_name, value=value))
 
         return EvalOutputRecord(
             scores=scores,
-            non_score_columns=non_score_columns,
+            dataset_columns=dataset_columns,
         )
 
 
