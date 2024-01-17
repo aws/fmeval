@@ -627,7 +627,9 @@ class TestQAAccuracySemanticRobustness:
                 "evaluate",
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]),
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(
+                    cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -642,7 +644,9 @@ class TestQAAccuracySemanticRobustness:
                 expected_error_message="Missing required column: model_input, for evaluate",
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(cols=[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(
+                    cols=[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

@@ -152,7 +152,10 @@ class TestJsonDataLoader:
         )
         num_rows = 3
         assert dataset.count() == num_rows
-        assert sorted(dataset.take(num_rows), key=lambda x: x[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]) == test_case.expected_dataset
+        assert (
+            sorted(dataset.take(num_rows), key=lambda x: x[ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+            == test_case.expected_dataset
+        )
 
     def test_write_block(self, tmp_path):
         """

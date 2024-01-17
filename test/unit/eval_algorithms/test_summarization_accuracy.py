@@ -295,7 +295,9 @@ class TestSummarizationAccuracy:
         [
             # Built-in datasets evaluate for dataset without category
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
@@ -340,7 +342,9 @@ class TestSummarizationAccuracy:
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET,
@@ -436,7 +440,9 @@ class TestSummarizationAccuracy:
             ),
             # Custom dataset evaluate with input prompt template
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -465,7 +471,9 @@ class TestSummarizationAccuracy:
             ),
             # Custom dataset evaluate without input prompt template
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -615,14 +623,18 @@ class TestSummarizationAccuracy:
         "test_case",
         [
             TestCaseSummarizationAccuracyEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 model_provided=False,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -638,7 +650,11 @@ class TestSummarizationAccuracy:
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value, ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -655,7 +671,11 @@ class TestSummarizationAccuracy:
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",

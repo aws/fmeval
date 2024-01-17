@@ -83,9 +83,24 @@ def model_runner_return_value():
             ],
             num_rows=3,
             expected_dataset=[
-                {"id": 1, ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a", "model_output": "output", "model_log_probability": 1.0},
-                {"id": 2, ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b", "model_output": "output", "model_log_probability": 1.0},
-                {"id": 3, ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c", "model_output": "output", "model_log_probability": 1.0},
+                {
+                    "id": 1,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
+                    "model_output": "output",
+                    "model_log_probability": 1.0,
+                },
+                {
+                    "id": 2,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
+                    "model_output": "output",
+                    "model_log_probability": 1.0,
+                },
+                {
+                    "id": 3,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
+                    "model_output": "output",
+                    "model_log_probability": 1.0,
+                },
             ],
             model_log_probability=1.0,
         ),
@@ -230,7 +245,10 @@ def test_category_wise_aggregate():
         dataset=ray.data.from_pandas(pandas_df), score_column_name="a", agg_method="mean"
     )
     for row in category_aggregates.iter_rows():
-        assert row[f"mean(a)"] == pandas_df.loc[pandas_df.category == row[ColumnNames.CATEGORY_COLUMN_NAME.value]]["a"].mean()
+        assert (
+            row[f"mean(a)"]
+            == pandas_df.loc[pandas_df.category == row[ColumnNames.CATEGORY_COLUMN_NAME.value]]["a"].mean()
+        )
 
 
 def test_eval_output_record_post_init():
@@ -246,7 +264,7 @@ def test_eval_output_record_post_init():
     ):
         EvalOutputRecord(
             scores=[EvalScore(name="score1", value=0.162)],
-            non_score_columns={
+            dataset_columns={
                 ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "my input",
                 ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "my output",
                 invalid_col: "blah",
@@ -260,12 +278,15 @@ def test_eval_output_record_str():
     WHEN its __str__ method is called
     THEN the correct string representation of EvalOutputRecord is returned,
         where the order of the non-score columns matches their relative ordering
-        in constants.COLUMN_NAMES, rather than their order in the `non_score_columns`
+        in constants.COLUMN_NAMES, rather than their order in the `dataset_columns`
         list, and "scores" comes at the end.
     """
     record = EvalOutputRecord(
         scores=[EvalScore(name="rouge", value=0.5), EvalScore(name="bert", value=0.4)],
-        non_score_columns={ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output", ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input"},
+        dataset_columns={
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input",
+        },
     )
     expected_record = OrderedDict(
         [
@@ -294,7 +315,10 @@ def test_eval_output_record_from_row():
     }
     expected_record = EvalOutputRecord(
         scores=[EvalScore(name="rouge", value=0.42), EvalScore(name="bert", value=0.162)],
-        non_score_columns={ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output"},
+        dataset_columns={
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "input",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "output",
+        },
     )
 
     assert EvalOutputRecord.from_row(row, score_names=["rouge", "bert"]) == expected_record
@@ -349,7 +373,11 @@ def test_save_dataset(tmp_path, file_name):
         assert json_objects  # if nothing gets written to the file, this test would trivially pass
         for json_obj in json_objects:
             # want to ensure ordering of keys is correct, so we use list instead of set
-            assert list(json_obj.keys()) == [ColumnNames.MODEL_INPUT_COLUMN_NAME.value, ColumnNames.CATEGORY_COLUMN_NAME.value, "scores"]
+            assert list(json_obj.keys()) == [
+                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                ColumnNames.CATEGORY_COLUMN_NAME.value,
+                "scores",
+            ]
             assert json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] in {"hello", "world"}
 
             if json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == "hello":
@@ -369,7 +397,12 @@ def test_save_dataset_many_rows(tmp_path):
     """
     # GIVEN
     ds_items = [
-        {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: f"input_{i}", ColumnNames.CATEGORY_COLUMN_NAME.value: f"category_{i}", "rouge": 0.5, "bert_score": 0.42}
+        {
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: f"input_{i}",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: f"category_{i}",
+            "rouge": 0.5,
+            "bert_score": 0.42,
+        }
         for i in range(EVAL_OUTPUT_RECORDS_BATCH_SIZE + 1)
     ]
     dataset = ray.data.from_items(ds_items)
@@ -383,7 +416,11 @@ def test_save_dataset_many_rows(tmp_path):
         json_objects = (json.loads(line, object_pairs_hook=OrderedDict) for line in file_handle.readlines())
         for i, json_obj in enumerate(json_objects):
             # want to ensure ordering of keys is correct, so we use list instead of set
-            assert list(json_obj.keys()) == [ColumnNames.MODEL_INPUT_COLUMN_NAME.value, ColumnNames.CATEGORY_COLUMN_NAME.value, "scores"]
+            assert list(json_obj.keys()) == [
+                ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                ColumnNames.CATEGORY_COLUMN_NAME.value,
+                "scores",
+            ]
             assert json_obj[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == f"input_{i}"
             assert json_obj[ColumnNames.CATEGORY_COLUMN_NAME.value] == f"category_{i}"
 

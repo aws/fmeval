@@ -529,10 +529,22 @@ class TestFactualKnowledge:
             TestCaseFactualKnowledgeEvaluateInvalid(
                 input_dataset=ray.data.from_items(
                     [
-                        {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of", ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals"},
-                        {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of", ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals"},
-                        {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by", ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies"},
-                        {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by", ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies"},
+                        {
+                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                        },
+                        {
+                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                        },
+                        {
+                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                        },
+                        {
+                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                        },
                     ]
                 ),
                 dataset_config=DataConfig(
@@ -551,10 +563,22 @@ class TestFactualKnowledge:
             TestCaseFactualKnowledgeEvaluateInvalid(
                 input_dataset=ray.data.from_items(
                     [
-                        {ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK", ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals"},
-                        {ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France", ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals"},
-                        {ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO", ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies"},
-                        {ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN", ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies"},
+                        {
+                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                        },
+                        {
+                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                        },
+                        {
+                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                        },
+                        {
+                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
+                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                        },
                     ]
                 ),
                 dataset_config=DataConfig(
