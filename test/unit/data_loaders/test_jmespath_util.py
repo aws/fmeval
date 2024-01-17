@@ -4,7 +4,7 @@ from typing import NamedTuple, Any
 
 from fmeval.data_loaders.jmespath_util import compile_jmespath, search_jmespath
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.constants import MODEL_INPUT_COLUMN_NAME
+from fmeval.constants import ColumnNames
 
 
 class TestJmespathUtil:
@@ -47,13 +47,13 @@ class TestJmespathUtil:
         parser = compile_jmespath("column_c")
         result = search_jmespath(
             jmespath_parser=parser,
-            jmespath_query_type=MODEL_INPUT_COLUMN_NAME,
+            jmespath_query_type=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
             dataset={"column_a": "hello", "column_b": "world"},
             dataset_name="my_dataset",
         )
         assert result is None
         mock_logger.assert_called_with(
-            f"Failed to find {MODEL_INPUT_COLUMN_NAME} columns in dataset `my_dataset` "
+            f"Failed to find {ColumnNames.MODEL_INPUT_COLUMN_NAME.value} columns in dataset `my_dataset` "
             f"using JMESPath query '{parser.expression}'."
         )
 
@@ -69,12 +69,12 @@ class TestJmespathUtil:
             parser = compile_jmespath("column_a")
             result = search_jmespath(
                 jmespath_parser=parser,
-                jmespath_query_type=MODEL_INPUT_COLUMN_NAME,
+                jmespath_query_type=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
                 dataset={"column_a": "hello", "column_b": "world"},
                 dataset_name="my_dataset",
             )
             assert result is None
             mock_logger.assert_called_with(
-                f"Failed to find {MODEL_INPUT_COLUMN_NAME} columns in dataset `my_dataset` "
+                f"Failed to find {ColumnNames.MODEL_INPUT_COLUMN_NAME.value} columns in dataset `my_dataset` "
                 f"using JMESPath query '{parser.expression}'."
             )

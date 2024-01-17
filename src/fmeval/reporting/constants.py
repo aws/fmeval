@@ -136,8 +136,6 @@ ACCURACY_SEMANTIC_ROBUSTNESS_SCORES = [
 BUILT_IN_DATASET = "Built-in Dataset"
 CUSTOM_DATASET = "Custom Dataset"
 
-PROMPT_COLUMN_NAME = "prompt"
-
 TOXICITY_EVAL_NAMES = [
     EvalAlgorithm.TOXICITY.value,
     EvalAlgorithm.QA_TOXICITY.value,

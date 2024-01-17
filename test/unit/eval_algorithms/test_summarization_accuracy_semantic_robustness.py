@@ -8,11 +8,8 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
+    ColumnNames,
     MIME_TYPE_JSON,
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
@@ -43,10 +40,10 @@ from fmeval.model_runners.model_runner import ModelRunner
 DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-            TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "I like cake.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
             ROUGE_SCORE: 0.0,
             METEOR_SCORE: 0.0,
             BERT_SCORE: 0.0,
@@ -55,13 +52,13 @@ DATASET_WITH_SCORES = ray.data.from_items(
             DELTA_BERT_SCORE: 0.0,
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "The art metropolis of Berlin inspires locals and visitors with its famous "
             "museum landscape and numerous UNESCO World Heritage sites."
             " It is also an international exhibition venue. "
             "You will find a selection of current and upcoming exhibitions here.",
-            TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
-            CATEGORY_COLUMN_NAME: "dummy_category_2",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Berlin: an art metropolis.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
             ROUGE_SCORE: 0.0,
             METEOR_SCORE: 0.0,
             BERT_SCORE: 0.0,
@@ -76,11 +73,13 @@ DATASET_WITH_MODEL_OUTPUT = DATASET_WITH_SCORES.drop_columns(
     cols=[DELTA_ROUGE_SCORE, DELTA_METEOR_SCORE, DELTA_BERT_SCORE]
 )
 
-DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[MODEL_OUTPUT_COLUMN_NAME])
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value])
 
-DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[CATEGORY_COLUMN_NAME])
+DATASET_NO_CATEGORY_WITH_MODEL_OUTPUT = DATASET_WITH_MODEL_OUTPUT.drop_columns(
+    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]
+)
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[CATEGORY_COLUMN_NAME])
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value])
 
 
 class MockModelRunner(ModelRunner):
@@ -421,7 +420,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
-                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -610,7 +609,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 ),
                 prompt_template="$feature",
                 save_data=False,
-                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -644,7 +643,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 ),
                 prompt_template=None,
                 save_data=False,
-                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=CATEGORY_COLUMN_NAME),
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy_semantic_robustness",
@@ -717,7 +716,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 "evaluate method",
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[MODEL_INPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -732,7 +731,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_error_message="Missing required column: model_input, for evaluate() method",
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[TARGET_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

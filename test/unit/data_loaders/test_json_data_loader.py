@@ -15,10 +15,7 @@ from fmeval.data_loaders.json_data_loader import (
 from fmeval.data_loaders.util import DataConfig
 from typing import Any, Dict, List, NamedTuple, Optional
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
+    ColumnNames,
     MIME_TYPE_JSON,
     MIME_TYPE_JSONLINES,
 )
@@ -64,9 +61,9 @@ class TestJsonDataLoader:
             TestCaseReadDataset(
                 input_dataset={"model_input_col": ["a", "b", "c"]},
                 expected_dataset=[
-                    {MODEL_INPUT_COLUMN_NAME: "a"},
-                    {MODEL_INPUT_COLUMN_NAME: "b"},
-                    {MODEL_INPUT_COLUMN_NAME: "c"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c"},
                 ],
                 dataset_mime_type=MIME_TYPE_JSON,
                 model_input_jmespath="model_input_col",
@@ -82,22 +79,22 @@ class TestJsonDataLoader:
                 },
                 expected_dataset=[
                     {
-                        MODEL_INPUT_COLUMN_NAME: "a",
-                        MODEL_OUTPUT_COLUMN_NAME: "positive",
-                        TARGET_OUTPUT_COLUMN_NAME: "positive",
-                        CATEGORY_COLUMN_NAME: 0,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a",
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "positive",
+                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "positive",
+                        ColumnNames.CATEGORY_COLUMN_NAME.value: 0,
                     },
                     {
-                        MODEL_INPUT_COLUMN_NAME: "b",
-                        MODEL_OUTPUT_COLUMN_NAME: "negative",
-                        TARGET_OUTPUT_COLUMN_NAME: "negative",
-                        CATEGORY_COLUMN_NAME: 1,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "b",
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "negative",
+                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "negative",
+                        ColumnNames.CATEGORY_COLUMN_NAME.value: 1,
                     },
                     {
-                        MODEL_INPUT_COLUMN_NAME: "c",
-                        MODEL_OUTPUT_COLUMN_NAME: "positive",
-                        TARGET_OUTPUT_COLUMN_NAME: "negative",
-                        CATEGORY_COLUMN_NAME: 2,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c",
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "positive",
+                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "negative",
+                        ColumnNames.CATEGORY_COLUMN_NAME.value: 2,
                     },
                 ],
                 dataset_mime_type=MIME_TYPE_JSON,
@@ -113,9 +110,9 @@ class TestJsonDataLoader:
                     {"input": "e", "output": "f"},
                 ],
                 expected_dataset=[
-                    {MODEL_INPUT_COLUMN_NAME: "a", MODEL_OUTPUT_COLUMN_NAME: "b"},
-                    {MODEL_INPUT_COLUMN_NAME: "c", MODEL_OUTPUT_COLUMN_NAME: "d"},
-                    {MODEL_INPUT_COLUMN_NAME: "e", MODEL_OUTPUT_COLUMN_NAME: "f"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "a", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "b"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "c", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "d"},
+                    {ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "e", ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "f"},
                 ],
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 model_input_jmespath="input",
@@ -155,7 +152,10 @@ class TestJsonDataLoader:
         )
         num_rows = 3
         assert dataset.count() == num_rows
-        assert sorted(dataset.take(num_rows), key=lambda x: x[MODEL_INPUT_COLUMN_NAME]) == test_case.expected_dataset
+        assert (
+            sorted(dataset.take(num_rows), key=lambda x: x[ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+            == test_case.expected_dataset
+        )
 
     def test_write_block(self, tmp_path):
         """

@@ -4,9 +4,7 @@ from typing import Optional, List, Dict, Any
 
 
 from fmeval.constants import (
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_INPUT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
 )
 import fmeval.util as util
@@ -34,8 +32,6 @@ from fmeval.eval_algorithms.util import (
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
-
-PROMPT_COLUMN_NAME = "prompt"
 
 logger = logging.getLogger(__name__)
 
@@ -140,22 +136,27 @@ class FactualKnowledge(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
                 dataset = generate_prompt_column_for_dataset(
-                    dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+                    dataset_prompt_template,
+                    dataset,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=PROMPT_COLUMN_NAME,
-                    model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -164,7 +165,8 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     Map function generating the scores for every input record in input dataset
                     """
                     row[FACTUAL_KNOWLEDGE] = self._get_score(
-                        row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME]
+                        row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
+                        row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
                     )
                     return row
 

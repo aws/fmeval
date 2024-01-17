@@ -7,11 +7,8 @@ import ray
 from _pytest.fixtures import fixture
 
 from fmeval.constants import (
+    ColumnNames,
     MIME_TYPE_JSON,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
-    MODEL_INPUT_COLUMN_NAME,
 )
 
 from fmeval.data_loaders.util import DataConfig
@@ -39,38 +36,44 @@ from fmeval.exceptions import EvalAlgorithmClientError
 CLASSIFICATION_DATASET = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "Delicious cake! Would buy again.",
-            TARGET_OUTPUT_COLUMN_NAME: "4",
-            CATEGORY_COLUMN_NAME: "brownie",
-            MODEL_OUTPUT_COLUMN_NAME: "4",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Delicious cake! Would buy again.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "4",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "brownie",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "4",
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "Tasty cake! Must eat.",
-            TARGET_OUTPUT_COLUMN_NAME: "4",
-            CATEGORY_COLUMN_NAME: "vanilla cake",
-            MODEL_OUTPUT_COLUMN_NAME: "4",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Tasty cake! Must eat.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "4",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "vanilla cake",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "4",
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "Terrible! Nightmarish cake.",
-            TARGET_OUTPUT_COLUMN_NAME: "1",
-            CATEGORY_COLUMN_NAME: "vanilla cake",
-            MODEL_OUTPUT_COLUMN_NAME: "2",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Terrible! Nightmarish cake.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "vanilla cake",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "2",
         },
     ]
 )
 
 
-CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT = CLASSIFICATION_DATASET.drop_columns(MODEL_OUTPUT_COLUMN_NAME)
-
-CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT = CLASSIFICATION_DATASET.drop_columns(MODEL_INPUT_COLUMN_NAME)
-
-CLASSIFICATION_DATASET_WITHOUT_TARGET_OUTPUT = CLASSIFICATION_DATASET.drop_columns(TARGET_OUTPUT_COLUMN_NAME)
-
-CLASSIFICATION_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(
-    CATEGORY_COLUMN_NAME
+CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT = CLASSIFICATION_DATASET.drop_columns(
+    ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
 )
 
-CLASSIFICATION_DATASET_WITHOUT_CATEGORY = CLASSIFICATION_DATASET.drop_columns(CATEGORY_COLUMN_NAME)
+CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT = CLASSIFICATION_DATASET.drop_columns(
+    ColumnNames.MODEL_INPUT_COLUMN_NAME.value
+)
+
+CLASSIFICATION_DATASET_WITHOUT_TARGET_OUTPUT = CLASSIFICATION_DATASET.drop_columns(
+    ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value
+)
+
+CLASSIFICATION_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(
+    ColumnNames.CATEGORY_COLUMN_NAME.value
+)
+
+CLASSIFICATION_DATASET_WITHOUT_CATEGORY = CLASSIFICATION_DATASET.drop_columns(ColumnNames.CATEGORY_COLUMN_NAME.value)
 
 DATASET_SCORES = [
     EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=2 / 3),
