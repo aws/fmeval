@@ -94,6 +94,21 @@ def _normalize_text_quac_protocol(text: str) -> str:
     return " ".join([word for word in text.split(" ") if (word != "" and word not in ENGLISH_ARTICLES)])
 
 
+def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_text: bool = False) -> str:
+    """
+    Combine two common operations -- normalization and stripping -- used by several metrics.
+    :param normalize_text: Normalize the text. We use the QuAC protocol for normalization.
+    :param strip_text: Strip the text, that is, remove whitespace characters from the beginning and end of the text.
+    :returns: The normalized (if the normalize_text flag was set to True) and stripped (if the strip_text flag was set
+              to True). If neither of the flags was set, the function returns the original text.
+    """
+    if strip_text:
+        text = text.strip()
+    if normalize_text:  # pragma: no branch
+        text = _normalize_text_quac_protocol(text)
+    return text
+
+
 def _f1_score(
     model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
 ) -> float:
@@ -111,10 +126,8 @@ def _f1_score(
     :param strip_text: Strip the model_output and the target_output before computing the f1 score. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: The F1 score.
     """
-    if strip_text:
-        model_output, target_output = (text.strip() for text in (model_output, target_output))
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
@@ -122,7 +135,9 @@ def _f1_score(
         return float(ret)
 
 
-def _precision(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _precision(
+    model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
+) -> float:
     """
     Given the model output and the target output, compute the precision.
     Precision is the fraction of words in the prediction that are also found in the target output.
@@ -130,11 +145,12 @@ def _precision(model_output: str, target_output: str, *, normalize_text: bool = 
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing precision.
+    :param strip_text: Strip the model_output and the target_output before computing precision. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: Precision.
     """
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = precision(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
@@ -142,7 +158,7 @@ def _precision(model_output: str, target_output: str, *, normalize_text: bool = 
         return float(ret)
 
 
-def _recall(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _recall(model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False) -> float:
     """
     Given the model output and the target output, compute the recall.
     Recall is the fraction of words in the target output that are also found in the answer.
@@ -150,11 +166,12 @@ def _recall(model_output: str, target_output: str, *, normalize_text: bool = Fal
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing recall.
+    :param strip_text: Strip the model_output and the target_output before computing recall. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: Recall.
     """
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = recall(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
