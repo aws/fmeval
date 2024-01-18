@@ -12,9 +12,7 @@ from nltk.translate import meteor_score
 
 import fmeval.util as util
 from fmeval.constants import (
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
@@ -43,7 +41,6 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 
-PROMPT_COLUMN_NAME = "prompt"
 METEOR_SCORE = "meteor"
 ROUGE_SCORE = "rouge"
 BERT_SCORE = "bertscore"
@@ -192,19 +189,24 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
                 dataset = generate_prompt_column_for_dataset(
-                    dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+                    dataset_prompt_template,
+                    dataset,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
-                    model, dataset, PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME
+                    model, dataset, ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = add_score_to_dataset(
@@ -333,7 +335,10 @@ def add_score_to_dataset(
         for score_name in score_name_to_func:
             eval_func = score_name_to_func[score_name]
             row[score_name] = eval_func(
-                row[TARGET_OUTPUT_COLUMN_NAME], row[MODEL_OUTPUT_COLUMN_NAME], config, helper_model=helper_model
+                row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
+                row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                config,
+                helper_model=helper_model,
             )
         return row
 

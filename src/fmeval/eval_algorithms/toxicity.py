@@ -6,7 +6,7 @@ import ray
 from ray.data import Dataset
 
 from fmeval import util
-from fmeval.constants import MODEL_INPUT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MEAN
+from fmeval.constants import ColumnNames, MEAN
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
@@ -38,8 +38,6 @@ DEFAULT_MODEL_TYPE = DETOXIFY_MODEL
 MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
 
 TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
-
-PROMPT_COLUMN_NAME = "prompt"
 
 logger = logging.getLogger(__name__)
 
@@ -121,22 +119,25 @@ class Toxicity(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(dataset, [ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
                 dataset = generate_prompt_column_for_dataset(
-                    dataset_prompt_template, dataset, MODEL_INPUT_COLUMN_NAME, PROMPT_COLUMN_NAME
+                    dataset_prompt_template,
+                    dataset,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=PROMPT_COLUMN_NAME,
-                    model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -180,6 +181,6 @@ class Toxicity(EvalAlgorithmInterface):
         """
         return dataset.map_batches(
             fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
-            fn_constructor_args=(MODEL_OUTPUT_COLUMN_NAME,),
+            fn_constructor_args=(ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,),
             compute=ray.data.ActorPoolStrategy(size=get_num_actors()),
         ).materialize()

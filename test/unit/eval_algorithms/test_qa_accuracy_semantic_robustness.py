@@ -8,11 +8,8 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
+    ColumnNames,
     MIME_TYPE_JSON,
-    MODEL_INPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
@@ -44,23 +41,23 @@ from fmeval.model_runners.model_runner import ModelRunner
 QA_DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of Italy?",
-            TARGET_OUTPUT_COLUMN_NAME: "Rome",
-            CATEGORY_COLUMN_NAME: "capitals",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of Italy?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Rome",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "When did Argentina win the FIFA World Cup?",
-            TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022.",
-            CATEGORY_COLUMN_NAME: "sports",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "When did Argentina win the FIFA World Cup?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "sports",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
         },
     ]
 )
 
-QA_DATASET = QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=MODEL_OUTPUT_COLUMN_NAME)
+QA_DATASET = QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value)
 
-QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
+QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value)
 
 CATEGORY_SCORES = [
     CategoryScore(
@@ -372,7 +369,7 @@ class TestQAAccuracySemanticRobustness:
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
                 input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(
-                    cols=CATEGORY_COLUMN_NAME
+                    cols=ColumnNames.CATEGORY_COLUMN_NAME.value
                 ),
                 dataset_config=None,
                 prompt_template=None,
@@ -508,7 +505,7 @@ class TestQAAccuracySemanticRobustness:
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
                 input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(
-                    cols=CATEGORY_COLUMN_NAME
+                    cols=ColumnNames.CATEGORY_COLUMN_NAME.value
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -547,7 +544,7 @@ class TestQAAccuracySemanticRobustness:
             TestCaseQAAccuracySemanticRobustnessEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY,
                 input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT.drop_columns(
-                    cols=CATEGORY_COLUMN_NAME
+                    cols=ColumnNames.CATEGORY_COLUMN_NAME.value
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -630,7 +627,9 @@ class TestQAAccuracySemanticRobustness:
                 "evaluate",
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(cols=[MODEL_INPUT_COLUMN_NAME]),
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(
+                    cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -645,7 +644,9 @@ class TestQAAccuracySemanticRobustness:
                 expected_error_message="Missing required column: model_input, for evaluate",
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(cols=[TARGET_OUTPUT_COLUMN_NAME]),
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY.drop_columns(
+                    cols=[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

@@ -8,9 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
+    ColumnNames,
     MIME_TYPE_JSON,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -40,24 +38,23 @@ from fmeval.eval_algorithms.toxicity import (
     ToxicityConfig,
     TOXIGEN_MODEL,
     DETOXIFY_MODEL,
-    PROMPT_COLUMN_NAME,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET_TOXIGEN = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "sample model input",
-            PROMPT_COLUMN_NAME: "sample model input",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
-            MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.PROMPT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "sample model input",
-            PROMPT_COLUMN_NAME: "sample model input",
-            CATEGORY_COLUMN_NAME: "dummy_category_2",
-            MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.PROMPT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
             TOXIGEN_SCORE_NAME: 1.0,
         },
     ]
@@ -66,9 +63,9 @@ DATASET_TOXIGEN = ray.data.from_items(
 DATASET_DETOXIFY = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "sample model input",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
-            MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
             DETOXIFY_SCORE_SEVERE_TOXICITY: 0.5,
             DETOXIFY_SCORE_OBSCENE: 0.5,
@@ -78,9 +75,9 @@ DATASET_DETOXIFY = ray.data.from_items(
             DETOXIFY_SCORE_SEXUAL_EXPLICIT: 0.5,
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "sample model input",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
-            MODEL_OUTPUT_COLUMN_NAME: "sample_model_output",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "sample model input",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "sample_model_output",
             DETOXIFY_SCORE_TOXICITY: 0.5,
             DETOXIFY_SCORE_SEVERE_TOXICITY: 0.5,
             DETOXIFY_SCORE_OBSCENE: 0.5,
@@ -205,14 +202,19 @@ class TestQAToxicity:
             # Built-in datasets evaluate for dataset without category
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -243,7 +245,11 @@ class TestQAToxicity:
             # Built-in datasets evaluate for dataset with category
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=None,
                 prompt_template=None,
@@ -288,7 +294,12 @@ class TestQAToxicity:
             # Custom dataset evaluate with input prompt template
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -301,9 +312,9 @@ class TestQAToxicity:
                 ),
                 prompt_template="$feature",
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -318,7 +329,12 @@ class TestQAToxicity:
             # Custom dataset evaluate without input prompt template
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -331,9 +347,9 @@ class TestQAToxicity:
                 ),
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[ColumnNames.CATEGORY_COLUMN_NAME.value, TOXIGEN_SCORE_NAME]
                 ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -384,7 +400,11 @@ class TestQAToxicity:
         [
             TestCaseToxicityEvaluate(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -397,7 +417,7 @@ class TestQAToxicity:
                 ),
                 prompt_template="$feature",
                 input_dataset_with_generated_model_output=None,
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[CATEGORY_COLUMN_NAME]),
+                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value]),
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_toxicity",
@@ -453,7 +473,12 @@ class TestQAToxicity:
         [
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, CATEGORY_COLUMN_NAME, TOXIGEN_SCORE_NAME, MODEL_OUTPUT_COLUMN_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    ]
                 ),
                 dataset_config=None,
                 prompt_template=None,
@@ -462,7 +487,11 @@ class TestQAToxicity:
             ),
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TOXIGEN_SCORE_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        TOXIGEN_SCORE_NAME,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -480,11 +509,11 @@ class TestQAToxicity:
             TestCaseToxicityEvaluateInvalid(
                 input_dataset=DATASET_TOXIGEN.drop_columns(
                     cols=[
-                        PROMPT_COLUMN_NAME,
-                        CATEGORY_COLUMN_NAME,
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.CATEGORY_COLUMN_NAME.value,
                         TOXIGEN_SCORE_NAME,
-                        MODEL_OUTPUT_COLUMN_NAME,
-                        MODEL_INPUT_COLUMN_NAME,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
                     ]
                 ),
                 dataset_config=DataConfig(

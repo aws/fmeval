@@ -8,11 +8,8 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
+    ColumnNames,
     MIME_TYPE_JSON,
-    DEFAULT_EVAL_RESULTS_PATH,
-    MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
@@ -30,23 +27,25 @@ from fmeval.model_runners.model_runner import ModelRunner
 DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
-            CATEGORY_COLUMN_NAME: "dummy_category_2",
-            MODEL_OUTPUT_COLUMN_NAME: "Some model output.",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
         },
     ]
 )
 
-DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=MODEL_OUTPUT_COLUMN_NAME)
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value)
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value)
 
-DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=CATEGORY_COLUMN_NAME)
+DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(
+    cols=ColumnNames.CATEGORY_COLUMN_NAME.value
+)
 
 
 class ConstantModel(ModelRunner):
@@ -535,7 +534,7 @@ class TestGeneralSemanticRobustness:
                 "evaluate method",
             ),
             TestCaseSemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[MODEL_INPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

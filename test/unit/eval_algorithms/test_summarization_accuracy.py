@@ -9,11 +9,8 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
+    ColumnNames,
     MIME_TYPE_JSON,
-    MODEL_INPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
@@ -34,7 +31,6 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     ROUGE_2,
     ROUGE_1,
     ROUGE_L,
-    PROMPT_COLUMN_NAME,
     BERT_SCORE,
     get_meteor_score,
     get_rouge_score,
@@ -49,44 +45,44 @@ BERTSCORE_DUMMY_VALUE = (
 DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
-            MODEL_INPUT_COLUMN_NAME: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-            TARGET_OUTPUT_COLUMN_NAME: "I like cake.",
-            PROMPT_COLUMN_NAME: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I "
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "I like cake.",
+            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I "
             "grow up.",
-            MODEL_OUTPUT_COLUMN_NAME: "I like cake.",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "I like cake.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
             METEOR_SCORE: 0.1,
             ROUGE_SCORE: 0.1,
             BERT_SCORE: 0.1,
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "The art metropolis of Berlin inspires locals and visitors with its famous "
             "museum landscape and numerous UNESCO World Heritage sites."
             " It is also an international exhibition venue. "
             "You will find a selection of current and upcoming exhibitions here.",
-            TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
-            PROMPT_COLUMN_NAME: "Summarise: The art metropolis of Berlin inspires locals and visitors with its "
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Berlin: an art metropolis.",
+            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarise: The art metropolis of Berlin inspires locals and visitors with its "
             "famous museum landscape and numerous UNESCO World Heritage sites."
             " It is also an international exhibition venue. "
             "You will find a selection of current and upcoming exhibitions here.",
-            MODEL_OUTPUT_COLUMN_NAME: "Berlin: Art, Heritage, Exhibitions Hub.",
-            CATEGORY_COLUMN_NAME: "dummy_category_2",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Berlin: Art, Heritage, Exhibitions Hub.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_2",
             METEOR_SCORE: 0.2,
             ROUGE_SCORE: 0.2,
             BERT_SCORE: 0.2,
         },
         {
-            MODEL_INPUT_COLUMN_NAME: "The art metropolis of Berlin inspires locals and visitors with its famous "
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "The art metropolis of Berlin inspires locals and visitors with its famous "
             "museum landscape and numerous UNESCO World Heritage sites."
             " It is also an international exhibition venue. "
             "You will find a selection of current and upcoming exhibitions here.",
-            TARGET_OUTPUT_COLUMN_NAME: "Berlin: an art metropolis.",
-            PROMPT_COLUMN_NAME: "Summarise: The art metropolis of Berlin inspires locals and visitors with its "
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Berlin: an art metropolis.",
+            ColumnNames.PROMPT_COLUMN_NAME.value: "Summarise: The art metropolis of Berlin inspires locals and visitors with its "
             "famous museum landscape and numerous UNESCO World Heritage sites."
             " It is also an international exhibition venue. "
             "You will find a selection of current and upcoming exhibitions here.",
-            MODEL_OUTPUT_COLUMN_NAME: "Berlin: Art, Heritage, Exhibitions Hub.",
-            CATEGORY_COLUMN_NAME: "dummy_category_1",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Berlin: Art, Heritage, Exhibitions Hub.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "dummy_category_1",
             METEOR_SCORE: 0.3,
             ROUGE_SCORE: 0.3,
             BERT_SCORE: 0.3,
@@ -96,7 +92,7 @@ DATASET_WITH_SCORES = ray.data.from_items(
 
 DATASET = DATASET_WITH_SCORES.drop_columns(cols=[BERT_SCORE, METEOR_SCORE, ROUGE_SCORE])
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=CATEGORY_COLUMN_NAME)
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value)
 
 EVAL_RESULTS_PATH = "/tmp/eval_results/"
 
@@ -299,7 +295,9 @@ class TestSummarizationAccuracy:
         [
             # Built-in datasets evaluate for dataset without category
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
@@ -344,7 +342,9 @@ class TestSummarizationAccuracy:
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET,
@@ -440,7 +440,9 @@ class TestSummarizationAccuracy:
             ),
             # Custom dataset evaluate with input prompt template
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -469,7 +471,9 @@ class TestSummarizationAccuracy:
             ),
             # Custom dataset evaluate without input prompt template
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -542,7 +546,7 @@ class TestSummarizationAccuracy:
         [
             # Built-in datasets evaluate for dataset without category
             TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[ColumnNames.PROMPT_COLUMN_NAME.value]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -619,14 +623,18 @@ class TestSummarizationAccuracy:
         "test_case",
         [
             TestCaseSummarizationAccuracyEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=None,
                 prompt_template=None,
                 model_provided=False,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME]),
+                input_dataset=DATASET_NO_CATEGORY.drop_columns(
+                    cols=[ColumnNames.PROMPT_COLUMN_NAME.value, ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value]
+                ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -642,7 +650,11 @@ class TestSummarizationAccuracy:
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, TARGET_OUTPUT_COLUMN_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -659,7 +671,11 @@ class TestSummarizationAccuracy:
             ),
             TestCaseSummarizationAccuracyEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[PROMPT_COLUMN_NAME, MODEL_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME]
+                    cols=[
+                        ColumnNames.PROMPT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                        ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ]
                 ),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",

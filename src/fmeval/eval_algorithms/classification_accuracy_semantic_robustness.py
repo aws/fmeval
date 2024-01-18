@@ -8,14 +8,12 @@ from dataclasses import dataclass
 
 import fmeval.util as util
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
+    ColumnNames,
     MEAN,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
-    MODEL_OUTPUT_COLUMN_NAME,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
@@ -69,7 +67,6 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
 PREFIX_FOR_DELTA_SCORES = "delta_"
 DELTA_CLASSIFICATION_ACCURACY_SCORE = PREFIX_FOR_DELTA_SCORES + CLASSIFICATION_ACCURACY_SCORE
 
-PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 
@@ -201,27 +198,31 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = generate_prompt_column_for_dataset(
                 prompt_template=dataset_prompt_template,
                 data=dataset,
-                model_input_column_name=MODEL_INPUT_COLUMN_NAME,
-                prompt_column_name=PROMPT_COLUMN_NAME,
+                model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
             )
 
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
-                model_input_column_name=PROMPT_COLUMN_NAME,
-                model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
+                model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
             )
 
             config_valid_labels = self._eval_algorithm_config.valid_labels
             if not self._eval_algorithm_config.valid_labels:  # pragma: no branch
-                self._eval_algorithm_config.valid_labels = dataset.unique(column=TARGET_OUTPUT_COLUMN_NAME)
+                self._eval_algorithm_config.valid_labels = dataset.unique(
+                    column=ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value
+                )
                 row_count = dataset.count()
                 assert self._eval_algorithm_config.valid_labels is not None  # to satisfy mypy
                 if (
@@ -241,10 +242,10 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     scores = self.evaluate_sample(
-                        model_input=row[MODEL_INPUT_COLUMN_NAME],
+                        model_input=row[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
                         model=model,
-                        target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                        model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                        target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
+                        model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
                         prompt_template=dataset_prompt_template,
                     )
                     for score in scores:

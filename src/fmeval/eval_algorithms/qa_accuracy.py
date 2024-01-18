@@ -11,10 +11,7 @@ from nltk.metrics.scores import f_measure, precision, recall
 
 import fmeval.util as util
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    MODEL_LOG_PROBABILITY_COLUMN_NAME,
+    ColumnNames,
     MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
@@ -52,7 +49,6 @@ QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
 PRECISION = "precision"
 RECALL = "recall"
 
-PROMPT_COLUMN_NAME = "prompt"
 logger = logging.getLogger(__name__)
 
 
@@ -94,6 +90,21 @@ def _normalize_text_quac_protocol(text: str) -> str:
     return " ".join([word for word in text.split(" ") if (word != "" and word not in ENGLISH_ARTICLES)])
 
 
+def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_text: bool = False) -> str:
+    """
+    Combine two common operations -- normalization and stripping -- used by several metrics.
+    :param normalize_text: Normalize the text. We use the QuAC protocol for normalization.
+    :param strip_text: Strip the text, that is, remove whitespace characters from the beginning and end of the text.
+    :returns: The normalized (if the normalize_text flag was set to True) and stripped (if the strip_text flag was set
+              to True). If neither of the flags was set, the function returns the original text.
+    """
+    if strip_text:
+        text = text.strip()
+    if normalize_text:  # pragma: no branch
+        text = _normalize_text_quac_protocol(text)
+    return text
+
+
 def _f1_score(
     model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
 ) -> float:
@@ -111,10 +122,8 @@ def _f1_score(
     :param strip_text: Strip the model_output and the target_output before computing the f1 score. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: The F1 score.
     """
-    if strip_text:
-        model_output, target_output = (text.strip() for text in (model_output, target_output))
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
@@ -122,7 +131,9 @@ def _f1_score(
         return float(ret)
 
 
-def _precision(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _precision(
+    model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
+) -> float:
     """
     Given the model output and the target output, compute the precision.
     Precision is the fraction of words in the prediction that are also found in the target output.
@@ -130,11 +141,12 @@ def _precision(model_output: str, target_output: str, *, normalize_text: bool = 
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing precision.
+    :param strip_text: Strip the model_output and the target_output before computing precision. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: Precision.
     """
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = precision(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
@@ -142,7 +154,7 @@ def _precision(model_output: str, target_output: str, *, normalize_text: bool = 
         return float(ret)
 
 
-def _recall(model_output: str, target_output: str, *, normalize_text: bool = False) -> float:
+def _recall(model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False) -> float:
     """
     Given the model output and the target output, compute the recall.
     Recall is the fraction of words in the target output that are also found in the answer.
@@ -150,11 +162,12 @@ def _recall(model_output: str, target_output: str, *, normalize_text: bool = Fal
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
-    :param normalize_text: Normalize the text before computing f1.
+    :param normalize_text: Normalize the text before computing recall.
+    :param strip_text: Strip the model_output and the target_output before computing recall. Stripping amounts to removing whitespace characters from the beginning and end of the strings.
     :returns: Recall.
     """
-    if normalize_text:  # pragma: no branch
-        model_output, target_output = (_normalize_text_quac_protocol(text) for text in (model_output, target_output))
+    model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
+    target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
     ret = recall(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
     if ret is None:  # pragma: no cover
         return 0.0
@@ -192,8 +205,8 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     F1_SCORE: partial(_f1_score, normalize_text=True, strip_text=True),
     EXACT_MATCH_SCORE: _exact_match_score,
     QUASI_EXACT_MATCH_SCORE: _quasi_exact_match_score,
-    PRECISION: partial(_precision, normalize_text=True),
-    RECALL: partial(_recall, normalize_text=True),
+    PRECISION: partial(_precision, normalize_text=True, strip_text=True),
+    RECALL: partial(_recall, normalize_text=True, strip_text=True),
 }
 
 
@@ -242,9 +255,11 @@ class QAAccuracy(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [TARGET_OUTPUT_COLUMN_NAME, MODEL_INPUT_COLUMN_NAME])
+            validate_dataset(
+                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
+            )
             dataset_prompt_template = None
-            if MODEL_OUTPUT_COLUMN_NAME not in dataset.columns():
+            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -252,16 +267,16 @@ class QAAccuracy(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     prompt_template=dataset_prompt_template,
                     data=dataset,
-                    model_input_column_name=MODEL_INPUT_COLUMN_NAME,
-                    prompt_column_name=PROMPT_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=PROMPT_COLUMN_NAME,
-                    model_output_column_name=MODEL_OUTPUT_COLUMN_NAME,
-                    model_log_probability_column_name=MODEL_LOG_PROBABILITY_COLUMN_NAME,
+                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    model_log_probability_column_name=ColumnNames.MODEL_LOG_PROBABILITY_COLUMN_NAME.value,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -271,8 +286,8 @@ class QAAccuracy(EvalAlgorithmInterface):
                     """
                     for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
                         row[eval_score] = self._get_score(
-                            target_output=row[TARGET_OUTPUT_COLUMN_NAME],
-                            model_output=row[MODEL_OUTPUT_COLUMN_NAME],
+                            target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
+                            model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
                             eval_fn=eval_fn,
                         )
                     return row

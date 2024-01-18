@@ -8,11 +8,8 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
+    ColumnNames,
     MIME_TYPE_JSON,
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
     DEFAULT_EVAL_RESULTS_PATH,
 )
 from fmeval.eval_algorithms.eval_algorithm import DataConfig
@@ -36,6 +33,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     RECALL,
     _f1_score,
     _exact_match_score,
+    _precision,
+    _recall,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -43,58 +42,60 @@ QA_DATASET = ray.data.from_items(
     [
         # Exact match so all scores should have perfect values.
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of England?",
-            TARGET_OUTPUT_COLUMN_NAME: "London",
-            MODEL_OUTPUT_COLUMN_NAME: "London",
-            CATEGORY_COLUMN_NAME: "capitals",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of England?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "London",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "London",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
         },
         # Partial match.
         {
-            MODEL_INPUT_COLUMN_NAME: "Who directed Pulp Fiction?",
-            TARGET_OUTPUT_COLUMN_NAME: "Quentin Tarantino",
-            MODEL_OUTPUT_COLUMN_NAME: "tarantino!",
-            CATEGORY_COLUMN_NAME: "movies",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Who directed Pulp Fiction?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "tarantino!",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "movies",
         },
         # Wrong answer. All scores should be zero.
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of France?",
-            TARGET_OUTPUT_COLUMN_NAME: "Paris",
-            MODEL_OUTPUT_COLUMN_NAME: "London",
-            CATEGORY_COLUMN_NAME: "capitals",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of France?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Paris",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "London",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
         },
         # Correct answer but with punctuation added.
         {
-            MODEL_INPUT_COLUMN_NAME: "What is the capital of Italy?",
-            TARGET_OUTPUT_COLUMN_NAME: "Rome",
-            MODEL_OUTPUT_COLUMN_NAME: "rome!",
-            CATEGORY_COLUMN_NAME: "capitals",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "What is the capital of Italy?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Rome",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "rome!",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "capitals",
         },
         # Many correct answers.
         {
-            MODEL_INPUT_COLUMN_NAME: "When did Argentina win the FIFA World Cup?",
-            TARGET_OUTPUT_COLUMN_NAME: "1978<OR>1986<OR>2022",
-            MODEL_OUTPUT_COLUMN_NAME: "2022",
-            CATEGORY_COLUMN_NAME: "sports",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "When did Argentina win the FIFA World Cup?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1978<OR>1986<OR>2022",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "2022",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "sports",
         },
         # Answer is longer than the model output.
         {
-            MODEL_INPUT_COLUMN_NAME: "Did RMS Titanic sink in 1912?",
-            TARGET_OUTPUT_COLUMN_NAME: "yes",
-            MODEL_OUTPUT_COLUMN_NAME: "Yes. That is true.",
-            CATEGORY_COLUMN_NAME: "history",
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Did RMS Titanic sink in 1912?",
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "yes",
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Yes. That is true.",
+            ColumnNames.CATEGORY_COLUMN_NAME.value: "history",
         },
     ]
 )
 
-QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(MODEL_OUTPUT_COLUMN_NAME)
+QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value)
 
-QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(MODEL_INPUT_COLUMN_NAME)
+QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(ColumnNames.MODEL_INPUT_COLUMN_NAME.value)
 
-QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(TARGET_OUTPUT_COLUMN_NAME)
+QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value)
 
-QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(CATEGORY_COLUMN_NAME)
+QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(ColumnNames.CATEGORY_COLUMN_NAME.value)
 
-QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns(MODEL_OUTPUT_COLUMN_NAME)
+QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns(
+    ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value
+)
 
 CATEGORY_SCORES = [
     CategoryScore(
@@ -611,6 +612,98 @@ class TestQAAccuracy:
     def test_f1_score(self, test_case):
         assert (
             _f1_score(
+                model_output=test_case.model_output,
+                target_output=test_case.target_output,
+                normalize_text=True,
+                strip_text=test_case.strip_text,
+            )
+            == test_case.expected_score
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracyEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="This is a bad movie",
+                target_output="This is a bad movie",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Love this movie",
+                target_output="Hated that film",
+                strip_text=True,
+                expected_score=0.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=False,
+                expected_score=0.0,
+            ),
+        ],
+    )
+    def test_precision(self, test_case):
+        assert (
+            _precision(
+                model_output=test_case.model_output,
+                target_output=test_case.target_output,
+                normalize_text=True,
+                strip_text=test_case.strip_text,
+            )
+            == test_case.expected_score
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracyEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="This is a bad movie",
+                target_output="This is a bad movie",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Love this movie",
+                target_output="Hated that film",
+                strip_text=True,
+                expected_score=0.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=True,
+                expected_score=1.0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="yes.\n",
+                target_output="yes",
+                strip_text=False,
+                expected_score=0.0,
+            ),
+        ],
+    )
+    def test_recall(self, test_case):
+        assert (
+            _recall(
                 model_output=test_case.model_output,
                 target_output=test_case.target_output,
                 normalize_text=True,

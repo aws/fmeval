@@ -5,13 +5,9 @@ from fmeval.data_loaders.json_parser import JsonParser, ColumnParseArguments
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.constants import (
-    MODEL_INPUT_COLUMN_NAME,
-    MODEL_OUTPUT_COLUMN_NAME,
-    TARGET_OUTPUT_COLUMN_NAME,
-    CATEGORY_COLUMN_NAME,
+    ColumnNames,
     MIME_TYPE_JSON,
     MIME_TYPE_JSONLINES,
-    SENT_MORE_INPUT_COLUMN_NAME,
 )
 
 
@@ -32,7 +28,7 @@ class TestJsonParser:
                     model_input_location="model_input_jmespath",
                 ),
                 expected_call_args=["model_input_jmespath"],
-                expected_keys=[MODEL_INPUT_COLUMN_NAME],
+                expected_keys=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
             ),
             TestCaseInit(
                 config=DataConfig(
@@ -51,10 +47,10 @@ class TestJsonParser:
                     "category_jmespath",
                 ],
                 expected_keys=[
-                    MODEL_INPUT_COLUMN_NAME,
-                    MODEL_OUTPUT_COLUMN_NAME,
-                    TARGET_OUTPUT_COLUMN_NAME,
-                    CATEGORY_COLUMN_NAME,
+                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+                    ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
+                    ColumnNames.CATEGORY_COLUMN_NAME.value,
                 ],
             ),
         ],
@@ -236,23 +232,23 @@ class TestJsonParser:
         parser = JsonParser(config)
         cols = parser.parse_dataset_columns(dataset=dataset, dataset_mime_type=MIME_TYPE_JSON, dataset_name="dataset")
 
-        assert cols[MODEL_INPUT_COLUMN_NAME] == expected_model_inputs
-        assert cols[MODEL_OUTPUT_COLUMN_NAME] == expected_model_outputs
-        assert cols[TARGET_OUTPUT_COLUMN_NAME] == expected_target_outputs
-        assert cols[CATEGORY_COLUMN_NAME] == expected_categories
+        assert cols[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == expected_model_inputs
+        assert cols[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value] == expected_model_outputs
+        assert cols[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value] == expected_target_outputs
+        assert cols[ColumnNames.CATEGORY_COLUMN_NAME.value] == expected_categories
 
-        # ensure that SENT_MORE_INPUT_COLUMN_NAME does not show up in `cols`
+        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value does not show up in `cols`
         assert set(cols.keys()) == {
-            MODEL_INPUT_COLUMN_NAME,
-            MODEL_OUTPUT_COLUMN_NAME,
-            TARGET_OUTPUT_COLUMN_NAME,
-            CATEGORY_COLUMN_NAME,
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
+            ColumnNames.CATEGORY_COLUMN_NAME.value,
         }
 
         # ensure that logger generated a warning when search_jmespath
-        # was called on SENT_MORE_INPUT_COLUMN_NAME.
+        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value.
         mock_logger.assert_called_with(
-            f"Failed to find {SENT_MORE_INPUT_COLUMN_NAME} columns in dataset `dataset` "
+            f"Failed to find {ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value} columns in dataset `dataset` "
             f"using JMESPath query '{config.sent_more_input_location}'."
         )
 
@@ -286,23 +282,23 @@ class TestJsonParser:
         cols = parser.parse_dataset_columns(
             dataset=dataset_line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name="dataset_line"
         )
-        assert cols[MODEL_INPUT_COLUMN_NAME] == expected_model_input
-        assert cols[MODEL_OUTPUT_COLUMN_NAME] == expected_model_output
-        assert cols[TARGET_OUTPUT_COLUMN_NAME] == expected_target_output
-        assert cols[CATEGORY_COLUMN_NAME] == expected_category
+        assert cols[ColumnNames.MODEL_INPUT_COLUMN_NAME.value] == expected_model_input
+        assert cols[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value] == expected_model_output
+        assert cols[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value] == expected_target_output
+        assert cols[ColumnNames.CATEGORY_COLUMN_NAME.value] == expected_category
 
-        # ensure that SENT_MORE_INPUT_COLUMN_NAME does not show up in `cols`
+        # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value does not show up in `cols`
         assert set(cols.keys()) == {
-            MODEL_INPUT_COLUMN_NAME,
-            MODEL_OUTPUT_COLUMN_NAME,
-            TARGET_OUTPUT_COLUMN_NAME,
-            CATEGORY_COLUMN_NAME,
+            ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
+            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value,
+            ColumnNames.CATEGORY_COLUMN_NAME.value,
         }
 
         # ensure that logger generated a warning when search_jmespath
-        # was called on SENT_MORE_INPUT_COLUMN_NAME.
+        # was called on ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value.
         mock_logger.assert_called_with(
-            f"Failed to find {SENT_MORE_INPUT_COLUMN_NAME} columns in dataset `dataset_line` "
+            f"Failed to find {ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value} columns in dataset `dataset_line` "
             f"using JMESPath query '{config.sent_more_input_location}'."
         )
 
