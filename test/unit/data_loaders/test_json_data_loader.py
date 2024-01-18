@@ -1,9 +1,7 @@
 import json
-import os
 
 import pytest
 import pathlib
-import ray.data
 
 from fmeval.data_loaders.data_sources import LocalDataFile
 from fmeval.data_loaders.json_parser import JsonParser
@@ -156,35 +154,3 @@ class TestJsonDataLoader:
         num_rows = 3
         assert dataset.count() == num_rows
         assert sorted(dataset.take(num_rows), key=lambda x: x[MODEL_INPUT_COLUMN_NAME]) == test_case.expected_dataset
-
-    def test_write_block(self, tmp_path):
-        """
-        Test whether the _write_block method of the CustomJSONDatasource works properly.
-        """
-
-        # GIVEN
-        ds_items = [{"name": "a", "id": 1}, {"name": "b", "id": 2}, {"name": "c", "id": 3}]
-        dataset = ray.data.from_items(ds_items).repartition(1)  # without repartitioning, there will be 3 blocks
-        expected_num_files = dataset.num_blocks()
-        dataset_uuid = "test_dataset"
-
-        # WHEN
-        dataset.write_datasource(datasource=CustomJSONDatasource(), path=tmp_path, dataset_uuid=dataset_uuid)
-
-        # THEN
-        num_files = 0
-        for file_name in os.listdir(tmp_path):
-            full_path = os.path.join(tmp_path, file_name)
-            if os.path.isfile(full_path):
-                assert file_name.startswith(dataset_uuid)
-                assert file_name.endswith(".json")
-                with open(full_path) as file_handle:
-                    json_objects = [json.loads(line) for line in file_handle.readlines()]
-                    # Can't compare set equality since dicts are not hashable
-                    for json_obj in json_objects:
-                        assert json_obj in ds_items
-                    for ds_item in ds_items:
-                        assert ds_item in json_objects
-                num_files += 1
-
-        assert num_files == expected_num_files
