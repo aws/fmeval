@@ -88,7 +88,7 @@ class JsonParser:
 
     def parse_dataset_columns(
         self, dataset: Union[Dict[str, Any], List], dataset_mime_type: str, dataset_name: str
-    ) -> Dict[str, List[str]]:
+    ) -> Dict[str, Union[Any, List[Any]]]:
         """Parses a JSON dataset (which could be a single line in a JSON Lines dataset)
            using the parsers stored in self._parsers to extract the desired columns.
            In the case that `dataset` corresponds to a single JSON Lines line, the
@@ -117,7 +117,7 @@ class JsonParser:
             for column_name in self._parsers
         }
 
-        filtered_parsed_columns_dict: Dict[str, List[str]] = {
+        filtered_parsed_columns_dict: Dict[str, Union[Any, List[Any]]] = {
             column_name: parsed_columns
             for column_name, parsed_columns in parsed_columns_dict.items()
             if parsed_columns is not None
@@ -128,7 +128,7 @@ class JsonParser:
         return filtered_parsed_columns_dict
 
     @staticmethod
-    def _parse_column(args: ColumnParseArguments) -> Optional[List[str]]:
+    def _parse_column(args: ColumnParseArguments) -> Optional[Union[Any, List[Any]]]:
         """Parses a single column, specified by `args`, from a dataset
            and converts the contents of the column to strings if needed.
 
