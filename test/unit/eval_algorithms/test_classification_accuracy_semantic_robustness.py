@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -35,31 +35,31 @@ from fmeval.model_runners.model_runner import ModelRunner
 DATASET = ray.data.from_items(
     [
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Delicious cake! Would buy again.",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "4",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "brownie",
+            DatasetColumns.MODEL_INPUT.value.name: "Delicious cake! Would buy again.",
+            DatasetColumns.TARGET_OUTPUT.value.name: "4",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            DatasetColumns.CATEGORY.value.name: "brownie",
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Tasty cake! Must eat.",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "4",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "vanilla cake",
+            DatasetColumns.MODEL_INPUT.value.name: "Tasty cake! Must eat.",
+            DatasetColumns.TARGET_OUTPUT.value.name: "4",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            DatasetColumns.CATEGORY.value.name: "vanilla cake",
         },
         {
-            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Terrible! Nightmarish cake.",
-            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "1",
-            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Some model output.",
-            ColumnNames.CATEGORY_COLUMN_NAME.value: "vanilla cake",
+            DatasetColumns.MODEL_INPUT.value.name: "Terrible! Nightmarish cake.",
+            DatasetColumns.TARGET_OUTPUT.value.name: "1",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            DatasetColumns.CATEGORY.value.name: "vanilla cake",
         },
     ]
 )
 
-DATASET_WITHOUT_CATEGORY = DATASET.drop_columns(cols=[ColumnNames.CATEGORY_COLUMN_NAME.value])
+DATASET_WITHOUT_CATEGORY = DATASET.drop_columns(cols=[DatasetColumns.CATEGORY.value.name])
 
-DATASET_WITHOUT_MODEL_OUTPUT = DATASET.drop_columns(cols=[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value])
+DATASET_WITHOUT_MODEL_OUTPUT = DATASET.drop_columns(cols=[DatasetColumns.MODEL_OUTPUT.value.name])
 
-DATASET_WITHOUT_MODEL_INPUT = DATASET.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+DATASET_WITHOUT_MODEL_INPUT = DATASET.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name])
 
 
 CATEGORY_SCORES = [
@@ -285,7 +285,7 @@ class TestClassificationAccuracySemanticRobustness:
         [
             # Built-in datasets evaluate for dataset without category
             TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
+                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
                 dataset_config=None,
                 prompt_template=None,
@@ -327,7 +327,7 @@ class TestClassificationAccuracySemanticRobustness:
             ),
             # Custom dataset evaluate, with input prompt template
             TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
+                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -356,7 +356,7 @@ class TestClassificationAccuracySemanticRobustness:
             ),
             # Custom dataset evaluate, without input prompt template
             TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=ColumnNames.CATEGORY_COLUMN_NAME.value),
+                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
@@ -439,7 +439,7 @@ class TestClassificationAccuracySemanticRobustness:
                 "evaluate",
             ),
             TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[ColumnNames.MODEL_INPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -454,7 +454,7 @@ class TestClassificationAccuracySemanticRobustness:
                 expected_error_message="Missing required column: model_input, for evaluate",
             ),
             TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value]),
+                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[DatasetColumns.TARGET_OUTPUT.value.name]),
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",

@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MIME_TYPE_JSON,
 )
 from fmeval.eval_algorithms.eval_algorithm import DataConfig
@@ -126,24 +126,24 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),
@@ -152,32 +152,32 @@ class TestFactualKnowledge:
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.PROMPT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.PROMPT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.PROMPT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "nolan",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.PROMPT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
                         },
                     ]
                 ),
@@ -199,24 +199,24 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),
@@ -233,32 +233,32 @@ class TestFactualKnowledge:
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.PROMPT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.PROMPT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.PROMPT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "nolan",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.PROMPT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
                         },
                     ]
                 ),
@@ -280,20 +280,20 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
                         },
                     ]
                 ),
@@ -310,27 +310,27 @@ class TestFactualKnowledge:
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.PROMPT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.PROMPT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.PROMPT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "nolan",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.PROMPT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
                         },
                     ]
                 ),
@@ -376,28 +376,28 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "uk",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "Quentin Tarantino",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
-                            ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value: "nolan",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
                         },
                     ]
                 ),
@@ -462,24 +462,24 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),
@@ -492,24 +492,24 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),
@@ -530,20 +530,20 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "London is the capital of",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Paris is the capital of",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Pulp Fiction was directed by",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.MODEL_INPUT_COLUMN_NAME.value: "Dark knight was directed by",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),
@@ -564,20 +564,20 @@ class TestFactualKnowledge:
                 input_dataset=ray.data.from_items(
                     [
                         {
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "England<OR>UK",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "France",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Capitals",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
+                            DatasetColumns.CATEGORY.value.name: "Capitals",
                         },
                         {
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "QUENTIN TARANTINO",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                         {
-                            ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value: "Christopher Nolan<OR>NOLAN",
-                            ColumnNames.CATEGORY_COLUMN_NAME.value: "Movies",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
+                            DatasetColumns.CATEGORY.value.name: "Movies",
                         },
                     ]
                 ),

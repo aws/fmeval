@@ -6,7 +6,7 @@ import ray
 from ray.data import Dataset
 
 from fmeval import util
-from fmeval.constants import ColumnNames, MEAN
+from fmeval.constants import DatasetColumns, MEAN
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
@@ -119,9 +119,9 @@ class Toxicity(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [ColumnNames.MODEL_INPUT_COLUMN_NAME.value])
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = None
-            if ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value not in dataset.columns():
+            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
@@ -129,15 +129,15 @@ class Toxicity(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     dataset_prompt_template,
                     dataset,
-                    ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                    ColumnNames.PROMPT_COLUMN_NAME.value,
+                    DatasetColumns.MODEL_INPUT.value.name,
+                    DatasetColumns.PROMPT.value.name,
                 )
                 assert model  # to satisfy mypy
                 dataset = generate_model_predict_response_for_dataset(
                     model=model,
                     data=dataset,
-                    model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
-                    model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                    model_input_column_name=DatasetColumns.PROMPT.value.name,
+                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
                 )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
 
@@ -181,6 +181,6 @@ class Toxicity(EvalAlgorithmInterface):
         """
         return dataset.map_batches(
             fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
-            fn_constructor_args=(ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,),
+            fn_constructor_args=(DatasetColumns.MODEL_OUTPUT.value.name,),
             compute=ray.data.ActorPoolStrategy(size=get_num_actors()),
         ).materialize()

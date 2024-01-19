@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 
 import fmeval.util as util
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
@@ -84,17 +84,17 @@ class PromptStereotyping(EvalAlgorithmInterface):
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(
-                dataset, [ColumnNames.SENT_LESS_INPUT_COLUMN_NAME.value, ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value]
+                dataset, [DatasetColumns.SENT_LESS_INPUT.value.name, DatasetColumns.SENT_MORE_INPUT.value.name]
             )
             dataset_prompt_template = None
             if (
-                ColumnNames.SENT_MORE_LOG_PROB_COLUMN_NAME.value not in dataset.columns()
-                or ColumnNames.SENT_LESS_LOG_PROB_COLUMN_NAME.value not in dataset.columns()
+                DatasetColumns.SENT_MORE_LOG_PROB.value.name not in dataset.columns()
+                or DatasetColumns.SENT_LESS_LOG_PROB.value.name not in dataset.columns()
             ):
                 util.require(
                     model,
                     f"No ModelRunner provided. ModelRunner is required for inference on model_inputs if "
-                    f"{ColumnNames.SENT_MORE_LOG_PROB_COLUMN_NAME.value} and {ColumnNames.SENT_LESS_LOG_PROB_COLUMN_NAME.value} "
+                    f"{DatasetColumns.SENT_MORE_LOG_PROB.value.name} and {DatasetColumns.SENT_LESS_LOG_PROB.value.name} "
                     f"columns are not provided in the dataset",
                 )
                 assert model  # to satisfy mypy
@@ -104,26 +104,26 @@ class PromptStereotyping(EvalAlgorithmInterface):
                 dataset = generate_prompt_column_for_dataset(
                     dataset_prompt_template,
                     dataset,
-                    ColumnNames.SENT_MORE_INPUT_COLUMN_NAME.value,
-                    ColumnNames.SENT_MORE_PROMPT_COLUMN_NAME.value,
+                    DatasetColumns.SENT_MORE_INPUT.value.name,
+                    DatasetColumns.SENT_MORE_PROMPT.value.name,
                 )
                 dataset = generate_prompt_column_for_dataset(
                     dataset_prompt_template,
                     dataset,
-                    ColumnNames.SENT_LESS_INPUT_COLUMN_NAME.value,
-                    ColumnNames.SENT_LESS_PROMPT_COLUMN_NAME.value,
+                    DatasetColumns.SENT_LESS_INPUT.value.name,
+                    DatasetColumns.SENT_LESS_PROMPT.value.name,
                 )
                 dataset = generate_model_predict_response_for_dataset(
                     model,
                     dataset,
-                    ColumnNames.SENT_MORE_PROMPT_COLUMN_NAME.value,
-                    model_log_probability_column_name=ColumnNames.SENT_MORE_LOG_PROB_COLUMN_NAME.value,
+                    DatasetColumns.SENT_MORE_PROMPT.value.name,
+                    model_log_probability_column_name=DatasetColumns.SENT_MORE_LOG_PROB.value.name,
                 )
                 dataset = generate_model_predict_response_for_dataset(
                     model,
                     dataset,
-                    ColumnNames.SENT_LESS_PROMPT_COLUMN_NAME.value,
-                    model_log_probability_column_name=ColumnNames.SENT_LESS_LOG_PROB_COLUMN_NAME.value,
+                    DatasetColumns.SENT_LESS_PROMPT.value.name,
+                    model_log_probability_column_name=DatasetColumns.SENT_LESS_LOG_PROB.value.name,
                 )
 
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
@@ -134,8 +134,8 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     stereotyping columns for dataset.
                     """
                     row[LOG_PROBABILITY_DIFFERENCE] = self.evaluate_sample(
-                        row[ColumnNames.SENT_MORE_LOG_PROB_COLUMN_NAME.value],
-                        row[ColumnNames.SENT_LESS_LOG_PROB_COLUMN_NAME.value],
+                        row[DatasetColumns.SENT_MORE_LOG_PROB.value.name],
+                        row[DatasetColumns.SENT_LESS_LOG_PROB.value.name],
                     )[0].value
                     row[PROMPT_STEREOTYPING] = row[LOG_PROBABILITY_DIFFERENCE] > 0
                     return row

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import fmeval.util as util
 from fmeval.constants import (
-    ColumnNames,
+    DatasetColumns,
     MEAN,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
@@ -198,30 +198,28 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(
-                dataset, [ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value, ColumnNames.MODEL_INPUT_COLUMN_NAME.value]
-            )
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = generate_prompt_column_for_dataset(
                 prompt_template=dataset_prompt_template,
                 data=dataset,
-                model_input_column_name=ColumnNames.MODEL_INPUT_COLUMN_NAME.value,
-                prompt_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
+                model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
+                prompt_column_name=DatasetColumns.PROMPT.value.name,
             )
 
             dataset = generate_model_predict_response_for_dataset(
                 model=model,
                 data=dataset,
-                model_input_column_name=ColumnNames.PROMPT_COLUMN_NAME.value,
-                model_output_column_name=ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value,
+                model_input_column_name=DatasetColumns.PROMPT.value.name,
+                model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
             )
 
             config_valid_labels = self._eval_algorithm_config.valid_labels
             if not self._eval_algorithm_config.valid_labels:  # pragma: no branch
                 self._eval_algorithm_config.valid_labels = dataset.unique(
-                    column=ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value
+                    column=DatasetColumns.TARGET_OUTPUT.value.name
                 )
                 row_count = dataset.count()
                 assert self._eval_algorithm_config.valid_labels is not None  # to satisfy mypy
@@ -242,10 +240,10 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
                 def _generate_score_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
                     scores = self.evaluate_sample(
-                        model_input=row[ColumnNames.MODEL_INPUT_COLUMN_NAME.value],
+                        model_input=row[DatasetColumns.MODEL_INPUT.value.name],
                         model=model,
-                        target_output=row[ColumnNames.TARGET_OUTPUT_COLUMN_NAME.value],
-                        model_output=row[ColumnNames.MODEL_OUTPUT_COLUMN_NAME.value],
+                        target_output=row[DatasetColumns.TARGET_OUTPUT.value.name],
+                        model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
                         prompt_template=dataset_prompt_template,
                     )
                     for score in scores:
