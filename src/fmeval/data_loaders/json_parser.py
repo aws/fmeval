@@ -245,5 +245,7 @@ class JsonParser:
             raise EvalAlgorithmClientError(
                 "Failed to cast object to string in json_parser._cast_to_string. "
                 f"Please inspect dataset {args.dataset_name} for columns containing "
-                "objects that cannot be converted to strings."
+                "objects that cannot be converted to strings. The column that failed "
+                f"is {args.column.value.name} which was extracted using the JMESPath expression "
+                f"{args.jmespath_parser.expression}."
             )

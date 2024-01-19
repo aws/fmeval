@@ -1,6 +1,8 @@
 from unittest.mock import patch, call, Mock
 import pytest
 from typing import Any, List, NamedTuple, Union, Dict
+
+from fmeval.data_loaders.jmespath_util import compile_jmespath
 from fmeval.data_loaders.json_parser import JsonParser, ColumnParseArguments
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.data_loaders.data_config import DataConfig
@@ -399,18 +401,33 @@ class TestJsonParser:
                 raise Exception
 
         bad_object = BadObject()
-        args = Mock()
+
+        err_msg = (
+            "Failed to cast object to string in json_parser._cast_to_string. "
+            f"Please inspect dataset my_dataset for columns containing "
+            "objects that cannot be converted to strings. The column that failed "
+            f"is model_input which was extracted using the JMESPath expression "
+            "my_jmespath_expression."
+        )
 
         # JSON case
-        with pytest.raises(
-            EvalAlgorithmClientError, match="Failed to cast object to string in json_parser._cast_to_string."
-        ):
-            args.dataset_mime_type = MIME_TYPE_JSON
+        with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+            args = ColumnParseArguments(
+                jmespath_parser=compile_jmespath("my_jmespath_expression"),
+                column=DatasetColumns.MODEL_INPUT,
+                dataset={},
+                dataset_mime_type=MIME_TYPE_JSON,
+                dataset_name="my_dataset",
+            )
             JsonParser._cast_to_string([1, False, "hello", bad_object], args)
 
         # JSON Lines case
-        with pytest.raises(
-            EvalAlgorithmClientError, match="Failed to cast object to string in json_parser._cast_to_string."
-        ):
-            args.dataset_mime_type = MIME_TYPE_JSONLINES
+        with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+            args = ColumnParseArguments(
+                jmespath_parser=compile_jmespath("my_jmespath_expression"),
+                column=DatasetColumns.MODEL_INPUT,
+                dataset={},
+                dataset_mime_type=MIME_TYPE_JSONLINES,
+                dataset_name="my_dataset",
+            )
             JsonParser._cast_to_string(bad_object, args)
