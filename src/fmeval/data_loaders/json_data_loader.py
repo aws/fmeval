@@ -2,7 +2,6 @@ import ray.data
 import pyarrow
 import json
 
-from typing import Any, Callable, Dict, Optional
 from dataclasses import dataclass
 
 from fmeval.constants import MIME_TYPE_JSON, MIME_TYPE_JSONLINES
@@ -13,7 +12,6 @@ from ray.data.datasource.file_based_datasource import (
     FileBasedDatasource,
     _resolve_kwargs,
 )
-from ray.data.block import BlockAccessor
 
 from fmeval.exceptions import EvalAlgorithmInternalError
 
@@ -63,18 +61,21 @@ class CustomJSONDatasource(FileBasedDatasource):
        "key": [20, "hello"]
     }
 
-    :param config: The config used by _read_file to determine whether to treat the
+    :param config: The config used by _read_stream to determine whether to treat the
             input file as a JSON or JSON Lines file.
     """
 
-    _FILE_EXTENSION = "json"  # configures the extension for files written by _write_block
+    # A list of file extensions to filter files by.
+    # Since this class only reads a single file at a time,
+    # this list effectively configures the allowed file
+    # extensions for the dataset being read.
+    _FILE_EXTENSIONS = ["json", "jsonl"]
 
-    def __init__(self, config: Optional[JsonDataLoaderConfig] = None):
-        super().__init__()
-        if config:
-            self.config = config
+    def __init__(self, config: JsonDataLoaderConfig):
+        super().__init__(config.data_file.uri, file_extensions=CustomJSONDatasource._FILE_EXTENSIONS)
+        self.config = config
 
-    def _read_file(self, f: "pyarrow.NativeFile", path: str, **reader_args) -> pyarrow.Table:  # pragma: no cover
+    def _read_stream(self, f: "pyarrow.NativeFile", path: str) -> pyarrow.Table:  # pragma: no cover
         """
         Reads the JSON or JSON Lines dataset file given by `f`, parses the JSON/JSON Lines,
         then returns a pyarrow.Table representing the dataset.
@@ -82,7 +83,6 @@ class CustomJSONDatasource(FileBasedDatasource):
         :param f: The file object to read. Note that pyarrow.NativeFile objects differ
             slightly from regular Python files.
         :param path: Unused. Required so that this class conforms to FileBasedDatasource.
-        :param reader_args: Unused. Required so that this class conforms to FileBasedDatasource.
         """
         parser = self.config.parser
         if self.config.dataset_mime_type == MIME_TYPE_JSON:
@@ -90,7 +90,7 @@ class CustomJSONDatasource(FileBasedDatasource):
             pydict = parser.parse_dataset_columns(
                 dataset=dataset, dataset_mime_type=MIME_TYPE_JSON, dataset_name=self.config.dataset_name
             )
-            return pyarrow.Table.from_pydict(pydict)
+            yield pyarrow.Table.from_pydict(pydict)
         elif self.config.dataset_mime_type == MIME_TYPE_JSONLINES:
             json_lines_strings = f.readall().decode().strip().split("\n")
             json_lines = [json.loads(line) for line in json_lines_strings]
@@ -100,24 +100,9 @@ class CustomJSONDatasource(FileBasedDatasource):
                 )
                 for line in json_lines
             ]
-            return pyarrow.Table.from_pylist(parsed_json_lines)
+            yield pyarrow.Table.from_pylist(parsed_json_lines)
         else:  # pragma: no cover
             raise EvalAlgorithmInternalError(
                 f"Got an unexpected dataset MIME type {self.config.dataset_mime_type} "
                 "that is not JSON or JSON Lines."
             )
-
-    def _write_block(
-        self,
-        f: "pyarrow.NativeFile",
-        block: BlockAccessor,
-        writer_args_fn: Callable[[], Dict[str, Any]] = lambda: {},
-        **writer_args,
-    ):  # pragma: no cover
-        """
-        Copied directly from Ray's own JSONDatasource class.
-        """
-        writer_args = _resolve_kwargs(writer_args_fn, **writer_args)
-        orient = writer_args.pop("orient", "records")
-        lines = writer_args.pop("lines", True)
-        block.to_pandas().to_json(f, orient=orient, lines=lines, **writer_args)

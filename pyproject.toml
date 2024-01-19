@@ -20,7 +20,7 @@ classifiers=[
 [tool.poetry.dependencies]
 python = "^3.10"
 urllib3 = "1.26.18"
-ray = "2.7.1"
+ray = "2.9.0"
 semantic-version = "2.10.0"
 pyarrow = "*"
 pyfunctional = "1.4.3"
@@ -41,6 +41,7 @@ sagemaker = "^2.199.0"
 testbook = "^0.4.2"
 ipykernel = "^6.26.0"
 mypy-boto3-bedrock = "^1.33.2"
+grpcio = "^1.60.0"
 
 [tool.poetry.dev-dependencies]
 fire = "*"
