@@ -3,7 +3,7 @@ from typing import NamedTuple, Tuple, List
 
 from fmeval.eval_algorithms.factual_knowledge import FACTUAL_KNOWLEDGE
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING, LOG_PROBABILITY_DIFFERENCE
-from fmeval.eval_algorithms.qa_accuracy import F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE
+from fmeval.eval_algorithms.qa_accuracy import F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION, RECALL
 from fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, BERT_SCORE, ROUGE_SCORE
 from fmeval.eval_algorithms.classification_accuracy import (
     CLASSIFICATION_ACCURACY_SCORE,
@@ -18,6 +18,8 @@ from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_F1_SCORE,
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
+    DELTA_PRECISION,
+    DELTA_RECALL,
 )
 from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     DELTA_ROUGE_SCORE,
@@ -168,6 +170,8 @@ SCORE_DESCRIPTIONS = {
     F1_SCORE: "Numerical score between 0 (worst) and 1 (best). F1-score is the harmonic mean of precision and recall. It is computed as follows:  precision = true positives / (true positives + false positives) and recall = true positives / (true positives + false negatives). Then F1 = 2 (precision * recall)/(precision + recall) .",
     EXACT_MATCH_SCORE: "An exact match score is a binary score where 1 indicates the model output and answer match exactly and 0 indicates otherwise.",
     QUASI_EXACT_MATCH_SCORE: "Similar as above, but both model output and answer are normalised first by removing any articles and punctuation. E.g., 1 also for predicted answers “Antarctica.” or “the Antarctica” .",
+    PRECISION: "The precision score is the fraction of words in the model output that are also found in the target output.",
+    RECALL: "The recall score is the fraction of words in the target output that are also found in the model output.`",
     # Summarization accuracy
     ROUGE_SCORE: "A ROUGE-N score computes the N-gram (sequences of n words) word overlaps between the reference and model summary, with the value ranging between 0 (no match) to 1 (perfect match).",
     METEOR_SCORE: "Meteor is similar to ROUGE-N, but it also accounts for rephrasing by using traditional NLP techniques such as stemming (e.g. matching “singing” to “sing”,“sings” etc.) and synonym lists.",
@@ -180,13 +184,15 @@ SCORE_DESCRIPTIONS = {
     # General semantic robustness
     WER_SCORE: "Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).",
     # Summarization semantic robustness
-    DELTA_ROUGE_SCORE: "The performance change of the ROUGE-N score is measured.",
-    DELTA_METEOR_SCORE: "The performance change of the METEOR score is measured.",
-    DELTA_BERT_SCORE: "The performance change of the BERTscore is measured.",
+    DELTA_ROUGE_SCORE: "Delta ROUGE-N score measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_METEOR_SCORE: "Delta Meteor score measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_BERT_SCORE: "Delta BERTscore measures the change in Precision between the original and perturbed versions of the same input.",
     # QA semantic robustness
-    DELTA_EXACT_MATCH_SCORE: "The performance change of the Exact Match score is measured.",
-    DELTA_QUASI_EXACT_MATCH_SCORE: "The performance change of the Quasi Exact Match score is measured.",
-    DELTA_F1_SCORE: "The performance change of the F1 over Words score is measured.",
+    DELTA_EXACT_MATCH_SCORE: "Delta Exact Match score measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_QUASI_EXACT_MATCH_SCORE: "Delta Quasi Exact Match score measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_F1_SCORE: "Delta F1 score measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_PRECISION: "Delta Precision measures the change in Precision between the original and perturbed versions of the same input.",
+    DELTA_RECALL: "Delta Recall measures the change in Recall between the original and perturbed versions of the same input.",
     # Classification semantic robustness
     DELTA_CLASSIFICATION_ACCURACY_SCORE: "The score is the binary indicator on whether or not the model answer is correct.",
     # Toxicity
