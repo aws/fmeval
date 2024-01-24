@@ -1,6 +1,7 @@
 import logging
 import string
 from functools import partial
+import re
 
 
 from typing import Any, Callable, List, Optional, Dict
@@ -105,6 +106,15 @@ def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_
     return text
 
 
+def _split(text: str) -> List[str]:
+    """
+    Split text matching one or more spaces (\s+) or one or more new lines (\n+).
+    E.g. re.split(r"\n+\s+", 'True\n\nI    disagree') = ['True', 'I', 'disagree'].
+    Note the
+    """
+    return [e for e in re.split(r"\n+|\s+", text) if e != ""]
+
+
 def _f1_score(
     model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False
 ) -> float:
@@ -124,7 +134,7 @@ def _f1_score(
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = f_measure(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
+    ret = f_measure(reference=set(_split(target_output)), test=set(_split(model_output)))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
@@ -147,7 +157,7 @@ def _precision(
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = precision(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
+    ret = precision(reference=set(_split(target_output)), test=set(_split(model_output)))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
@@ -168,7 +178,7 @@ def _recall(model_output: str, target_output: str, *, normalize_text: bool = Fal
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = recall(reference=set(target_output.split(" ")), test=set(model_output.split(" ")))
+    ret = recall(reference=set(_split(target_output)), test=set(_split(model_output)))
     if ret is None:  # pragma: no cover
         return 0.0
     else:

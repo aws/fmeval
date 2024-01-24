@@ -35,6 +35,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _exact_match_score,
     _precision,
     _recall,
+    _split,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -605,7 +606,7 @@ class TestQAAccuracy:
                 model_output="yes.\n",
                 target_output="yes",
                 strip_text=False,
-                expected_score=0.0,
+                expected_score=1.0,
             ),
         ],
     )
@@ -651,7 +652,7 @@ class TestQAAccuracy:
                 model_output="yes.\n",
                 target_output="yes",
                 strip_text=False,
-                expected_score=0.0,
+                expected_score=1.0,
             ),
         ],
     )
@@ -694,10 +695,10 @@ class TestQAAccuracy:
                 expected_score=1.0,
             ),
             TestCaseQAAccuracyEvalScore(
-                model_output="yes.\n",
+                model_output="\n\nyes.\n",
                 target_output="yes",
                 strip_text=False,
-                expected_score=0.0,
+                expected_score=1.0,
             ),
         ],
     )
@@ -737,3 +738,20 @@ class TestQAAccuracy:
             _exact_match_score(model_output=test_case.model_output, target_output=test_case.target_output)
             == test_case.expected_score
         )
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("True\n\nI do agree.", ["True", "I", "do", "agree."]),
+            ("\n\n   \n\n", []),
+            ("I\n\n\n     am you\n", ["I", "am", "you"]),
+        ],
+    )
+    def test_split(self, text, expected):
+        """
+        GIVEN text as string
+        WHEN _split is called
+        THEN returns a list of strings as expected
+        """
+        ans = _split(text)
+        assert ans == expected
