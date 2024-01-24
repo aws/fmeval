@@ -108,11 +108,12 @@ def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_
 
 def _split(text: str) -> List[str]:
     """
-    Split text matching one or more spaces (\s+) or one or more new lines (\n+).
-    E.g. re.split(r"\n+\s+", 'True\n\nI    disagree') = ['True', 'I', 'disagree'].
-    Note the
+    Split text matching one or more spaces (\s+) or one or more new lines (\n+) or any other special character.
+    Ref. https://docs.python.org/3.10/library/stdtypes.html?highlight=str%20split#str.split
+
+    E.g. re.split(r"\n+\s+", 'True\n\nI\t\t    disagree.\n') = ['True', 'I', 'disagree.'].
     """
-    return [e for e in re.split(r"\n+|\s+", text) if e != ""]
+    return text.split()
 
 
 def _f1_score(
