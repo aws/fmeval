@@ -1,7 +1,6 @@
 import logging
 import string
 from functools import partial
-import re
 
 
 from typing import Any, Callable, List, Optional, Dict
@@ -108,7 +107,8 @@ def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_
 
 def _split(text: str) -> List[str]:
     """
-    Split text matching one or more spaces (\s+) or one or more new lines (\n+) or any other special character.
+    Split text matching one or more spaces (\s+) or one or more new lines (\n+) or any other string.whitespace
+    (namely ' \t\n\r\x0b\x0c').
     Ref. https://docs.python.org/3.10/library/stdtypes.html?highlight=str%20split#str.split
 
     E.g. re.split(r"\n+\s+", 'True\n\nI\t\t    disagree.\n') = ['True', 'I', 'disagree.'].
