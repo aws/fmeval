@@ -742,17 +742,17 @@ class TestQAAccuracy:
     @pytest.mark.parametrize(
         "text, expected",
         [
-            ("True\n\nI do agree.", ["True", "I", "do", "agree."]),
-            ("\n\n   \n\n", []),
-            ("I\n\n\n     am you\n", ["I", "am", "you"]),
-            ("\r\x0bI\x0csaw\t\n\ryou", ["I", "saw", "you"]),
+            ("True\n\nI do agree.\tTrue", {"True", "I", "do", "agree."}),
+            ("\n\n   \n\n", set()),
+            ("I\n\n\n     am you\n", {"I", "am", "you"}),
+            ("\r\x0bI\x0csaw\t\n\ryou!", {"I", "saw", "you!"}),
         ],
     )  #
     def test_split(self, text, expected):
         """
         GIVEN text as string
         WHEN _split is called
-        THEN returns a list of strings as expected (namley split by ' \t\n\r\x0b\x0c')
+        THEN returns a set of strings as expected (namley split by ' \t\n\r\x0b\x0c')
         """
         ans = _split(text)
         assert ans == expected

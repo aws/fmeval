@@ -3,7 +3,7 @@ import string
 from functools import partial
 
 
-from typing import Any, Callable, List, Optional, Dict
+from typing import Any, Callable, List, Optional, Dict, Set
 
 from dataclasses import dataclass
 
@@ -105,15 +105,12 @@ def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_
     return text
 
 
-def _split(text: str) -> List[str]:
+def _split(text: str) -> Set[str]:
     """
-    Split text matching one or more spaces (\s+) or one or more new lines (\n+) or any other string.whitespace
-    (namely ' \t\n\r\x0b\x0c').
-    Ref. https://docs.python.org/3.10/library/stdtypes.html?highlight=str%20split#str.split
-
-    E.g. re.split(r"\n+\s+", 'True\n\nI\t\t    disagree.\n') = ['True', 'I', 'disagree.'].
+    Splits the text to compute precision, recall scores and F1-score based on string.whitespace characters
+     (namely ' \t\n\r\x0b\x0c') and converting the resulting list into a set.
     """
-    return text.split()
+    return set(text.split())
 
 
 def _f1_score(
@@ -135,7 +132,7 @@ def _f1_score(
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = f_measure(reference=set(_split(target_output)), test=set(_split(model_output)))
+    ret = f_measure(reference=_split(target_output), test=_split(model_output))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
@@ -158,7 +155,7 @@ def _precision(
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = precision(reference=set(_split(target_output)), test=set(_split(model_output)))
+    ret = precision(reference=_split(target_output), test=_split(model_output))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
@@ -179,7 +176,7 @@ def _recall(model_output: str, target_output: str, *, normalize_text: bool = Fal
     """
     model_output = _normalize_and_strip_text(model_output, normalize_text=normalize_text, strip_text=strip_text)
     target_output = _normalize_and_strip_text(target_output, normalize_text=normalize_text, strip_text=strip_text)
-    ret = recall(reference=set(_split(target_output)), test=set(_split(model_output)))
+    ret = recall(reference=_split(target_output), test=_split(model_output))
     if ret is None:  # pragma: no cover
         return 0.0
     else:
