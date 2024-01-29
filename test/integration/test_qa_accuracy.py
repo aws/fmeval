@@ -6,8 +6,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
     EXACT_MATCH_SCORE,
     QUASI_EXACT_MATCH_SCORE,
-    PRECISION,
-    RECALL,
+    PRECISION_OVER_WORDS,
+    RECALL_OVER_WORDS,
 )
 
 from fmeval.data_loaders.data_config import DataConfig
@@ -62,7 +62,7 @@ class TestQAAccuracy:
                 assert eval_score.value == approx(0.060606, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
                 assert eval_score.value == approx(0.303030, abs=ABS_TOL)
-            elif eval_score.name == PRECISION:
+            elif eval_score.name == PRECISION_OVER_WORDS:
                 assert eval_score.value == approx(0.357660, abs=ABS_TOL)
-            elif eval_score.name == RECALL:
+            elif eval_score.name == RECALL_OVER_WORDS:
                 assert eval_score.value == approx(0.381313, abs=ABS_TOL)
