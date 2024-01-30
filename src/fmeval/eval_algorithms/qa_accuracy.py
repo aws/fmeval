@@ -46,8 +46,8 @@ ENGLISH_PUNCTUATIONS = string.punctuation
 F1_SCORE = "f1_score"
 EXACT_MATCH_SCORE = "exact_match_score"
 QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
-PRECISION = "precision"
-RECALL = "recall"
+PRECISION_OVER_WORDS = "precision_over_words"
+RECALL_OVER_WORDS = "recall_over_words"
 
 logger = logging.getLogger(__name__)
 
@@ -213,8 +213,8 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     F1_SCORE: partial(_f1_score, normalize_text=True, strip_text=True),
     EXACT_MATCH_SCORE: _exact_match_score,
     QUASI_EXACT_MATCH_SCORE: _quasi_exact_match_score,
-    PRECISION: partial(_precision, normalize_text=True, strip_text=True),
-    RECALL: partial(_recall, normalize_text=True, strip_text=True),
+    PRECISION_OVER_WORDS: partial(_precision, normalize_text=True, strip_text=True),
+    RECALL_OVER_WORDS: partial(_recall, normalize_text=True, strip_text=True),
 }
 
 
@@ -301,7 +301,9 @@ class QAAccuracy(EvalAlgorithmInterface):
                 dataset = dataset.map(_generate_eval_scores).materialize()
 
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION, RECALL], agg_method=MEAN
+                    dataset,
+                    [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS],
+                    agg_method=MEAN,
                 )
 
                 eval_outputs.append(
