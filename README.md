@@ -22,12 +22,9 @@ To install the package from PIP you can simply do:
 pip install fmeval
 ```
 
-Note: if you you run into the following error while installing `fmeval` on a Mac, please try running the steps below.
+### Troubleshooting
+If you you run into the error `error: can't find Rust compiler` while installing on a Mac, please try running the steps below.
 
-Error:
-`error: can't find Rust compiler`
-
-Fix:
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup install 1.72.1
