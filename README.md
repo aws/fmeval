@@ -22,6 +22,22 @@ To install the package from PIP you can simply do:
 pip install fmeval
 ```
 
+Note: if you you run into the following error while installing `fmeval` on a Mac, please try running the steps below.
+
+Error:
+`error: can't find Rust compiler`
+
+Fix:
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup install 1.72.1
+rustup default 1.72.1-aarch64-apple-darwin
+rustup toolchain remove stable-aarch64-apple-darwin
+rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
+mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
+```
+
+
 ## Usage
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
 the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
