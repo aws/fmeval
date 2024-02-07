@@ -1,7 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
 from collections import OrderedDict
-from typing import Optional
+from typing import Optional, List
 
 # Output results path
 
@@ -121,3 +121,30 @@ SDK_MANIFEST_FILE = "models_manifest.json"
 JUMPSTART_BUCKET_BASE_URL_FORMAT = "https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com"
 JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR = "JUMPSTART_BUCKET_BASE_URL_FORMAT"
 GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
+
+
+class BertscoreModels(Enum):
+    """This class holds the names of all the allowed models for computing the BERTScore."""
+
+    MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
+    ROBERTA_MODEL = "roberta-large-mnli"
+
+    @classmethod
+    def model_is_allowed(cls, model_name: str) -> bool:
+        """
+        Given a model name like 'roberta-large-mnli', check if this is an allowed model for computing BERTScore.
+        """
+        for elem in iter(cls):
+            if elem.value == model_name:
+                return True
+        return False
+
+    @classmethod
+    def model_list(cls) -> List[str]:
+        """
+        Return a list of all the allowed models for computing BERTScore.
+        """
+        return [elem.value for elem in iter(cls)]
+
+
+BERTSCORE_DEFAULT_MODEL = BertscoreModels.ROBERTA_MODEL.value

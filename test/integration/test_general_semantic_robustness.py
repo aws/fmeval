@@ -16,6 +16,7 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     GeneralSemanticRobustnessConfig,
     RANDOM_UPPER_CASE,
     WER_SCORE,
+    BERT_SCORE,
     WHITESPACE_ADD_REMOVE,
 )
 
@@ -42,7 +43,10 @@ class TestGeneralSemanticRobustness:
                     num_perturbations=5,
                     butter_finger_perturbation_prob=0.1,
                 ),
-                expected_scores={WER_SCORE: 1.1},
+                expected_scores={
+                    WER_SCORE: 1.1,
+                    BERT_SCORE: 0.7592862963676452,
+                },
             ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
@@ -50,7 +54,10 @@ class TestGeneralSemanticRobustness:
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
-                expected_scores={WER_SCORE: 0.26666666666666666},
+                expected_scores={
+                    WER_SCORE: 0.26666666666666666,
+                    BERT_SCORE: 0.9743958353996277,
+                },
             ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
@@ -59,7 +66,10 @@ class TestGeneralSemanticRobustness:
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
                 ),
-                expected_scores={WER_SCORE: 0.5},
+                expected_scores={
+                    WER_SCORE: 0.5,
+                    BERT_SCORE: 0.8889654517173767,
+                },
             ),
         ],
     )
@@ -71,7 +81,7 @@ class TestGeneralSemanticRobustness:
             model=sm_model_runner,
         )
         for eval_score in eval_scores:
-            assert eval_score.value == gsr_test_case.expected_scores[eval_score.name]
+            assert eval_score.value == approx(gsr_test_case.expected_scores[eval_score.name], abs=ABS_TOL)
 
     @pytest.mark.parametrize(
         "gsr_test_case",
@@ -82,7 +92,10 @@ class TestGeneralSemanticRobustness:
                     num_perturbations=5,
                     butter_finger_perturbation_prob=0.1,
                 ),
-                expected_scores={WER_SCORE: 0.7579873015873015},
+                expected_scores={
+                    WER_SCORE: 0.7579873015873015,
+                    BERT_SCORE: 0.7902515553236007,
+                },
             ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
@@ -90,7 +103,10 @@ class TestGeneralSemanticRobustness:
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
-                expected_scores={WER_SCORE: 0.5560531746031746},
+                expected_scores={
+                    WER_SCORE: 0.5560531746031746,
+                    BERT_SCORE: 0.8534759819507599,
+                },
             ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
@@ -99,7 +115,10 @@ class TestGeneralSemanticRobustness:
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
                 ),
-                expected_scores={WER_SCORE: 0.6135412698412699},
+                expected_scores={
+                    WER_SCORE: 0.6135412698412699,
+                    BERT_SCORE: 0.8363203999996186,
+                },
             ),
         ],
     )

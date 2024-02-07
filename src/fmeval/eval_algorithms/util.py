@@ -365,3 +365,21 @@ def verify_model_determinism(model: ModelRunner, dataset: Dataset, prompt_column
         if model.predict(original_prompt)[0] != original_model_output:
             return False
     return True
+
+
+def get_bert_score(target_output: str, model_output: str, **kwargs) -> float:
+    """
+    BERTscore is a similarity-based metric that compares the embedding of two texts under a learned model, typically,
+    from the BERT family. This score may lead to increased flexibility compared to ROUGE and METEOR since semantically
+    similar sentences are (typically) embedded similarly.
+
+    https://huggingface.co/spaces/evaluate-metric/bertscore
+
+    :param target_output: The expected responses from the model
+    :param model_output: The output of a model that we want to evaluate.
+    :param helper_model: The BertscoreHelperModel belonging to an instance of SummarizationAccuracy.
+    :returns: bert score
+    """
+    assert "helper_model" in kwargs
+    helper_model = kwargs["helper_model"]
+    return ray.get(helper_model.get_helper_scores.remote(target_output, model_output))

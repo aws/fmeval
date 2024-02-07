@@ -1,6 +1,5 @@
 import logging
 
-import ray
 import nltk
 import evaluate as hf_evaluate
 
@@ -40,6 +39,8 @@ from fmeval.eval_algorithms.util import (
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
+from fmeval.constants import BertscoreModels, BERTSCORE_DEFAULT_MODEL
+from fmeval.eval_algorithms.util import get_bert_score
 
 METEOR_SCORE = "meteor"
 ROUGE_SCORE = "rouge"
@@ -52,11 +53,6 @@ ROUGE_L = "rougeL"
 
 ROUGE_TYPES = [ROUGE_1, ROUGE_2, ROUGE_L]
 
-# bertscore constants
-MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
-ROBERTA_MODEL = "roberta-large-mnli"
-DEFAULT_MODEL_TYPE = MICROSOFT_DEBERTA_MODEL
-MODEL_TYPES_SUPPORTED = [MICROSOFT_DEBERTA_MODEL, ROBERTA_MODEL]
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +69,7 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
 
     rouge_type: str = ROUGE_2
     use_stemmer_for_rouge: bool = True
-    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
+    model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
         if not self.rouge_type in ROUGE_TYPES:
@@ -82,10 +78,10 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+        if not BertscoreModels.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreModels.model_list()}"
             )
 
 
@@ -244,7 +240,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         return eval_outputs
 
 
-def get_meteor_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
+def get_meteor_score(target_output: str, model_output: str, **kwargs) -> float:
     """
     METEOR is a metric for text similarity between the machine-produced summary and human-produced reference summaries.
     Unigrams can be matched based on their surface forms, stemmed forms,
@@ -258,7 +254,6 @@ def get_meteor_score(target_output: str, model_output: str, config: Summarizatio
 
     :param target_output: The expected responses from the model
     :param model_output: The output of a model that we want to evaluate.
-    :param config: Eval algo config
     :returns: meteor score
     """
     return meteor_score.single_meteor_score(
@@ -266,7 +261,7 @@ def get_meteor_score(target_output: str, model_output: str, config: Summarizatio
     )
 
 
-def get_rouge_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
+def get_rouge_score(target_output: str, model_output: str, **kwargs) -> float:
     """
     The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
     It computes the word overlap between the reference and model summary. Given that this metric is based on simple
@@ -280,6 +275,8 @@ def get_rouge_score(target_output: str, model_output: str, config: Summarization
     :param config: Eval algo config
     :returns: rouge score
     """
+    assert "config" in kwargs
+    config = kwargs["config"]
     rouge = hf_evaluate.load("rouge")
     return rouge.compute(
         predictions=[model_output],
@@ -287,26 +284,6 @@ def get_rouge_score(target_output: str, model_output: str, config: Summarization
         use_stemmer=config.use_stemmer_for_rouge,
         rouge_types=[config.rouge_type],
     )[config.rouge_type]
-
-
-def get_bert_score(target_output: str, model_output: str, config: SummarizationAccuracyConfig, **kwargs) -> float:
-    """
-    BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
-    under a learned model, typically, from the BERT family.
-    This score may lead to increased flexibility compared to ROUGE and METEOR in terms of rephrasing since
-    semantically similar sentences are (typically) embedded similarly.
-
-    https://huggingface.co/spaces/evaluate-metric/bertscore
-
-    :param target_output: The expected responses from the model
-    :param model_output: The output of a model that we want to evaluate.
-    :param config: Eval algo config
-    :param helper_model: The BertscoreHelperModel belonging to an instance of SummarizationAccuracy.
-    :returns: bert score
-    """
-    assert "helper_model" in kwargs
-    helper_model = kwargs["helper_model"]
-    return ray.get(helper_model.get_helper_scores.remote(target_output, model_output))
 
 
 def add_score_to_dataset(
@@ -335,7 +312,7 @@ def add_score_to_dataset(
             row[score_name] = eval_func(
                 row[DatasetColumns.TARGET_OUTPUT.value.name],
                 row[DatasetColumns.MODEL_OUTPUT.value.name],
-                config,
+                config=config,
                 helper_model=helper_model,
             )
         return row
