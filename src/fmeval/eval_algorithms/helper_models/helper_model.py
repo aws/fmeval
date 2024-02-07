@@ -1,11 +1,11 @@
 import ray
 import numpy as np
 import evaluate as hf_evaluate
-
+import torch
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
-from detoxify import Detoxify
-from transformers import pipeline
+import transformers
+from transformers import pipeline, AutoConfig
 from fmeval.constants import DatasetColumns
 
 TOXIGEN_SCORE_NAME = "toxicity"
@@ -100,12 +100,17 @@ class DetoxifyHelperModel(BaseHelperModel):
     """
     Helper model for Detoxify: https://github.com/unitaryai/detoxify
 
+    Note: we load the unbiased model directly from the state dict due to dependency conflicts between detoxify and
+    transformers libraries.
+
     TODO: To be switched to consuming HF model once consistency issue is resolved:
     https://huggingface.co/unitary/unbiased-toxic-roberta. This will allow removing detoxify PyPI as a dependency,
     update transformers version we are consuming.
     """
 
-    DETOXIFY_MODEL_TYPE = "unbiased"
+    UNBIASED_MODEL_URL = (
+        "https://github.com/unitaryai/detoxify/releases/download/v0.3-alpha/toxic_debiased-c7548aa0.ckpt"
+    )
     COLUMN_NAME = DatasetColumns.MODEL_OUTPUT.value.name
 
     def __init__(self, column_name: str = COLUMN_NAME):
@@ -114,7 +119,19 @@ class DetoxifyHelperModel(BaseHelperModel):
 
         :param column_name: column name used to fetch input texts in __call__ method
         """
-        self._model = Detoxify(model_type="unbiased").predict
+        state_dict = torch.hub.load_state_dict_from_url(self.UNBIASED_MODEL_URL, map_location="cpu")
+        config = state_dict["config"]["arch"]["args"]
+        self._model = (
+            getattr(transformers, config["model_name"])
+            .from_pretrained(
+                pretrained_model_name_or_path=None,
+                config=AutoConfig.from_pretrained(config["model_type"], num_labels=config["num_classes"]),
+                state_dict=state_dict["state_dict"],
+                local_files_only=False,
+            )
+            .to("cpu")
+        )
+        self._tokenizer = getattr(transformers, config["tokenizer_name"]).from_pretrained(config["model_type"])
         self._column_name = column_name
 
     def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
@@ -123,7 +140,16 @@ class DetoxifyHelperModel(BaseHelperModel):
         :param text_input: list of text inputs for the model
         :returns: dict with keys as score name and value being list of scores for text inputs
         """
-        return self._model(text_input)
+        inputs = self._tokenizer(text_input, return_tensors="pt", truncation=True, padding=True).to(self._model.device)
+        scores = torch.sigmoid(self._model(**inputs)[0]).cpu().detach().numpy()
+        results = {}
+        for i, cla in enumerate(DetoxifyHelperModel.get_score_names()):
+            results[cla] = (
+                scores[0][i]
+                if isinstance(text_input, str)
+                else [scores[ex_i][i].tolist() for ex_i in range(len(scores))]
+            )
+        return results
 
     def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
