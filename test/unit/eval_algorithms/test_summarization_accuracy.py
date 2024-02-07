@@ -738,7 +738,8 @@ class TestSummarizationAccuracy:
     )
     def test_get_meteor_score(self, test_case, load_meteor_helpers):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_meteor_score(
-            test_case.target_output, test_case.model_output,
+            test_case.target_output,
+            test_case.model_output,
         )
 
     @pytest.mark.parametrize(
@@ -775,7 +776,9 @@ class TestSummarizationAccuracy:
     )
     def test_get_rouge_score(self, test_case, load_meteor_helpers, config):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_rouge_score(
-            test_case.target_output, test_case.model_output, config=config,
+            test_case.target_output,
+            test_case.model_output,
+            config=config,
         )
 
     @pytest.mark.parametrize(
