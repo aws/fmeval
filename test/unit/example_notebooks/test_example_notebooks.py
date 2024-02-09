@@ -37,8 +37,7 @@ def test_bedrock_model_notebook(tb):
     )
 
     # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the package built from the latest code
-    # (see devtool build_package and install_package), not the released package.
+    # We want to test the example notebooks against the latest code, not the released package.
     seen_code_cell = False
     for index, cell in enumerate(tb.cells):
         if cell["cell_type"] == "code" and not seen_code_cell:
@@ -85,8 +84,7 @@ def test_js_model_notebook(tb):
     )
 
     # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the package built from the latest code
-    # (see devtool build_package and install_package), not the released package.
+    # We want to test the example notebooks against the latest code, not the released package.
     seen_code_cell = False
     for index, cell in enumerate(tb.cells):
         if cell["cell_type"] == "code" and not seen_code_cell:
@@ -133,8 +131,7 @@ def test_custom_model_chat_gpt_notebook(tb):
     )
 
     # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the package built from the latest code
-    # (see devtool build_package and install_package), not the released package.
+    # We want to test the example notebooks against the latest code, not the released package.
     seen_code_cell = False
     for index, cell in enumerate(tb.cells):
         if cell["cell_type"] == "code" and not seen_code_cell:
@@ -186,8 +183,7 @@ def test_custom_model_hf_notebook(tb):
     )
 
     # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the package built from the latest code
-    # (see devtool build_package and install_package), not the released package.
+    # We want to test the example notebooks against the latest code, not the released package.
     seen_code_cell = False
     for index, cell in enumerate(tb.cells):
         if cell["cell_type"] == "code" and not seen_code_cell:
