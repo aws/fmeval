@@ -176,15 +176,16 @@ install_deps_dev() {
 
 install_package() {
     wheel_name=$(ls -t dist | head -n 1)
-    pip3 install --upgrade dist/$wheel_name --upgrade --upgrade-strategy only-if-needed --force-reinstall
+    pip3 install --upgrade dist/$wheel_name
 }
 
 all() {
     env_setup
     install_deps
     lint
-    unit_test_with_coverage
     build_package
+    install_package
+    unit_test_with_coverage
     echo "All build and tests passed. 😊"
 }
 

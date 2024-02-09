@@ -1,5 +1,7 @@
 import os
 from testbook import testbook
+from testbook.client import TestbookNotebookClient
+
 from fmeval.util import project_root
 
 
@@ -34,7 +36,17 @@ def test_bedrock_model_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
+    # We want to test the example notebooks against the package built from the latest code
+    # (see devtool build_package and install_package), not the released package.
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+
     tb.inject(
         """
         p1.stop()
@@ -72,7 +84,17 @@ def test_js_model_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
+    # We want to test the example notebooks against the package built from the latest code
+    # (see devtool build_package and install_package), not the released package.
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+
     tb.inject(
         """
         p1.stop()
@@ -110,7 +132,17 @@ def test_custom_model_chat_gpt_notebook(tb):
         p3.start()
         """
     )
-    tb.execute()
+
+    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
+    # We want to test the example notebooks against the package built from the latest code
+    # (see devtool build_package and install_package), not the released package.
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+
     tb.inject(
         """
         p1.stop()
@@ -153,7 +185,17 @@ def test_custom_model_hf_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
+    # We want to test the example notebooks against the package built from the latest code
+    # (see devtool build_package and install_package), not the released package.
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+
     tb.inject(
         """
         p1.stop()
