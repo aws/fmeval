@@ -4,6 +4,27 @@ from testbook.client import TestbookNotebookClient
 from fmeval.util import project_root
 
 
+def execute_notebook_cells(tb: TestbookNotebookClient) -> None:
+    """
+    Performs essentially the exact same behavior as tb.execute(),
+    except it skips the execution of the first code cell.
+
+    The reason behind skipping the first code cell is that for the example notebooks,
+    the first code cell always installs the currently-released fmeval package.
+    This overrides the existing fmeval installation that gets done when we run `poetry install`.
+    We want to test the example notebooks against the latest code, not the released package.
+
+    :param tb: the TestbookNotebookClient used in the example notebook unit test
+    :returns: None
+    """
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+
+
 bedrock_example_notebook_path = os.path.join(
     project_root(__file__), "examples", "bedrock-claude-factual-knowledge.ipynb"
 )
@@ -36,14 +57,7 @@ def test_bedrock_model_notebook(tb):
         """
     )
 
-    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the latest code, not the released package.
-    seen_code_cell = False
-    for index, cell in enumerate(tb.cells):
-        if cell["cell_type"] == "code" and not seen_code_cell:
-            seen_code_cell = True
-            continue
-        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+    execute_notebook_cells(tb)
 
     tb.inject(
         """
@@ -83,14 +97,7 @@ def test_js_model_notebook(tb):
         """
     )
 
-    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the latest code, not the released package.
-    seen_code_cell = False
-    for index, cell in enumerate(tb.cells):
-        if cell["cell_type"] == "code" and not seen_code_cell:
-            seen_code_cell = True
-            continue
-        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+    execute_notebook_cells(tb)
 
     tb.inject(
         """
@@ -130,14 +137,7 @@ def test_custom_model_chat_gpt_notebook(tb):
         """
     )
 
-    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the latest code, not the released package.
-    seen_code_cell = False
-    for index, cell in enumerate(tb.cells):
-        if cell["cell_type"] == "code" and not seen_code_cell:
-            seen_code_cell = True
-            continue
-        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+    execute_notebook_cells(tb)
 
     tb.inject(
         """
@@ -182,14 +182,7 @@ def test_custom_model_hf_notebook(tb):
         """
     )
 
-    # Skip execution of the first code cell, which installs the *currently-released* fmeval package.
-    # We want to test the example notebooks against the latest code, not the released package.
-    seen_code_cell = False
-    for index, cell in enumerate(tb.cells):
-        if cell["cell_type"] == "code" and not seen_code_cell:
-            seen_code_cell = True
-            continue
-        super(TestbookNotebookClient, tb).execute_cell(cell, index)
+    execute_notebook_cells(tb)
 
     tb.inject(
         """
