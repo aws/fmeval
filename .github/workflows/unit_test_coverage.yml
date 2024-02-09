@@ -24,6 +24,11 @@ jobs:
         run: |
           ./devtool env_setup
 
+      - name: Create virtual env
+        run: |
+          python -m venv .fmeval_venv
+          source .fmeval_venv/bin/activate
+
       - name: Install dependencies with poetry
         run: |
           ./devtool install_deps
@@ -31,7 +36,7 @@ jobs:
       - name: Test with code coverage
         run: |
           ./devtool unit_test_with_coverage
-          echo "All build and tests passed."
+          echo "All build and unit tests passed."
 
       - name: Build Package binary wheel
         run: |
