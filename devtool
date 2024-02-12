@@ -176,7 +176,7 @@ install_deps_dev() {
 
 install_package() {
     wheel_name=$(ls -t dist | head -n 1)
-    pip3 install --upgrade dist/$wheel_name --upgrade --upgrade-strategy only-if-needed --force-reinstall
+    pip3 install dist/$wheel_name --force-reinstall
 }
 
 all() {
