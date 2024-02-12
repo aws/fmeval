@@ -45,7 +45,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 1.1,
-                    BERT_SCORE: 0.7592862963676452,
+                    BERT_SCORE: 0.5673260986804962,
                 },
             ),
             GSRTestCase(
@@ -56,7 +56,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.26666666666666666,
-                    BERT_SCORE: 0.9743958353996277,
+                    BERT_SCORE: 0.9478128790855408,
                 },
             ),
             GSRTestCase(
@@ -68,7 +68,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.5,
-                    BERT_SCORE: 0.8889654517173767,
+                    BERT_SCORE: 0.8349653720855713,
                 },
             ),
         ],
@@ -94,7 +94,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.7579873015873015,
-                    BERT_SCORE: 0.7902515553236007,
+                    BERT_SCORE: 0.6333582122325897,
                 },
             ),
             GSRTestCase(
@@ -105,7 +105,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.5560531746031746,
-                    BERT_SCORE: 0.8534759819507599,
+                    BERT_SCORE: 0.7492285879850387,
                 },
             ),
             GSRTestCase(
@@ -117,7 +117,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.6135412698412699,
-                    BERT_SCORE: 0.8363203999996186,
+                    BERT_SCORE: 0.7184949726462364,
                 },
             ),
         ],

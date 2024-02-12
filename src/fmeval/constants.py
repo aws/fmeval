@@ -147,4 +147,4 @@ class BertscoreModels(Enum):
         return [elem.value for elem in iter(cls)]
 
 
-BERTSCORE_DEFAULT_MODEL = BertscoreModels.ROBERTA_MODEL.value
+BERTSCORE_DEFAULT_MODEL = BertscoreModels.MICROSOFT_DEBERTA_MODEL.value
