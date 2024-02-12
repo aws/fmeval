@@ -1,6 +1,28 @@
 import os
 from testbook import testbook
+from testbook.client import TestbookNotebookClient
 from fmeval.util import project_root
+
+
+def execute_notebook_cells(tb: TestbookNotebookClient) -> None:
+    """
+    Performs essentially the exact same behavior as tb.execute(),
+    except it skips the execution of the first code cell.
+
+    The reason behind skipping the first code cell is that for the example notebooks,
+    the first code cell always installs the currently-released fmeval package.
+    This overrides the existing fmeval installation that gets done when we run `poetry install`.
+    We want to test the example notebooks against the latest code, not the released package.
+
+    :param tb: the TestbookNotebookClient used in the example notebook unit test
+    :returns: None
+    """
+    seen_code_cell = False
+    for index, cell in enumerate(tb.cells):
+        if cell["cell_type"] == "code" and not seen_code_cell:
+            seen_code_cell = True
+            continue
+        super(TestbookNotebookClient, tb).execute_cell(cell, index)
 
 
 bedrock_example_notebook_path = os.path.join(
@@ -34,7 +56,9 @@ def test_bedrock_model_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    execute_notebook_cells(tb)
+
     tb.inject(
         """
         p1.stop()
@@ -72,7 +96,9 @@ def test_js_model_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    execute_notebook_cells(tb)
+
     tb.inject(
         """
         p1.stop()
@@ -110,7 +136,9 @@ def test_custom_model_chat_gpt_notebook(tb):
         p3.start()
         """
     )
-    tb.execute()
+
+    execute_notebook_cells(tb)
+
     tb.inject(
         """
         p1.stop()
@@ -153,7 +181,9 @@ def test_custom_model_hf_notebook(tb):
         p4.start()
         """
     )
-    tb.execute()
+
+    execute_notebook_cells(tb)
+
     tb.inject(
         """
         p1.stop()
