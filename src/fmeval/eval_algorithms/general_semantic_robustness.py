@@ -6,6 +6,7 @@ import evaluate as hf_evaluate
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any
 import numpy as np
+from ray.data import Dataset
 
 from fmeval import util
 from fmeval.constants import (
@@ -263,25 +264,26 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
             with (timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger)):
 
-                def _generate_general_semantic_robustness_score(
-                    row: Dict[str, Any]
-                ) -> Dict[str, Any]:  # pragma: no cover
-                    """
-                    Map function generating the scores for every input record in input dataset
-                    """
-                    scores = self.evaluate_sample(
-                        model_input=row[DatasetColumns.MODEL_INPUT.value.name],
-                        model=model,
-                        model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
-                        prompt_template=dataset_prompt_template,
-                    )
-                    row[BERT_SCORE] = scores[0].value
-                    if self._is_model_deterministic:
-                        row[WER_SCORE] = scores[1].value
-
-                    return row
-
-                dataset = dataset.map(_generate_general_semantic_robustness_score).materialize()
+                # def _generate_general_semantic_robustness_score(
+                #     row: Dict[str, Any]
+                # ) -> Dict[str, Any]:  # pragma: no cover
+                #     """
+                #     Map function generating the scores for every input record in input dataset
+                #     """
+                #     scores = self.evaluate_sample(
+                #         model_input=row[DatasetColumns.MODEL_INPUT.value.name],
+                #         model=model,
+                #         model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
+                #         prompt_template=dataset_prompt_template,
+                #     )
+                #     row[BERT_SCORE] = scores[0].value
+                #     if self._is_model_deterministic:
+                #         row[WER_SCORE] = scores[1].value
+                #
+                #     return row
+                #
+                # dataset = dataset.map(_generate_general_semantic_robustness_score).materialize()
+                dataset = self.__add_scores_to_dataset(dataset, model, dataset_prompt_template)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [BERT_SCORE, WER_SCORE] if self._is_model_deterministic else [BERT_SCORE], agg_method=MEAN
                 )
@@ -312,3 +314,31 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 )
 
         return eval_outputs
+
+    def __add_scores_to_dataset(self, dataset: Dataset, model: ModelRunner, prompt_template: str):
+        """
+        Private method to encapsulate logic around getting scores for every row in the dataset.
+
+        :param dataset: ray Dataset to be used for eval scores generation
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param prompt_template: Eval algo config
+        :returns: ray Dataset with score columns
+        """
+
+        def _generate_general_semantic_robustness_score(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
+            """
+            Map function generating the scores for every input record in input dataset
+            """
+            scores = self.evaluate_sample(
+                model_input=row[DatasetColumns.MODEL_INPUT.value.name],
+                model=model,
+                model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
+                prompt_template=prompt_template,
+            )
+            row[BERT_SCORE] = scores[0].value
+            if self._is_model_deterministic:
+                row[WER_SCORE] = scores[1].value
+
+            return row
+
+        return dataset.map(_generate_general_semantic_robustness_score).materialize()
