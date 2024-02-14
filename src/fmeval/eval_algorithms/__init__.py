@@ -200,16 +200,16 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [GIGAWORD, GOV_REPORT],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
         WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     ],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [GIGAWORD, GOV_REPORT],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [GIGAWORD, GOV_REPORT],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -276,13 +276,6 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         sent_more_input_location="sent_more",
         sent_less_input_location="sent_less",
         category_location="bias_type",
-    ),
-    XSUM: DataConfig(
-        dataset_name=XSUM,
-        dataset_uri="s3://fmeval/datasets/xsum/xsum.jsonl",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="document",
-        target_output_location="summary",
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
