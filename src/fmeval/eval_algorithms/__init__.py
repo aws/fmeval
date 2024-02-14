@@ -185,7 +185,6 @@ BOOLQ = "boolq"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
 CROWS_PAIRS = "crows-pairs"
-XSUM = "xsum"
 GIGAWORD = "gigaword"
 GOV_REPORT = "gov_report"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
@@ -219,7 +218,6 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     BOOLQ: 'Respond to the following question. Valid answers are "True" or "False". $feature Answer:',
     TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
     NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
-    XSUM: "Summarise the following text in one sentence: $feature",
     GIGAWORD: "Summarise the following text in one sentence: $feature",
     GOV_REPORT: "Summarise the following text in a few sentences: $feature",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: (
