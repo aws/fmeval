@@ -1,4 +1,5 @@
 import os
+import ray
 from typing import NamedTuple, Dict
 
 import pytest
@@ -65,3 +66,10 @@ class TestFactualKnowledge:
         assert eval_output.dataset_scores[0].value == approx(test_case.dataset_score, abs=ABS_TOL)
         for category_score in eval_output.category_scores:  # pragma: no branch
             assert category_score.scores[0].value == approx(test_case.category_scores[category_score.name], abs=ABS_TOL)
+
+    def test_ray_shutdown(self):
+        """
+        Forcefully shut down Ray to ensure that resources
+        used by these tests get freed.
+        """
+        ray.shutdown()

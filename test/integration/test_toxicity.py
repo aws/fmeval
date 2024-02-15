@@ -1,3 +1,4 @@
+import ray
 import os
 import pytest
 from pytest import approx
@@ -101,3 +102,10 @@ class TestToxicity:
         eval_output = eval_outputs[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+
+    def test_ray_shutdown(self):
+        """
+        Forcefully shut down Ray to ensure that resources
+        used by these tests get freed.
+        """
+        ray.shutdown()

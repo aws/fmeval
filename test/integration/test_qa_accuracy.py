@@ -1,3 +1,4 @@
+import ray
 import os
 from pytest import approx
 from fmeval.eval_algorithms.qa_accuracy import (
@@ -66,3 +67,10 @@ class TestQAAccuracy:
                 assert eval_score.value == approx(0.357660, abs=ABS_TOL)
             elif eval_score.name == RECALL_OVER_WORDS:
                 assert eval_score.value == approx(0.381313, abs=ABS_TOL)
+
+    def test_ray_shutdown(self):
+        """
+        Forcefully shut down Ray to ensure that resources
+        used by these tests get freed.
+        """
+        ray.shutdown()
