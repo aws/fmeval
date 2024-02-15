@@ -139,7 +139,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     and perturbed inputs might show artificially low robustness since the model output changes even
     without a change in the input. So this evaluation normalizes the robustness score to account for
     the baseline non-determinism. Specifically, if d is a score (Word Error Rate or BERTScore
-    Dissimilarity), then the evaluation reports min(0, d - d_base) where d_base measures the
+    Dissimilarity), then the evaluation reports max(0, d - d_base) where d_base measures the
     differences between the model output on the same input.
     """
 
@@ -261,10 +261,10 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
 
         if not is_model_deterministic:  # Compute the baseline differences in the model outputs for the same input
             baselines = self._compute_baseline_scores(model, original_prompt, original_model_output)
-            bert_score_dissimilarity_value = min(
+            bert_score_dissimilarity_value = max(
                 0, bert_score_dissimilarity_value - baselines[BERT_SCORE_DISSIMILARITY]
             )
-            wer_value = min(0, wer_value - baselines[WER_SCORE])
+            wer_value = max(0, wer_value - baselines[WER_SCORE])
 
         return [
             EvalScore(name=BERT_SCORE_DISSIMILARITY, value=bert_score_dissimilarity_value),
