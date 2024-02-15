@@ -63,7 +63,7 @@ PERTURBATION_TYPE_TO_HELPER_CLASS = {
 }
 
 WER_SCORE = "word_error_rate"
-BERT_SCORE = "bertscore"
+BERT_SCORE_DISSIMILARITY = "bertscore_dissimilarity"
 
 
 @dataclass(frozen=True)
@@ -73,6 +73,9 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
 
     :param perturbation_type: perturbation type for generating perturbed inputs
     :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
+    :param num_baseline_samples: Only used for non-deterministic models. Number of times we generate
+        the model output with the same input to compute the "baseline" change in model output. We
+        compute differences between all pairs of outputs, i.e. between comb(num_baseline_samples, 2) pairs.
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
         butter_finger perturbation_type
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
@@ -86,6 +89,7 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
 
     perturbation_type: str = BUTTER_FINGER
     num_perturbations: int = 5
+    num_baseline_samples: int = 4
     butter_finger_perturbation_prob: float = 0.1
     random_uppercase_corrupt_proportion: float = 0.1
     whitespace_remove_prob: float = 0.1
@@ -103,6 +107,11 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
                 f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModels.model_list()}."
             )
+        if self.num_baseline_samples < 2:
+            raise EvalAlgorithmClientError(
+                f"Invalid num_baseline_samples: {self.num_baseline_samples} in GeneralSemanticRobusntessConfig. "
+                f"The value should be at least 2."
+            )
 
 
 class GeneralSemanticRobustness(EvalAlgorithmInterface):
@@ -117,14 +126,21 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     original vs. perturbed input.
 
     The output difference is measured using two metrics: the Word Error Rate
-    (https://huggingface.co/spaces/evaluate-metric/wer) and the BERTScore (https://huggingface.co/spaces/evaluate-metric/bertscore)
-    between the original and the perturbed outputs. WER measures syntactic differences, that is,
-    changes in the words, while BERTScore measures semantic differences.
+    (https://huggingface.co/spaces/evaluate-metric/wer) and the BERTScore Dissimilarity, which  is
+    1 - BERTScore (https://huggingface.co/spaces/evaluate-metric/bertscore), between the original
+    and the perturbed outputs. Word Error Rate measures syntactic differences, that is, changes in
+    the words, whereas BERTScore Dissimilarity measures semantic differences. Semantic differences
+    account of cases when the precise words in the output change but the meaning is the same, e.g.,
+    consider the outputs "it is pouring down today" vs. "it is very rainy today".
 
-    Note: We only compute WER when the model output is deterministic. For non-deterministic models,
-    even with the same prompt, the phrasing of the model output might change even if the meaning is
-    the same, e.g., consider the outputs "highly recommend this movie" vs. "you should really watch
-    this film".
+    Note: When the model generation strategy is non-deterministic (e.g., with non-zero temperature),
+    the output can change even if the input is the same. In such scenarios, reporting differences
+    (using Word Error Rate or BERTScore Dissimilarity) between the model output on the original input
+    and perturbed inputs might show artificially low robustness since the model output changes even
+    without a change in the input. So this evaluation normalizes the robustness score to account for
+    the baseline non-determinism. Specifically, if d is a score (Word Error Rate or BERTScore
+    Dissimilarity), then the evaluation reports min(0, d - d_base) where d_base measures the
+    differences between the model output on the same input.
     """
 
     def __init__(self, eval_algorithm_config: GeneralSemanticRobustnessConfig = GeneralSemanticRobustnessConfig()):
@@ -151,6 +167,44 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         self._bertscore_helper_model = BertscoreHelperModel.remote(
             model_type=self._eval_algorithm_config.model_type_for_bertscore
         )
+
+    def _compute_baseline_scores(
+        self, model: ModelRunner, original_prompt: str, original_model_output
+    ) -> Dict[str, float]:
+        """
+        Private method for computing baseline scores. The baseline scores are required when the model
+        output is non-deterministic and measure the change in the model output with the same input.
+        See the class documentation for how the baseline scores are computed and used.
+
+        :param model: An instance of ModelRunner which is the model under evaluation
+        :param original_prompt: The input prompt to the model. Assumes that the input is already
+            embedded into the prompt template.
+        :param original_model_output: The output of the model on the original input prompt.
+
+        :return: A dict containing the score name to baseline score value mapping.
+        """
+        model_outputs = [
+            model.predict(original_prompt)[0] for _ in range(self._eval_algorithm_config.num_baseline_samples - 1)
+        ]
+        model_outputs.append(original_model_output)
+        all_pairs = itertools.combinations(model_outputs, 2)
+        first_output, second_output = zip(*all_pairs)
+        baselines = dict()
+
+        baselines[BERT_SCORE_DISSIMILARITY] = 1 - np.mean(
+            list(
+                map(
+                    functools.partial(get_bert_score, helper_model=self._bertscore_helper_model),
+                    first_output,
+                    second_output,
+                )
+            )
+        )
+
+        wer = hf_evaluate.load("wer")
+        baselines[WER_SCORE] = wer.compute(predictions=first_output, references=second_output)
+
+        return baselines
 
     def evaluate_sample(
         self,
@@ -190,7 +244,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
         perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
 
-        bert_score_value = np.mean(
+        bert_score_dissimilarity_value = 1 - np.mean(
             list(
                 map(
                     functools.partial(get_bert_score, helper_model=self._bertscore_helper_model),
@@ -199,17 +253,23 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 )
             )
         )
-        eval_scores = [EvalScore(name=BERT_SCORE, value=bert_score_value)]
+        wer = hf_evaluate.load("wer")
+        wer_value = wer.compute(
+            predictions=perturbed_input_outputs,
+            references=list(itertools.repeat(original_model_output, self._eval_algorithm_config.num_perturbations)),
+        )
 
-        if is_model_deterministic:
-            wer = hf_evaluate.load("wer")
-            wer_value = wer.compute(
-                predictions=perturbed_input_outputs,
-                references=list(itertools.repeat(original_model_output, self._eval_algorithm_config.num_perturbations)),
+        if not is_model_deterministic:  # Compute the baseline differences in the model outputs for the same input
+            baselines = self._compute_baseline_scores(model, original_prompt, original_model_output)
+            bert_score_dissimilarity_value = min(
+                0, bert_score_dissimilarity_value - baselines[BERT_SCORE_DISSIMILARITY]
             )
-            eval_scores.append(EvalScore(name=WER_SCORE, value=wer_value))
+            wer_value = min(0, wer_value - baselines[WER_SCORE])
 
-        return eval_scores
+        return [
+            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=bert_score_dissimilarity_value),
+            EvalScore(name=WER_SCORE, value=wer_value),
+        ]
 
     def evaluate(
         self,
@@ -264,28 +324,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
             with (timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger)):
 
-                # def _generate_general_semantic_robustness_score(
-                #     row: Dict[str, Any]
-                # ) -> Dict[str, Any]:  # pragma: no cover
-                #     """
-                #     Map function generating the scores for every input record in input dataset
-                #     """
-                #     scores = self.evaluate_sample(
-                #         model_input=row[DatasetColumns.MODEL_INPUT.value.name],
-                #         model=model,
-                #         model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
-                #         prompt_template=dataset_prompt_template,
-                #     )
-                #     row[BERT_SCORE] = scores[0].value
-                #     if self._is_model_deterministic:
-                #         row[WER_SCORE] = scores[1].value
-                #
-                #     return row
-                #
-                # dataset = dataset.map(_generate_general_semantic_robustness_score).materialize()
                 dataset = self.__add_scores_to_dataset(dataset, model, dataset_prompt_template)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [BERT_SCORE, WER_SCORE] if self._is_model_deterministic else [BERT_SCORE], agg_method=MEAN
+                    dataset, [BERT_SCORE_DISSIMILARITY, WER_SCORE], agg_method=MEAN
                 )
                 eval_outputs.append(
                     EvalOutput(
@@ -305,7 +346,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             if save:
                 save_dataset(
                     dataset=dataset,
-                    score_names=[WER_SCORE],
+                    score_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
                     path=generate_output_dataset_path(
                         path_to_parent_dir=self._eval_results_path,
                         eval_name=self.eval_name,
@@ -335,10 +376,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
                 prompt_template=prompt_template,
             )
-            row[BERT_SCORE] = scores[0].value
-            if self._is_model_deterministic:
-                row[WER_SCORE] = scores[1].value
+            row[BERT_SCORE_DISSIMILARITY] = scores[0].value
+            row[WER_SCORE] = scores[1].value
 
             return row
 
-        return dataset.map(_generate_general_semantic_robustness_score).materialize()
+        return dataset.map(_generate_general_semantic_robustness_score).materialize()  # pragma: no cover

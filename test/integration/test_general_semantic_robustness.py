@@ -17,7 +17,7 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     GeneralSemanticRobustnessConfig,
     RANDOM_UPPER_CASE,
     WER_SCORE,
-    BERT_SCORE,
+    BERT_SCORE_DISSIMILARITY,
     WHITESPACE_ADD_REMOVE,
 )
 
@@ -46,7 +46,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 1.1,
-                    BERT_SCORE: 0.5673260986804962,
+                    BERT_SCORE_DISSIMILARITY: 0.4326739013195038,
                 },
             ),
             GSRTestCase(
@@ -57,7 +57,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.26666666666666666,
-                    BERT_SCORE: 0.9478128790855408,
+                    BERT_SCORE_DISSIMILARITY: 0.052187120914459206,
                 },
             ),
             GSRTestCase(
@@ -69,7 +69,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.5,
-                    BERT_SCORE: 0.8349653720855713,
+                    BERT_SCORE_DISSIMILARITY: 0.1650346279144287,
                 },
             ),
         ],
@@ -95,7 +95,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.7579873015873015,
-                    BERT_SCORE: 0.6333582122325897,
+                    BERT_SCORE_DISSIMILARITY: 0.3666417877674103,
                 },
             ),
             GSRTestCase(
@@ -106,7 +106,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.5560531746031746,
-                    BERT_SCORE: 0.7492285879850387,
+                    BERT_SCORE_DISSIMILARITY: 0.25077141201496134,
                 },
             ),
             GSRTestCase(
@@ -118,7 +118,7 @@ class TestGeneralSemanticRobustness:
                 ),
                 expected_scores={
                     WER_SCORE: 0.6135412698412699,
-                    BERT_SCORE: 0.7184949726462364,
+                    BERT_SCORE_DISSIMILARITY: 0.2815050273537636,
                 },
             ),
         ],
