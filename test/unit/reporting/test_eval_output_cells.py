@@ -456,7 +456,7 @@ class TestEvalOutputCells:
         ]
         eval_output = EvalOutput(
             eval_name="summarization_accuracy",
-            dataset_name="xsum",
+            dataset_name="gov_report",
             prompt_template="prompt",
             dataset_scores=dataset_scores,
             category_scores=category_scores,
@@ -467,7 +467,7 @@ class TestEvalOutputCells:
         dataset.select_columns = Mock()
         with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
-            expected_cell = '#### Built-in Dataset: <a style="color:#006DAA;" href="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset">XSUM</a>  \n\nA dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors. We sampled 10 records out of 204045 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
+            expected_cell = '#### Built-in Dataset: <a style="color:#006DAA;" href="https://gov-report-data.github.io/">Government Report</a>  \n\nA dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets. We sampled 10 records out of 7238 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
             assert str(cell) == expected_cell
 
     def test_eval_output_cell_eval_error(self):
