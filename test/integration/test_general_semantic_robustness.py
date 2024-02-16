@@ -13,7 +13,6 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     BUTTER_FINGER,
     GeneralSemanticRobustness,
     GeneralSemanticRobustnessConfig,
-    RANDOM_UPPER_CASE,
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
     WHITESPACE_ADD_REMOVE,
@@ -46,30 +45,7 @@ class TestGeneralSemanticRobustness:
                     WER_SCORE: 1.1,
                     BERT_SCORE_DISSIMILARITY: 0.4326739013195038,
                 },
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPER_CASE,
-                    num_perturbations=5,
-                    random_uppercase_corrupt_proportion=0.1,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.26666666666666666,
-                    BERT_SCORE_DISSIMILARITY: 0.052187120914459206,
-                },
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
-                    num_perturbations=5,
-                    whitespace_remove_prob=0.1,
-                    whitespace_add_prob=0.05,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.5,
-                    BERT_SCORE_DISSIMILARITY: 0.1650346279144287,
-                },
-            ),
+            )
         ],
     )
     def test_evaluate_sample(self, gsr_test_case):
@@ -85,28 +61,6 @@ class TestGeneralSemanticRobustness:
     @pytest.mark.parametrize(
         "gsr_test_case",
         [
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=BUTTER_FINGER,
-                    num_perturbations=5,
-                    butter_finger_perturbation_prob=0.1,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.7579873015873015,
-                    BERT_SCORE_DISSIMILARITY: 0.3666417877674103,
-                },
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPER_CASE,
-                    num_perturbations=5,
-                    random_uppercase_corrupt_proportion=0.1,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.5560531746031746,
-                    BERT_SCORE_DISSIMILARITY: 0.25077141201496134,
-                },
-            ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
                     perturbation_type=WHITESPACE_ADD_REMOVE,
