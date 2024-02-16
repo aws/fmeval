@@ -3,7 +3,6 @@ from copy import deepcopy
 from typing import NamedTuple, Dict
 
 import pytest
-import ray
 from pytest import approx
 
 from fmeval.eval_algorithms import (
@@ -133,11 +132,3 @@ class TestGeneralSemanticRobustness:
 
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(gsr_test_case.expected_scores[eval_score.name], abs=ABS_TOL)
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down the Ray session to ensure that resources
-        consumed by this session (most importantly, the BertscoreHelperModel
-        Actor, which consumes a lot of memory) get freed.
-        """
-        ray.shutdown()
