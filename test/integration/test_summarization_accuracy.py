@@ -1,6 +1,5 @@
 import os
 import json
-import ray
 from pytest import approx
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracy,
@@ -63,11 +62,3 @@ class TestSummarizationAccuracy:
         eval_scores = eval_output.dataset_scores
         for eval_score in eval_scores:
             assert eval_score.value == approx(expected_evaluate_scores[eval_score.name], abs=ABS_TOL)
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down the Ray session to ensure that resources
-        consumed by this session (most importantly, the BertscoreHelperModel
-        Actor, which consumes a lot of memory) get freed.
-        """
-        ray.shutdown()

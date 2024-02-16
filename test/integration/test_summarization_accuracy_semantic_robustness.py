@@ -21,7 +21,6 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     WHITESPACE_ADD_REMOVE,
 )
 from test.integration.models.model_runners import sm_model_runner
-from pprint import pprint
 
 ABS_TOL = 1e-6
 os.environ["PARALLELIZATION_FACTOR"] = "2"
@@ -134,8 +133,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 model=sm_model_runner,
                 target_output=target_output,
             )
-            print("EVAL SCORES: \n")
-            pprint(eval_scores)
             for eval_score in eval_scores:
                 assert eval_score.value == approx(expected_evaluate_sample_scores[eval_score.name], abs=ABS_TOL)
 
@@ -147,8 +144,6 @@ class TestSummarizationAccuracySemanticRobustness:
             save=True,
             num_records=20,
         )[0]
-        print("DATASET SCORES: \n")
-        pprint(eval_output.dataset_scores)
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_evaluate_scores[eval_score.name], abs=ABS_TOL)
 

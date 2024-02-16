@@ -1,5 +1,4 @@
 import os
-import ray
 from copy import deepcopy
 from typing import NamedTuple, Dict
 
@@ -114,10 +113,3 @@ class TestGeneralSemanticRobustness:
 
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(gsr_test_case.expected_scores[eval_score.name], abs=ABS_TOL)
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down Ray to ensure that resources
-        used by these tests get freed.
-        """
-        ray.shutdown()

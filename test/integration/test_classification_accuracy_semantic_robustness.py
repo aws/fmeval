@@ -1,5 +1,4 @@
 import os
-import ray
 import pytest
 from pytest import approx
 from typing import NamedTuple, Dict
@@ -402,10 +401,3 @@ class TestClassificationAccuracySemanticRobustness:
                     casr_test_case.category_scores[category_score.name][individual_score.name],
                     abs=ABS_TOL,
                 )
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down Ray to ensure that resources
-        used by these tests get freed.
-        """
-        ray.shutdown()

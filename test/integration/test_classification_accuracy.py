@@ -7,7 +7,6 @@ from typing import (
     NamedTuple,
 )
 
-import ray
 
 from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
@@ -24,7 +23,6 @@ from fmeval.eval_algorithms.classification_accuracy import (
 
 import pytest
 from pytest import approx
-
 from test.integration.models.model_runners import (
     sm_model_runner,
 )
@@ -195,10 +193,3 @@ class TestClassificationAccuracy:
                     ca_test_case.category_scores[category_score.name][individual_score.name],
                     abs=ABS_TOL,
                 )
-
-    def test_ray_shutdown(self):
-        """
-        Forcefully shut down Ray to ensure that resources
-        used by these tests get freed.
-        """
-        ray.shutdown()
