@@ -1,10 +1,7 @@
 import os
-
-from typing import NamedTuple, Dict
-
-
 import pytest
 from pytest import approx
+from typing import NamedTuple, Dict
 
 from fmeval.eval_algorithms import (
     DATASET_CONFIGS,

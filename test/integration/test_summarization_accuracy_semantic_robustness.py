@@ -5,6 +5,8 @@ import pytest
 
 from typing import NamedTuple, Dict
 from pytest import approx
+
+from fmeval.eval_algorithms import DATASET_CONFIGS, GIGAWORD
 from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     SummarizationAccuracySemanticRobustness,
     SummarizationAccuracySemanticRobustnessConfig,
@@ -18,8 +20,6 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
 )
-from fmeval.data_loaders.data_config import DataConfig
-from fmeval.constants import MIME_TYPE_JSONLINES
 from test.integration.models.model_runners import sm_model_runner
 
 ABS_TOL = 1e-6
@@ -57,57 +57,57 @@ class TestSummarizationAccuracySemanticRobustness:
                 config=BUTTER_FINGER_CONFIG,
                 expected_evaluate_sample_scores={
                     ROUGE_SCORE: 0.0,
-                    METEOR_SCORE: 0.055555,
-                    BERT_SCORE: 0.578891,
+                    METEOR_SCORE: 0.0,
+                    BERT_SCORE: 0.536162,
                     DELTA_ROUGE_SCORE: 0.0,
-                    DELTA_METEOR_SCORE: 0.0,
-                    DELTA_BERT_SCORE: 0.020095,
+                    DELTA_METEOR_SCORE: 0.063628,
+                    DELTA_BERT_SCORE: 0.050299,
                 },
                 expected_evaluate_scores={
-                    ROUGE_SCORE: 0.067589,
-                    METEOR_SCORE: 0.110135,
-                    BERT_SCORE: 0.593341,
-                    DELTA_ROUGE_SCORE: 0.039784,
-                    DELTA_METEOR_SCORE: 0.045444,
-                    DELTA_BERT_SCORE: 0.053839,
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.107623,
+                    BERT_SCORE: 0.559997,
+                    DELTA_ROUGE_SCORE: 0.019394,
+                    DELTA_METEOR_SCORE: 0.044310,
+                    DELTA_BERT_SCORE: 0.033714,
                 },
             ),
             TestCaseEvaluate(
                 config=RANDOM_UPPER_CASE_CONFIG,
                 expected_evaluate_sample_scores={
                     ROUGE_SCORE: 0.0,
-                    METEOR_SCORE: 0.055555,
-                    BERT_SCORE: 0.578892,
+                    METEOR_SCORE: 0.0,
+                    BERT_SCORE: 0.536162,
                     DELTA_ROUGE_SCORE: 0.0,
-                    DELTA_METEOR_SCORE: 0.011111,
-                    DELTA_BERT_SCORE: 0.017105,
+                    DELTA_METEOR_SCORE: 0.051282,
+                    DELTA_BERT_SCORE: 0.048976,
                 },
                 expected_evaluate_scores={
-                    ROUGE_SCORE: 0.067589,
-                    METEOR_SCORE: 0.110135,
-                    BERT_SCORE: 0.593341,
-                    DELTA_ROUGE_SCORE: 0.038557,
-                    DELTA_METEOR_SCORE: 0.046560,
-                    DELTA_BERT_SCORE: 0.045161,
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.107623,
+                    BERT_SCORE: 0.559998,
+                    DELTA_ROUGE_SCORE: 0.035696,
+                    DELTA_METEOR_SCORE: 0.056931,
+                    DELTA_BERT_SCORE: 0.027971,
                 },
             ),
             TestCaseEvaluate(
                 config=WHITESPACE_CONFIG,
                 expected_evaluate_sample_scores={
                     ROUGE_SCORE: 0.0,
-                    METEOR_SCORE: 0.055555,
-                    BERT_SCORE: 0.578892,
+                    METEOR_SCORE: 0.0,
+                    BERT_SCORE: 0.536162,
                     DELTA_ROUGE_SCORE: 0.0,
-                    DELTA_METEOR_SCORE: 0.016667,
-                    DELTA_BERT_SCORE: 0.009600,
+                    DELTA_METEOR_SCORE: 0.050657,
+                    DELTA_BERT_SCORE: 0.037705,
                 },
                 expected_evaluate_scores={
-                    ROUGE_SCORE: 0.067589,
-                    METEOR_SCORE: 0.110135,
-                    BERT_SCORE: 0.593341,
-                    DELTA_ROUGE_SCORE: 0.025756,
-                    DELTA_BERT_SCORE: 0.039346,
-                    DELTA_METEOR_SCORE: 0.033426,
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.107623,
+                    BERT_SCORE: 0.559998,
+                    DELTA_ROUGE_SCORE: 0.032187,
+                    DELTA_METEOR_SCORE: 0.057705,
+                    DELTA_BERT_SCORE: 0.027511,
                 },
             ),
         ],
@@ -124,7 +124,7 @@ class TestSummarizationAccuracySemanticRobustness:
         """
         eval_algo = SummarizationAccuracySemanticRobustness(config)
         # Test evaluate_sample
-        with open(os.path.join(integration_tests_dir, "datasets", "xsum_sample.jsonl")) as fh:
+        with open(os.path.join(integration_tests_dir, "datasets", "gigaword_sample.jsonl")) as fh:
             json_obj = json.loads(fh.readline())
             model_input = json_obj["document"]
             target_output = json_obj["summary"]
@@ -137,20 +137,16 @@ class TestSummarizationAccuracySemanticRobustness:
                 assert eval_score.value == approx(expected_evaluate_sample_scores[eval_score.name], abs=ABS_TOL)
 
         # Test evaluate
-        dataset_config = DataConfig(
-            dataset_name="xsum_sample",
-            dataset_uri=os.path.join(integration_tests_dir, "datasets", "xsum_sample_small.jsonl"),
-            dataset_mime_type=MIME_TYPE_JSONLINES,
-            model_input_location="document",
-            target_output_location="summary",
-        )
+        dataset_config = DATASET_CONFIGS[GIGAWORD]
         eval_output = eval_algo.evaluate(
             model=sm_model_runner,
             dataset_config=dataset_config,
             save=True,
+            num_records=20,
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_evaluate_scores[eval_score.name], abs=ABS_TOL)
+
         # Calling ray.shutdown() would be overkill since there are still other test cases.
         # Thus, we kill only the SummarizationAccuracySingleton ray actor used by the
         # current test case, to make sure that resources are cleaned up between test cases.

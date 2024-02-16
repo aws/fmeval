@@ -2,7 +2,6 @@ import os
 from copy import deepcopy
 from typing import NamedTuple, Dict
 
-
 import pytest
 from pytest import approx
 
