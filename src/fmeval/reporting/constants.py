@@ -32,7 +32,7 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     DELTA_BERT_SCORE,
     DELTA_METEOR_SCORE,
 )
-from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
+from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE, BERT_SCORE_DISSIMILARITY
 from fmeval.eval_algorithms import (
     TREX,
     BOOLQ,
@@ -188,6 +188,7 @@ SCORE_DESCRIPTIONS = {
     BALANCED_ACCURACY_SCORE: "The balanced accuracy score is the same as accuracy in the binary case, otherwise averaged recall per class.",
     # General semantic robustness
     WER_SCORE: "Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).",
+    BERT_SCORE_DISSIMILARITY: "BERTScore Dissimilarity is computed as 1 - BERTScore and measures semantic differences between the original and perturbed versions of the same input.",
     # Summarization semantic robustness
     DELTA_ROUGE_SCORE: "Delta ROUGE-N score measures the change in Rouge between the original and perturbed versions of the same input.",
     DELTA_METEOR_SCORE: "Delta Meteor score measures the change in Meteor between the original and perturbed versions of the same input.",
