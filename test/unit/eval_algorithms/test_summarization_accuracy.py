@@ -18,7 +18,6 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    XSUM,
     DEFAULT_PROMPT_TEMPLATE,
     GIGAWORD,
     GOV_REPORT,
@@ -34,7 +33,6 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     BERT_SCORE,
     get_meteor_score,
     get_rouge_score,
-    get_bert_score,
     add_score_to_dataset,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -304,18 +302,6 @@ class TestSummarizationAccuracy:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
-                        dataset_name=XSUM,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
                         dataset_name=GIGAWORD,
                         dataset_scores=[
@@ -349,35 +335,6 @@ class TestSummarizationAccuracy:
                 prompt_template=None,
                 input_dataset_with_generated_model_output=DATASET,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
-                        dataset_name=XSUM,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_xsum.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_accuracy",
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
@@ -736,9 +693,10 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    def test_get_meteor_score(self, test_case, load_meteor_helpers, config):
+    def test_get_meteor_score(self, test_case, load_meteor_helpers):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_meteor_score(
-            test_case.target_output, test_case.model_output, config
+            test_case.target_output,
+            test_case.model_output,
         )
 
     @pytest.mark.parametrize(
@@ -775,28 +733,9 @@ class TestSummarizationAccuracy:
     )
     def test_get_rouge_score(self, test_case, load_meteor_helpers, config):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_rouge_score(
-            test_case.target_output, test_case.model_output, config
-        )
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=0.500000, rouge_type=None
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.500000,
-                rouge_type=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.ray.get")
-    def test_get_bert_score(self, mock_ray_get, test_case, config):
-        mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
-        assert test_case.expected_score == get_bert_score(
-            test_case.target_output, test_case.model_output, config, helper_model=MagicMock()
+            test_case.target_output,
+            test_case.model_output,
+            config=config,
         )
 
     @pytest.mark.parametrize(

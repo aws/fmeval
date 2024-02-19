@@ -39,7 +39,6 @@ from fmeval.eval_algorithms import (
     TRIVIA_QA,
     NATURAL_QUESTIONS,
     CROWS_PAIRS,
-    XSUM,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     BOLD,
     WIKITEXT2,
@@ -252,12 +251,6 @@ DATASET_DETAILS = {
         description="This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.",
         size=1508,
     ),
-    XSUM: DatasetDetails(
-        name="XSUM",
-        url="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset",
-        description="A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.",
-        size=204045,
-    ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DatasetDetails(
         name="Women's E-commerce Clothing Reviews",
         url="https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews",
@@ -291,7 +284,7 @@ DATASET_DETAILS = {
     GIGAWORD: DatasetDetails(
         name="Gigaword",
         url="https://huggingface.co/datasets/gigaword",
-        description="A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.",
+        description="A dataset with around 4 million news article headlines. Our dataset consists of 190k entries from its validation set.",
         size=189651,
     ),
     GOV_REPORT: DatasetDetails(

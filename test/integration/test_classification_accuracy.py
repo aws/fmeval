@@ -7,6 +7,7 @@ from typing import (
     NamedTuple,
 )
 
+
 from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
@@ -22,7 +23,6 @@ from fmeval.eval_algorithms.classification_accuracy import (
 
 import pytest
 from pytest import approx
-
 from test.integration.models.model_runners import (
     sm_model_runner,
 )

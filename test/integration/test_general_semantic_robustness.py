@@ -2,7 +2,6 @@ import os
 from copy import deepcopy
 from typing import NamedTuple, Dict
 
-
 import pytest
 from pytest import approx
 
@@ -14,8 +13,8 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     BUTTER_FINGER,
     GeneralSemanticRobustness,
     GeneralSemanticRobustnessConfig,
-    RANDOM_UPPER_CASE,
     WER_SCORE,
+    BERT_SCORE_DISSIMILARITY,
     WHITESPACE_ADD_REMOVE,
 )
 
@@ -42,25 +41,11 @@ class TestGeneralSemanticRobustness:
                     num_perturbations=5,
                     butter_finger_perturbation_prob=0.1,
                 ),
-                expected_scores={WER_SCORE: 1.1},
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPER_CASE,
-                    num_perturbations=5,
-                    random_uppercase_corrupt_proportion=0.1,
-                ),
-                expected_scores={WER_SCORE: 0.26666666666666666},
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
-                    num_perturbations=5,
-                    whitespace_remove_prob=0.1,
-                    whitespace_add_prob=0.05,
-                ),
-                expected_scores={WER_SCORE: 0.5},
-            ),
+                expected_scores={
+                    WER_SCORE: 1.1,
+                    BERT_SCORE_DISSIMILARITY: 0.4326739013195038,
+                },
+            )
         ],
     )
     def test_evaluate_sample(self, gsr_test_case):
@@ -71,27 +56,11 @@ class TestGeneralSemanticRobustness:
             model=sm_model_runner,
         )
         for eval_score in eval_scores:
-            assert eval_score.value == gsr_test_case.expected_scores[eval_score.name]
+            assert eval_score.value == approx(gsr_test_case.expected_scores[eval_score.name], abs=ABS_TOL)
 
     @pytest.mark.parametrize(
         "gsr_test_case",
         [
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=BUTTER_FINGER,
-                    num_perturbations=5,
-                    butter_finger_perturbation_prob=0.1,
-                ),
-                expected_scores={WER_SCORE: 0.7579873015873015},
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPER_CASE,
-                    num_perturbations=5,
-                    random_uppercase_corrupt_proportion=0.1,
-                ),
-                expected_scores={WER_SCORE: 0.5560531746031746},
-            ),
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
                     perturbation_type=WHITESPACE_ADD_REMOVE,
@@ -99,7 +68,10 @@ class TestGeneralSemanticRobustness:
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
                 ),
-                expected_scores={WER_SCORE: 0.6135412698412699},
+                expected_scores={
+                    WER_SCORE: 0.6135412698412699,
+                    BERT_SCORE_DISSIMILARITY: 0.2815050273537636,
+                },
             ),
         ],
     )

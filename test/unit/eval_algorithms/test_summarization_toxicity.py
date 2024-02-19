@@ -17,7 +17,6 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    XSUM,
     DEFAULT_PROMPT_TEMPLATE,
     GIGAWORD,
     GOV_REPORT,
@@ -227,14 +226,6 @@ class TestSummarizationToxicityToxicity:
                 expected_response=[
                     EvalOutput(
                         eval_name="summarization_toxicity",
-                        dataset_name=XSUM,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_toxicity",
                         dataset_name=GIGAWORD,
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
                         prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
@@ -265,17 +256,6 @@ class TestSummarizationToxicityToxicity:
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(cols=[TOXIGEN_SCORE_NAME]),
                 dataset_with_scores=DATASET_TOXIGEN,
                 expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_toxicity",
-                        dataset_name=XSUM,
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[XSUM],
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/summarization_toxicity_xsum.jsonl",
-                    ),
                     EvalOutput(
                         eval_name="summarization_toxicity",
                         dataset_name=GIGAWORD,
