@@ -50,8 +50,8 @@ from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 from fmeval.eval_algorithms.util import get_bert_score
-from fmeval.constants import BertscoreModels, BERTSCORE_DEFAULT_MODEL
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel, BertscoreHelperModelTypes
 
 logger = logging.getLogger(__name__)
 
@@ -102,10 +102,10 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"Invalid perturbation type '{self.perturbation_type} requested, please "
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
-        if not BertscoreModels.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModels.model_list()}."
+                f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}."
             )
         if self.num_baseline_samples < 2:
             raise EvalAlgorithmClientError(

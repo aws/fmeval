@@ -39,8 +39,9 @@ from fmeval.eval_algorithms.util import (
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
-from fmeval.constants import BertscoreModels, BERTSCORE_DEFAULT_MODEL
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL
 from fmeval.eval_algorithms.util import get_bert_score
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 
 METEOR_SCORE = "meteor"
 ROUGE_SCORE = "rouge"
@@ -78,10 +79,10 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not BertscoreModels.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreModels.model_list()}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
             )
 
 
@@ -261,7 +262,9 @@ def get_meteor_score(target_output: str, model_output: str, **kwargs) -> float:
     )
 
 
-def get_rouge_score(target_output: str, model_output: str, **kwargs) -> float:
+def get_rouge_score(
+    target_output: str, model_output: str, config: Optional[SummarizationAccuracyConfig] = None, **kwargs
+) -> float:
     """
     The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
     It computes the word overlap between the reference and model summary. Given that this metric is based on simple
@@ -275,8 +278,9 @@ def get_rouge_score(target_output: str, model_output: str, **kwargs) -> float:
     :param config: Eval algo config
     :returns: rouge score
     """
-    assert "config" in kwargs
-    config = kwargs["config"]
+    assert (
+        config is not None
+    ), "The config parameter of get_rouge_score expected a SummarizationAccuracyConfig, instead received None."
     rouge = hf_evaluate.load("rouge")
     return rouge.compute(
         predictions=[model_output],

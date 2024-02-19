@@ -35,7 +35,6 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     get_rouge_score,
     add_score_to_dataset,
 )
-from fmeval.eval_algorithms.util import get_bert_score
 from fmeval.exceptions import EvalAlgorithmClientError
 
 BERTSCORE_DUMMY_VALUE = (
@@ -737,27 +736,6 @@ class TestSummarizationAccuracy:
             test_case.target_output,
             test_case.model_output,
             config=config,
-        )
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=0.500000, rouge_type=None
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.500000,
-                rouge_type=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.util.ray.get")
-    def test_get_bert_score(self, mock_ray_get, test_case, config):
-        mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
-        assert test_case.expected_score == get_bert_score(
-            test_case.target_output, test_case.model_output, helper_model=MagicMock()
         )
 
     @pytest.mark.parametrize(

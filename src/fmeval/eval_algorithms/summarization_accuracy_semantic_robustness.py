@@ -45,7 +45,8 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     METEOR_SCORE,
     BERT_SCORE,
 )
-from fmeval.constants import BertscoreModels, BERTSCORE_DEFAULT_MODEL
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     save_dataset,
@@ -156,10 +157,10 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not BertscoreModels.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreModels.model_list()}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
             )
 
 

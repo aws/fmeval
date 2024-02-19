@@ -26,7 +26,7 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.constants import BertscoreModels
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 
 BERTSCORE_DUMMY_VALUE = (
     0.5  # we don't always evaluate the real BERTScore inside unit tests to reduce runtime, so we hardcode a dummy value
@@ -386,7 +386,7 @@ class TestGeneralSemanticRobustness:
         model_name = "my_model"
         expected_error_message = (
             f"Invalid model_type_for_bertscore: {model_name} requested in GeneralSemanticRobustnessConfig, "
-            f"please choose from acceptable values: {BertscoreModels.model_list()}."
+            f"please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}."
         )
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             GeneralSemanticRobustnessConfig(model_type_for_bertscore=model_name)
