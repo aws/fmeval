@@ -185,7 +185,6 @@ BOOLQ = "boolq"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
 CROWS_PAIRS = "crows-pairs"
-XSUM = "xsum"
 GIGAWORD = "gigaword"
 GOV_REPORT = "gov_report"
 WOMENS_CLOTHING_ECOMMERCE_REVIEWS = "womens_clothing_ecommerce_reviews"
@@ -200,16 +199,16 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_ACCURACY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.PROMPT_STEREOTYPING.value: [CROWS_PAIRS],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY.value: [GIGAWORD, GOV_REPORT],
     EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value: [BOLD, TREX, WIKITEXT2],
     EvalAlgorithm.CLASSIFICATION_ACCURACY.value: [WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
     EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [
         WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     ],
-    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value: [GIGAWORD, GOV_REPORT],
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [XSUM, GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [GIGAWORD, GOV_REPORT],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -219,7 +218,6 @@ BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
     BOOLQ: 'Respond to the following question. Valid answers are "True" or "False". $feature Answer:',
     TRIVIA_QA: "Respond to the following question with a short answer: $feature Answer:",
     NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature Answer:",
-    XSUM: "Summarise the following text in one sentence: $feature",
     GIGAWORD: "Summarise the following text in one sentence: $feature",
     GOV_REPORT: "Summarise the following text in a few sentences: $feature",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: (
@@ -276,13 +274,6 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         sent_more_input_location="sent_more",
         sent_less_input_location="sent_less",
         category_location="bias_type",
-    ),
-    XSUM: DataConfig(
-        dataset_name=XSUM,
-        dataset_uri="s3://fmeval/datasets/xsum/xsum.jsonl",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="document",
-        target_output_location="summary",
     ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DataConfig(
         dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,

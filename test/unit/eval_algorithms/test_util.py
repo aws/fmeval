@@ -30,6 +30,11 @@ from fmeval.eval_algorithms.util import (
 )
 from fmeval.exceptions import EvalAlgorithmInternalError
 from fmeval.util import camel_to_snake, get_num_actors
+from fmeval.eval_algorithms.util import get_bert_score
+
+BERTSCORE_DUMMY_VALUE = (
+    0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
+)
 
 
 def test_camel_to_snake():
@@ -584,3 +589,13 @@ def test_verify_model_determinism(test_case):
     )
     assert model.predict.call_count == test_case.expect_num_predict_calls
     assert result == test_case.expect_response
+
+
+@pytest.mark.parametrize(
+    "target_output,model_output",
+    [("I like cake.", "I like cake."), ("Berlin: Art, Heritage, Exhibitions Hub.", "Berlin: an art metropolis.")],
+)
+@patch("fmeval.eval_algorithms.util.ray.get")
+def test_get_bert_score(mock_ray_get, target_output, model_output):
+    mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
+    assert BERTSCORE_DUMMY_VALUE == get_bert_score(target_output, model_output, helper_model=MagicMock())

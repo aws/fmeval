@@ -32,14 +32,13 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     DELTA_BERT_SCORE,
     DELTA_METEOR_SCORE,
 )
-from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
+from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE, BERT_SCORE_DISSIMILARITY
 from fmeval.eval_algorithms import (
     TREX,
     BOOLQ,
     TRIVIA_QA,
     NATURAL_QUESTIONS,
     CROWS_PAIRS,
-    XSUM,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     BOLD,
     WIKITEXT2,
@@ -189,6 +188,7 @@ SCORE_DESCRIPTIONS = {
     BALANCED_ACCURACY_SCORE: "The balanced accuracy score is the same as accuracy in the binary case, otherwise averaged recall per class.",
     # General semantic robustness
     WER_SCORE: "Word error rate (WER) is a value between 0 and 1, and measures the difference between the model output on the unperturbed input and the output(s) on one or more perturbed versions of the same input. For more details on how word error rate is computed, see the [HuggingFace Article on Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer).",
+    BERT_SCORE_DISSIMILARITY: "BERTScore Dissimilarity is computed as 1 - BERTScore and measures semantic differences between the original and perturbed versions of the same input.",
     # Summarization semantic robustness
     DELTA_ROUGE_SCORE: "Delta ROUGE-N score measures the change in Rouge between the original and perturbed versions of the same input.",
     DELTA_METEOR_SCORE: "Delta Meteor score measures the change in Meteor between the original and perturbed versions of the same input.",
@@ -252,12 +252,6 @@ DATASET_DETAILS = {
         description="This dataset provides crowdsourced sentence pairs for the different categories along which stereotyping is to be measured.",
         size=1508,
     ),
-    XSUM: DatasetDetails(
-        name="XSUM",
-        url="https://github.com/EdinburghNLP/XSum/tree/master/XSum-Dataset",
-        description="A dataset consisting of newspaper articles from the BBC and their reference summaries. The reference summaries consist of a single sentence: the boldfaced sentence at the begininning of each BBC article, provided by article’s authors.",
-        size=204045,
-    ),
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: DatasetDetails(
         name="Women's E-commerce Clothing Reviews",
         url="https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews",
@@ -291,7 +285,7 @@ DATASET_DETAILS = {
     GIGAWORD: DatasetDetails(
         name="Gigaword",
         url="https://huggingface.co/datasets/gigaword",
-        description="A dataset with around 4 million news articles with their summaries. We use the “validation set”, which includes 190k entries.",
+        description="A dataset with around 4 million news article headlines. Our dataset consists of 190k entries from its validation set.",
         size=189651,
     ),
     GOV_REPORT: DatasetDetails(

@@ -38,15 +38,15 @@ from fmeval.eval_algorithms.semantic_perturbation_utils import (
 )
 from fmeval.eval_algorithms.summarization_accuracy import (
     ROUGE_2,
-    DEFAULT_MODEL_TYPE,
     SummarizationAccuracyConfig,
     ROUGE_TYPES,
-    MODEL_TYPES_SUPPORTED,
     SummarizationAccuracy,
     ROUGE_SCORE,
     METEOR_SCORE,
     BERT_SCORE,
 )
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     save_dataset,
@@ -142,7 +142,7 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     whitespace_add_prob: float = 0.05
     rouge_type: str = ROUGE_2
     use_stemmer_for_rouge: bool = True
-    model_type_for_bertscore: str = DEFAULT_MODEL_TYPE
+    model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
         if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
@@ -157,10 +157,10 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not self.model_type_for_bertscore in MODEL_TYPES_SUPPORTED:
+        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
             )
 
 
