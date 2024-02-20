@@ -42,6 +42,7 @@ testbook = "^0.4.2"
 ipykernel = "^6.26.0"
 mypy-boto3-bedrock = "^1.33.2"
 grpcio = "^1.60.0"
+aiohttp = "^3.9.2"
 
 [tool.poetry.dev-dependencies]
 fire = "*"
