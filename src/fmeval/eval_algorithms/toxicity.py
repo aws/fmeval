@@ -85,7 +85,7 @@ class Toxicity(EvalAlgorithmInterface):
         :param model_output: The output of a model that we want to evaluate.
         :return: list of EvalScore objects
         """
-        util.require(model_output, "Missing required input: target_output, for Toxicity evaluate_sample")
+        util.require(model_output, "Missing required input: model_output, for Toxicity evaluate_sample")
         scores = self._helper_model.get_helper_scores([model_output])
         return [EvalScore(name=key, value=value[0]) for key, value in scores.items()]
 
