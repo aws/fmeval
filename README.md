@@ -65,7 +65,7 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
 *Please refer to the [developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-foundation-model-evaluate-auto.html) and
-[examples]((https://github.com/aws/fmeval/tree/main/examples)) for more details around the usage of
+[examples](https://github.com/aws/fmeval/tree/main/examples) for more details around the usage of
 eval algorithms.*
 
 ## Development
