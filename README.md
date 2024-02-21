@@ -10,9 +10,9 @@ The library contains
 * Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
   Prompt Stereotyping across different tasks.
 * Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
-  method to simplify interactions with LLMs within the eval algorithm code. The interface can be extended by
-  the user for their own model classes.
-  We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
+  method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The interface can be extended by
+  the user for their own model classes by implementing the `predict` method.
+  
 
 ## Installation
 `fmeval` is developed under python3.10. To install the package from PIP you can simply do:
@@ -25,7 +25,7 @@ pip install fmeval
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
 the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
 
-Main steps for using fmeval are:
+The main steps for using `fmeval` are:
 1. Create a [ModelRunner](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/model_runner.py)
    which can perform invocations on your LLM. We have built-in support for
    [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_jumpstart_model_runner.py),
