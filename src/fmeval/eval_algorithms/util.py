@@ -22,6 +22,7 @@ from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 from fmeval.util import get_num_actors
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 
 logger = logging.getLogger(__name__)
 
@@ -365,3 +366,24 @@ def verify_model_determinism(model: ModelRunner, dataset: Dataset, prompt_column
         if model.predict(original_prompt)[0] != original_model_output:
             return False
     return True
+
+
+def get_bert_score(
+    target_output: str, model_output: str, helper_model: Optional[BertscoreHelperModel] = None, **kwargs
+) -> float:
+    """
+    BERTscore is a similarity-based metric that compares the embedding of two texts under a learned model, typically,
+    from the BERT family. This score may lead to increased flexibility compared to ROUGE and METEOR since semantically
+    similar sentences are (typically) embedded similarly.
+
+    https://huggingface.co/spaces/evaluate-metric/bertscore
+
+    :param target_output: The expected responses from the model
+    :param model_output: The output of a model that we want to evaluate.
+    :param helper_model: The BertscoreHelperModel for computing the BERTScore.
+    :returns: bert score
+    """
+    assert (
+        helper_model is not None
+    ), "The helper_model parameter of get_bert_score expected a BertscoreHelperModel, instead received None."
+    return ray.get(helper_model.get_helper_scores.remote(target_output, model_output))

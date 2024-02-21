@@ -1,4 +1,6 @@
+import random
 import re
+import string
 from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import MagicMock, patch
 
@@ -15,6 +17,7 @@ from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
 from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
+    BERT_SCORE_DISSIMILARITY,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
     RANDOM_UPPER_CASE,
@@ -23,21 +26,38 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 
-DATASET_WITH_MODEL_OUTPUT = ray.data.from_items(
+BERTSCORE_DUMMY_VALUE = (
+    0.5  # we don't always evaluate the real BERTScore inside unit tests to reduce runtime, so we hardcode a dummy value
+)
+BERTSCORE_DISSIMILARITY_DUMMY_VALUE = (
+    1 - BERTSCORE_DUMMY_VALUE
+)  # By definition, BERT_SCORE_DISSIMILARITY = 1 - BERT_SCORE
+
+
+DATASET_WITH_SCORES = ray.data.from_items(
     [
         {
             DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
             DatasetColumns.CATEGORY.value.name: "dummy_category_1",
             DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            WER_SCORE: 0.0,
+            BERT_SCORE_DISSIMILARITY: BERTSCORE_DUMMY_VALUE,
         },
         {
             DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
             DatasetColumns.CATEGORY.value.name: "dummy_category_2",
             DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            WER_SCORE: 0.0,
+            BERT_SCORE_DISSIMILARITY: BERTSCORE_DUMMY_VALUE,
         },
     ]
 )
+
+DATASET_WITH_ONLY_BERT_SCORE = DATASET_WITH_SCORES.drop_columns(cols=WER_SCORE)
+
+DATASET_WITH_MODEL_OUTPUT = DATASET_WITH_ONLY_BERT_SCORE.drop_columns(cols=BERT_SCORE_DISSIMILARITY)
 
 DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.MODEL_OUTPUT.value.name)
 
@@ -52,6 +72,20 @@ class ConstantModel(ModelRunner):
 
     def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
         return "Some model output.", None
+
+
+class NonDeterministicModel(ModelRunner):
+    """A model that always returns some random strings in the output regardless of the input."""
+
+    def __init__(self, num_letters: int = 10):
+        """
+        :param num_letters: The number of letters in the random string.
+        """
+        super().__init__('{"data": $prompt}', output="output")
+        self.num_letters = num_letters
+
+    def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
+        return "".join(random.choices(string.ascii_letters, k=self.num_letters)), None
 
 
 class TestGeneralSemanticRobustness:
@@ -83,6 +117,7 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Some model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=0.0),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2),
@@ -93,6 +128,7 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Another model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=(1 / 3 + 0) / 2),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=BUTTER_FINGER),
@@ -103,6 +139,7 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Another model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=(1 / 3 + 0) / 2),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE),
@@ -113,13 +150,16 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Another model output.",
                 perturbed_model_output_2="Another model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=(1 / 3 + 1 / 3) / 2),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE),
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample(self, test_case):
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_bert_score")
+    def test_semantic_robustness_evaluate_sample(self, mock_get_bert_score, bertscore_helper_model, test_case):
         """
         GIVEN valid inputs
         WHEN GeneralSemanticRobustness.evaluate_sample is called
@@ -132,6 +172,9 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
 
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         assert eval_algorithm.evaluate_sample(test_case.model_input, model) == test_case.expected_response
@@ -146,13 +189,18 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Some model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=0.0),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample_with_model_output(self, test_case):
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_bert_score")
+    def test_semantic_robustness_evaluate_sample_with_model_output(
+        self, mock_get_bert_score, bertscore_helper_model, test_case
+    ):
         """
         GIVEN valid inputs with model_output
         WHEN GeneralSemanticRobustness.evaluate_sample is called
@@ -164,6 +212,9 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
 
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         assert (
@@ -181,13 +232,18 @@ class TestGeneralSemanticRobustness:
                 perturbed_model_output_1="Some model output.",
                 perturbed_model_output_2="Some model output.",
                 expected_response=[
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                     EvalScore(name=WER_SCORE, value=0.0),
                 ],
                 config=GeneralSemanticRobustnessConfig(num_perturbations=2),
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample_with_deterministic_model(self, test_case):
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_bert_score")
+    def test_semantic_robustness_evaluate_sample_with_deterministic_model(
+        self, mock_get_bert_score, bertscore_helper_model, test_case
+    ):
         """
         GIVEN valid inputs with model_output, and a deterministic model
         WHEN GeneralSemanticRobustness.evaluate_sample is called
@@ -198,6 +254,10 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_1,),
             (test_case.perturbed_model_output_2,),
         ]
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
+
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         eval_algorithm._is_model_deterministic = True
         assert (
@@ -229,12 +289,17 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    def test_semantic_robustness_evaluate_sample_invalid_input(self, test_case):
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    def test_semantic_robustness_evaluate_sample_invalid_input(self, bertscore_helper_model, test_case):
         """
         GIVEN invalid inputs
         WHEN GeneralSemanticRobustness.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.model_input, test_case.model)
@@ -245,32 +310,53 @@ class TestGeneralSemanticRobustness:
             TestCaseGeneralSemanticRobustnessEvaluateSample(
                 model_input="What is the capital of England?",
                 original_model_output="Some model output.",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                expected_response=None,
-                config=GeneralSemanticRobustnessConfig(num_perturbations=2),
+                perturbed_model_output_1="Another longer model output.",
+                perturbed_model_output_2="Yet another model output which is even longer.",
+                expected_response=[
+                    EvalScore(name=WER_SCORE, value=0),
+                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=0),
+                ],
+                config=GeneralSemanticRobustnessConfig(num_perturbations=2, num_baseline_samples=2),
             )
         ],
     )
-    def test_semantic_robustness_evaluate_sample_invalid_model(self, test_case):
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_bert_score")
+    def test_semantic_robustness_evaluate_sample_non_deterministic_model(
+        self, mock_get_bert_score, bertscore_helper_model, test_case
+    ):
         """
         GIVEN a non-deterministic model
         WHEN GeneralSemanticRobustness.evaluate_sample is called
-        THEN correct exception with proper message is raised
+        THEN the robustness score valueis smaller than it would be for a deterministic model.
         """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.original_model_output,),
-            (test_case.original_model_output + "1",),
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
+
+        deterministic_model = MagicMock()
+        deterministic_model.predict.side_effect = [
+            (test_case.original_model_output,),  # Original model output
+            (test_case.original_model_output,),  # The determinism check
+            (test_case.perturbed_model_output_1,),  # Output on the first perturbation
+            (test_case.perturbed_model_output_2,),  # Output on the second perturbation
+        ]
+
+        nondeterministic_model = MagicMock()
+        nondeterministic_model.predict.side_effect = [
+            (test_case.original_model_output,),  # Original model output
+            (test_case.original_model_output + "1",),  # The determinism check
+            (test_case.perturbed_model_output_1,),  # Output on the first perturbation
+            (test_case.perturbed_model_output_2,),  # Output on the second perturbation
+            (test_case.original_model_output + "1",),  # Computing baseline: first model call
+            (test_case.original_model_output + "1",),  # Computing baseline: second model call
         ]
 
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate_sample(test_case.model_input, model)
+        output_deterministic = eval_algorithm.evaluate_sample(test_case.model_input, deterministic_model)
+        output_nondeterministic = eval_algorithm.evaluate_sample(test_case.model_input, nondeterministic_model)
+        assert output_nondeterministic[0].value < output_deterministic[0].value  # BERTScore Dissimilarity
+        assert output_nondeterministic[1].value < output_deterministic[1].value  # WER
 
     @pytest.mark.parametrize(
         "perturbation_type, expected_error_message",
@@ -282,9 +368,42 @@ class TestGeneralSemanticRobustness:
             )
         ],
     )
-    def test_semantic_robustness_invalid_config(self, perturbation_type, expected_error_message):
+    def test_semantic_robustness_invalid_perturbation_type(self, perturbation_type, expected_error_message):
+        """
+        GIVEN invalid perturbation types
+        WHEN GeneralSemanticRobustnessConfig is initiated
+        THEN correct exception with proper message is raised
+        """
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             GeneralSemanticRobustnessConfig(perturbation_type=perturbation_type)
+
+    def test_semantic_robustness_invalid_bertscore_model(self):
+        """
+        GIVEN invalid bertscore model
+        WHEN GeneralSemanticRobustnessConfig is initiated
+        THEN correct exception with proper message is raised
+        """
+        model_name = "my_model"
+        expected_error_message = (
+            f"Invalid model_type_for_bertscore: {model_name} requested in GeneralSemanticRobustnessConfig, "
+            f"please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}."
+        )
+        with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
+            GeneralSemanticRobustnessConfig(model_type_for_bertscore=model_name)
+
+    def test_semantic_robustness_invalid_num_baseline_samples(self):
+        """
+        GIVEN invalid number of baseline samples
+        WHEN GeneralSemanticRobustnessConfig is initiated
+        THEN correct exception with proper message is raised
+        """
+        num_baseline_samples = 1
+        expected_error_message = (
+            f"Invalid num_baseline_samples: {num_baseline_samples} in GeneralSemanticRobusntessConfig. "
+            f"The value should be at least 2."
+        )
+        with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
+            GeneralSemanticRobustnessConfig(num_baseline_samples=num_baseline_samples)
 
     class TestCaseSemanticRobustnessEvaluate(NamedTuple):
         input_dataset: Dataset
@@ -293,47 +412,7 @@ class TestGeneralSemanticRobustness:
         dataset_config: Optional[DataConfig]
         expected_response: List[EvalOutput]
         save_data: bool
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSemanticRobustnessEvaluate(
-                input_dataset=DATASET,
-                input_dataset_with_generated_model_output=None,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$feature",
-                save_data=False,
-                expected_response=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
-    def test_semantic_robustness_evaluate_invalid_model(self, get_dataset, test_case, config):
-        """
-        GIVEN a non-deterministic model
-        WHEN GeneralSemanticRobustness.evaluate is called
-        THEN correct exception with proper message is raised
-        """
-        model = MagicMock()
-        original_model_output = "some model output"
-        model.predict.side_effect = [
-            (original_model_output,),
-            (original_model_output + "1",),
-        ]
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = GeneralSemanticRobustness(config)
-        with pytest.raises(
-            EvalAlgorithmClientError, match="For evaluating semantic robustness, the model should be deterministic."
-        ):
-            eval_algorithm.evaluate(model, test_case.dataset_config, prompt_template=test_case.prompt_template)
+        dataset_with_scores: Dataset
 
     @pytest.mark.parametrize(
         "test_case",
@@ -345,30 +424,40 @@ class TestGeneralSemanticRobustness:
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_bold.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_bold.jsonl",
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_trex.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_trex.jsonl",
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_wikitext2.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_wikitext2.jsonl",
                     ),
                 ],
             ),
@@ -379,54 +468,85 @@ class TestGeneralSemanticRobustness:
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
+                dataset_with_scores=DATASET_WITH_SCORES,
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="bold",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
-                                name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=0.0)],
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/factual_knowledge_bold.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_bold.jsonl",
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="trex",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
-                                name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=0.0)],
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/factual_knowledge_trex.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_trex.jsonl",
                     ),
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="wikitext2",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=[
                             CategoryScore(
-                                name="dummy_category_1", scores=[EvalScore(name="word_error_rate", value=0.0)]
+                                name="dummy_category_1",
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                             CategoryScore(
                                 name="dummy_category_2",
-                                scores=[EvalScore(name="word_error_rate", value=0.0)],
+                                scores=[
+                                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                                    EvalScore(name=WER_SCORE, value=0.0),
+                                ],
                             ),
                         ],
-                        output_path="/tmp/eval_results/factual_knowledge_wikitext2.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_wikitext2.jsonl",
                     ),
                 ],
             ),
@@ -445,14 +565,18 @@ class TestGeneralSemanticRobustness:
                 ),
                 prompt_template="Answer: $feature",
                 save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template="Answer: $feature",
                         category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_my_custom_dataset.jsonl",
                     ),
                 ],
             ),
@@ -471,14 +595,18 @@ class TestGeneralSemanticRobustness:
                 ),
                 prompt_template=None,
                 save_data=False,
+                dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 expected_response=[
                     EvalOutput(
                         eval_name="general_semantic_robustness",
                         dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="word_error_rate", value=0.0)],
+                        dataset_scores=[
+                            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
+                            EvalScore(name=WER_SCORE, value=0.0),
+                        ],
                         prompt_template=DEFAULT_PROMPT_TEMPLATE,
                         category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
+                        output_path="/tmp/eval_results/general_semantic_robustness_my_custom_dataset.jsonl",
                     ),
                 ],
             ),
@@ -487,8 +615,12 @@ class TestGeneralSemanticRobustness:
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch.object(GeneralSemanticRobustness, "_GeneralSemanticRobustness__add_scores_to_dataset")
     def test_semantic_robustness_evaluate(
         self,
+        add_scores_to_dataset,
+        bertscore_helper_model,
         generate_model_predict_response_for_dataset,
         save_dataset,
         get_dataset,
@@ -501,6 +633,12 @@ class TestGeneralSemanticRobustness:
         WHEN GeneralSemanticRobustness evaluate() method is called
         THEN correct EvalOutput is returned
         """
+        add_scores_to_dataset.return_value = test_case.dataset_with_scores
+
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
         eval_algorithm = GeneralSemanticRobustness(config)
@@ -550,8 +688,10 @@ class TestGeneralSemanticRobustness:
     )
     @patch("fmeval.model_runners.model_runner.ModelRunner")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
+        bertscore_helper_model,
         get_dataset,
         model,
         test_case,
@@ -562,6 +702,10 @@ class TestGeneralSemanticRobustness:
         WHEN GeneralSemanticRobustness evaluate is called
         THEN correct exception with proper message is raised
         """
+        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
+        bertscore_helper_model_instance = MagicMock()
+        bertscore_helper_model.return_value = bertscore_helper_model_instance
+
         eval_algorithm = GeneralSemanticRobustness(config)
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:

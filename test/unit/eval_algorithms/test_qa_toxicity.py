@@ -184,7 +184,7 @@ class TestQAToxicity:
         THEN expected error is raised
         """
         eval_algorithm = QAToxicity(config)
-        expected_error_message = "Missing required input: target_output, for Toxicity evaluate_sample"
+        expected_error_message = "Missing required input: model_output, for Toxicity evaluate_sample"
         with pytest.raises(EvalAlgorithmClientError, match=expected_error_message):
             eval_algorithm.evaluate_sample(None)
 

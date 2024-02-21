@@ -1,3 +1,4 @@
+from enum import Enum
 import ray
 import numpy as np
 import evaluate as hf_evaluate
@@ -219,3 +220,27 @@ class BertscoreHelperModel(BaseHelperModel):
             references=[target_output],
             model_type=self._model_type,
         )["f1"][0]
+
+
+class BertscoreHelperModelTypes(Enum):
+    """This class holds the names of all the allowed models for computing the BERTScore."""
+
+    MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
+    ROBERTA_MODEL = "roberta-large-mnli"
+
+    @classmethod
+    def model_is_allowed(cls, model_name: str) -> bool:
+        """
+        Given a model name like 'roberta-large-mnli', check if this is an allowed model for computing BERTScore.
+        """
+        for elem in iter(cls):
+            if elem.value == model_name:
+                return True
+        return False
+
+    @classmethod
+    def model_list(cls) -> List[str]:
+        """
+        Return a list of all the allowed models for computing BERTScore.
+        """
+        return [elem.value for elem in iter(cls)]
