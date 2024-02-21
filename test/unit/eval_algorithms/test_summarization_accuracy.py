@@ -33,7 +33,6 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     BERT_SCORE,
     get_meteor_score,
     get_rouge_score,
-    get_bert_score,
     add_score_to_dataset,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -694,9 +693,10 @@ class TestSummarizationAccuracy:
             ),
         ],
     )
-    def test_get_meteor_score(self, test_case, load_meteor_helpers, config):
+    def test_get_meteor_score(self, test_case, load_meteor_helpers):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_meteor_score(
-            test_case.target_output, test_case.model_output, config
+            test_case.target_output,
+            test_case.model_output,
         )
 
     @pytest.mark.parametrize(
@@ -733,28 +733,9 @@ class TestSummarizationAccuracy:
     )
     def test_get_rouge_score(self, test_case, load_meteor_helpers, config):
         assert pytest.approx(test_case.expected_score, rel=1e-5) == get_rouge_score(
-            test_case.target_output, test_case.model_output, config
-        )
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=0.500000, rouge_type=None
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.500000,
-                rouge_type=None,
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.ray.get")
-    def test_get_bert_score(self, mock_ray_get, test_case, config):
-        mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
-        assert test_case.expected_score == get_bert_score(
-            test_case.target_output, test_case.model_output, config, helper_model=MagicMock()
+            test_case.target_output,
+            test_case.model_output,
+            config=config,
         )
 
     @pytest.mark.parametrize(
