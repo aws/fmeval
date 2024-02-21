@@ -86,7 +86,11 @@ We use [poetry](https://python-poetry.org/docs/) to manage python dependencies i
 dependency, please update the [pyproject.toml](./pyproject.toml) file, and run the `poetry update` command to update the
 `poetry.lock` file (which is checked in).
 
-Other than this step above to add dependencies, everything else should be managed with devtool commands.
+Other than this step above to add dependencies, everything else should be managed with devtool commands. In particular, 
+```
+./devtool all
+```
+needs to run without errors for any PR to be merged.
 
 ### Adding your own Eval Algorithm
 
