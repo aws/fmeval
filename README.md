@@ -10,8 +10,7 @@ The library contains
 * Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
   Prompt Stereotyping across different tasks.
 * Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
-  method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The interface can be extended by
-  the user for their own model classes by implementing the `predict` method.
+  method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The user can extend the interface for their own model classes by implementing the `predict` method.
 
 
 ## Installation
@@ -70,27 +69,26 @@ eval algorithms.*
 
 ## Development
 
-### Setup
-Once a virtual environment is set up with python3.10, run the following command to install all dependencies:
-```
-./devtool all
-```
-If this fails, you might need to install some dependencies first:
+### Setup and the use of `devtool`
+Once you have set up virtual environment with python3.10, run the following command to install `devtool`:
 ```
 ./devtool install_deps_dev
 ./devtool install_deps
 ```
+
+Then you can install the library with all dependencies by running:
+```
+./devtool all
+```
+
+Before submitting a PR, rerun `./devtool all` for testing and linting. It should run without errors.
 
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
 dependency, please update the [pyproject.toml](./pyproject.toml) file, and run the `poetry update` command to update the
 `poetry.lock` file (which is checked in).
 
-Other than this step above to add dependencies, everything else should be managed with devtool commands. In particular,
-```
-./devtool all
-```
-needs to run without errors for any PR to be merged.
+Other than this step to add dependencies, use devtool commands for installing dependencies, linting and testing. Execute the command `./devtool` without any arguments to see a list of available options.
 
 ### Adding your own Eval Algorithm
 
