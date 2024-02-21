@@ -1,6 +1,6 @@
 ## Foundation Model Evaluations Library
-`fmeval` is a library to evaluate Large Language Models (LLMs), and to select the best LLM
-for your use case. The library can help evaluate LLMs for the following tasks:
+`fmeval` is a library to evaluate Large Language Models (LLMs) in order to help select the best LLM
+for your use case. The library evaluates LLMs for the following tasks:
 * Open-ended generation - The production of natural human responses to text that does not have a pre-defined structure.
 * Text summarization - The generation of a condensed summary retaining the key information contained in a longer text.
 * Question Answering - The generation of a relevant and accurate response to an answer.
@@ -54,19 +54,18 @@ config = DataConfig(
     dataset_uri="./custom_dataset.jsonl",
     dataset_mime_type="application/jsonlines",
     model_input_location="question",
-    git push --set-upstream origin readme
     target_output_location="answer",
 )
 ```
 
 2. Use an eval algorithm with a custom dataset
 ```
-eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
+eval_algo = Toxicity(ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
-*Please refer to [code documentation](http://aws.github.io/fmeval) and
-[examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around the usage of
+*Please refer to the [developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-foundation-model-evaluate-auto.html) and
+[examples]((https://github.com/aws/fmeval/tree/main/examples)) for more details around the usage of
 eval algorithms.*
 
 ## Development
@@ -76,6 +75,11 @@ Once a virtual environment is set up with python3.10, run the following command 
 ```
 ./devtool all
 ```
+If this fails, you might need to install some dependencies first:
+```
+./devtool install_deps_dev
+./devtool install_deps
+``` 
 
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
