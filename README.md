@@ -6,10 +6,10 @@ for your use case. The library evaluates LLMs for the following tasks:
 * Question Answering - The generation of a relevant and accurate response to an answer.
 * Classification - Assigning a category, such as a label or score to text, based on its content.
 
-The library contains the following:
+The library contains 
 * Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
   Prompt Stereotyping across different tasks.
-* Implementation of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
+* Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
   method to simplify interactions with LLMs within the eval algorithm code. The interface can be extended by
   the user for their own model classes.
   We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
