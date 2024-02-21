@@ -1,22 +1,21 @@
 ## Foundation Model Evaluations Library
-FMEval is a library to evaluate Large Language Models (LLMs) and select the best LLM
+`fmeval` is a library to evaluate Large Language Models (LLMs), and to select the best LLM
 for your use case. The library can help evaluate LLMs for the following tasks:
-* Open-ended generation - the production of natural language as a response to general prompts that do not have a
-  pre-defined structure.
-* Text summarization - summarizing the most important parts of a text, shortening a text while preserving its meaning.
-* Question Answering - the generation of a relevant and accurate response to a question.
-* Classification - assigning a category, such as a label or score, to text based on its content.
+* Open-ended generation - The production of natural human responses to text that does not have a pre-defined structure.
+* Text summarization - The generation of a condensed summary retaining the key information contained in a longer text.
+* Question Answering - The generation of a relevant and accurate response to an answer.
+* Classification - Assigning a category, such as a label or score to text, based on its content.
 
 The library contains the following:
-* Implementation of popular metrics (eval algorithms) such as Accuracy, Toxicity, Semantic Robustness and
-  Prompt Stereotyping for evaluating LLMs across different tasks.
-* Implementation of the ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
-  method that greatly simplifies interactions with LLMs within eval algorithm code. The interface can be extended by
-  the user for their LLMs.
+* Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
+  Prompt Stereotyping across different tasks.
+* Implementation of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
+  method to simplify interactions with LLMs within the eval algorithm code. The interface can be extended by
+  the user for their own model classes.
   We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
 
 ## Installation
-To install the package from PIP you can simply do:
+`fmeval` is developed under python3.10. To install the package from PIP you can simply do:
 
 ```
 pip install fmeval
@@ -34,8 +33,12 @@ Main steps for using fmeval are:
    and [AWS Bedrock Models](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/bedrock_model_runner.py).
    You can also extend the ModelRunner interface for any LLMs hosted anywhere.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
+
+For example, 
 ```
-eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
+from fmeval.eval_algorithms.toxicity import Toxicity, ToxicityConfig
+
+eval_algo = Toxicity(ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner)
 ```
 *Note: You can update the default eval config parameters for your specific use case.*
@@ -51,6 +54,7 @@ config = DataConfig(
     dataset_uri="./custom_dataset.jsonl",
     dataset_mime_type="application/jsonlines",
     model_input_location="question",
+    git push --set-upstream origin readme
     target_output_location="answer",
 )
 ```
