@@ -6,13 +6,13 @@ for your use case. The library evaluates LLMs for the following tasks:
 * Question Answering - The generation of a relevant and accurate response to an answer.
 * Classification - Assigning a category, such as a label or score to text, based on its content.
 
-The library contains 
+The library contains
 * Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
   Prompt Stereotyping across different tasks.
 * Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
   method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The interface can be extended by
   the user for their own model classes by implementing the `predict` method.
-  
+
 
 ## Installation
 `fmeval` is developed under python3.10. To install the package from PIP you can simply do:
@@ -34,7 +34,7 @@ The main steps for using `fmeval` are:
    You can also extend the ModelRunner interface for any LLMs hosted anywhere.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
 
-For example, 
+For example,
 ```
 from fmeval.eval_algorithms.toxicity import Toxicity, ToxicityConfig
 
@@ -79,14 +79,14 @@ If this fails, you might need to install some dependencies first:
 ```
 ./devtool install_deps_dev
 ./devtool install_deps
-``` 
+```
 
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
 dependency, please update the [pyproject.toml](./pyproject.toml) file, and run the `poetry update` command to update the
 `poetry.lock` file (which is checked in).
 
-Other than this step above to add dependencies, everything else should be managed with devtool commands. In particular, 
+Other than this step above to add dependencies, everything else should be managed with devtool commands. In particular,
 ```
 ./devtool all
 ```
