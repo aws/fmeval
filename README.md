@@ -83,14 +83,10 @@ eval algorithms.*
 ## Development
 
 ### Setup and the use of `devtool`
-Once you have set up virtual environment with python3.10, run the following command to install `devtool`:
+Once you have created a virtual environment with python3.10, run the following command to setup the development environment:
 ```
 ./devtool install_deps_dev
 ./devtool install_deps
-```
-
-Then you can install the library with all dependencies by running:
-```
 ./devtool all
 ```
 
