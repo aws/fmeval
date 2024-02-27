@@ -1,22 +1,20 @@
 ## Foundation Model Evaluations Library
-FMEval is a library to evaluate Large Language Models (LLMs) and select the best LLM
-for your use case. The library can help evaluate LLMs for the following tasks:
-* Open-ended generation - the production of natural language as a response to general prompts that do not have a
-  pre-defined structure.
-* Text summarization - summarizing the most important parts of a text, shortening a text while preserving its meaning.
-* Question Answering - the generation of a relevant and accurate response to a question.
-* Classification - assigning a category, such as a label or score, to text based on its content.
+`fmeval` is a library to evaluate Large Language Models (LLMs) in order to help select the best LLM
+for your use case. The library evaluates LLMs for the following tasks:
+* Open-ended generation - The production of natural human responses to text that does not have a pre-defined structure.
+* Text summarization - The generation of a condensed summary retaining the key information contained in a longer text.
+* Question Answering - The generation of a relevant and accurate response to an answer.
+* Classification - Assigning a category, such as a label or score to text, based on its content.
 
-The library contains the following:
-* Implementation of popular metrics (eval algorithms) such as Accuracy, Toxicity, Semantic Robustness and
-  Prompt Stereotyping for evaluating LLMs across different tasks.
-* Implementation of the ModelRunner interface. ModelRunner encapsulates the logic for invoking LLMs, exposing a predict
-  method that greatly simplifies interactions with LLMs within eval algorithm code. The interface can be extended by
-  the user for their LLMs.
-  We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models.
+The library contains
+* Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
+  Prompt Stereotyping across different tasks.
+* Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
+  method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The user can extend the interface for their own model classes by implementing the `predict` method.
+
 
 ## Installation
-To install the package from PIP you can simply do:
+`fmeval` is developed under python3.10. To install the package from PIP you can simply do:
 
 ```
 pip install fmeval
@@ -26,7 +24,7 @@ pip install fmeval
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
 the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
 
-Main steps for using fmeval are:
+The main steps for using `fmeval` are:
 1. Create a [ModelRunner](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/model_runner.py)
    which can perform invocations on your LLM. We have built-in support for
    [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_jumpstart_model_runner.py),
@@ -34,8 +32,12 @@ Main steps for using fmeval are:
    and [AWS Bedrock Models](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/bedrock_model_runner.py).
    You can also extend the ModelRunner interface for any LLMs hosted anywhere.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
+
+For example,
 ```
-eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
+from fmeval.eval_algorithms.toxicity import Toxicity, ToxicityConfig
+
+eval_algo = Toxicity(ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner)
 ```
 *Note: You can update the default eval config parameters for your specific use case.*
@@ -57,12 +59,12 @@ config = DataConfig(
 
 2. Use an eval algorithm with a custom dataset
 ```
-eval_algo = get_eval_algorithm("toxicity", ToxicityConfig())
+eval_algo = Toxicity(ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
 
-*Please refer to [code documentation](http://aws.github.io/fmeval) and
-[examples]((https://github.com/aws/fmeval/tree/main/examples)) for understanding other details around the usage of
+*Please refer to the [developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-foundation-model-evaluate-auto.html) and
+[examples](https://github.com/aws/fmeval/tree/main/examples) for more details around the usage of
 eval algorithms.*
 
 ## Troubleshooting
@@ -86,18 +88,22 @@ cores on to which these models are loaded on to, and avoids running into OOM err
 
 ## Development
 
-### Setup
-Once a virtual environment is set up with python3.10, run the following command to install all dependencies:
+### Setup and the use of `devtool`
+Once you have created a virtual environment with python3.10, run the following command to setup the development environment:
 ```
+./devtool install_deps_dev
+./devtool install_deps
 ./devtool all
 ```
+
+Before submitting a PR, rerun `./devtool all` for testing and linting. It should run without errors.
 
 ### Adding python dependencies
 We use [poetry](https://python-poetry.org/docs/) to manage python dependencies in this project. If you want to add a new
 dependency, please update the [pyproject.toml](./pyproject.toml) file, and run the `poetry update` command to update the
 `poetry.lock` file (which is checked in).
 
-Other than this step above to add dependencies, everything else should be managed with devtool commands.
+Other than this step to add dependencies, use devtool commands for installing dependencies, linting and testing. Execute the command `./devtool` without any arguments to see a list of available options.
 
 ### Adding your own Eval Algorithm
 
