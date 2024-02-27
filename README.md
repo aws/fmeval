@@ -20,19 +20,6 @@ The library contains
 pip install fmeval
 ```
 
-### Troubleshooting
-If you you run into the error `error: can't find Rust compiler` while installing on a Mac, please try running the steps below.
-
-```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup install 1.72.1
-rustup default 1.72.1-aarch64-apple-darwin
-rustup toolchain remove stable-aarch64-apple-darwin
-rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
-mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
-```
-
-
 ## Usage
 You can see examples of running evaluations on your LLMs with built-in or custom datasets in
 the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
@@ -79,6 +66,25 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 *Please refer to the [developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-foundation-model-evaluate-auto.html) and
 [examples](https://github.com/aws/fmeval/tree/main/examples) for more details around the usage of
 eval algorithms.*
+
+## Troubleshooting
+
+1. If you you run into the error `error: can't find Rust compiler` while installing on a Mac, please try running the steps below.
+
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup install 1.72.1
+rustup default 1.72.1-aarch64-apple-darwin
+rustup toolchain remove stable-aarch64-apple-darwin
+rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
+mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
+```
+
+2. If you run into OOM errors, especially while running evaluations that use LLMs as evaluators like toxicity and
+summarization accuracy, it might be happening because your machine does not have enough memory to load the evaluator
+models on to all the cores available to it by default to maximize parallelization. To reduce parallelization, users can
+set the environment variable `PARALLELIZATION_FACTOR` to a value that works on their machine. This reduces the number of
+cores on to which these models are loaded on to, and avoids running into OOM errors.
 
 ## Development
 
