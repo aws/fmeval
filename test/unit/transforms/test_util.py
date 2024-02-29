@@ -132,11 +132,7 @@ def test_get_model_response_init_failure():
     """
     with pytest.raises(EvalAlgorithmInternalError, match="GetModelResponse takes a single input key."):
         with patch("fmeval.transforms.util.ModelRunner") as mock_model_runner:
-            GetModelResponse(
-                ["prompt_1", "prompt_2"],
-                ["model_output_1", "model_output_2"],
-                mock_model_runner
-            )
+            GetModelResponse(["prompt_1", "prompt_2"], ["model_output_1", "model_output_2"], mock_model_runner)
 
 
 class TestCaseGetModelResponseSuccess(NamedTuple):
@@ -153,21 +149,21 @@ class TestCaseGetModelResponseSuccess(NamedTuple):
             model_output="some output",
             log_prob=-0.162,
             output_keys=["model_output", "log_prob"],
-            expected_result={"input": "Hello", "model_output": "some output", "log_prob": -0.162}
+            expected_result={"input": "Hello", "model_output": "some output", "log_prob": -0.162},
         ),
         TestCaseGetModelResponseSuccess(
             model_output="some output",
             log_prob=None,
             output_keys=["model_output"],
-            expected_result={"input": "Hello", "model_output": "some output"}
+            expected_result={"input": "Hello", "model_output": "some output"},
         ),
         TestCaseGetModelResponseSuccess(
             model_output=None,
             log_prob=-0.162,
             output_keys=["log_prob"],
-            expected_result={"input": "Hello", "log_prob": -0.162}
+            expected_result={"input": "Hello", "log_prob": -0.162},
         ),
-    ]
+    ],
 )
 def test_get_model_response_call_success(model_output, log_prob, output_keys, expected_result):
     """
@@ -207,7 +203,7 @@ class TestCaseGetModelResponseFailure(NamedTuple):
             log_prob=-0.162,
             output_keys=["model_output", "log_prob"],
         ),
-    ]
+    ],
 )
 def test_get_model_response_call_failure(model_output, log_prob, output_keys):
     """

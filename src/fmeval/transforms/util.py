@@ -58,6 +58,7 @@ class GeneratePrompt(Transform):
     If multiple input keys are provided, this transform creates prompts out of all of them,
     applying the same prompt template to each input.
     """
+
     def __init__(self, input_keys: List[str], output_keys: List[str], prompt_template: str):
         """GeneratePrompt initializer.
 
@@ -94,6 +95,7 @@ class GetModelResponse(Transform):
     if you wish to invoke the same ModelRunner on a different input, you should
     instantiate another instance of this class with said input key.
     """
+
     def __init__(
         self,
         input_keys: List[str],
@@ -124,8 +126,8 @@ class GetModelResponse(Transform):
 
         input_key = self.input_keys[0]
         model_output, log_prob = self.model_runner.predict(record[input_key])
-        model_response = (
-            ((model_output,) if model_output is not None else ()) + ((log_prob,) if log_prob is not None else ())
+        model_response = ((model_output,) if model_output is not None else ()) + (
+            (log_prob,) if log_prob is not None else ()
         )
         assert_condition(
             len(model_response) == len(self.output_keys),
