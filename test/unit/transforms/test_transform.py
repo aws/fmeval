@@ -77,6 +77,11 @@ class TestCaseTransformInitFailure(NamedTuple):
             err_msg="All keys in the input_keys argument for Transform.__init__ should be strings.",
         ),
         TestCaseTransformInitFailure(
+            input_keys=["input_1", "input_2", "input_1", "input_1"],
+            output_keys=["output"],
+            err_msg="Duplicate keys found: ",
+        ),
+        TestCaseTransformInitFailure(
             input_keys=["input"],
             output_keys="output",
             err_msg="The output_keys argument for Transform.__init__ should be a list.",
@@ -85,6 +90,11 @@ class TestCaseTransformInitFailure(NamedTuple):
             input_keys=["input"],
             output_keys=["output", 123],
             err_msg="All keys in the output_keys argument for Transform.__init__ should be strings.",
+        ),
+        TestCaseTransformInitFailure(
+            input_keys=["input_1", "input_2"],
+            output_keys=["output_1", "output_2", "output_1", "output_1"],
+            err_msg="Duplicate keys found: ",
         ),
     ],
 )
