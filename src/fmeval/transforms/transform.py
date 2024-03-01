@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List
+
+from fmeval.transforms.util import validate_key_uniqueness
 from fmeval.util import assert_condition
 
 
@@ -46,6 +48,7 @@ class Transform(ABC):
             all(isinstance(input_key, str) for input_key in input_keys),
             "All keys in the input_keys argument for Transform.__init__ should be strings.",
         )
+        validate_key_uniqueness(input_keys)
         assert_condition(
             isinstance(output_keys, List), "The output_keys argument for Transform.__init__ should be a list."
         )
@@ -53,6 +56,7 @@ class Transform(ABC):
             all(isinstance(output_key, str) for output_key in output_keys),
             "All keys in the output_keys argument for Transform.__init__ should be strings.",
         )
+        validate_key_uniqueness(output_keys)
         self.input_keys = deepcopy(input_keys)
         self.output_keys = deepcopy(output_keys)
         self.args = (self.input_keys, self.output_keys) + deepcopy(args)
