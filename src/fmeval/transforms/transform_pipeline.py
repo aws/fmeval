@@ -1,5 +1,6 @@
 import ray.data
 from typing import List, Union
+from collections import defaultdict
 
 from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -10,19 +11,40 @@ NestedTransform = Union[Transform, "TransformPipeline"]
 
 
 class TransformPipeline:
+    """A TransformPipeline represents a sequence of Transforms to be applied to a dataset.
+
+    TransformPipelines can be created from a combination of Transforms or other TransformPipelines,
+    thus enabling the creation of a pipeline with a nested, tree-like structure.
+
+    Note: mutating the `transforms` list of a child pipeline (either by adding or removing
+    elements from the list) is not recommended, as the changes will not propagate to the parent
+    pipeline. The parent pipeline's list of transforms will continue to be whatever it was when
+    the parent pipeline was initialized. If you find the need to mutate a child pipeline,
+    consider creating a separate, new pipeline instead.
+
+    Note: mutating the Transform objects that comprise a child pipeline's `transforms` list *will*
+    affect the parent pipeline. However, Transform objects should essentially never be mutated
+    after initialization. Doing so can lead to unexpected behavior, and is strongly advised against.
+    """
+
     def __init__(self, nested_transforms: List[NestedTransform]):
+        """TransformPipeline initializer.
+
+        :param nested_transforms: A list of Transforms and/or TransformPipelines.
+        """
         require(
             isinstance(nested_transforms, List),
-            "TransformPipeline initializer accepts a list containing Transforms or TransformPipelines.",
+            "TransformPipeline initializer accepts a list containing Transforms or TransformPipelines, "
+            f"but received an object with type {type(nested_transforms)}.",
         )
         seen_keys = set()
-        duplicate_keys = []
+        transform_to_duplicate_keys = defaultdict(list)
         self.transforms: List[Transform] = []
         for nested_transform in nested_transforms:
             if isinstance(nested_transform, Transform):
                 for key in nested_transform.output_keys:
                     if key in seen_keys:
-                        duplicate_keys.append(key)
+                        transform_to_duplicate_keys[nested_transform].append(key)
                     else:
                         seen_keys.add(key)
                 self.transforms.append(nested_transform)
@@ -34,17 +56,27 @@ class TransformPipeline:
                     "but either Transform or TransformPipeline is expected."
                 )
         require(
-            len(duplicate_keys) == 0,
+            len(transform_to_duplicate_keys.keys()) == 0,
             "TransformPipeline contains Transforms with the same output keys as other Transforms. "
-            f"Duplicate keys: {duplicate_keys}.",
+            "Here are the problematic Transforms, paired with their offending keys: "
+            f"{str(dict(transform_to_duplicate_keys))}",
         )
         require(
             len(self.transforms) <= TRANSFORM_PIPELINE_MAX_SIZE,
             f"TransformPipeline initialized with {len(self.transforms)} Transforms. "
-            f"Currently, the max pipeline size is {TRANSFORM_PIPELINE_MAX_SIZE}.",
+            f"Currently, the max pipeline size is {TRANSFORM_PIPELINE_MAX_SIZE}. "
+            "An overly-large pipeline is typically an indication that your Transforms "
+            "are performing tasks that are too fine-grained. See how this negatively "
+            "affects performance here: "
+            "https://docs.ray.io/en/latest/ray-core/patterns/too-fine-grained-tasks.html",
         )
 
-    def execute(self, dataset: ray.data.Dataset):
+    def execute(self, dataset: ray.data.Dataset) -> ray.data.Dataset:
+        """Apply the Transforms in self.transforms to the input dataset.
+
+        :param dataset: A Ray Dataset.
+        :returns: The resulting Ray Dataset after all Transforms have been applied.
+        """
         for transform in self.transforms:
             dataset = dataset.map(
                 transform.__class__,

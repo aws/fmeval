@@ -1,3 +1,4 @@
+import re
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +9,6 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline, NestedTransform
-
 
 TRANSFORM_1 = GeneratePrompt(["input_1"], ["output_1"], "1")
 TRANSFORM_2 = GeneratePrompt(["input_2"], ["output_2"], "2")
@@ -38,6 +38,11 @@ class TestCaseInit(NamedTuple):
     ],
 )
 def test_init_success(transforms, expected):
+    """
+    GIVEN valid arguments.
+    WHEN a Transform is initialized.
+    THEN the Transform's `transforms` attribute is the correct, flat list of Transforms.
+    """
     pipeline = TransformPipeline(transforms)
     assert pipeline.transforms == expected
 
@@ -59,7 +64,12 @@ class TestCaseInitFailure(NamedTuple):
         ),
         TestCaseInitFailure(
             transforms=[TRANSFORM_1, TRANSFORM_1],
-            err_msg="TransformPipeline contains Transforms with the same output keys as other Transforms.",
+            err_msg=re.escape(
+                "TransformPipeline contains Transforms with the same output keys as other Transforms. "
+                "Here are the problematic Transforms, paired with their offending keys: "
+                "{GeneratePrompt(input_keys=['input_1'], output_keys=['output_1'], args=['1'], kwargs={})"
+                ": ['output_1']}"
+            ),
         ),
         TestCaseInitFailure(
             transforms=[
@@ -70,6 +80,11 @@ class TestCaseInitFailure(NamedTuple):
     ],
 )
 def test_init_failure(transforms, err_msg):
+    """
+    GIVEN invalid arguments.
+    WHEN a Transform is initialized.
+    THEN errors with the appropriate message are raised.
+    """
     with pytest.raises(EvalAlgorithmClientError, match=err_msg):
         TransformPipeline(transforms)
 
@@ -86,6 +101,35 @@ class DummyTransform(Transform):
 
     def __call__(self, record: Dict[str, Any]):
         return record
+
+
+def test_mutating_nested_pipelines():
+    """
+    GIVEN a TransformPipeline containing a child pipeline.
+    WHEN the child pipeline's `transforms` list is mutated.
+    THEN the parent pipeline is not affected.
+    """
+    child = TransformPipeline([TRANSFORM_1, TRANSFORM_2])
+    parent = TransformPipeline([child, TRANSFORM_3])
+    child.transforms.pop(0)
+    assert parent.transforms == [TRANSFORM_1, TRANSFORM_2, TRANSFORM_3]
+
+
+def test_mutating_child_transforms():
+    """
+    GIVEN a TransformPipeline containing a child pipeline.
+    WHEN Transform objects within the child pipeline's `transforms` list are mutated.
+        Note that it is bad practice to mutate Transform objects after initialization,
+        and this should never be done when defining a pipeline.
+    THEN the parent pipeline's `transforms` reflect the same changes.
+    """
+    transform_1 = GeneratePrompt(["input_1"], ["output_1"], "1")
+    transform_2 = GeneratePrompt(["input_2"], ["output_2"], "2")
+    transform_3 = GeneratePrompt(["input_3"], ["output_3"], "3")
+    child = TransformPipeline([transform_1, transform_2])
+    parent = TransformPipeline([child, transform_3])
+    child.transforms[0].args = ("Hello", "there")
+    assert parent.transforms[0].args == ("Hello", "there")
 
 
 def test_execute():

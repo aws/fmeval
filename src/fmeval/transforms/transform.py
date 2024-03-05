@@ -68,3 +68,9 @@ class Transform(ABC):
             This record can be the same object as the input record. In this case,
             the logic in this method should mutate the input record directly.
         """
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(input_keys={self.input_keys}, output_keys={self.output_keys}, "
+            f"args={list(self.args[2:])}, kwargs={self.kwargs})"
+        )

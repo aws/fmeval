@@ -126,8 +126,10 @@ GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"
 
 # Configures the maximum number of Transforms a TransformPipeline can contain.
-# All builtin eval algorithms use on the order of just a few dozen Transforms;
-# setting the limit to 100 to support more complicated, user-implemented algorithms.
-# Any evaluation algorithm where the pipeline has an order of magnitude more transforms
-# than this should likely be redesigned.
+# All built-in evaluation algorithms use on the order of a few dozen Transforms;
+# we set the limit to 100 to support more complicated, user-implemented algorithms.
+# An evaluation algorithm that contains a pipeline with significantly more transforms
+# than this should likely be redesigned. It is worth noting that for optimal performance,
+# the computation that an individual Transform performs should not be too small.
+# See https://docs.ray.io/en/latest/ray-core/patterns/too-fine-grained-tasks.html
 TRANSFORM_PIPELINE_MAX_SIZE = 100
