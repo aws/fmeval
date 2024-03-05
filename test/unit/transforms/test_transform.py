@@ -111,3 +111,19 @@ def test_transform_init_failure(input_keys, output_keys, err_msg):
     """
     with pytest.raises(EvalAlgorithmInternalError, match=err_msg):
         DummyTransform(input_keys, output_keys, [123], {"k": "v"})
+
+
+def test_repr():
+    input_keys = ["input"]
+    output_keys = ["output"]
+    pos_arg_a = [162, 189]
+    pos_arg_b = {"k1": ["v1"], "k2": ["v2"]}
+    kw_arg_a = 123
+    kw_arg_b = "Hi"
+    dummy = DummyTransform(input_keys, output_keys, pos_arg_a, pos_arg_b, kw_arg_a=kw_arg_a, kw_arg_b=kw_arg_b)
+    expected = (
+        "DummyTransform(input_keys=['input'], output_keys=['output'], "
+        "args=[[162, 189], {'k1': ['v1'], 'k2': ['v2']}], "
+        "kwargs={'kw_arg_a': 123, 'kw_arg_b': 'Hi'})"
+    )
+    assert str(dummy) == expected
