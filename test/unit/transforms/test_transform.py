@@ -69,12 +69,12 @@ class TestCaseTransformInitFailure(NamedTuple):
         TestCaseTransformInitFailure(
             input_keys="input",
             output_keys=["output"],
-            err_msg="The input_keys argument for Transform.__init__ should be a list.",
+            err_msg="input_keys should be a list.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input", 123],
             output_keys=["output"],
-            err_msg="All keys in the input_keys argument for Transform.__init__ should be strings.",
+            err_msg="All keys in input_keys should be strings.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input_1", "input_2", "input_1", "input_1"],
@@ -84,12 +84,17 @@ class TestCaseTransformInitFailure(NamedTuple):
         TestCaseTransformInitFailure(
             input_keys=["input"],
             output_keys="output",
-            err_msg="The output_keys argument for Transform.__init__ should be a list.",
+            err_msg="output_keys should be a list.",
+        ),
+        TestCaseTransformInitFailure(
+            input_keys=["input"],
+            output_keys=[],
+            err_msg="output_keys should be a non-empty list.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input"],
             output_keys=["output", 123],
-            err_msg="All keys in the output_keys argument for Transform.__init__ should be strings.",
+            err_msg="All keys in output_keys should be strings.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input_1", "input_2"],

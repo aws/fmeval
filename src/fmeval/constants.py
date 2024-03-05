@@ -124,3 +124,10 @@ GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
 
 # BERTScore
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"
+
+# Configures the maximum number of Transforms a TransformPipeline can contain.
+# All builtin eval algorithms use on the order of just a few dozen Transforms;
+# setting the limit to 100 to support more complicated, user-implemented algorithms.
+# Any evaluation algorithm where the pipeline has an order of magnitude more transforms
+# than this should likely be redesigned.
+TRANSFORM_PIPELINE_MAX_SIZE = 100
