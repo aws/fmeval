@@ -36,12 +36,12 @@ class TransformPipeline:
         require(
             len(duplicate_keys) == 0,
             "TransformPipeline contains Transforms with the same output keys as other Transforms. "
-            f"Duplicate keys: {duplicate_keys}."
+            f"Duplicate keys: {duplicate_keys}.",
         )
         require(
             len(self.transforms) <= TRANSFORM_PIPELINE_MAX_SIZE,
             f"TransformPipeline initialized with {len(self.transforms)} Transforms. "
-            f"Currently, the max pipeline size is {TRANSFORM_PIPELINE_MAX_SIZE}."
+            f"Currently, the max pipeline size is {TRANSFORM_PIPELINE_MAX_SIZE}.",
         )
 
     def execute(self, dataset: ray.data.Dataset):

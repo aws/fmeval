@@ -59,12 +59,14 @@ class TestCaseInitFailure(NamedTuple):
         ),
         TestCaseInitFailure(
             transforms=[TRANSFORM_1, TRANSFORM_1],
-            err_msg="TransformPipeline contains Transforms with the same output keys as other Transforms."
+            err_msg="TransformPipeline contains Transforms with the same output keys as other Transforms.",
         ),
         TestCaseInitFailure(
-            transforms=[GeneratePrompt([f"input_{i}"], [f"output_{i}"], str(i)) for i in range(TRANSFORM_PIPELINE_MAX_SIZE + 1)],
-            err_msg=f"TransformPipeline initialized with {TRANSFORM_PIPELINE_MAX_SIZE + 1} Transforms."
-        )
+            transforms=[
+                GeneratePrompt([f"input_{i}"], [f"output_{i}"], str(i)) for i in range(TRANSFORM_PIPELINE_MAX_SIZE + 1)
+            ],
+            err_msg=f"TransformPipeline initialized with {TRANSFORM_PIPELINE_MAX_SIZE + 1} Transforms.",
+        ),
     ],
 )
 def test_init_failure(transforms, err_msg):
@@ -98,8 +100,12 @@ def test_execute():
     pipeline.execute(dataset)
     dataset.map.assert_called_once_with(
         DummyTransform,
-        fn_constructor_args=(["input"], ["output"], 42,),
+        fn_constructor_args=(
+            ["input"],
+            ["output"],
+            42,
+        ),
         fn_constructor_kwargs={"kw_arg": "Hello there"},
         num_cpus=(1 / TRANSFORM_PIPELINE_MAX_SIZE),
-        concurrency=1.
+        concurrency=1.0,
     )

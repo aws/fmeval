@@ -41,20 +41,14 @@ class Transform(ABC):
         :param *args: Variable length argument list.
         :param **kwargs: Arbitrary keyword arguments.
         """
-        assert_condition(
-            isinstance(input_keys, List), "input_keys should be a list."
-        )
+        assert_condition(isinstance(input_keys, List), "input_keys should be a list.")
         assert_condition(
             all(isinstance(input_key, str) for input_key in input_keys),
             "All keys in input_keys should be strings.",
         )
         validate_key_uniqueness(input_keys)
-        assert_condition(
-            isinstance(output_keys, List), "output_keys should be a list."
-        )
-        assert_condition(
-            len(output_keys) > 0, "output_keys should be a non-empty list."
-        )
+        assert_condition(isinstance(output_keys, List), "output_keys should be a list.")
+        assert_condition(len(output_keys) > 0, "output_keys should be a non-empty list.")
         assert_condition(
             all(isinstance(output_key, str) for output_key in output_keys),
             "All keys in output_keys should be strings.",
