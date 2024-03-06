@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import patch
 from typing import NamedTuple, List, Optional, Dict, Any
+
+from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt, GetModelResponse
 from fmeval.util import EvalAlgorithmInternalError
 
@@ -54,7 +56,7 @@ def test_get_model_response_init_failure():
     WHEN a GeneratePrompt object is instantiated.
     THEN an EvalAlgorithmInternalError is raised.
     """
-    with pytest.raises(EvalAlgorithmInternalError, match="GetModelResponse takes a single input key."):
+    with pytest.raises(EvalAlgorithmClientError, match="GetModelResponse takes a single input key."):
         with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
             GetModelResponse(["prompt_1", "prompt_2"], ["model_output_1", "model_output_2"], mock_model_runner)
 
