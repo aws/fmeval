@@ -69,12 +69,12 @@ class TestCaseTransformInitFailure(NamedTuple):
         TestCaseTransformInitFailure(
             input_keys="input",
             output_keys=["output"],
-            err_msg="The input_keys argument for Transform.__init__ should be a list.",
+            err_msg="input_keys should be a list.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input", 123],
             output_keys=["output"],
-            err_msg="All keys in the input_keys argument for Transform.__init__ should be strings.",
+            err_msg="All keys in input_keys should be strings.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input_1", "input_2", "input_1", "input_1"],
@@ -84,12 +84,17 @@ class TestCaseTransformInitFailure(NamedTuple):
         TestCaseTransformInitFailure(
             input_keys=["input"],
             output_keys="output",
-            err_msg="The output_keys argument for Transform.__init__ should be a list.",
+            err_msg="output_keys should be a list.",
+        ),
+        TestCaseTransformInitFailure(
+            input_keys=["input"],
+            output_keys=[],
+            err_msg="output_keys should be a non-empty list.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input"],
             output_keys=["output", 123],
-            err_msg="All keys in the output_keys argument for Transform.__init__ should be strings.",
+            err_msg="All keys in output_keys should be strings.",
         ),
         TestCaseTransformInitFailure(
             input_keys=["input_1", "input_2"],
@@ -106,3 +111,19 @@ def test_transform_init_failure(input_keys, output_keys, err_msg):
     """
     with pytest.raises(EvalAlgorithmInternalError, match=err_msg):
         DummyTransform(input_keys, output_keys, [123], {"k": "v"})
+
+
+def test_repr():
+    input_keys = ["input"]
+    output_keys = ["output"]
+    pos_arg_a = [162, 189]
+    pos_arg_b = {"k1": ["v1"], "k2": ["v2"]}
+    kw_arg_a = 123
+    kw_arg_b = "Hi"
+    dummy = DummyTransform(input_keys, output_keys, pos_arg_a, pos_arg_b, kw_arg_a=kw_arg_a, kw_arg_b=kw_arg_b)
+    expected = (
+        "DummyTransform(input_keys=['input'], output_keys=['output'], "
+        "args=[[162, 189], {'k1': ['v1'], 'k2': ['v2']}], "
+        "kwargs={'kw_arg_a': 123, 'kw_arg_b': 'Hi'})"
+    )
+    assert str(dummy) == expected
