@@ -3,11 +3,12 @@ from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import (
-    assert_condition,
     validate_key_uniqueness,
     validate_existing_keys,
     validate_added_keys,
+    validate_call,
 )
+from fmeval.util import require, assert_condition
 
 
 class GeneratePrompt(Transform):
@@ -30,23 +31,15 @@ class GeneratePrompt(Transform):
         super().__init__(input_keys, output_keys, prompt_template)
         self.prompt_composer = PromptComposer(prompt_template)
 
+    @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
         """Augments the input record with LLM prompts and returns said record.
 
         :param record: The input record.
         :returns: The input record with prompts added in.
         """
-        validate_existing_keys(record, self.input_keys)
-        original_keys = set(record.keys())
-
         for input_key, prompt_key in zip(self.input_keys, self.output_keys):
             record[prompt_key] = self.prompt_composer.compose(record[input_key])
-
-        # A defensive sanity check; self.output_keys should never be mutated.
-        validate_key_uniqueness(self.output_keys)
-        validate_added_keys(
-            current_keys=set(record.keys()), original_keys=original_keys, keys_to_add=set(self.output_keys)
-        )
         return record
 
 
@@ -73,19 +66,17 @@ class GetModelResponse(Transform):
             for log probabilities.
         :param model_runner: The ModelRunner instance whose responses will be obtained.
         """
-        assert_condition(len(input_keys) == 1, "GetModelResponse takes a single input key.")
+        require(len(input_keys) == 1, "GetModelResponse takes a single input key.")
         super().__init__(input_keys, output_keys, model_runner)
         self.model_runner = model_runner
 
+    @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
         """Augments the input record with model responses and returns said record.
 
         :param record: The input record.
         :returns: The input record with model response data added in.
         """
-        validate_existing_keys(record, self.input_keys)
-        original_keys = set(record.keys())
-
         input_key = self.input_keys[0]
         model_output, log_prob = self.model_runner.predict(record[input_key])
         model_response = ((model_output,) if model_output is not None else ()) + (
@@ -96,13 +87,6 @@ class GetModelResponse(Transform):
             f"The number of elements in model response {model_response} "
             f"does not match number of output keys in {self.output_keys}.",
         )
-
         for model_response_item, model_output_key in zip(model_response, self.output_keys):
             record[model_output_key] = model_response_item
-
-        # A defensive sanity check; self.output_keys should never be mutated.
-        validate_key_uniqueness(self.output_keys)
-        validate_added_keys(
-            current_keys=set(record.keys()), original_keys=original_keys, keys_to_add=set(self.output_keys)
-        )
         return record

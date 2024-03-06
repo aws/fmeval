@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Callable
 from fmeval.util import assert_condition
 
 
@@ -60,3 +60,32 @@ def validate_added_keys(current_keys: Set[str], original_keys: Set[str], keys_to
         f"and the original keys: {original_keys} does not match "
         f"the expected keys to be added: {keys_to_add}.",
     )
+
+
+def validate_call(call_method: Callable) -> Callable:
+    """Decorator for the __call__ method of Transforms used for validating input and output.
+
+    This decorator validates that all keys in a Transform's `input_keys` attribute are
+    present in the input record that is passed to `__call__` and that the keys that
+    are added to the record by the Transform's internal `__call__` logic are limited
+    to the keys specified by the Transform's `output_keys` attribute.
+
+    Note that this decorator should only be used by Transforms that mutate their input record,
+    as the output key validation may not make sense in the case where a new record object
+    (which may not keep all the same keys as the original record) is returned as the output.
+
+    :param call_method: The `__call__` method of a Transform.
+    :returns: A wrapper function that performs pre- and post-validation on top of `__call__`.
+    """
+
+    def wrapper(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        validate_existing_keys(record, self.input_keys)
+        original_keys = set(record.keys())
+        call_output = call_method(self, record)
+        validate_key_uniqueness(self.output_keys)
+        validate_added_keys(
+            current_keys=set(record.keys()), original_keys=original_keys, keys_to_add=set(self.output_keys)
+        )
+        return call_output
+
+    return wrapper
