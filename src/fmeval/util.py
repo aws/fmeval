@@ -1,7 +1,10 @@
-import multiprocessing as mp
 import os
 import re
 
+import ray
+import multiprocessing as mp
+
+from ray import ObjectRef
 from fmeval.constants import EVAL_RESULTS_PATH, DEFAULT_EVAL_RESULTS_PATH, PARALLELIZATION_FACTOR
 from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 
@@ -80,3 +83,32 @@ def get_num_actors():
     except ValueError:
         num_actors = mp.cpu_count() - 1
     return num_actors
+
+
+def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
+    """Create a Ray actor out of `resource`.
+
+    Typically, `resource` will be an object that consumes a significant amount of
+    memory (ex: a BertscoreHelperModel instance) that you do not want to create
+    on a per-transform (i.e. per-process) basis, but rather wish to have as a "global resource".
+
+    Conceptually, the object that is returned from this function can be thought
+    of as the input object, except it now exists in shared memory, as opposed
+    to the address space of the process it was created in. Note that this
+    function returns a Ray actor handle, which must be interacted with using the
+    Ray remote API.
+
+    :param resource: The object which we create a Ray actor from.
+        This object's class must implement the `__reduce__` method
+        with a return value of the form (ClassName, serialized_data),
+        where serialized_data is a tuple containing arguments to __init__,
+        in order to be compatible with this function.
+    :param num_cpus: The num_cpus parameter to pass to ray.remote().
+        This parameter represents the number of Ray logical CPUs
+        (see https://docs.ray.io/en/latest/ray-core/scheduling/resources.html#physical-resources-and-logical-resources)
+        that the created actor will require.
+    :returns: The Ray actor handle corresponding to the created actor.
+    """
+    resource_cls, serialized_data = resource.__reduce__()  # type: ignore[misc]
+    wrapped_resource_cls = ray.remote(num_cpus=num_cpus)(resource_cls)
+    return wrapped_resource_cls.remote(*serialized_data)
