@@ -9,9 +9,7 @@ for your use case. The library evaluates LLMs for the following tasks:
 The library contains
 * Algorithms to evaluate LLMs for Accuracy, Toxicity, Semantic Robustness and
   Prompt Stereotyping across different tasks.
-* Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict`
-  method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for AWS SageMaker Jumpstart Endpoints, AWS SageMaker Endpoints and Bedrock Models. The user can extend the interface for their own model classes by implementing the `predict` method.
-
+* Implementations of the `ModelRunner` interface. `ModelRunner` encapsulates the logic for invoking different types of LLMs, exposing a `predict` method to simplify interactions with LLMs within the eval algorithm code. We have built-in support for Amazon SageMaker Endpoints and JumpStart models. The user can extend the interface for their own model classes by implementing the `predict` method.
 
 ## Installation
 `fmeval` is developed under python3.10. To install the package from PIP you can simply do:
@@ -25,12 +23,7 @@ You can see examples of running evaluations on your LLMs with built-in or custom
 the [examples folder](https://github.com/aws/fmeval/tree/main/examples).
 
 The main steps for using `fmeval` are:
-1. Create a [ModelRunner](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/model_runner.py)
-   which can perform invocations on your LLM. We have built-in support for
-   [AWS SageMaker Jumpstart Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_jumpstart_model_runner.py),
-   [AWS SageMaker Endpoints](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/sm_model_runner.py)
-   and [AWS Bedrock Models](https://github.com/aws/fmeval/blob/main/src/fmeval/model_runners/bedrock_model_runner.py).
-   You can also extend the ModelRunner interface for any LLMs hosted anywhere.
+1. Create a `ModelRunner` which can perform invocation on your LLM. `fmeval` provides built-in support for Amazon SageMaker Endpoints and JumpStart LLMs. You can also extend the `ModelRunner` interface for any LLMs hosted anywhere.
 2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
 
 For example,

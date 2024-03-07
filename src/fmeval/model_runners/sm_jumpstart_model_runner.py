@@ -1,5 +1,5 @@
 """
-Module to manage model runners for SageMaker Jumpstart endpoints.
+Module to manage model runners for SageMaker Endpoints with JumpStart LLMs.
 """
 import logging
 
@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 class JumpStartModelRunner(ModelRunner):
     """
-    A class to manage the creation and deletion of SageMaker Jumpstart model runner when user provides
-    a SageMaker Jumpstart endpoint name from a SageMaker Jumpstart model.
+    A class to manage the creation and deletion of a SageMaker Jumpstart model runner
+    when the user provides an endpoint name corresponding to a SageMaker Endpoint
+    for a JumpStart LLM.
     """
 
     def __init__(
