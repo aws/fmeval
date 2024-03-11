@@ -257,8 +257,5 @@ def test_get_default_prompt_template():
     WHEN get_default_prompt_template() method is called
     THEN expected default prompt template is returned
     """
-    assert (
-        get_default_prompt_template("trivia_qa")
-        == "Respond to the following question with a short answer: $feature"
-    )
+    assert get_default_prompt_template("trivia_qa") == "Respond to the following question with a short answer: $feature"
     assert get_default_prompt_template("my_custom_dataset") == "$feature"
