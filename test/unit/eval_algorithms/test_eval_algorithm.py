@@ -259,6 +259,6 @@ def test_get_default_prompt_template():
     """
     assert (
         get_default_prompt_template("trivia_qa")
-        == "Respond to the following question with a short answer: $feature Answer:"
+        == "Respond to the following question with a short answer: $feature"
     )
     assert get_default_prompt_template("my_custom_dataset") == "$feature"
