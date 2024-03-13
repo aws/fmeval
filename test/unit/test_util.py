@@ -60,7 +60,7 @@ def test_create_shared_resource():
         def __reduce__(self):
             return Dummy, (self.name, self.age)
 
-    with patch("src.fmeval.util.ray.remote") as mock_ray_remote:
+    with patch("fmeval.util.ray.remote") as mock_ray_remote:
         mock_actor_class = Mock()
         mock_actor_class.remote = Mock()
 
