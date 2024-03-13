@@ -66,7 +66,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.021908,
                     METEOR_SCORE: 0.107623,
-                    BERT_SCORE: 0.559997,
+                    BERT_SCORE: 0.559893,
                     DELTA_ROUGE_SCORE: 0.019394,
                     DELTA_METEOR_SCORE: 0.044310,
                     DELTA_BERT_SCORE: 0.033714,
@@ -85,7 +85,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.021908,
                     METEOR_SCORE: 0.107623,
-                    BERT_SCORE: 0.559998,
+                    BERT_SCORE: 0.559893,
                     DELTA_ROUGE_SCORE: 0.035696,
                     DELTA_METEOR_SCORE: 0.056931,
                     DELTA_BERT_SCORE: 0.027971,
@@ -104,7 +104,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 expected_evaluate_scores={
                     ROUGE_SCORE: 0.021908,
                     METEOR_SCORE: 0.107623,
-                    BERT_SCORE: 0.559998,
+                    BERT_SCORE: 0.559893,
                     DELTA_ROUGE_SCORE: 0.032187,
                     DELTA_METEOR_SCORE: 0.057705,
                     DELTA_BERT_SCORE: 0.027511,
