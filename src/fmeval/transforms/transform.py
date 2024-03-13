@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from typing import Any, Dict, List
 
 from fmeval.transforms.util import validate_key_uniqueness
@@ -54,10 +53,10 @@ class Transform(ABC):
             "All keys in output_keys should be strings.",
         )
         validate_key_uniqueness(output_keys)
-        self.input_keys = deepcopy(input_keys)
-        self.output_keys = deepcopy(output_keys)
-        self.args = (self.input_keys, self.output_keys) + deepcopy(args)
-        self.kwargs = deepcopy(kwargs)
+        self.input_keys = input_keys
+        self.output_keys = output_keys
+        self.args = (self.input_keys, self.output_keys) + args
+        self.kwargs = kwargs
 
     @abstractmethod
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:

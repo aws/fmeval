@@ -16,7 +16,8 @@ from fmeval.constants import (
     NUM_ROWS_DETERMINISTIC,
     DATASET_COLUMNS,
 )
-from fmeval.eval_algorithms import EvalScore, CategoryScore
+from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms import EvalScore, CategoryScore, DATASET_CONFIGS, EVAL_DATASETS
 from fmeval.exceptions import EvalAlgorithmInternalError
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -25,6 +26,12 @@ from fmeval.util import get_num_actors
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 
 logger = logging.getLogger(__name__)
+
+
+def get_dataset_configs(data_config: Optional[DataConfig], eval_name: str) -> List[DataConfig]:
+    return (
+        [data_config] if data_config else [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[eval_name]]
+    )
 
 
 def generate_model_predict_response_for_dataset(
