@@ -62,7 +62,9 @@ eval algorithms.*
 
 ## Troubleshooting
 
-1. If you run into the error `error: can't find Rust compiler` while installing on a Mac, please try running the steps below.
+1. Users running `fmeval` on a Windows machine may encounter the error `OSError: [Errno 0] AssignProcessToJobObject() failed` when `fmeval` internally calls `ray.init()`. This OS error is a known Ray issue, and is detailed [here](https://github.com/ray-project/ray/issues/21994). Multiple users have reported that installing Python from the [official Python website](https://www.python.org/downloads/windows/) rather than the Microsoft store fixes this issue. You can view more details on limitations of running Ray on Windows on [Ray's webpage](https://docs.ray.io/en/latest/ray-overview/installation.html#windows-support).
+
+2. If you run into the error `error: can't find Rust compiler` while installing `fmeval` on a Mac, please try running the steps below.
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -73,13 +75,10 @@ rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 ```
 
-2. Due to `fmeval`'s use of [Ray](https://www.ray.io/), and the fact that [Ray on Windows is still in beta](https://docs.ray.io/en/latest/ray-overview/installation.html#windows-support), users running evaluations on Windows machines may encounter Windows-specific issues. For example, `ray.init()` may raise an OS error, as described in [this thread](https://discuss.ray.io/t/ray-init-raises-oserror-assignprocesstojobobject-failed/7018).
-
-3. If you run into OOM errors, especially while running evaluations that use LLMs as evaluators like toxicity and
-summarization accuracy, it might be happening because your machine does not have enough memory to load the evaluator
-models on to all the cores available to it by default to maximize parallelization. To reduce parallelization, users can
-set the environment variable `PARALLELIZATION_FACTOR` to a value that works on their machine. This reduces the number of
-cores on to which these models are loaded on to, and avoids running into OOM errors.
+3. If you run into out of memory (OOM) errors, especially while running evaluations that use LLMs as evaluators like toxicity and
+summarization accuracy, it is likely that your machine does not have enough memory to load the evaluator
+models. By default, `femval` loads multiple copies of the model into memory to maximize parallelization, where the exact number depends on the number of cores on the machine. To reduce the number of models that get loaded in parallel, you can
+set the environment variable `PARALLELIZATION_FACTOR` to a value that suits your machine.
 
 ## Development
 
