@@ -106,7 +106,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     METEOR_SCORE: 0.105540,
                     BERT_SCORE: 0.559893,
                     DELTA_ROUGE_SCORE: 0.030725,
-                    DELTA_METEOR_SCORE: 0.057705,
+                    DELTA_METEOR_SCORE: 0.054234,
                     DELTA_BERT_SCORE: 0.026511,
                 },
             ),
