@@ -1,5 +1,5 @@
 import ray.data
-from typing import List, Union
+from typing import List, Union, Dict, Any
 from collections import defaultdict
 
 from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
@@ -97,3 +97,13 @@ class TransformPipeline:
                 concurrency=1,
             )
         return dataset
+
+    def execute_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply the Transforms in self.transforms to a single record.
+
+        :param record: An input record.
+        :returns: The record with augmentations from all the applied Transforms.
+        """
+        for transform in self.transforms:
+            record = transform(record)
+        return record

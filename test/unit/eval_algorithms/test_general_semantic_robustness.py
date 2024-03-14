@@ -2,7 +2,7 @@ import random
 import re
 import string
 from typing import NamedTuple, List, Optional, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 import pytest
 import ray
@@ -289,16 +289,15 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_semantic_robustness_evaluate_sample_invalid_input(self, bertscore_helper_model, test_case):
         """
         GIVEN invalid inputs
         WHEN GeneralSemanticRobustness.evaluate_sample is called
         THEN correct exception with proper message is raised
         """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        # We mock the BertscoreHelperModel class so that the model doesn't get loaded into memory.
+        bertscore_helper_model.return_value = Mock()
 
         eval_algorithm = GeneralSemanticRobustness(test_case.config)
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
@@ -615,7 +614,7 @@ class TestGeneralSemanticRobustness:
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     @patch.object(GeneralSemanticRobustness, "_GeneralSemanticRobustness__add_scores_to_dataset")
     def test_semantic_robustness_evaluate(
         self,
@@ -635,9 +634,8 @@ class TestGeneralSemanticRobustness:
         """
         add_scores_to_dataset.return_value = test_case.dataset_with_scores
 
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        # We mock the BertscoreHelperModel class so that the model doesn't get loaded into memory
+        bertscore_helper_model.return_value = Mock()
 
         get_dataset.return_value = test_case.input_dataset
         generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
@@ -688,7 +686,7 @@ class TestGeneralSemanticRobustness:
     )
     @patch("fmeval.model_runners.model_runner.ModelRunner")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_semantic_robustness_evaluate_invalid_input(
         self,
         bertscore_helper_model,

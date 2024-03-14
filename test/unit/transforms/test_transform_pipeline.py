@@ -98,8 +98,12 @@ class DummyTransform(Transform):
         kw_arg: str = "Hi",
     ):
         super().__init__(input_keys, output_keys, pos_arg, kw_arg=kw_arg)
+        self.pos_arg = pos_arg
+        self.kw_arg = kw_arg
 
     def __call__(self, record: Dict[str, Any]):
+        input_key = self.input_keys[0]
+        record[self.output_keys[0]] = f"{record[input_key]}_{self.pos_arg}_{self.kw_arg}"
         return record
 
 
@@ -153,3 +157,17 @@ def test_execute():
         num_cpus=(1 / TRANSFORM_PIPELINE_MAX_SIZE),
         concurrency=1.0,
     )
+
+
+def test_execute_record():
+    """
+    GIVEN a valid TransformPipeline.
+    WHEN its execute_record method is called on a record.
+    THEN all Transforms in the TransformPipeline are applied to the input record.
+    """
+    pipeline = TransformPipeline(
+        [DummyTransform(["input"], ["output_1"], 1, kw_arg="a"), DummyTransform(["input"], ["output_2"], 2, kw_arg="b")]
+    )
+    record = {"input": "asdf"}
+    output_record = pipeline.execute_record(record)
+    assert output_record == {"input": "asdf", "output_1": "asdf_1_a", "output_2": "asdf_2_b"}

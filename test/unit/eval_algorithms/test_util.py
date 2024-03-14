@@ -16,6 +16,7 @@ from fmeval.constants import (
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
 )
+from fmeval.eval_algorithms import EvalAlgorithm, DATASET_CONFIGS, BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS
 from fmeval.eval_algorithms.eval_algorithm import EvalScore
 from fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -27,6 +28,7 @@ from fmeval.eval_algorithms.util import (
     generate_output_dataset_path,
     generate_mean_delta_score,
     verify_model_determinism,
+    get_dataset_configs,
 )
 from fmeval.exceptions import EvalAlgorithmInternalError
 from fmeval.util import camel_to_snake, get_num_actors
@@ -599,3 +601,13 @@ def test_verify_model_determinism(test_case):
 def test_get_bert_score(mock_ray_get, target_output, model_output):
     mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
     assert BERTSCORE_DUMMY_VALUE == get_bert_score(target_output, model_output, helper_model=MagicMock())
+
+
+def test_get_dataset_configs():
+    custom_config = Mock()
+    configs = get_dataset_configs(custom_config, "blah")
+    assert configs == [custom_config]
+
+    # WLOG, use QA accuracy as the test case
+    configs = get_dataset_configs(None, EvalAlgorithm.QA_ACCURACY.value)
+    assert configs == [DATASET_CONFIGS[BOOLQ], DATASET_CONFIGS[TRIVIA_QA], DATASET_CONFIGS[NATURAL_QUESTIONS]]

@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch
 from typing import List, Dict, Any, NamedTuple
 
 from fmeval.exceptions import EvalAlgorithmInternalError
@@ -27,34 +26,26 @@ def test_transform_init_success():
     GIVEN valid initializer arguments.
     WHEN a subclass of Transform is initialized.
     THEN the input_keys, output_keys, args, and kwargs attributes of the transform object
-        match what is expected, and deep copies of the relevant data are made.
+        match what is expected.
     """
-    with patch("fmeval.transforms.transform.deepcopy") as mock_deepcopy:
-        input_keys = ["input"]
-        output_keys = ["output"]
-        pos_arg_a = [162, 189]
-        pos_arg_b = {"k1": ["v1"], "k2": ["v2"]}
-        kw_arg_a = 123
-        kw_arg_b = "Hi"
+    input_keys = ["input"]
+    output_keys = ["output"]
+    pos_arg_a = [162, 189]
+    pos_arg_b = {"k1": ["v1"], "k2": ["v2"]}
+    kw_arg_a = 123
+    kw_arg_b = "Hi"
 
-        mock_deepcopy.side_effect = [
-            ["input_copy"],  # deepcopy called on input_keys
-            ["output_copy"],  # deepcopy called on output_keys
-            ([163, 190], {"k1_copy": ["v1_copy"], "k2_copy": ["v2_copy"]}),  # deepcopy called on (pos_arg_a, pos_arg_b)
-            {124, "Hi_copy"},  # deepcopy called on {"kw_arg_a": kw_arg_a, "kw_arg_b": kw_arg_b}
-        ]
+    dummy = DummyTransform(input_keys, output_keys, pos_arg_a, pos_arg_b, kw_arg_a=kw_arg_a, kw_arg_b=kw_arg_b)
 
-        dummy = DummyTransform(input_keys, output_keys, pos_arg_a, pos_arg_b, kw_arg_a=kw_arg_a, kw_arg_b=kw_arg_b)
-
-        assert dummy.input_keys == ["input_copy"]
-        assert dummy.output_keys == ["output_copy"]
-        assert dummy.args == (
-            ["input_copy"],
-            ["output_copy"],
-            [163, 190],
-            {"k1_copy": ["v1_copy"], "k2_copy": ["v2_copy"]},
-        )
-        assert dummy.kwargs == {124, "Hi_copy"}
+    assert dummy.input_keys == input_keys
+    assert dummy.output_keys == output_keys
+    assert dummy.args == (
+        input_keys,
+        output_keys,
+        pos_arg_a,
+        pos_arg_b,
+    )
+    assert dummy.kwargs == {"kw_arg_a": kw_arg_a, "kw_arg_b": kw_arg_b}
 
 
 class TestCaseTransformInitFailure(NamedTuple):

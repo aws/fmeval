@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, call, Mock
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 from ray import ObjectRef
 
@@ -248,3 +248,83 @@ def test_bert_score_call_with_ray_actor_handle():
         bs(sample)
         mock_bertscore_model.invoke_model.remote.assert_called_once_with("Hello there!", "Hi")
         mock_ray_get.assert_called_once_with("remote invocation result")
+
+
+class TestCaseMetricNumericalValues(NamedTuple):
+    model_output: str
+    target_output: str
+    expected_score: float
+    rouge_type: Optional[str] = None
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseMetricNumericalValues(
+            model_output="I like cake.",
+            target_output="I like cake.",
+            expected_score=0.9921875,
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+            target_output="Berlin: an art metropolis.",
+            expected_score=0.5009920634920636,
+        ),
+    ],
+)
+def test_meteor_numerical_values(test_case):
+    ms = MeteorScore(
+        input_keys=["target_output", "model_output"],
+        output_keys=["meteor"],
+        target_output_key="target_output",
+        model_output_key="model_output",
+        load_meteor_modules=False,
+    )
+    sample = {"target_output": test_case.target_output, "model_output": test_case.model_output}
+    output = ms(sample)
+    assert output["meteor"] == pytest.approx(test_case.expected_score, rel=1e-5)
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseMetricNumericalValues(
+            model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge1"
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+            target_output="Berlin: an art metropolis.",
+            expected_score=0.4444444444444445,
+            rouge_type="rouge1",
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge2"
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+            target_output="Berlin: an art metropolis.",
+            expected_score=0.0,
+            rouge_type="rouge2",
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rougeL"
+        ),
+        TestCaseMetricNumericalValues(
+            model_output="Berlin: Art, Heritage, Exhibitions Hub.",
+            target_output="Berlin: an art metropolis.",
+            expected_score=0.4444444444444445,
+            rouge_type="rougeL",
+        ),
+    ],
+)
+def test_get_rouge_score(test_case):
+    rs = RougeScore(
+        input_keys=["target_output", "model_output"],
+        output_keys=["rouge"],
+        target_output_key="target_output",
+        model_output_key="model_output",
+        rouge_type=test_case.rouge_type,
+    )
+    sample = {"target_output": test_case.target_output, "model_output": test_case.model_output}
+    output = rs(sample)
+    assert output["rouge"] == pytest.approx(test_case.expected_score, rel=1e-5)
