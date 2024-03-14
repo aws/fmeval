@@ -54,7 +54,7 @@ def test_get_model_response_init_failure():
     """
     GIVEN a list of input keys where the number of keys != 1.
     WHEN a GeneratePrompt object is instantiated.
-    THEN an EvalAlgorithmInternalError is raised.
+    THEN an EvalAlgorithmClientError is raised.
     """
     with pytest.raises(EvalAlgorithmClientError, match="GetModelResponse takes a single input key."):
         with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
