@@ -256,7 +256,7 @@ class AddRemoveWhitespace(SemanticPerturbation):
         :param num_perturbations: The number of perturbed outputs to generate via the `perturb` method.
             Note that the number of output keys must match this parameter.
         :param seed: A random seed, used by pseudorandom number generators.
-        :param add_prob: The probability of adding a whitespace character in front of a non-whitespace character.
+        :param add_prob: The probability of adding a whitespace character after a non-whitespace character.
         :param remove_prob: The probability of removing a whitespace character.
         """
         super().__init__(
