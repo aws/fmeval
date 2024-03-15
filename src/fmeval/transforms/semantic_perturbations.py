@@ -1,4 +1,3 @@
-import random
 import numpy as np
 from typing import Dict, List, Any
 from abc import abstractmethod
@@ -6,11 +5,6 @@ from abc import abstractmethod
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 from fmeval.util import require
-
-
-def set_seed(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
 
 
 class SemanticPerturbation(Transform):
@@ -42,7 +36,7 @@ class SemanticPerturbation(Transform):
         require(len(input_keys) == 1, f"{self.__class__.__name__} takes a single input key.")
         super().__init__(input_keys, output_keys, num_perturbations, seed, args, kwargs)
         self.num_perturbations = num_perturbations
-        set_seed(seed)
+        self.rng = np.random.default_rng(seed)
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,7 +145,6 @@ class ButterFinger(SemanticPerturbation):
         :param text: The input text to be perturbed.
         :returns: A list of perturbed text outputs.
         """
-        prob_of_typo = int(self.perturbation_prob * 100)
         perturbed_texts = []
         for _ in range(self.num_perturbations):
             butter_finger_text = []
@@ -160,8 +153,10 @@ class ButterFinger(SemanticPerturbation):
                 if lowercase_letter not in ButterFinger.QUERTY_KEY_APPROX.keys():
                     new_letter = lowercase_letter
                 else:
-                    if random.choice(range(0, 100)) <= prob_of_typo:
-                        new_letter = random.choice(ButterFinger.QUERTY_KEY_APPROX[lowercase_letter])
+                    if self.rng.random() <= self.perturbation_prob:
+                        new_letter = self.rng.choice(
+                            [char for char in ButterFinger.QUERTY_KEY_APPROX[lowercase_letter]]
+                        )
                     else:
                         new_letter = lowercase_letter
                 # go back to original case
@@ -220,7 +215,7 @@ class RandomUppercase(SemanticPerturbation):
 
             :returns: A copy of `text` where a fraction of the characters are converted to uppercase.
             """
-            positions = np.random.choice(
+            positions = self.rng.choice(
                 range(len(text)),
                 int(len(text) * self.uppercase_fraction),
                 False,
@@ -295,7 +290,7 @@ class AddRemoveWhitespace(SemanticPerturbation):
         for _ in range(self.num_perturbations):
             perturbed_text = []
             for ch in text:
-                p = random.random()
-                perturbed_text += [update_char(ch, p)]
+                prob = self.rng.random()
+                perturbed_text += [update_char(ch, prob)]
             perturbed_texts.append("".join(perturbed_text))
         return perturbed_texts

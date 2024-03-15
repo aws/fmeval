@@ -33,15 +33,15 @@ def test_semantic_perturbation_init_success():
     GIVEN valid arguments to __init__.
     WHEN a concrete subclass of SemanticPerturbation is initialized.
     THEN the instance's attributes match what is expected
-        and set_seed is called with the correct argument.
+        and np.random.default_rng is called with the correct argument.
     """
 
-    with patch("fmeval.transforms.semantic_perturbations.set_seed") as mock_set_seed:
+    with patch("numpy.random.default_rng") as mock_rng:
         num_perturbations = 3
         seed = 42
         dummy = Dummy(["input"], ["output_1", "output_2", "output_3"], num_perturbations, seed, "asdf", kw_arg="qwerty")
         assert dummy.num_perturbations == num_perturbations
-        mock_set_seed.assert_called_once_with(seed)
+        mock_rng.assert_called_once_with(seed)
 
 
 class TestCaseInitFailure(NamedTuple):
@@ -118,9 +118,9 @@ class TestCaseButterFinger(NamedTuple):
         TestCaseButterFinger(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A quick bcmwn fox jumps over bhr lwzj dog 10 times.",
-                "A auick brown fox jumps over the lazy dog 10 timef.",
-                "A quick brown flz jujps ovef the lazy dog 10 times.",
+                "Q qhick brown fox jumps ovtr che lazy dog 10 times.",
+                "A quick brown fox jumps oeer the lazy cog 10 times.",
+                "A qunck brown fpx jumps over the lazf dog 10 times.",
             ],
             num_perturbations=3,
             seed=3,
@@ -129,8 +129,8 @@ class TestCaseButterFinger(NamedTuple):
         TestCaseButterFinger(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A qujck brown fov jumps over dhe lavg dog 10 times.",
-                "A qhick brocm fox jukps over tie pazy dog 10 times.",
+                "A qmyck brown fmr jumps over the mazy dot 10 timvs.",
+                "A quick briwn fox uumps oveg tke lavy bog 10 clmes.",
             ],
             num_perturbations=2,
             seed=10,
@@ -169,9 +169,9 @@ class TestCaseRandomUppercase(NamedTuple):
         TestCaseRandomUppercase(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A quick bRowN fox jumps over the lazy dOG 10 timEs.",
-                "A quicK brown fox jUmps Over tHe lazy dog 10 Times.",
-                "A qUicK brown fox jumps over thE lazy Dog 10 timEs.",
+                "A quIck BRoWn fox jumps over the lazy Dog 10 times.",
+                "A quIck brown fOx jumPs Over thE lazy dog 10 times.",
+                "A quiCk brown fox jUmpS over the lazy dog 10 Times.",
             ],
             num_perturbations=3,
             seed=3,
@@ -180,8 +180,8 @@ class TestCaseRandomUppercase(NamedTuple):
         TestCaseRandomUppercase(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A qUick brown fox juMPs oveR thE lazy Dog 10 TimEs.",
-                "A quick brown foX jUMps ovER the lazY dog 10 tiMes.",
+                "A quick bRoWn fox jumps OvEr the lazY Dog 10 timeS.",
+                "A qUick brOwn fOx jumps oveR the laZY doG 10 TImes.",
             ],
             num_perturbations=2,
             seed=10,
@@ -221,9 +221,9 @@ class TestCaseWhitespace(NamedTuple):
         TestCaseWhitespace(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A quick  brown fox jumps ov er the lazydog 10 times.",
-                "A quick brown foxjumps o ve r the lazy  dog10 times.",
-                "A quick brow n f oxjumps o ver the lazy do g 10 times.",
+                "A quick brown fox jum ps overthe lazy dog 10 times.",
+                "A quick brown fox jumpsover the lazy dog 10 times.",
+                "A q uick brownfox jumps over the lazy dog 10 times.",
             ],
             num_perturbations=3,
             seed=3,
@@ -233,8 +233,8 @@ class TestCaseWhitespace(NamedTuple):
         TestCaseWhitespace(
             input_text="A quick brown fox jumps over the lazy dog 10 times.",
             expected_outputs=[
-                "A qu ickbr o wnfox  jumps  over t he  la zydog  10  times .",
-                "A  q ui c k bro w nf ox  jump sov e r  th e l azy d og 10 ti mes. ",
+                "A qu ic k brow n fox  j um ps  ov e r th e  la z y  d og 1 0  tim es . ",
+                "A quick br ow n fox  ju m p s over t h ela z y d og10  tim e s .",
             ],
             num_perturbations=2,
             seed=10,
