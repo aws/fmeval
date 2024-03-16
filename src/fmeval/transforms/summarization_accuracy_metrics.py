@@ -2,12 +2,11 @@ import ray
 import nltk
 import evaluate as hf_evaluate
 
-from typing import List, Dict, Any, Union
+from typing import Any, Dict, Union
 from ray import ObjectRef
 from nltk import word_tokenize
 from nltk.translate import meteor_score
 
-from fmeval.util import require
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 from fmeval.helper_models import BertscoreModel
@@ -52,29 +51,21 @@ class MeteorScore(Transform):
 
     def __init__(
         self,
-        input_keys: List[str],
-        output_keys: List[str],
+        output_key: str,
         target_output_key: str,
         model_output_key: str,
         load_meteor_modules: bool = True,
     ):
         """MeteorScore initializer.
 
-        :param input_keys: A two-element list containing the keys corresponding to the target output and LLM output.
-        :param output_keys: A single-element list containing the output key for this Transform,
-            which corresponds to the METEOR metric that gets computed.
+        :param output_key: The output key for this Transform, which corresponds to
+            the METEOR metric that gets computed.
         :param target_output_key: The key corresponding to the target output.
         :param model_output_key: The key corresponding to the model (LLM) output.
-        :param load_meteor_modules: Whether to load the meteor helper modules. This needs to be performed only once.
+        :param load_meteor_modules: Whether to load the meteor helper modules.
         """
-        require(
-            set(input_keys) == {target_output_key, model_output_key},
-            f"input_keys to MeteorScore should be {target_output_key, model_output_key}.",
-        )
-        require(len(output_keys) == 1, "MeteorScore should only have a single output key.")
         super().__init__(
-            input_keys,
-            output_keys,
+            output_key,
             target_output_key,
             model_output_key,
             # The first instance of this class that gets created will
@@ -82,6 +73,8 @@ class MeteorScore(Transform):
             # need not load them again.
             load_meteor_modules=False,
         )
+        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
+        self.output_key = output_key
         self.target_output_key = target_output_key
         self.model_output_key = model_output_key
         if load_meteor_modules:
@@ -94,8 +87,7 @@ class MeteorScore(Transform):
         :param record: The input record.
         :returns: The input record with the METEOR metric added in.
         """
-        output_key = self.output_keys[0]
-        record[output_key] = meteor_score.single_meteor_score(
+        record[self.output_key] = meteor_score.single_meteor_score(
             reference=word_tokenize(record[self.target_output_key]),
             hypothesis=word_tokenize(record[self.model_output_key]),
         )
@@ -115,8 +107,7 @@ class RougeScore(Transform):
 
     def __init__(
         self,
-        input_keys: List[str],
-        output_keys: List[str],
+        output_key: str,
         target_output_key: str,
         model_output_key: str,
         rouge_type: str = ROUGE_2,
@@ -124,22 +115,18 @@ class RougeScore(Transform):
     ):
         """RougeScore initializer.
 
-        :param input_keys: A two-element list containing the keys corresponding to the target output and LLM output.
-        :param output_keys: A single-element list containing the output key for this Transform,
-            which corresponds to the ROUGE score that gets computed.
+        :param output_key: The output key for this Transform, which corresponds
+            to the ROUGE score that gets computed.
         :param target_output_key: The key corresponding to the target output.
         :param model_output_key: The key corresponding to the model (LLM) output.
         :param rouge_type: Which ROUGE type to use (1, 2, L).
         :param use_stemmer: Whether to use a stemmer for ROUGE.
         """
-        require(
-            set(input_keys) == {target_output_key, model_output_key},
-            f"input_keys to RougeScore should be {target_output_key, model_output_key}.",
-        )
-        require(len(output_keys) == 1, "RougeScore should only have a single output key.")
         super().__init__(
-            input_keys, output_keys, target_output_key, model_output_key, rouge_type=rouge_type, use_stemmer=use_stemmer
+            output_key, target_output_key, model_output_key, rouge_type=rouge_type, use_stemmer=use_stemmer
         )
+        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
+        self.output_key = output_key
         self.target_output_key = target_output_key
         self.model_output_key = model_output_key
         self.rouge_type = rouge_type
@@ -153,8 +140,7 @@ class RougeScore(Transform):
         :param record: The input record.
         :returns: The input record with the ROUGE score added in.
         """
-        output_key = self.output_keys[0]
-        record[output_key] = self.rouge_metric.compute(
+        record[self.output_key] = self.rouge_metric.compute(
             predictions=[record[self.model_output_key]],
             references=[record[self.target_output_key]],
             use_stemmer=self.use_stemmer,
@@ -176,27 +162,22 @@ class BertScore(Transform):
 
     def __init__(
         self,
-        input_keys: List[str],
-        output_keys: List[str],
+        output_key: str,
         target_output_key: str,
         model_output_key: str,
         bertscore_model: Union[BertscoreModel, ObjectRef],
     ):
         """BertScore initializer.
 
-        :param input_keys: A two-element list containing the keys corresponding to the target output and LLM output.
-        :param output_keys: A single-element list containing the output key for this Transform,
-            which corresponds to the ROUGE score that gets computed.
+        :param output_key: The output key for this Transform, which corresponds
+            to the BERT score that gets computed.
         :param target_output_key: The key corresponding to the target output.
         :param model_output_key: The key corresponding to the model (LLM) output.
         :param bertscore_model: A BertscoreModel instance or a Ray actor handle for a BertscoreModel.
         """
-        require(
-            set(input_keys) == {target_output_key, model_output_key},
-            f"input_keys to BertScore should be {target_output_key, model_output_key}.",
-        )
-        require(len(output_keys) == 1, "BertScore should only have a single output key.")
-        super().__init__(input_keys, output_keys, target_output_key, model_output_key, bertscore_model)
+        super().__init__(output_key, target_output_key, model_output_key, bertscore_model)
+        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
+        self.output_key = output_key
         self.target_output_key = target_output_key
         self.model_output_key = model_output_key
         self.bertscore_model = bertscore_model
@@ -216,6 +197,5 @@ class BertScore(Transform):
                 )
             )
         )
-        output_key = self.output_keys[0]
-        record[output_key] = score
+        record[self.output_key] = score
         return record

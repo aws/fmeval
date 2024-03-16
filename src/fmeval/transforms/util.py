@@ -74,11 +74,25 @@ def validate_call(call_method: Callable) -> Callable:
     as the output key validation may not make sense in the case where a new record object
     (which may not keep all the same keys as the original record) is returned as the output.
 
+    Additionally, this decorator should be used in conjunction with the
+    `register_input_output_keys` method, as the `input_keys` and `output_keys` are initialized
+    to None in `Transform.__init__`.
+
     :param call_method: The `__call__` method of a Transform.
     :returns: A wrapper function that performs pre- and post-validation on top of `__call__`.
     """
 
     def wrapper(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        assert_condition(
+            self.input_keys is not None,
+            "self.input_keys has not been set. You should set this attribute using "
+            "the register_input_output_keys method.",
+        )
+        assert_condition(
+            self.output_keys is not None,
+            "self.output_keys has not been set. You should set this attribute using "
+            "the register_input_output_keys method.",
+        )
         validate_existing_keys(record, self.input_keys)
         original_keys = set(record.keys())
         call_output = call_method(self, record)

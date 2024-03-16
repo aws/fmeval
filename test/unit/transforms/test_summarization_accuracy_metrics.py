@@ -1,70 +1,31 @@
 import pytest
 from unittest.mock import patch, call, Mock
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 from ray import ObjectRef
 
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.helper_models import BertscoreModel
 from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeScore, BertScore, ROUGE_2
 
 
-def test_meteor_score_init_load_modules():
+@pytest.mark.parametrize("load_modules", [True, False])
+def test_meteor_score_init(load_modules):
     """
     GIVEN valid arguments to __init__.
-    WHEN a MeteorScore is instantiated with load_meteor_modules=True.
+    WHEN a MeteorScore is instantiated.
     THEN the instance is created without errors, and _load_meteor_modules is called.
     """
     with patch("fmeval.transforms.summarization_accuracy_metrics._load_meteor_modules") as mock_load_modules:
         MeteorScore(
-            input_keys=["target_output", "model_output"],
-            output_keys=["meteor"],
+            output_key="meteor",
             target_output_key="target_output",
             model_output_key="model_output",
-            load_meteor_modules=True,
+            load_meteor_modules=load_modules,
         )
-        mock_load_modules.assert_called_once()
-
-
-class TestCaseInitFailure(NamedTuple):
-    input_keys: List[str]
-    output_keys: List[str]
-    err_msg: str
-
-
-@pytest.mark.parametrize(
-    "input_keys, output_keys, err_msg",
-    [
-        TestCaseInitFailure(
-            input_keys=["not_target_output", "model_output"],
-            output_keys=["meteor"],
-            err_msg="input_keys to MeteorScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "not_model_output"],
-            output_keys=["meteor"],
-            err_msg="input_keys to MeteorScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "model_output"],
-            output_keys=["key1", "key2"],
-            err_msg="MeteorScore should only have a single output key.",
-        ),
-    ],
-)
-def test_meteor_score_init_failure(input_keys, output_keys, err_msg):
-    """
-    GIVEN invalid initializer arguments.
-    WHEN a MeteorScore object is instantiated.
-    THEN an EvalAlgorithmClientError with the correct error message is raised.
-    """
-    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
-        MeteorScore(
-            input_keys=input_keys,
-            output_keys=output_keys,
-            target_output_key="target_output",
-            model_output_key="model_output",
-        )
+        if load_modules:
+            mock_load_modules.assert_called_once()
+        else:
+            mock_load_modules.assert_not_called()
 
 
 def test_meteor_score_call():
@@ -83,8 +44,7 @@ def test_meteor_score_call():
 
         mock_word_tokenize.side_effect = ["tokenized_target_output", "tokenized_model_output"]
         ms = MeteorScore(
-            input_keys=["target_output", "model_output"],
-            output_keys=["meteor"],
+            output_key="meteor",
             target_output_key="target_output",
             model_output_key="model_output",
             load_meteor_modules=False,
@@ -95,39 +55,19 @@ def test_meteor_score_call():
         mock_meteor.assert_called_once_with(reference="tokenized_target_output", hypothesis="tokenized_model_output")
 
 
-@pytest.mark.parametrize(
-    "input_keys, output_keys, err_msg",
-    [
-        TestCaseInitFailure(
-            input_keys=["not_target_output", "model_output"],
-            output_keys=["rouge"],
-            err_msg="input_keys to RougeScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "not_model_output"],
-            output_keys=["rouge"],
-            err_msg="input_keys to RougeScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "model_output"],
-            output_keys=["key1", "key2"],
-            err_msg="RougeScore should only have a single output key.",
-        ),
-    ],
-)
-def test_rouge_score_init_failure(input_keys, output_keys, err_msg):
+def test_rouge_score_init():
     """
-    GIVEN invalid initializer arguments.
-    WHEN a RougeScore object is instantiated.
-    THEN an EvalAlgorithmClientError with the correct error message is raised.
+    GIVEN valid arguments to __init__.
+    WHEN a RougeScore is instantiated.
+    THEN hf_evaluate.load("rouge") is called.
     """
-    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+    with patch("fmeval.transforms.summarization_accuracy_metrics.hf_evaluate.load") as mock_load:
         RougeScore(
-            input_keys=input_keys,
-            output_keys=output_keys,
+            output_key="rouge",
             target_output_key="target_output",
             model_output_key="model_output",
         )
+        mock_load.assert_called_once_with("rouge")
 
 
 def test_rouge_score_call():
@@ -147,8 +87,7 @@ def test_rouge_score_call():
         mock_hf_load.return_value = mock_rouge_metric
 
         rs = RougeScore(
-            input_keys=["target_output", "model_output"],
-            output_keys=["rouge"],
+            output_key="rouge",
             target_output_key="target_output",
             model_output_key="model_output",
             rouge_type=rouge_type,
@@ -160,42 +99,6 @@ def test_rouge_score_call():
             references=["Hello there!"],
             use_stemmer=rs.use_stemmer,
             rouge_types=[rs.rouge_type],
-        )
-
-
-@pytest.mark.parametrize(
-    "input_keys, output_keys, err_msg",
-    [
-        TestCaseInitFailure(
-            input_keys=["not_target_output", "model_output"],
-            output_keys=["rouge"],
-            err_msg="input_keys to BertScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "not_model_output"],
-            output_keys=["rouge"],
-            err_msg="input_keys to BertScore should be",
-        ),
-        TestCaseInitFailure(
-            input_keys=["target_output", "model_output"],
-            output_keys=["key1", "key2"],
-            err_msg="BertScore should only have a single output key.",
-        ),
-    ],
-)
-def test_bert_score_init_failure(input_keys, output_keys, err_msg):
-    """
-    GIVEN invalid initializer arguments.
-    WHEN a BertScore object is instantiated.
-    THEN an EvalAlgorithmClientError with the correct error message is raised.
-    """
-    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
-        BertScore(
-            input_keys=input_keys,
-            output_keys=output_keys,
-            target_output_key="target_output",
-            model_output_key="model_output",
-            bertscore_model=Mock(),
         )
 
 
@@ -212,8 +115,7 @@ def test_bert_score_call_with_bertscore_model_object():
     mock_bertscore_model.invoke_model = Mock()
 
     bs = BertScore(
-        input_keys=["target_output", "model_output"],
-        output_keys=["rouge"],
+        output_key="bertscore",
         target_output_key="target_output",
         model_output_key="model_output",
         bertscore_model=mock_bertscore_model,
@@ -238,8 +140,7 @@ def test_bert_score_call_with_ray_actor_handle():
 
     with patch("fmeval.transforms.summarization_accuracy_metrics.ray.get") as mock_ray_get:
         bs = BertScore(
-            input_keys=["target_output", "model_output"],
-            output_keys=["rouge"],
+            output_key="bertscore",
             target_output_key="target_output",
             model_output_key="model_output",
             bertscore_model=mock_bertscore_model,
@@ -274,8 +175,7 @@ class TestCaseMetricNumericalValues(NamedTuple):
 )
 def test_meteor_numerical_values(test_case):
     ms = MeteorScore(
-        input_keys=["target_output", "model_output"],
-        output_keys=["meteor"],
+        output_key="meteor",
         target_output_key="target_output",
         model_output_key="model_output",
         load_meteor_modules=False,
@@ -319,8 +219,7 @@ def test_meteor_numerical_values(test_case):
 )
 def test_get_rouge_score(test_case):
     rs = RougeScore(
-        input_keys=["target_output", "model_output"],
-        output_keys=["rouge"],
+        output_key="rouge",
         target_output_key="target_output",
         model_output_key="model_output",
         rouge_type=test_case.rouge_type,
