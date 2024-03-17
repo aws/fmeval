@@ -23,6 +23,7 @@ class Dummy(SemanticPerturbation):
         kw_arg: str = "Hi",
     ):
         super().__init__(input_keys, output_keys, num_perturbations, seed, pos_arg, kw_arg=kw_arg)
+        self.register_input_output_keys(input_keys, output_keys)
 
     def perturb(self, text: str) -> List[str]:
         return [f"dummy_{i}" for i in range(self.num_perturbations)]
