@@ -34,7 +34,7 @@ class GeneratePrompt(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augments the input record with LLM prompts and returns said record.
+        """Augment the input record with LLM prompts and returns said record.
 
         :param record: The input record.
         :returns: The input record with prompts added in.
@@ -74,7 +74,7 @@ class GetModelResponse(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augments the input record with model responses and returns said record.
+        """Augment the input record with model responses and returns said record.
 
         :param record: The input record.
         :returns: The input record with model response data added in.

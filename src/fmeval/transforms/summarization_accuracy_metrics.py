@@ -82,7 +82,7 @@ class MeteorScore(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augments the input record with the computed METEOR metric.
+        """Augment the input record with the computed METEOR metric.
 
         :param record: The input record.
         :returns: The input record with the METEOR metric added in.
@@ -135,7 +135,7 @@ class RougeScore(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augments the input record with the computed ROUGE score.
+        """Augment the input record with the computed ROUGE score.
 
         :param record: The input record.
         :returns: The input record with the ROUGE score added in.
@@ -183,7 +183,7 @@ class BertScore(Transform):
         self.bertscore_model = bertscore_model
 
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augments the input record with the computed BERT score.
+        """Augment the input record with the computed BERT score.
 
         :param record: The input record.
         :returns: The input record with the BERT score added in.
