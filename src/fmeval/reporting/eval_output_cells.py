@@ -2,7 +2,14 @@ from typing import List, Optional, Any
 import ray.data
 from textwrap import shorten
 import numpy as np
-from fmeval.eval_algorithms import EvalOutput, DATASET_CONFIGS, EvalAlgorithm, TREX, CROWS_PAIRS
+from fmeval.eval_algorithms import (
+    EvalOutput,
+    DATASET_CONFIGS,
+    EvalAlgorithm,
+    TREX,
+    CROWS_PAIRS,
+    get_default_prompt_template,
+)
 from fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
 from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
@@ -357,6 +364,9 @@ class EvalOutputCell(MarkdownCell):
             dataset=dataset,
             eval_name=eval_output.eval_name,
         )
+        prompt_template = EvalOutputCell.format_prompt_template(
+            dataset_type, eval_output.dataset_name, eval_output.prompt_template
+        )
         toxicity_detector_name = (
             f"**Toxicity detector model**: {add_hyperlink(DETOXIFY_NAME, DETOXIFY_URI)}"
             if eval_output.eval_name in TOXICITY_EVAL_NAMES and len(eval_output.dataset_scores) > 1
@@ -368,6 +378,7 @@ class EvalOutputCell(MarkdownCell):
         eval_cells = [
             HeadingCell(f"{dataset_type}: {format_dataset_name(eval_output.dataset_name, hyperlink=True)}", level=4),
             MarkdownCell(dataset_description),
+            MarkdownCell(prompt_template),
             MarkdownCell(toxicity_detector_name),
         ]
         if eval_output.error:
@@ -450,3 +461,19 @@ class EvalOutputCell(MarkdownCell):
                 else DATASET_DETAILS[dataset_name].description + " " + dataset_sampling_description
             )
             return dataset_description
+
+    @staticmethod
+    def format_prompt_template(dataset_type: str, dataset_name: str, prompt_template: Optional[str] = None) -> str:
+        """
+        :param dataset_type: string indicating if dataset is a built-in or custom dataset.
+        :param dataset_name: the name of the dataset.
+        :param prompt_template: optional prompt template used in the evaluation.
+        :return: prompt template string formatted for the report.
+        """
+        prompt_template_str = "**Prompt Template:** "
+        if prompt_template:
+            return prompt_template_str + escape(prompt_template)
+        elif dataset_type == BUILT_IN_DATASET:
+            return prompt_template_str + get_default_prompt_template(dataset_name)
+        else:
+            return prompt_template_str + "No prompt template was provided for this dataset."
