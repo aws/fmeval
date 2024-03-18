@@ -350,8 +350,7 @@ class TestSummarizationAccuracy:
             prompt_template=test_case.eval_output_prompt_template,
         )
         get_model_response.assert_called_with(
-            input_keys=[DatasetColumns.PROMPT.value.name],
-            output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
             model_runner=model_runner,
         )
         save_dataset.assert_called_once()
