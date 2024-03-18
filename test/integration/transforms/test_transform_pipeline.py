@@ -22,8 +22,7 @@ def test_pipeline_execution():
     )
 
     get_model_response = GetModelResponse(
-        input_keys=gen_prompt.output_keys,
-        output_keys=["model_output"],
+        input_to_output_keys={gen_prompt.output_keys[0]: ["model_output"]},
         model_runner=sm_model_runner,
     )
 

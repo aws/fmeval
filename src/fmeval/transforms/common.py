@@ -1,4 +1,6 @@
 from typing import Any, Dict, List
+
+
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
@@ -8,7 +10,7 @@ from fmeval.transforms.util import (
     validate_added_keys,
     validate_call,
 )
-from fmeval.util import require, assert_condition
+from fmeval.util import assert_condition
 
 
 class GeneratePrompt(Transform):
@@ -45,31 +47,35 @@ class GeneratePrompt(Transform):
 
 
 class GetModelResponse(Transform):
-    """This transform augments an input record with a ModelRunner's `predict` response.
+    """This transform invokes a ModelRunner's `predict` method and augments the input record with the response payload.
 
-    At the moment, this transform only accepts a single input key, meaning that
-    if you wish to invoke the same ModelRunner on a different input, you should
-    instantiate another instance of this class with said input key.
+    An instance of this transform can be configured to get model responses for multiple inputs.
+    See __init__ docstring for more details.
     """
 
     def __init__(
         self,
-        input_keys: List[str],
-        output_keys: List[str],
+        input_to_output_keys: Dict[str, List[str]],
         model_runner: ModelRunner,
     ):
         """GetModelResponse initializer.
 
-        :param input_keys: A single-element list containing the key corresponding to the ModelRunner's input.
-        :param output_keys: The keys corresponding to the data in the model response payload. Note that
-            this parameter is dependent on the behavior of model_runner's `predict` method. For example,
-            for ModelRunners that do not return log probabilities, `output_keys` should not contain a key
+        :param input_to_output_keys: Maps an input key to a list of output keys.
+            The input key corresponds to the model input (i.e. the input payload
+            to `model_runner`) while the output keys correspond to the response
+            payload resulting from invoking `model_runner`.
+            Note that the list of output keys is dependent on the behavior of the
+            model runner's `predict` method. For example, for ModelRunners that do
+            not return log probabilities, the output keys list should not contain a key
             for log probabilities.
         :param model_runner: The ModelRunner instance whose responses will be obtained.
         """
-        require(len(input_keys) == 1, "GetModelResponse takes a single input key.")
-        super().__init__(input_keys, output_keys, model_runner)
-        self.register_input_output_keys(input_keys, output_keys)
+        super().__init__(input_to_output_keys, model_runner)
+        self.register_input_output_keys(
+            list(input_to_output_keys.keys()),
+            [output_key for output_keys in input_to_output_keys.values() for output_key in output_keys],
+        )
+        self.input_to_output_keys = input_to_output_keys
         self.model_runner = model_runner
 
     @validate_call
@@ -79,16 +85,17 @@ class GetModelResponse(Transform):
         :param record: The input record.
         :returns: The input record with model response data added in.
         """
-        input_key = self.input_keys[0]
-        model_output, log_prob = self.model_runner.predict(record[input_key])
-        model_response = ((model_output,) if model_output is not None else ()) + (
-            (log_prob,) if log_prob is not None else ()
-        )
-        assert_condition(
-            len(model_response) == len(self.output_keys),
-            f"The number of elements in model response {model_response} "
-            f"does not match number of output keys in {self.output_keys}.",
-        )
-        for model_response_item, model_output_key in zip(model_response, self.output_keys):
-            record[model_output_key] = model_response_item
+        for input_key in self.input_keys:
+            model_output, log_prob = self.model_runner.predict(record[input_key])
+            model_response = ((model_output,) if model_output is not None else ()) + (
+                (log_prob,) if log_prob is not None else ()
+            )
+            output_keys = self.input_to_output_keys[input_key]
+            assert_condition(
+                len(model_response) == len(output_keys),
+                f"The number of elements in model response {model_response} "
+                f"does not match number of output keys in {output_keys}.",
+            )
+            for model_response_item, model_output_key in zip(model_response, output_keys):
+                record[model_output_key] = model_response_item
         return record

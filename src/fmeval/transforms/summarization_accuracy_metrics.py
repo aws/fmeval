@@ -2,7 +2,8 @@ import ray
 import nltk
 import evaluate as hf_evaluate
 
-from typing import Any, Dict, Union
+from abc import abstractmethod
+from typing import Any, Dict, Union, List
 from ray import ObjectRef
 from nltk import word_tokenize
 from nltk.translate import meteor_score
@@ -10,7 +11,7 @@ from nltk.translate import meteor_score
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 from fmeval.helper_models import BertscoreModel
-
+from fmeval.util import assert_condition
 
 METEOR_SCORE = "meteor"
 ROUGE_SCORE = "rouge"
@@ -24,17 +25,91 @@ ROUGE_L = "rougeL"
 ROUGE_TYPES = [ROUGE_1, ROUGE_2, ROUGE_L]
 
 
-def _load_meteor_modules() -> None:  # pragma: no cover
-    """Load helper modules required by meteor metric.
+class SummarizationAccuracyMetric(Transform):
+    """The abstract base class for summarization accuracy metric transforms.
 
-    :returns: None
+    Concrete subclasses of SummarizationAccuracyMetric should simply implement the
+    `compute_metric` method and their own __init__ method. Subclasses need not implement
+    the __call__ method, as it is already implemented in this class, but are
+    free to do so if additional customization is required.
     """
-    nltk.download("wordnet")
-    nltk.download("punkt")
-    nltk.download("omw-1.4")
+
+    def __init__(
+        self,
+        target_output_keys: List[str],
+        model_output_keys: List[str],
+        output_keys: List[str],
+        allow_duplicate_input_keys: bool,
+        *args,
+        **kwargs,
+    ):
+        """SummarizationAccuracyMetric initializer.
+
+        Note that the ordering of the elements in `target_output_keys`, `model_output_keys`,
+        and `output_keys` must match, i.e. the kth element of `target_output_keys` and the
+        kth element of `model_output_keys` are used to compute the kth metric, which has
+        an output key of `output_keys[k]`.
+
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param output_keys: The output keys for this Transform, which correspond
+            to the metrics/scores that get computed.
+        :param allow_duplicate_input_keys: Whether to allow duplicate keys in
+            `target_output_keys` and `model_output_keys`. This parameter is usually
+            False, but will be True when a SummarizationAccuracyMetric is created
+            to compute metrics on perturbed model outputs. In this case,
+            `target_output_keys` will be a list of a single repeated key, while
+            `model_output_keys` will contain the keys for perturbed model outputs.
+        :param *args: Variable length argument list.
+        :param **kwargs: Arbitrary keyword arguments.
+        """
+        assert_condition(
+            len(target_output_keys) == len(model_output_keys) and len(target_output_keys) == len(output_keys),
+            "len(target_output_keys), len(model_output_keys) and len(output_keys) should all match. "
+            f"len(target_output_keys) is {len(target_output_keys)}, len(model_output_keys) is "
+            f"{len(model_output_keys)}, and len(output_keys) is {len(output_keys)}.",
+        )
+        super().__init__(
+            target_output_keys,
+            model_output_keys,
+            output_keys,
+            allow_duplicate_input_keys,
+            *args,
+            **kwargs,
+        )
+        self.register_input_output_keys(
+            target_output_keys + model_output_keys,
+            output_keys,
+            allow_duplicates=allow_duplicate_input_keys,
+        )
+        self.target_output_keys = target_output_keys
+        self.model_output_keys = model_output_keys
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with metrics computed via self.compute_metric.
+
+        :param record: The input record.
+        :returns: The input record with metrics added in.
+        """
+        for target_output_key, model_output_key, output_key in zip(
+            self.target_output_keys, self.model_output_keys, self.output_keys
+        ):
+            score = self.compute_metric(record[target_output_key], record[model_output_key])
+            record[output_key] = score
+        return record
+
+    @abstractmethod
+    def compute_metric(self, target_output: str, model_output: str) -> float:
+        """Compute the metric that is specific to this Transform.
+
+        :param target_output: The target/reference output.
+        :param model_output: The actual output produced by the model.
+        :returns: A float representing the computed metric value.
+        """
 
 
-class MeteorScore(Transform):
+class MeteorScore(SummarizationAccuracyMetric):
     """This Transform augments an input record with the METEOR metric, computed from target and model outputs.
 
     METEOR is a metric for text similarity between the machine-produced summary
@@ -51,50 +126,58 @@ class MeteorScore(Transform):
 
     def __init__(
         self,
-        output_key: str,
-        target_output_key: str,
-        model_output_key: str,
-        load_meteor_modules: bool = True,
+        target_output_keys: List[str],
+        model_output_keys: List[str],
+        output_keys: List[str],
+        allow_duplicate_input_keys,
+        load_modules: bool = True,
     ):
         """MeteorScore initializer.
 
-        :param output_key: The output key for this Transform, which corresponds to
-            the METEOR metric that gets computed.
-        :param target_output_key: The key corresponding to the target output.
-        :param model_output_key: The key corresponding to the model (LLM) output.
-        :param load_meteor_modules: Whether to load the meteor helper modules.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param output_keys: The output keys for this Transform, which correspond
+            to the Meteor scores that get computed.
+        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
+        :param load_modules: Whether to load the meteor helper modules.
         """
         super().__init__(
-            output_key,
-            target_output_key,
-            model_output_key,
+            target_output_keys,
+            model_output_keys,
+            output_keys,
+            allow_duplicate_input_keys,
             # The first instance of this class that gets created will
             # load the helper modules, so copies of this instance
             # need not load them again.
-            load_meteor_modules=False,
+            load_modules=False,
         )
-        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
-        self.output_key = output_key
-        self.target_output_key = target_output_key
-        self.model_output_key = model_output_key
-        if load_meteor_modules:
-            _load_meteor_modules()
+        if load_modules:
+            MeteorScore._load_modules()
 
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed METEOR metric.
+    @staticmethod
+    def _load_modules() -> None:  # pragma: no cover
+        """Load helper modules required by meteor metric.
 
-        :param record: The input record.
-        :returns: The input record with the METEOR metric added in.
+        :returns: None
         """
-        record[self.output_key] = meteor_score.single_meteor_score(
-            reference=word_tokenize(record[self.target_output_key]),
-            hypothesis=word_tokenize(record[self.model_output_key]),
+        nltk.download("wordnet")
+        nltk.download("punkt")
+        nltk.download("omw-1.4")
+
+    def compute_metric(self, target_output: str, model_output: str) -> float:
+        """Compute the Meteor metric.
+
+        :param target_output: The target/reference output.
+        :param model_output: The actual output produced by the model.
+        :returns: The meteor metric value.
+        """
+        return meteor_score.single_meteor_score(
+            reference=word_tokenize(target_output),
+            hypothesis=word_tokenize(model_output),
         )
-        return record
 
 
-class RougeScore(Transform):
+class RougeScore(SummarizationAccuracyMetric):
     """This transform augments an input record with the ROUGE score, computed from target and model outputs.
 
     The ROUGE-N, where N=[1,2,L], score is a standard metric for summarization quality.
@@ -107,49 +190,51 @@ class RougeScore(Transform):
 
     def __init__(
         self,
-        output_key: str,
-        target_output_key: str,
-        model_output_key: str,
+        target_output_keys: List[str],
+        model_output_keys: List[str],
+        output_keys: List[str],
+        allow_duplicate_input_keys: bool,
         rouge_type: str = ROUGE_2,
         use_stemmer: bool = True,
     ):
         """RougeScore initializer.
 
-        :param output_key: The output key for this Transform, which corresponds
-            to the ROUGE score that gets computed.
-        :param target_output_key: The key corresponding to the target output.
-        :param model_output_key: The key corresponding to the model (LLM) output.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param output_keys: The output keys for this Transform, which correspond
+            to the ROUGE scores that get computed.
+        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
         :param rouge_type: Which ROUGE type to use (1, 2, L).
         :param use_stemmer: Whether to use a stemmer for ROUGE.
         """
         super().__init__(
-            output_key, target_output_key, model_output_key, rouge_type=rouge_type, use_stemmer=use_stemmer
+            target_output_keys,
+            model_output_keys,
+            output_keys,
+            allow_duplicate_input_keys,
+            rouge_type=rouge_type,
+            use_stemmer=use_stemmer,
         )
-        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
-        self.output_key = output_key
-        self.target_output_key = target_output_key
-        self.model_output_key = model_output_key
         self.rouge_type = rouge_type
         self.use_stemmer = use_stemmer
         self.rouge_metric = hf_evaluate.load("rouge")
 
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed ROUGE score.
+    def compute_metric(self, target_output: str, model_output: str) -> float:
+        """Compute the ROUGE metric.
 
-        :param record: The input record.
-        :returns: The input record with the ROUGE score added in.
+        :param target_output: The target/reference output.
+        :param model_output: The actual output produced by the model.
+        :returns: The ROUGE metric value.
         """
-        record[self.output_key] = self.rouge_metric.compute(
-            predictions=[record[self.model_output_key]],
-            references=[record[self.target_output_key]],
+        return self.rouge_metric.compute(
+            predictions=[model_output],
+            references=[target_output],
             use_stemmer=self.use_stemmer,
             rouge_types=[self.rouge_type],
         )[self.rouge_type]
-        return record
 
 
-class BertScore(Transform):
+class BertScore(SummarizationAccuracyMetric):
     """This transform augments an input record with the BERT score, computed from target and model outputs.
 
     BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
@@ -162,40 +247,36 @@ class BertScore(Transform):
 
     def __init__(
         self,
-        output_key: str,
-        target_output_key: str,
-        model_output_key: str,
+        target_output_keys: List[str],
+        model_output_keys: List[str],
+        output_keys: List[str],
+        allow_duplicate_input_keys: bool,
         bertscore_model: Union[BertscoreModel, ObjectRef],
     ):
         """BertScore initializer.
 
-        :param output_key: The output key for this Transform, which corresponds
-            to the BERT score that gets computed.
-        :param target_output_key: The key corresponding to the target output.
-        :param model_output_key: The key corresponding to the model (LLM) output.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param output_keys: The output keys for this Transform, which correspond
+            to the BERT scores that get computed.
+        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
         :param bertscore_model: A BertscoreModel instance or a Ray actor handle for a BertscoreModel.
         """
-        super().__init__(output_key, target_output_key, model_output_key, bertscore_model)
-        self.register_input_output_keys([target_output_key, model_output_key], [output_key])
-        self.output_key = output_key
-        self.target_output_key = target_output_key
-        self.model_output_key = model_output_key
+        super().__init__(
+            target_output_keys, model_output_keys, output_keys, allow_duplicate_input_keys, bertscore_model
+        )
         self.bertscore_model = bertscore_model
 
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed BERT score.
+    def compute_metric(self, target_output: str, model_output: str) -> float:
+        """Compute the BERTScore metric.
 
-        :param record: The input record.
-        :returns: The input record with the BERT score added in.
+        :param target_output: The target/reference output.
+        :param model_output: The actual output produced by the model.
+        :returns: The BERT metric value.
         """
-        score = (
-            self.bertscore_model.invoke_model(record[self.target_output_key], record[self.model_output_key])
-            if isinstance(self.bertscore_model, BertscoreModel)
-            else ray.get(
-                self.bertscore_model.invoke_model.remote(  # type: ignore[union-attr]
-                    record[self.target_output_key], record[self.model_output_key]
-                )
+        if isinstance(self.bertscore_model, BertscoreModel):
+            return self.bertscore_model.invoke_model(target_output, model_output)
+        else:
+            return ray.get(  # type: ignore[return-value]
+                self.bertscore_model.invoke_model.remote(target_output, model_output)  # type: ignore[union-attr]
             )
-        )
-        record[self.output_key] = score
-        return record

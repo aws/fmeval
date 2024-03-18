@@ -13,13 +13,14 @@ def test_meteor_score_init(load_modules):
     """
     GIVEN valid arguments to __init__.
     WHEN a MeteorScore is instantiated.
-    THEN the instance is created without errors, and _load_meteor_modules is called.
+    THEN _load_meteor_modules is called if applicable.
     """
-    with patch("fmeval.transforms.summarization_accuracy_metrics._load_meteor_modules") as mock_load_modules:
+    with patch("fmeval.transforms.summarization_accuracy_metrics.MeteorScore._load_modules") as mock_load_modules:
         MeteorScore(
-            output_key="meteor",
-            target_output_key="target_output",
-            model_output_key="model_output",
+            target_output_keys=["target_output"],
+            model_output_keys=["model_output"],
+            output_keys=["meteor"],
+            allow_duplicate_input_keys=False,
             load_meteor_modules=load_modules,
         )
         if load_modules:
@@ -44,10 +45,10 @@ def test_meteor_score_call():
 
         mock_word_tokenize.side_effect = ["tokenized_target_output", "tokenized_model_output"]
         ms = MeteorScore(
-            output_key="meteor",
-            target_output_key="target_output",
-            model_output_key="model_output",
-            load_meteor_modules=False,
+            target_output_keys=["target_output"],
+            model_output_keys=["model_output"],
+            output_keys=["meteor"],
+            allow_duplicate_input_keys=False,
         )
         sample = {"target_output": "Hello there!", "model_output": "Hi"}
         ms(sample)
@@ -63,9 +64,10 @@ def test_rouge_score_init():
     """
     with patch("fmeval.transforms.summarization_accuracy_metrics.hf_evaluate.load") as mock_load:
         RougeScore(
-            output_key="rouge",
-            target_output_key="target_output",
-            model_output_key="model_output",
+            target_output_keys=["target_output"],
+            model_output_keys=["model_output"],
+            output_keys=["rouge"],
+            allow_duplicate_input_keys=False,
         )
         mock_load.assert_called_once_with("rouge")
 
@@ -87,9 +89,10 @@ def test_rouge_score_call():
         mock_hf_load.return_value = mock_rouge_metric
 
         rs = RougeScore(
-            output_key="rouge",
-            target_output_key="target_output",
-            model_output_key="model_output",
+            target_output_keys=["target_output"],
+            model_output_keys=["model_output"],
+            output_keys=["rouge"],
+            allow_duplicate_input_keys=False,
             rouge_type=rouge_type,
         )
         sample = {"target_output": "Hello there!", "model_output": "Hi"}
@@ -115,9 +118,10 @@ def test_bert_score_call_with_bertscore_model_object():
     mock_bertscore_model.invoke_model = Mock()
 
     bs = BertScore(
-        output_key="bertscore",
-        target_output_key="target_output",
-        model_output_key="model_output",
+        target_output_keys=["target_output"],
+        model_output_keys=["model_output"],
+        output_keys=["bertscore"],
+        allow_duplicate_input_keys=False,
         bertscore_model=mock_bertscore_model,
     )
     sample = {"target_output": "Hello there!", "model_output": "Hi"}
@@ -140,9 +144,10 @@ def test_bert_score_call_with_ray_actor_handle():
 
     with patch("fmeval.transforms.summarization_accuracy_metrics.ray.get") as mock_ray_get:
         bs = BertScore(
-            output_key="bertscore",
-            target_output_key="target_output",
-            model_output_key="model_output",
+            target_output_keys=["target_output"],
+            model_output_keys=["model_output"],
+            output_keys=["bertscore"],
+            allow_duplicate_input_keys=False,
             bertscore_model=mock_bertscore_model,
         )
         sample = {"target_output": "Hello there!", "model_output": "Hi"}
@@ -175,10 +180,10 @@ class TestCaseMetricNumericalValues(NamedTuple):
 )
 def test_meteor_numerical_values(test_case):
     ms = MeteorScore(
-        output_key="meteor",
-        target_output_key="target_output",
-        model_output_key="model_output",
-        load_meteor_modules=False,
+        target_output_keys=["target_output"],
+        model_output_keys=["model_output"],
+        output_keys=["meteor"],
+        allow_duplicate_input_keys=False,
     )
     sample = {"target_output": test_case.target_output, "model_output": test_case.model_output}
     output = ms(sample)
@@ -219,9 +224,10 @@ def test_meteor_numerical_values(test_case):
 )
 def test_get_rouge_score(test_case):
     rs = RougeScore(
-        output_key="rouge",
-        target_output_key="target_output",
-        model_output_key="model_output",
+        target_output_keys=["target_output"],
+        model_output_keys=["model_output"],
+        output_keys=["rouge"],
+        allow_duplicate_input_keys=False,
         rouge_type=test_case.rouge_type,
     )
     sample = {"target_output": test_case.target_output, "model_output": test_case.model_output}

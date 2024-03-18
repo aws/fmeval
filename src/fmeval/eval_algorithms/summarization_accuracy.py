@@ -90,14 +90,16 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         """
         super().__init__(eval_algorithm_config)
         meteor_transform = MeteorScore(
-            output_key=METEOR_SCORE,
-            target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
-            model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[METEOR_SCORE],
+            allow_duplicate_input_keys=False,
         )
         rouge_transform = RougeScore(
-            output_key=ROUGE_SCORE,
-            target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
-            model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[ROUGE_SCORE],
+            allow_duplicate_input_keys=False,
             rouge_type=eval_algorithm_config.rouge_type,
             use_stemmer=eval_algorithm_config.use_stemmer_for_rouge,
         )
@@ -105,9 +107,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         if use_ray:
             bertscore_model = create_shared_resource(bertscore_model)
         bert_transform = BertScore(
-            output_key=BERT_SCORE,
-            target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
-            model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=False,
             bertscore_model=bertscore_model,
         )
         self.pipeline = TransformPipeline([meteor_transform, rouge_transform, bert_transform])
@@ -150,20 +153,18 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         save: bool = False,
         num_records=100,
     ) -> List[EvalOutput]:
-        """
-        Summarization Accuracy evaluate
+        """Perform summarization accuracy evaluation on a dataset.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
-        :param dataset_config: Configures the single dataset used for evaluation. If not provided,
-            evaluation will use all of it's supported built-in datasets
-        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
-            will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
-
-        :return: List of EvalOutput objects.
+        :param model: An instance of ModelRunner representing the model under evaluation.
+        :param dataset_config: Configures the single dataset used for evaluation.
+            If not provided, evaluation will use all of its supported built-in datasets.
+        :param prompt_template: A template used to generate prompts.
+            If not provided, defaults will be used.
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The output is written to EvalAlgorithmInterface.EVAL_RESULTS_PATH.
+        :param num_records: The number of records to be sampled randomly from the input dataset
+            to perform the evaluation
+        :return: A list of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
@@ -184,8 +185,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     prompt_template=dataset_prompt_template,
                 )
                 get_model_response = GetModelResponse(
-                    input_keys=gen_prompt.output_keys,
-                    output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+                    input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
                     model_runner=model,
                 )
                 pipeline = TransformPipeline([gen_prompt, get_model_response, pipeline])

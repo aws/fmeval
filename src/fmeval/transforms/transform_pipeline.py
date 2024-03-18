@@ -5,7 +5,7 @@ from collections import defaultdict
 from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.transform import Transform
-from fmeval.util import require
+from fmeval.util import require, get_num_actors
 
 NestedTransform = Union[Transform, "TransformPipeline"]
 
@@ -82,20 +82,8 @@ class TransformPipeline:
                 transform.__class__,
                 fn_constructor_args=transform.args,
                 fn_constructor_kwargs=transform.kwargs,
-                # num_cpus configures how many logical CPUs
-                # (see https://docs.ray.io/en/latest/ray-core/scheduling/resources.html)
-                # each map worker requires.
-                # To prevent the case where an actor cannot be created due to
-                # insufficient logical CPUs, we set num_cpus to a small fractional value.
-                # The default value for num_cpus is 1 and the default number of logical CPUs
-                # is the number of cores on the machine, meaning that if we don't
-                # override num_cpus, any pipeline with more Transforms than cores will
-                # fail to execute.
-                num_cpus=(1 / TRANSFORM_PIPELINE_MAX_SIZE),
-                # Set concurrency to 1 for now. Even with a concurrency parameter of 1,
-                # the code runs significantly faster (by roughly 4x) compared to fmeval v1.
-                concurrency=1,
-            )
+                concurrency=(1, get_num_actors()),
+            ).materialize()
         return dataset
 
     def execute_record(self, record: Dict[str, Any]) -> Dict[str, Any]:

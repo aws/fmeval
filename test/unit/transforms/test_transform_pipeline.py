@@ -1,7 +1,8 @@
 import re
-from unittest.mock import Mock
-
+import os
 import pytest
+
+from unittest.mock import Mock
 from typing import Any, List, NamedTuple, Dict
 
 from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
@@ -13,6 +14,8 @@ from fmeval.transforms.transform_pipeline import TransformPipeline, NestedTransf
 TRANSFORM_1 = GeneratePrompt(["input_1"], ["output_1"], "1")
 TRANSFORM_2 = GeneratePrompt(["input_2"], ["output_2"], "2")
 TRANSFORM_3 = GeneratePrompt(["input_3"], ["output_3"], "3")
+
+os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 
 class TestCaseInit(NamedTuple):
@@ -155,8 +158,7 @@ def test_execute():
             42,
         ),
         fn_constructor_kwargs={"kw_arg": "Hello there"},
-        num_cpus=(1 / TRANSFORM_PIPELINE_MAX_SIZE),
-        concurrency=1.0,
+        concurrency=(1, 2),
     )
 
 

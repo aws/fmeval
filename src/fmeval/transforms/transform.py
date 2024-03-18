@@ -60,7 +60,7 @@ class Transform(ABC):
             f"args={list(self.args)}, kwargs={self.kwargs})"
         )
 
-    def register_input_output_keys(self, input_keys: List[str], output_keys: List[str]):
+    def register_input_output_keys(self, input_keys: List[str], output_keys: List[str], allow_duplicates: bool = False):
         """Assign self.input_keys and self.output_keys attributes.
 
         Concrete subclasses of Transform should call this method in their __init__
@@ -71,13 +71,15 @@ class Transform(ABC):
         :param output_keys: The keys introduced by this Transform's __call__ logic
             that will be present in the output record. If this Transform mutates its
             input, then these keys should be added by __call__ to the input record.
+        :param allow_duplicates: Whether to allow duplicate values in `input_keys`.
         """
         assert_condition(isinstance(input_keys, List), "input_keys should be a list.")
         assert_condition(
             all(isinstance(input_key, str) for input_key in input_keys),
             "All keys in input_keys should be strings.",
         )
-        validate_key_uniqueness(input_keys)
+        if not allow_duplicates:
+            validate_key_uniqueness(input_keys)
         assert_condition(isinstance(output_keys, List), "output_keys should be a list.")
         assert_condition(len(output_keys) > 0, "output_keys should be a non-empty list.")
         assert_condition(
