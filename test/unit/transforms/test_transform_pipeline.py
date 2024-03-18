@@ -67,8 +67,8 @@ class TestCaseInitFailure(NamedTuple):
             err_msg=re.escape(
                 "TransformPipeline contains Transforms with the same output keys as other Transforms. "
                 "Here are the problematic Transforms, paired with their offending keys: "
-                "{GeneratePrompt(input_keys=['input_1'], output_keys=['output_1'], args=['1'], kwargs={})"
-                ": ['output_1']}"
+                "{GeneratePrompt(input_keys=['input_1'], output_keys=['output_1'], "
+                "args=[['input_1'], ['output_1'], '1'], kwargs={}): ['output_1']}"
             ),
         ),
         TestCaseInitFailure(
@@ -82,7 +82,7 @@ class TestCaseInitFailure(NamedTuple):
 def test_init_failure(transforms, err_msg):
     """
     GIVEN invalid arguments.
-    WHEN a Transform is initialized.
+    WHEN a TransformPipeline is initialized.
     THEN errors with the appropriate message are raised.
     """
     with pytest.raises(EvalAlgorithmClientError, match=err_msg):
@@ -98,6 +98,7 @@ class DummyTransform(Transform):
         kw_arg: str = "Hi",
     ):
         super().__init__(input_keys, output_keys, pos_arg, kw_arg=kw_arg)
+        self.register_input_output_keys(input_keys, output_keys)
         self.pos_arg = pos_arg
         self.kw_arg = kw_arg
 

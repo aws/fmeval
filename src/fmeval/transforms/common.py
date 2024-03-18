@@ -29,6 +29,7 @@ class GeneratePrompt(Transform):
             Example: "Summarize the following text: $feature".
         """
         super().__init__(input_keys, output_keys, prompt_template)
+        self.register_input_output_keys(input_keys, output_keys)
         self.prompt_composer = PromptComposer(prompt_template)
 
     @validate_call
@@ -68,6 +69,7 @@ class GetModelResponse(Transform):
         """
         require(len(input_keys) == 1, "GetModelResponse takes a single input key.")
         super().__init__(input_keys, output_keys, model_runner)
+        self.register_input_output_keys(input_keys, output_keys)
         self.model_runner = model_runner
 
     @validate_call

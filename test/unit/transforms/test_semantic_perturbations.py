@@ -15,14 +15,14 @@ from fmeval.transforms.semantic_perturbations import (
 class Dummy(SemanticPerturbation):
     def __init__(
         self,
-        input_keys: List[str],
+        input_key: str,
         output_keys: List[str],
         num_perturbations: int,
         seed: int,
         pos_arg: str,
         kw_arg: str = "Hi",
     ):
-        super().__init__(input_keys, output_keys, num_perturbations, seed, pos_arg, kw_arg=kw_arg)
+        super().__init__(input_key, output_keys, num_perturbations, seed, pos_arg, kw_arg=kw_arg)
 
     def perturb(self, text: str) -> List[str]:
         return [f"dummy_{i}" for i in range(self.num_perturbations)]
@@ -39,42 +39,22 @@ def test_semantic_perturbation_init_success():
     with patch("numpy.random.default_rng") as mock_rng:
         num_perturbations = 3
         seed = 42
-        dummy = Dummy(["input"], ["output_1", "output_2", "output_3"], num_perturbations, seed, "asdf", kw_arg="qwerty")
+        dummy = Dummy("input", ["output_1", "output_2", "output_3"], num_perturbations, seed, "asdf", kw_arg="qwerty")
         assert dummy.num_perturbations == num_perturbations
         mock_rng.assert_called_once_with(seed)
 
 
-class TestCaseInitFailure(NamedTuple):
-    input_keys: List[str]
-    output_keys: List[str]
-    err_msg: str
-
-
-@pytest.mark.parametrize(
-    "input_keys, output_keys, err_msg",
-    [
-        TestCaseInitFailure(
-            input_keys=["input"],
-            output_keys=["out_1", "out_2", "out_3"],
-            err_msg="len(output_keys) is 3 while num_perturbations is 2. They should match.",
-        ),
-        TestCaseInitFailure(
-            input_keys=["input_1", "input_2"],
-            output_keys=["out_1", "out_2"],
-            err_msg="Dummy takes a single input key.",
-        ),
-    ],
-)
-def test_semantic_perturbation_init_failure(input_keys, output_keys, err_msg):
+def test_semantic_perturbation_init_failure():
     """
     GIVEN invalid inputs.
     WHEN a subclass of SemanticPerturbation is initialized.
     THEN an EvalAlgorithmClientError with the correct error message is raised.
     """
+    err_msg = "len(output_keys) is 3 while num_perturbations is 2. They should match."
     with pytest.raises(EvalAlgorithmClientError, match=re.escape(err_msg)):
         Dummy(
-            input_keys,
-            output_keys,
+            input_key="input",
+            output_keys=["out_1", "out_2", "out_3"],
             num_perturbations=2,
             seed=42,
             pos_arg="asdf",
@@ -90,7 +70,7 @@ def test_semantic_perturbation_call():
         the `perturb` method) in the output record matches what is expected.
     """
     dummy = Dummy(
-        ["input"],
+        "input",
         ["out_1", "out_2", "out_3"],
         num_perturbations=3,
         seed=42,
@@ -145,7 +125,7 @@ def test_butter_finger_perturb(test_case):
     THEN the correct perturbed outputs are returned.
     """
     bf = ButterFinger(
-        ["unused"],
+        "unused",
         [f"bf_{i}" for i in range(len(test_case.expected_outputs))],
         perturbation_prob=test_case.perturbation_prob,
         num_perturbations=test_case.num_perturbations,
@@ -196,7 +176,7 @@ def test_random_uppercase_perturb(test_case):
     THEN the correct perturbed outputs are returned.
     """
     ru = RandomUppercase(
-        ["unused"],
+        "unused",
         [f"ru_{i}" for i in range(len(test_case.expected_outputs))],
         num_perturbations=test_case.num_perturbations,
         seed=test_case.seed,
@@ -250,7 +230,7 @@ def test_whitespace_add_remove_perturb(test_case):
     THEN the correct perturbed outputs are returned.
     """
     arw = AddRemoveWhitespace(
-        ["unused"],
+        "unused",
         [f"arw_{i}" for i in range(len(test_case.expected_outputs))],
         num_perturbations=test_case.num_perturbations,
         seed=test_case.seed,
