@@ -31,7 +31,7 @@ class SemanticPerturbation(Transform):
             len(output_keys) == num_perturbations,
             f"len(output_keys) is {len(output_keys)} while num_perturbations is {num_perturbations}. They should match.",
         )
-        super().__init__(input_key, output_keys, num_perturbations, seed, args, kwargs)
+        super().__init__(input_key, output_keys, num_perturbations, seed, *args, **kwargs)
         self.register_input_output_keys([input_key], output_keys)
         self.input_key = input_key
         self.num_perturbations = num_perturbations

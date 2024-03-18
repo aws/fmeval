@@ -99,6 +99,16 @@ def test_register_input_output_keys_failure(input_keys, output_keys, err_msg):
         d.register_input_output_keys(input_keys, output_keys)
 
 
+def test_register_input_output_keys_duplicate_keys_allowed():
+    """
+    GIVEN a list of input keys with duplicate values.
+    WHEN register_input_output_keys is called with `allow_duplicates` = True.
+    THEN no exceptions are raised due to duplicate keys being found.
+    """
+    d = DummyTransform([123], {"k": "v"})
+    d.register_input_output_keys(["a", "a"], ["b"], allow_duplicates=True)
+
+
 def test_repr():
     """
     GIVEN a valid Transform instance.

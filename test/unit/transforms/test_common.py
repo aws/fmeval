@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import patch
 from typing import NamedTuple, List, Optional, Dict, Any
 
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt, GetModelResponse
 from fmeval.util import EvalAlgorithmInternalError
 
@@ -44,21 +43,12 @@ def test_get_model_response_init_success():
     THEN the instance's attributes match what is expected.
     """
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
-        get_model_response = GetModelResponse(["prompt"], ["model_output"], mock_model_runner)
+        get_model_response = GetModelResponse(
+            input_to_output_keys={"prompt": ["model_output"]}, model_runner=mock_model_runner
+        )
         assert get_model_response.input_keys == ["prompt"]
         assert get_model_response.output_keys == ["model_output"]
         assert get_model_response.model_runner == mock_model_runner
-
-
-def test_get_model_response_init_failure():
-    """
-    GIVEN a list of input keys where the number of keys != 1.
-    WHEN a GeneratePrompt object is instantiated.
-    THEN an EvalAlgorithmClientError is raised.
-    """
-    with pytest.raises(EvalAlgorithmClientError, match="GetModelResponse takes a single input key."):
-        with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
-            GetModelResponse(["prompt_1", "prompt_2"], ["model_output_1", "model_output_2"], mock_model_runner)
 
 
 class TestCaseGetModelResponseSuccess(NamedTuple):
@@ -99,8 +89,38 @@ def test_get_model_response_call_success(model_output, log_prob, output_keys, ex
     """
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
         mock_model_runner.predict.return_value = (model_output, log_prob)
-        get_model_response = GetModelResponse(["input"], output_keys, mock_model_runner)
+        get_model_response = GetModelResponse(
+            input_to_output_keys={"input": output_keys}, model_runner=mock_model_runner
+        )
         sample = {"input": "Hello"}
+        result = get_model_response(sample)
+        assert result == expected_result
+
+
+def test_get_model_response_call_multiple_inputs():
+    """
+    GIVEN a GetModelResponse instance with multiple input keys configured.
+    WHEN its __call__ method is called.
+    THEN the correct output is returned.
+    """
+    with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
+        mock_model_runner.predict.side_effect = [("output 1", -0.162), ("output 2", -0.189)]
+        get_model_response = GetModelResponse(
+            input_to_output_keys={
+                "input_1": ["output_key_1", "log_prob_key_1"],
+                "input_2": ["output_key_2", "log_prob_key_2"],
+            },
+            model_runner=mock_model_runner,
+        )
+        sample = {"input_1": "input 1", "input_2": "input 2"}
+        expected_result = {
+            "input_1": "input 1",
+            "output_key_1": "output 1",
+            "log_prob_key_1": -0.162,
+            "input_2": "input 2",
+            "output_key_2": "output 2",
+            "log_prob_key_2": -0.189,
+        }
         result = get_model_response(sample)
         assert result == expected_result
 
@@ -133,14 +153,18 @@ class TestCaseGetModelResponseFailure(NamedTuple):
 )
 def test_get_model_response_call_failure(model_output, log_prob, output_keys):
     """
-    GIVEN a GetModelResponse instance whose `output_keys` attribute has a different number of elements
-        than the number of non-null elements in its model runner's predict() response.
+    GIVEN a GetModelResponse instance where the number of output keys corresponding to
+        a particular input key does not match the number of non-null elements in its model runner's
+        predict() response.
     WHEN its __call__ method is called.
     THEN an EvalAlgorithmInternalError is raised.
     """
     sample = {"input": "Hello"}
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
         mock_model_runner.predict.return_value = (model_output, log_prob)
-        get_model_response = GetModelResponse(["input"], output_keys, mock_model_runner)
+        get_model_response = GetModelResponse(
+            input_to_output_keys={"input": output_keys},
+            model_runner=mock_model_runner,
+        )
         with pytest.raises(EvalAlgorithmInternalError, match="The number of elements in model response"):
             get_model_response(sample)

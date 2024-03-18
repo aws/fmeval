@@ -32,14 +32,20 @@ def test_semantic_perturbation_init_success():
     """
     GIVEN valid arguments to __init__.
     WHEN a concrete subclass of SemanticPerturbation is initialized.
-    THEN the instance's attributes match what is expected
-        and np.random.default_rng is called with the correct argument.
+    THEN Transform.__init__ is called with the correct arguments,
+        np.random.default_rng is called with the correct argument, and
+        the instance's attributes match what is expected.
     """
 
-    with patch("numpy.random.default_rng") as mock_rng:
+    with patch("numpy.random.default_rng") as mock_rng, patch(
+        "fmeval.transforms.transform.Transform.__init__"
+    ) as mock_transform_init:
         num_perturbations = 3
         seed = 42
         dummy = Dummy("input", ["output_1", "output_2", "output_3"], num_perturbations, seed, "asdf", kw_arg="qwerty")
+        mock_transform_init.assert_called_once_with(
+            "input", ["output_1", "output_2", "output_3"], num_perturbations, seed, "asdf", kw_arg="qwerty"
+        )
         assert dummy.num_perturbations == num_perturbations
         mock_rng.assert_called_once_with(seed)
 
