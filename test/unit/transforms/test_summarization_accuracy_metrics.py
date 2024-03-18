@@ -13,7 +13,7 @@ def test_meteor_score_init(load_modules):
     """
     GIVEN valid arguments to __init__.
     WHEN a MeteorScore is instantiated.
-    THEN _load_meteor_modules is called if applicable.
+    THEN _load_modules is called if applicable.
     """
     with patch("fmeval.transforms.summarization_accuracy_metrics.MeteorScore._load_modules") as mock_load_modules:
         MeteorScore(
@@ -21,7 +21,7 @@ def test_meteor_score_init(load_modules):
             model_output_keys=["model_output"],
             output_keys=["meteor"],
             allow_duplicate_input_keys=False,
-            load_meteor_modules=load_modules,
+            load_modules=load_modules,
         )
         if load_modules:
             mock_load_modules.assert_called_once()
