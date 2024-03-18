@@ -1,8 +1,7 @@
 import re
-import os
 import pytest
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from typing import Any, List, NamedTuple, Dict
 
 from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
@@ -14,8 +13,6 @@ from fmeval.transforms.transform_pipeline import TransformPipeline, NestedTransf
 TRANSFORM_1 = GeneratePrompt(["input_1"], ["output_1"], "1")
 TRANSFORM_2 = GeneratePrompt(["input_2"], ["output_2"], "2")
 TRANSFORM_3 = GeneratePrompt(["input_3"], ["output_3"], "3")
-
-os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 
 class TestCaseInit(NamedTuple):
@@ -146,20 +143,22 @@ def test_execute():
     WHEN its execute method is called on a dataset.
     THEN the Ray Dataset `map` method is called with the correct arguments.
     """
-    pipeline = TransformPipeline([DummyTransform(["input"], ["output"], 42, "Hello there")])
-    dataset = Mock()
-    dataset.map = Mock()
-    pipeline.execute(dataset)
-    dataset.map.assert_called_once_with(
-        DummyTransform,
-        fn_constructor_args=(
-            ["input"],
-            ["output"],
-            42,
-        ),
-        fn_constructor_kwargs={"kw_arg": "Hello there"},
-        concurrency=(1, 2),
-    )
+    with patch("fmeval.transforms.transform_pipeline.get_num_actors") as mock_get_num_actors:
+        mock_get_num_actors.return_value = 7
+        pipeline = TransformPipeline([DummyTransform(["input"], ["output"], 42, "Hello there")])
+        dataset = Mock()
+        dataset.map = Mock()
+        pipeline.execute(dataset)
+        dataset.map.assert_called_once_with(
+            DummyTransform,
+            fn_constructor_args=(
+                ["input"],
+                ["output"],
+                42,
+            ),
+            fn_constructor_kwargs={"kw_arg": "Hello there"},
+            concurrency=(1, 7),
+        )
 
 
 def test_execute_record():
