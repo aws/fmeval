@@ -18,27 +18,59 @@ class Transform(ABC):
     attributes in the Transform.
     """
 
-    def __init__(self, input_keys: List[str], output_keys: List[str], *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Transform initializer.
 
-        Note: concrete subclasses of Transform should always call super().__init__
-        with every argument passed to their own __init__ method. This is because
-        this method will store a copy of all positional arguments in the `args`
-        instance attribute and all keyword arguments in the `kwargs` instance attribute,
-        so that Ray can create copies of this Transform instance when performing
-        parallel execution.
+        Concrete subclasses of Transform should always call super().__init__
+        with every argument passed to their own __init__ method.
+        Transform.__init__ stores all positional arguments in the `args` instance
+        attribute and all keyword arguments in the `kwargs` instance attribute.
+        This data is passed to Ray when Ray creates copies of this Transform instance
+        to perform parallel execution.
+
+        Note: The `input_keys` and `output_keys` attributes are initialized to None
+        and only assigned a meaningful value if the `register_input_output_keys` method
+        is called. This method is used in conjunction with the `validate_call` decorator
+        to perform validations of the __call__ inputs and outputs at runtime.
+        While it is not strictly necessary to utilize `register_input_output_keys` and
+        `validate_call` when implementing your own transforms, these methods are used in
+        all built-in transforms.
+
+        :param *args: Variable length argument list.
+        :param **kwargs: Arbitrary keyword arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
+        self.input_keys = None
+        self.output_keys = None
+
+    @abstractmethod
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a record containing data that gets computed in this method.
+
+        :param record: The input record to be transformed.
+        :returns: A record containing data that gets computed in this method.
+            This record can be the same object as the input record. In this case,
+            the logic in this method should mutate the input record directly.
+        """
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(input_keys={self.input_keys}, output_keys={self.output_keys}, "
+            f"args={list(self.args)}, kwargs={self.kwargs})"
+        )
+
+    def register_input_output_keys(self, input_keys: List[str], output_keys: List[str]):
+        """Assign self.input_keys and self.output_keys attributes.
+
+        Concrete subclasses of Transform should call this method in their __init__
+        if their __call__ method is decorated with `validate_call`.
 
         :param input_keys: The record keys corresponding to data that this Transform
             requires as inputs.
         :param output_keys: The keys introduced by this Transform's __call__ logic
             that will be present in the output record. If this Transform mutates its
-            input, then these keys should be added to the input record.
-            It is the responsibility of the implementer of a Transform to validate
-            that their __call__ method adds only these keys, and no others.
-            See fmeval.transforms.util.validate_added_keys and some built-in
-            Transforms for examples on how to perform such validations.
-        :param *args: Variable length argument list.
-        :param **kwargs: Arbitrary keyword arguments.
+            input, then these keys should be added by __call__ to the input record.
         """
         assert_condition(isinstance(input_keys, List), "input_keys should be a list.")
         assert_condition(
@@ -55,21 +87,3 @@ class Transform(ABC):
         validate_key_uniqueness(output_keys)
         self.input_keys = input_keys
         self.output_keys = output_keys
-        self.args = (self.input_keys, self.output_keys) + args
-        self.kwargs = kwargs
-
-    @abstractmethod
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a record containing data that gets computed in this method.
-
-        :param record: The input record to be transformed.
-        :returns: A record containing data that gets computed in this method.
-            This record can be the same object as the input record. In this case,
-            the logic in this method should mutate the input record directly.
-        """
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(input_keys={self.input_keys}, output_keys={self.output_keys}, "
-            f"args={list(self.args[2:])}, kwargs={self.kwargs})"
-        )

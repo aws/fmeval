@@ -90,14 +90,12 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         """
         super().__init__(eval_algorithm_config)
         meteor_transform = MeteorScore(
-            input_keys=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_OUTPUT.value.name],
-            output_keys=[METEOR_SCORE],
+            output_key=METEOR_SCORE,
             target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
             model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
         )
         rouge_transform = RougeScore(
-            input_keys=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_OUTPUT.value.name],
-            output_keys=[ROUGE_SCORE],
+            output_key=ROUGE_SCORE,
             target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
             model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
             rouge_type=eval_algorithm_config.rouge_type,
@@ -107,8 +105,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         if use_ray:
             bertscore_model = create_shared_resource(bertscore_model)
         bert_transform = BertScore(
-            input_keys=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_OUTPUT.value.name],
-            output_keys=[BERT_SCORE],
+            output_key=BERT_SCORE,
             target_output_key=DatasetColumns.TARGET_OUTPUT.value.name,
             model_output_key=DatasetColumns.MODEL_OUTPUT.value.name,
             bertscore_model=bertscore_model,
