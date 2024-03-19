@@ -16,18 +16,10 @@ from fmeval.eval_algorithms import (
     CategoryScore,
     EvalOutput,
     EvalScore,
-    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    DEFAULT_PROMPT_TEMPLATE,
-    GIGAWORD,
-    GOV_REPORT,
 )
 from fmeval.helper_models import BertscoreModel
 from fmeval.transforms.common import GetModelResponse, GeneratePrompt
-from fmeval.transforms.summarization_accuracy_metrics import (
-    ROUGE_1,
-    ROUGE_2,
-    ROUGE_L,
-)
+from fmeval.transforms.summarization_accuracy_metrics import ROUGE_L
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
     SummarizationAccuracy,
@@ -350,7 +342,7 @@ class TestSummarizationAccuracy:
             prompt_template=test_case.eval_output_prompt_template,
         )
         get_model_response.assert_called_with(
-            input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
+            input_key_to_response_keys={DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]},
             model_runner=model_runner,
         )
         save_dataset.assert_called_once()

@@ -185,7 +185,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     prompt_template=dataset_prompt_template,
                 )
                 get_model_response = GetModelResponse(
-                    input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
+                    input_key_to_response_keys={
+                        DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]
+                    },
                     model_runner=model,
                 )
                 pipeline = TransformPipeline([gen_prompt, get_model_response, pipeline])

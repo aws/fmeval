@@ -1,15 +1,9 @@
-from typing import Any, Dict, List
-
+from typing import Any, Dict, List, Tuple
 
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
-from fmeval.transforms.util import (
-    validate_key_uniqueness,
-    validate_existing_keys,
-    validate_added_keys,
-    validate_call,
-)
+from fmeval.transforms.util import validate_call
 from fmeval.util import assert_condition
 
 
@@ -55,27 +49,50 @@ class GetModelResponse(Transform):
 
     def __init__(
         self,
-        input_to_output_keys: Dict[str, List[str]],
+        input_key_to_response_keys: Dict[str, List[Tuple[str]]],
         model_runner: ModelRunner,
     ):
         """GetModelResponse initializer.
 
-        :param input_to_output_keys: Maps an input key to a list of output keys.
-            The input key corresponds to the model input (i.e. the input payload
-            to `model_runner`) while the output keys correspond to the response
-            payload resulting from invoking `model_runner`.
-            Note that the list of output keys is dependent on the behavior of the
-            model runner's `predict` method. For example, for ModelRunners that do
-            not return log probabilities, the output keys list should not contain a key
-            for log probabilities.
+        :param input_key_to_response_keys: Maps an input key (corresponding to
+            the input payload to the model) to a list of tuples, where each tuple
+            contains the keys for the model response payload that results from
+            invoking the model on the input. Since the model can be invoked on
+            the same input multiple times, we map the input key to a list of tuples
+            instead of a single tuple.
+
+            Note that the format of the response key tuple depends on the behavior of
+            model_runner's `predict` method. For ModelRunners whose `predict` method
+            returns both a model output and a log probability, the response key tuple
+            will be of the form (model_output_key, log_probability_key). If `predict`
+            returns only the model output or only the log probability, the response key
+            tuple will correspondingly be a single-element tuple.
+
+            Example:
+                input_key_to_response_keys = {
+                    "input_1": [
+                        ("input_1_model_output_1", "input_1_log_prob_1"),
+                        ("input_1_model_output_2", "input_1_log_prob_2")
+                    ],
+                    "input_2": [
+                        ("input_2_model_output_1", "input_2_log_prob_1"),
+                        ("input_2_model_output_2", "input_2_log_prob_2")
+                    ],
+                }
+
         :param model_runner: The ModelRunner instance whose responses will be obtained.
         """
-        super().__init__(input_to_output_keys, model_runner)
+        super().__init__(input_key_to_response_keys, model_runner)
         self.register_input_output_keys(
-            list(input_to_output_keys.keys()),
-            [output_key for output_keys in input_to_output_keys.values() for output_key in output_keys],
+            input_keys=list(input_key_to_response_keys.keys()),
+            output_keys=[
+                response_key
+                for list_of_response_key_tuples in input_key_to_response_keys.values()
+                for response_key_tuple in list_of_response_key_tuples
+                for response_key in response_key_tuple
+            ],
         )
-        self.input_to_output_keys = input_to_output_keys
+        self.input_key_to_response_keys = input_key_to_response_keys
         self.model_runner = model_runner
 
     @validate_call
@@ -86,16 +103,17 @@ class GetModelResponse(Transform):
         :returns: The input record with model response data added in.
         """
         for input_key in self.input_keys:
-            model_output, log_prob = self.model_runner.predict(record[input_key])
-            model_response = ((model_output,) if model_output is not None else ()) + (
-                (log_prob,) if log_prob is not None else ()
-            )
-            output_keys = self.input_to_output_keys[input_key]
-            assert_condition(
-                len(model_response) == len(output_keys),
-                f"The number of elements in model response {model_response} "
-                f"does not match number of output keys in {output_keys}.",
-            )
-            for model_response_item, model_output_key in zip(model_response, output_keys):
-                record[model_output_key] = model_response_item
+            response_key_tuples = self.input_key_to_response_keys[input_key]
+            for response_key_tuple in response_key_tuples:
+                model_output, log_prob = self.model_runner.predict(record[input_key])
+                model_response = ((model_output,) if model_output is not None else ()) + (
+                    (log_prob,) if log_prob is not None else ()
+                )
+                assert_condition(
+                    len(model_response) == len(response_key_tuple),
+                    f"The number of elements in model response {model_response} "
+                    f"does not match number of response keys in {response_key_tuple}.",
+                )
+                for model_response_key, model_response_item in zip(response_key_tuple, model_response):
+                    record[model_response_key] = model_response_item
         return record
