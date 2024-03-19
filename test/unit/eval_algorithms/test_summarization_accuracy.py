@@ -242,11 +242,12 @@ class TestSummarizationAccuracy:
         "test_case",
         [
             TestCaseEvaluateDatasetWithoutModelOutputColumn(
-                user_provided_prompt_template="Summarize $feature", eval_output_prompt_template="Summarize $feature"
+                user_provided_prompt_template="Summarize $model_input",
+                eval_output_prompt_template="Summarize $model_input",
             ),
             TestCaseEvaluateDatasetWithoutModelOutputColumn(
                 user_provided_prompt_template=None,
-                eval_output_prompt_template="$feature",
+                eval_output_prompt_template="$model_input",
             ),
         ],
     )
@@ -421,7 +422,7 @@ class TestSummarizationAccuracy:
 
         # Call `evaluate` and validate outputs.
         eval_outputs = eval_algo.evaluate(
-            model=None, dataset_config=dataset_config, prompt_template="Summarize $feature", save=False
+            model=None, dataset_config=dataset_config, prompt_template="Summarize $model_input", save=False
         )
 
         generate_prompt.assert_not_called()

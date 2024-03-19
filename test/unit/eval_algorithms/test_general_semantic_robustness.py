@@ -562,7 +562,7 @@ class TestGeneralSemanticRobustness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="Answer: $feature",
+                prompt_template="Answer: $model_input",
                 save_data=False,
                 dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 expected_response=[
@@ -573,7 +573,7 @@ class TestGeneralSemanticRobustness:
                             EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
                             EvalScore(name=WER_SCORE, value=0.0),
                         ],
-                        prompt_template="Answer: $feature",
+                        prompt_template="Answer: $model_input",
                         category_scores=None,
                         output_path="/tmp/eval_results/general_semantic_robustness_my_custom_dataset.jsonl",
                     ),

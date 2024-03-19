@@ -54,7 +54,7 @@ class TestSummarizationAccuracy:
         eval_outputs = eval_algo.evaluate(
             model=bedrock_model_runner,
             dataset_config=dataset_config,
-            prompt_template=format_input("Summarise the following text in one sentence: $feature"),
+            prompt_template=format_input("Summarise the following text in one sentence: $model_input"),
             save=True,
             num_records=20,
         )
