@@ -22,7 +22,7 @@ class GeneratePrompt(Transform):
             the created prompts will all utilize the same prompt template.
         :param output_keys: The keys corresponding to the prompts that get added by this Transform.
         :param prompt_template: The template used to construct the prompt.
-            Example: "Summarize the following text: $feature".
+            Example: "Summarize the following text: $model_input".
         """
         super().__init__(input_keys, output_keys, prompt_template)
         self.register_input_output_keys(input_keys, output_keys)

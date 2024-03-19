@@ -18,7 +18,7 @@ def test_pipeline_execution():
     gen_prompt = GeneratePrompt(
         input_keys=["model_input"],
         output_keys=["prompt"],
-        prompt_template="Summarize the following text in one sentence: $feature",
+        prompt_template="Summarize the following text in one sentence: $model_input",
     )
 
     get_model_response = GetModelResponse(

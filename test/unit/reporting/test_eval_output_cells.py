@@ -411,7 +411,7 @@ class TestEvalOutputCells:
         eval_output = EvalOutput(
             eval_name="summarization_accuracy",
             dataset_name="Dataset 1",
-            prompt_template="Summarize the following: $feature",
+            prompt_template="Summarize the following: $model_input",
             dataset_scores=dataset_scores,
             category_scores=category_scores,
         )
@@ -422,7 +422,7 @@ class TestEvalOutputCells:
         dataset.select_columns = Mock()
         with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
-            expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n**Prompt Template:** Summarize the following: $feature  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
+            expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n**Prompt Template:** Summarize the following: $model_input  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
             assert str(cell) == expected_cell
 
     def test_eval_output_cell_built_in_dataset(self):

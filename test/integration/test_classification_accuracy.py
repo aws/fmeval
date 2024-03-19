@@ -35,7 +35,7 @@ SAMPLE_VALID_LABELS = ["0", "1", "Negative", "Positive"]
 TEST_PROMPT_TEMPLATE = (
     "<s>[INST] <<SYS>>Classify the sentiment of the following review as either "
     "0 (negative sentiment) or 1 (positive sentiment). Be brief. Do not restate "
-    "the prompt. <</SYS>> Review: $feature. [/INST]"
+    "the prompt. <</SYS>> Review: $model_input. [/INST]"
 )
 
 

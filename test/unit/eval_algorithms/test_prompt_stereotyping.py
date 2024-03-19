@@ -204,7 +204,7 @@ class TestPromptStereotyping:
                     sent_more_input_location="sent_more",
                     sent_less_input_location="sent_less",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
@@ -242,7 +242,7 @@ class TestPromptStereotyping:
                     EvalOutput(
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=[
                             CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
@@ -285,7 +285,7 @@ class TestPromptStereotyping:
                     target_output_location="tba",
                     model_output_location=None,
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
@@ -318,7 +318,7 @@ class TestPromptStereotyping:
                     EvalOutput(
                         eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
                         dataset_name="my_custom_dataset",
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
                         category_scores=None,
                         output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",

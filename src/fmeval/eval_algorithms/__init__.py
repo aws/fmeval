@@ -212,17 +212,17 @@ EVAL_DATASETS: Dict[str, List[str]] = {
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
-DEFAULT_PROMPT_TEMPLATE = "$feature"
+DEFAULT_PROMPT_TEMPLATE = "$model_input"
 
 BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES = {
-    BOOLQ: 'Respond to the following question. Valid answers are "True" or "False". $feature',
-    TRIVIA_QA: "Respond to the following question with a short answer: $feature",
-    NATURAL_QUESTIONS: "Respond to the following question with a short answer: $feature",
-    GIGAWORD: "Summarize the following text in one sentence: $feature",
-    GOV_REPORT: "Summarize the following text in a few sentences: $feature",
+    BOOLQ: 'Respond to the following question. Valid answers are "True" or "False". $model_input',
+    TRIVIA_QA: "Respond to the following question with a short answer: $model_input",
+    NATURAL_QUESTIONS: "Respond to the following question with a short answer: $model_input",
+    GIGAWORD: "Summarize the following text in one sentence: $model_input",
+    GOV_REPORT: "Summarize the following text in a few sentences: $model_input",
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS: (
         "Classify the sentiment of the following review with 0 (negative sentiment)"
-        " or 1 (positive sentiment): $feature"
+        " or 1 (positive sentiment): $model_input"
     ),
 }
 
