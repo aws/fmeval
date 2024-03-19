@@ -242,7 +242,8 @@ class TestSummarizationAccuracy:
         "test_case",
         [
             TestCaseEvaluateDatasetWithoutModelOutputColumn(
-                user_provided_prompt_template="Summarize $model_input", eval_output_prompt_template="Summarize $model_input"
+                user_provided_prompt_template="Summarize $model_input",
+                eval_output_prompt_template="Summarize $model_input",
             ),
             TestCaseEvaluateDatasetWithoutModelOutputColumn(
                 user_provided_prompt_template=None,

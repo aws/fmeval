@@ -25,7 +25,9 @@ def test_generate_prompt_call():
     WHEN its __call__ method is called on a record.
     THEN the correct output is returned.
     """
-    gen_prompt = GeneratePrompt(["input_1", "input_2"], ["prompt_1", "prompt_2"], "Summarize the following: $model_input")
+    gen_prompt = GeneratePrompt(
+        ["input_1", "input_2"], ["prompt_1", "prompt_2"], "Summarize the following: $model_input"
+    )
     sample = {"input_1": "Hello", "input_2": "world"}
     result = gen_prompt(sample)
     assert result == {
