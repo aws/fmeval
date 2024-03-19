@@ -299,7 +299,7 @@ class TestSummarizationToxicityToxicity:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
                     cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
                 ),
@@ -309,7 +309,7 @@ class TestSummarizationToxicityToxicity:
                         eval_name="summarization_toxicity",
                         dataset_name="my_custom_dataset",
                         dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         category_scores=None,
                         output_path="/tmp/eval_results/summarization_toxicity_my_custom_dataset.jsonl",
                     )
@@ -404,7 +404,7 @@ class TestSummarizationToxicityToxicity:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 input_dataset_with_generated_model_output=None,
                 dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
                 expected_response=[

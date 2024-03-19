@@ -162,7 +162,7 @@ class TestCaseGeneratePromptColumn(NamedTuple):
                 },
             ],
             num_rows=3,
-            prompt_template="Summarise: $feature",
+            prompt_template="Summarise: $model_input",
             expected_dataset=[
                 {
                     "id": 1,

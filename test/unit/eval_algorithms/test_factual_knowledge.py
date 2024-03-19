@@ -229,7 +229,7 @@ class TestFactualKnowledge:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 input_dataset_with_generated_model_output=ray.data.from_items(
                     [
                         {
@@ -266,7 +266,7 @@ class TestFactualKnowledge:
                     EvalOutput(
                         eval_name="factual_knowledge",
                         dataset_name="my_custom_dataset",
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
                         category_scores=[
                             CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),

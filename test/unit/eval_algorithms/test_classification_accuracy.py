@@ -194,7 +194,7 @@ class TestClassificationAccuracy:
             ),
             TestCaseClassificationAccuracyEvaluate(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Classify: $feature",
+                prompt_template="Classify: $model_input",
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -209,7 +209,7 @@ class TestClassificationAccuracy:
                     EvalOutput(
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
-                        prompt_template="Classify: $feature",
+                        prompt_template="Classify: $model_input",
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
                         output_path="/tmp/eval_results/classification_accuracy_my_custom_dataset.jsonl",
@@ -218,7 +218,7 @@ class TestClassificationAccuracy:
             ),
             TestCaseClassificationAccuracyEvaluate(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Classify: $feature",
+                prompt_template="Classify: $model_input",
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -233,7 +233,7 @@ class TestClassificationAccuracy:
                     EvalOutput(
                         eval_name="classification_accuracy",
                         dataset_name="my_custom_dataset",
-                        prompt_template="Classify: $feature",
+                        prompt_template="Classify: $model_input",
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
                         output_path="/tmp/eval_results/classification_accuracy_my_custom_dataset.jsonl",

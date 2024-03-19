@@ -58,7 +58,7 @@ class TestFactualKnowledge:
         eval_outputs = eval_algo.evaluate(
             model=hf_model_runner,
             dataset_config=dataset_config,
-            prompt_template="$feature",
+            prompt_template="$model_input",
             save=True,
         )
         eval_output = eval_outputs[0]

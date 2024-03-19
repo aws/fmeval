@@ -13,10 +13,10 @@ def test_generate_prompt_init():
     THEN the instance's attributes match what is expected.
     """
     with patch("fmeval.transforms.common.PromptComposer") as mock_prompt_composer:
-        gen_prompt = GeneratePrompt(["model_input"], ["prompt"], "Summarize the following: $feature")
+        gen_prompt = GeneratePrompt(["model_input"], ["prompt"], "Summarize the following: $model_input")
         assert gen_prompt.input_keys == ["model_input"]
         assert gen_prompt.output_keys == ["prompt"]
-        mock_prompt_composer.assert_called_once_with("Summarize the following: $feature")
+        mock_prompt_composer.assert_called_once_with("Summarize the following: $model_input")
 
 
 def test_generate_prompt_call():
@@ -25,7 +25,7 @@ def test_generate_prompt_call():
     WHEN its __call__ method is called on a record.
     THEN the correct output is returned.
     """
-    gen_prompt = GeneratePrompt(["input_1", "input_2"], ["prompt_1", "prompt_2"], "Summarize the following: $feature")
+    gen_prompt = GeneratePrompt(["input_1", "input_2"], ["prompt_1", "prompt_2"], "Summarize the following: $model_input")
     sample = {"input_1": "Hello", "input_2": "world"}
     result = gen_prompt(sample)
     assert result == {
