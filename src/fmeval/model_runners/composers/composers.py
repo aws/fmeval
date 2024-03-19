@@ -73,7 +73,7 @@ class PromptComposer(Composer):
     Composes LLM prompt inputs.
     """
 
-    PLACEHOLDER = "feature"
+    PLACEHOLDER = "model_input"
 
     def __init__(self, template: str):
         super().__init__(template=template, placeholder=self.PLACEHOLDER)
