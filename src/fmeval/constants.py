@@ -97,8 +97,8 @@ SEED = 1234
 
 # Semantic robustness perturbation types
 BUTTER_FINGER = "butter_finger"
-RANDOM_UPPER_CASE = "random_upper_case"
-WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
+RANDOM_UPPERCASE = "random_uppercase"
+ADD_REMOVE_WHITESPACE = "add_remove_whitespace"
 
 PREFIX_FOR_DELTA_SCORES = "delta_"
 
@@ -124,12 +124,3 @@ GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
 
 # BERTScore
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"
-
-# Configures the maximum number of Transforms a TransformPipeline can contain.
-# All built-in evaluation algorithms use on the order of a few dozen Transforms;
-# we set the limit to 100 to support more complicated, user-implemented algorithms.
-# An evaluation algorithm that contains a pipeline with significantly more transforms
-# than this should likely be redesigned. It is worth noting that for optimal performance,
-# the computation that an individual Transform performs should not be too small.
-# See https://docs.ray.io/en/latest/ray-core/patterns/too-fine-grained-tasks.html
-TRANSFORM_PIPELINE_MAX_SIZE = 100

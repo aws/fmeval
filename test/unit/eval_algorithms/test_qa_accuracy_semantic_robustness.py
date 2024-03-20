@@ -25,8 +25,8 @@ from fmeval.eval_algorithms import (
 from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustnessConfig,
     QAAccuracySemanticRobustness,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
+    RANDOM_UPPERCASE,
+    ADD_REMOVE_WHITESPACE,
     BUTTER_FINGER,
     DELTA_F1_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
@@ -124,7 +124,7 @@ class TestQAAccuracySemanticRobustness:
                 target_output_delimiter="<OR>",
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
-                "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
+                "acceptable values: dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
             ),
             TestCaseQAAccuracySemanticRobustnessInvalidConfig(
                 target_output_delimiter="",
@@ -218,7 +218,7 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
-                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
+                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPERCASE
                 ),
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateSample(
@@ -240,7 +240,7 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
-                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
+                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=ADD_REMOVE_WHITESPACE
                 ),
             ),
         ],
@@ -442,8 +442,8 @@ class TestQAAccuracySemanticRobustness:
             ),
             # Built-in datasets evaluate for dataset with category
             TestCaseQAAccuracySemanticRobustnessEvaluate(
-                input_dataset=QA_DATASET_WITH_MODEL_OUTPUT,
-                input_dataset_with_generated_model_output=QA_DATASET,
+                input_dataset=QA_DATASET,
+                input_dataset_with_generated_model_output=QA_DATASET_WITH_MODEL_OUTPUT,
                 dataset_config=None,
                 prompt_template=None,
                 save_data=True,
@@ -589,7 +589,7 @@ class TestQAAccuracySemanticRobustness:
     )
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.save_dataset")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.generate_model_predict_response_for_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracy")
     def test_qa_accuracy_semantic_robustness_evaluate(
         self, qa_accuracy, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config

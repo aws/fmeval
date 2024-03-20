@@ -2,7 +2,6 @@ import ray.data
 from typing import List, Union, Dict, Any
 from collections import defaultdict
 
-from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.transform import Transform
 from fmeval.util import require, get_num_actors
@@ -60,15 +59,6 @@ class TransformPipeline:
             "TransformPipeline contains Transforms with the same output keys as other Transforms. "
             "Here are the problematic Transforms, paired with their offending keys: "
             f"{str(dict(transform_to_duplicate_keys))}",
-        )
-        require(
-            len(self.transforms) <= TRANSFORM_PIPELINE_MAX_SIZE,
-            f"TransformPipeline initialized with {len(self.transforms)} Transforms. "
-            f"Currently, the max pipeline size is {TRANSFORM_PIPELINE_MAX_SIZE}. "
-            "An overly-large pipeline is typically an indication that your Transforms "
-            "are performing tasks that are too fine-grained. See how this negatively "
-            "affects performance here: "
-            "https://docs.ray.io/en/latest/ray-core/patterns/too-fine-grained-tasks.html",
         )
 
     def execute(self, dataset: ray.data.Dataset) -> ray.data.Dataset:

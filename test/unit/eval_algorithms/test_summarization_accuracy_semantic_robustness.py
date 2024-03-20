@@ -22,8 +22,8 @@ from fmeval.eval_algorithms import (
     GOV_REPORT,
 )
 from fmeval.eval_algorithms.general_semantic_robustness import (
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
+    RANDOM_UPPERCASE,
+    ADD_REMOVE_WHITESPACE,
 )
 from fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, ROUGE_SCORE, BERT_SCORE
 from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
@@ -177,7 +177,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_BERT_SCORE, value=0.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(
-                    num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
+                    num_perturbations=2, perturbation_type=RANDOM_UPPERCASE
                 ),
             ),
             TestCaseSummarizationAccuracySemanticRobustnessEvaluateSample(
@@ -210,7 +210,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_BERT_SCORE, value=0.25),
                 ],
                 config=SummarizationAccuracySemanticRobustnessConfig(
-                    num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
+                    num_perturbations=2, perturbation_type=ADD_REMOVE_WHITESPACE
                 ),
             ),
         ],
@@ -388,7 +388,7 @@ class TestSummarizationAccuracySemanticRobustness:
                 bertscore_model_type="distilbert-base-uncased",
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
-                "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
+                "acceptable values: dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
             ),
         ],
     )

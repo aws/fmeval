@@ -23,8 +23,8 @@ from fmeval.eval_algorithms import (
 from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,
     ClassificationAccuracySemanticRobustness,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
+    RANDOM_UPPERCASE,
+    ADD_REMOVE_WHITESPACE,
     BUTTER_FINGER,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
 )
@@ -107,7 +107,7 @@ class TestClassificationAccuracySemanticRobustness:
                 valid_labels=["1", "2"],
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
-                "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
+                "acceptable values: dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
             ),
         ],
     )
@@ -187,7 +187,7 @@ class TestClassificationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=["1", "2", "3", "4", "5"], num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
+                    valid_labels=["1", "2", "3", "4", "5"], num_perturbations=2, perturbation_type=RANDOM_UPPERCASE
                 ),
             ),
             TestCaseClassificationAccuracySemanticRobustnessEvaluateSample(
@@ -201,7 +201,7 @@ class TestClassificationAccuracySemanticRobustness:
                     EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
                 ],
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=["1", "2", "3", "4", "5"], num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
+                    valid_labels=["1", "2", "3", "4", "5"], num_perturbations=2, perturbation_type=ADD_REMOVE_WHITESPACE
                 ),
             ),
         ],
