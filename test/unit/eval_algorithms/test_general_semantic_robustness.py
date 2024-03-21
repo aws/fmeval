@@ -179,7 +179,7 @@ class TestGeneralSemanticRobustness:
         elif perturbation_type == RANDOM_UPPERCASE:
             assert isinstance(perturbation, RandomUppercase)
             assert perturbation.num_perturbations == config.num_perturbations
-            assert perturbation.uppercase_fraction == config.random_uppercase_fraction
+            assert perturbation.uppercase_fraction == config.random_uppercase_corrupt_proportion
         else:
             assert isinstance(perturbation, AddRemoveWhitespace)
             assert perturbation.num_perturbations == config.num_perturbations

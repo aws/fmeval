@@ -76,7 +76,7 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
         compute differences between all pairs of outputs, i.e. between comb(num_baseline_samples, 2) pairs.
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed.
         Used when perturbation_type is BUTTER_FINGER.
-    :param random_uppercase_fraction: Fraction of characters to be changed to uppercase.
+    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase.
         Used when perturbation_type is RANDOM_UPPERCASE.
     :param whitespace_remove_prob: The probability of removing a whitespace character.
         Used when perturbation_type is ADD_REMOVE_WHITESPACE.
@@ -89,7 +89,7 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     num_perturbations: int = 5
     num_baseline_samples: int = 4
     butter_finger_perturbation_prob: float = 0.1
-    random_uppercase_fraction: float = 0.1
+    random_uppercase_corrupt_proportion: float = 0.1
     whitespace_add_prob: float = 0.05
     whitespace_remove_prob: float = 0.1
     model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
@@ -179,7 +179,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                     for i in range(self.num_perturbations)
                 ],
                 num_perturbations=self.num_perturbations,
-                uppercase_fraction=eval_algorithm_config.random_uppercase_fraction,
+                uppercase_fraction=eval_algorithm_config.random_uppercase_corrupt_proportion,
             )
         else:
             self.perturbation_transform = AddRemoveWhitespace(
