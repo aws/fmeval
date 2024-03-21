@@ -338,7 +338,7 @@ class TestClassificationAccuracySemanticRobustness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 save_data=False,
                 expected_response=[
                     EvalOutput(
@@ -348,7 +348,7 @@ class TestClassificationAccuracySemanticRobustness:
                             EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                             EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         category_scores=None,
                         output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_my_custom_dataset.jsonl",
                     ),

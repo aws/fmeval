@@ -553,7 +553,7 @@ class TestSummarizationAccuracySemanticRobustness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 save_data=False,
                 dataset_with_scores=DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
                 expected_response=[
@@ -568,7 +568,7 @@ class TestSummarizationAccuracySemanticRobustness:
                             EvalScore(name="delta_bertscore", value=0.0),
                             EvalScore(name="delta_meteor", value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         category_scores=None,
                         output_path="/tmp/eval_results/summarization_accuracy_semantic_robustness_my_custom_dataset.jsonl",
                     ),

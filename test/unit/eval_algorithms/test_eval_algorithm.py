@@ -181,7 +181,7 @@ class TestEvalOutput:
             dataset_name="dataset1",
             eval_name="toxicity",
             output_path="/output/path",
-            prompt_template="$feature",
+            prompt_template="$model_input",
             dataset_scores=[EvalScore(name="score1", value=0.7), EvalScore("score2", 0.2)],
             category_scores=[
                 CategoryScore(name="cat1", scores=[EvalScore("score1", 1), EvalScore("score2", 2)]),
@@ -191,7 +191,7 @@ class TestEvalOutput:
             dataset_name="dataset1",
             eval_name="toxicity",
             output_path="/output/path",
-            prompt_template="$feature",
+            prompt_template="$model_input",
             dataset_scores=[EvalScore(name="score1", value=0.7), EvalScore("score2", 0.2)],
             category_scores=[
                 CategoryScore(name="cat2", scores=[EvalScore("score1", 1), EvalScore("score2", 2)]),
@@ -204,7 +204,7 @@ class TestEvalOutput:
             dataset_name="dataset1",
             eval_name="toxicity",
             output_path="/output/path",
-            prompt_template="$feature",
+            prompt_template="$model_input",
             dataset_scores=[EvalScore(name="score1", value=0.7), EvalScore("score2", 0.2)],
             category_scores=[
                 CategoryScore(name="cat1", scores=[EvalScore("score1", 1), EvalScore("score2", 2)]),
@@ -214,7 +214,7 @@ class TestEvalOutput:
             dataset_name="dataset2",
             eval_name="toxicity",
             output_path="/output/path",
-            prompt_template="$feature",
+            prompt_template="$model_input",
             dataset_scores=[EvalScore(name="score1", value=0.7), EvalScore("score2", 0.2)],
             category_scores=[
                 CategoryScore(name="cat2", scores=[EvalScore("score1", 1), EvalScore("score2", 2)]),
@@ -259,6 +259,6 @@ def test_get_default_prompt_template():
     """
     assert (
         get_default_prompt_template("trivia_qa")
-        == "Respond to the following question with a short answer: $feature Answer:"
+        == "Respond to the following question with a short answer: $model_input"
     )
-    assert get_default_prompt_template("my_custom_dataset") == "$feature"
+    assert get_default_prompt_template("my_custom_dataset") == "$model_input"

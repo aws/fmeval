@@ -83,7 +83,7 @@ class TestClassificationAccuracySemanticRobustness:
         ca_semantic_robustness = ClassificationAccuracySemanticRobustness(eval_algorithm_config=casr_test_case.config)
         model_input = "Absolutely wonderful - silky and sexy and comfortable"
         prompt_template = "Classify the sentiment of the following review with 0 (negative sentiment) "
-        "or 1 (positive sentiment). Review: $feature. Classification:"
+        "or 1 (positive sentiment). Review: $model_input. Classification:"
         eval_scores = ca_semantic_robustness.evaluate_sample(
             model_input=model_input,
             model=hf_model_runner,
@@ -382,7 +382,7 @@ class TestClassificationAccuracySemanticRobustness:
         else:
             ca_semantic_robustness = ClassificationAccuracySemanticRobustness()
         prompt_template = "Classify the sentiment of the following review with 0 (negative sentiment) "
-        "or 1 (positive sentiment). Review: $feature. Classification:"
+        "or 1 (positive sentiment). Review: $model_input. Classification:"
         dataset_config = DATASET_CONFIGS[WOMENS_CLOTHING_ECOMMERCE_REVIEWS]
         eval_output = ca_semantic_robustness.evaluate(
             model=hf_model_runner,
