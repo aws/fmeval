@@ -345,7 +345,7 @@ class TestQAAccuracy:
             ),
             TestCaseQAAccuracyEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Answer: $feature",
+                prompt_template="Answer: $model_input",
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -360,7 +360,7 @@ class TestQAAccuracy:
                     EvalOutput(
                         eval_name="qa_accuracy",
                         dataset_name="my_custom_dataset",
-                        prompt_template="Answer: $feature",
+                        prompt_template="Answer: $model_input",
                         dataset_scores=DATASET_SCORES,
                         category_scores=CATEGORY_SCORES,
                         output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
@@ -369,7 +369,7 @@ class TestQAAccuracy:
             ),
             TestCaseQAAccuracyEvaluate(
                 input_dataset=QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Answer: $feature",
+                prompt_template="Answer: $model_input",
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -384,7 +384,7 @@ class TestQAAccuracy:
                     EvalOutput(
                         eval_name="qa_accuracy",
                         dataset_name="my_custom_dataset",
-                        prompt_template="Answer: $feature",
+                        prompt_template="Answer: $model_input",
                         dataset_scores=DATASET_SCORES,
                         category_scores=None,
                         output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",

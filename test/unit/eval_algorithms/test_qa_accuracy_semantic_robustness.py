@@ -522,7 +522,7 @@ class TestQAAccuracySemanticRobustness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                prompt_template="$feature",
+                prompt_template="$model_input",
                 save_data=False,
                 expected_response=[
                     EvalOutput(
@@ -540,7 +540,7 @@ class TestQAAccuracySemanticRobustness:
                             EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=0.0),
                             EvalScore(name=DELTA_RECALL_OVER_WORDS, value=0.0),
                         ],
-                        prompt_template="$feature",
+                        prompt_template="$model_input",
                         category_scores=None,
                         output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     ),

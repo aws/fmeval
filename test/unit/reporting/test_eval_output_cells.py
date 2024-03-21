@@ -1,6 +1,6 @@
 from unittest.mock import patch, Mock, call, MagicMock
 
-from fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore, EvalAlgorithm
+from fmeval.eval_algorithms import EvalOutput, EvalScore, CategoryScore, EvalAlgorithm, DEFAULT_PROMPT_TEMPLATE
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
 from fmeval.reporting.cells import BarPlotCell, TableCell
 from fmeval.reporting.eval_output_cells import (
@@ -411,7 +411,7 @@ class TestEvalOutputCells:
         eval_output = EvalOutput(
             eval_name="summarization_accuracy",
             dataset_name="Dataset 1",
-            prompt_template="prompt",
+            prompt_template="Summarize the following: $model_input",
             dataset_scores=dataset_scores,
             category_scores=category_scores,
         )
@@ -422,7 +422,7 @@ class TestEvalOutputCells:
         dataset.select_columns = Mock()
         with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
-            expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
+            expected_cell = "#### Custom Dataset: Dataset 1  \n\nWe sampled 10 records out of 10 in the full dataset.  \n\n**Prompt Template:** Summarize the following: $model_input  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell"
             assert str(cell) == expected_cell
 
     def test_eval_output_cell_built_in_dataset(self):
@@ -457,7 +457,6 @@ class TestEvalOutputCells:
         eval_output = EvalOutput(
             eval_name="summarization_accuracy",
             dataset_name="gov_report",
-            prompt_template="prompt",
             dataset_scores=dataset_scores,
             category_scores=category_scores,
         )
@@ -467,7 +466,7 @@ class TestEvalOutputCells:
         dataset.select_columns = Mock()
         with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output, dataset=dataset)
-            expected_cell = '#### Built-in Dataset: <a style="color:#006DAA;" href="https://gov-report-data.github.io/">Government Report</a>  \n\nA dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets. We sampled 10 records out of 7238 in the full dataset.  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
+            expected_cell = f'#### Built-in Dataset: <a style="color:#006DAA;" href="https://gov-report-data.github.io/">Government Report</a>  \n\nA dataset including a long-form summarization benchmark. It contains significantly longer documents (9.4k words) and summaries (553 words) than most existing datasets. We sampled 10 records out of 7238 in the full dataset.  \n\n**Prompt Template:** Summarize the following text in a few sentences: {DEFAULT_PROMPT_TEMPLATE}  \n\n  \n\nscore_cell  \n\nscore_cell  \n\nscore_cell'
             assert str(cell) == expected_cell
 
     def test_eval_output_cell_eval_error(self):
@@ -479,10 +478,9 @@ class TestEvalOutputCells:
         eval_output = EvalOutput(
             eval_name="summarization accuracy",
             dataset_name="Dataset 1",
-            prompt_template="prompt",
             error="The summarization accuracy evaluation failed.",
         )
         with patch("fmeval.reporting.eval_output_cells.ScoreCell", return_value="score_cell"):
             cell = EvalOutputCell(eval_output=eval_output)
-            expected_cell = "#### Custom Dataset: Dataset 1  \n\n  \n\n  \n\n**This evaluation failed with the error message: The summarization accuracy evaluation failed.**"
+            expected_cell = "#### Custom Dataset: Dataset 1  \n\n  \n\n**Prompt Template:** No prompt template was provided for this dataset.  \n\n  \n\n**This evaluation failed with the error message: The summarization accuracy evaluation failed.**"
             assert str(cell) == expected_cell

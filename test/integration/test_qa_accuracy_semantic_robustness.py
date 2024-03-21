@@ -32,7 +32,7 @@ os.environ["PARALLELIZATION_FACTOR"] = "2"
 sm_model_runner_prompt_template = """
     <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
     Do not repeat the question. Do not answer in complete sentences. <</SYS>>
-    Question: $feature [/INST]
+    Question: $model_input [/INST]
     """
 
 

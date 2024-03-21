@@ -1,10 +1,9 @@
-import re
-from typing import NamedTuple, List, Optional
-from unittest.mock import patch, MagicMock
-
-import nltk
 import pytest
+import re
 import ray
+
+from typing import NamedTuple, Optional
+from unittest.mock import Mock, patch
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
@@ -17,23 +16,16 @@ from fmeval.eval_algorithms import (
     CategoryScore,
     EvalOutput,
     EvalScore,
-    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    DEFAULT_PROMPT_TEMPLATE,
-    GIGAWORD,
-    GOV_REPORT,
 )
+from fmeval.helper_models import BertscoreModel
+from fmeval.transforms.common import GetModelResponse, GeneratePrompt
+from fmeval.transforms.summarization_accuracy_metrics import ROUGE_L
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
     SummarizationAccuracy,
     METEOR_SCORE,
     ROUGE_SCORE,
-    ROUGE_2,
-    ROUGE_1,
-    ROUGE_L,
     BERT_SCORE,
-    get_meteor_score,
-    get_rouge_score,
-    add_score_to_dataset,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -123,453 +115,316 @@ def assert_eval_output(expected_eval_output: EvalOutput, actual_eval_output: Eva
 
 class TestSummarizationAccuracy:
     @fixture(scope="module")
-    def config(self) -> SummarizationAccuracyConfig:
-        return SummarizationAccuracyConfig()
+    def eval_algo(self) -> SummarizationAccuracy:
+        return SummarizationAccuracy(SummarizationAccuracyConfig(), use_ray=False)
 
-    @fixture(scope="module")
-    def load_meteor_helpers(self):
-        nltk.download("wordnet")
-        nltk.download("punkt")
-        nltk.download("omw-1.4")
+    @pytest.mark.parametrize("use_ray", [True, False])
+    @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
+    def test_init(self, create_shared_resource, use_ray):
+        """
+        GIVEN valid arguments.
+        WHEN a SummarizationAccuracy is initialized.
+        THEN create_shared_resource is called when use_ray is True,
+            and not called when use_ray is False.
+        """
+        SummarizationAccuracy(SummarizationAccuracyConfig(), use_ray=use_ray)
+        if use_ray:
+            create_shared_resource.assert_called_once()
+        else:
+            create_shared_resource.assert_not_called()
 
-    class TestCaseSummarizationAccuracyEvaluateSample(NamedTuple):
-        model_output: str
-        target_output: str
-        expected_response: List[EvalScore]
+    class TestCaseSummarizationAccuracyInvalidConfig(NamedTuple):
         rouge_type: str
-
-    class TestCaseSummarizationAccuracyEvaluateSampleInvalid(NamedTuple):
-        model_output: str
-        target_output: Optional[str]
-        expected_error_message: str
+        bertscore_model_type: str
+        err_msg: str
 
     @pytest.mark.parametrize(
-        "test_case",
+        "rouge_type, bertscore_model_type, err_msg",
         [
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="I like cake.",
-                target_output="I like cake.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.9921875),
-                    EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_2,
+            TestCaseSummarizationAccuracyInvalidConfig(
+                rouge_type="rouge3",
+                bertscore_model_type="n/a",
+                err_msg="Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig. Please choose "
+                "from acceptable values: ['rouge1', 'rouge2', 'rougeL'].",
             ),
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
-                    EvalScore(name=ROUGE_SCORE, value=0.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_2,
-            ),
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="I like cake.",
-                target_output="I like cake.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.9921875),
-                    EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_1,
-            ),
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
-                    EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_1,
-            ),
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="I like cake.",
-                target_output="I like cake.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.9921875),
-                    EvalScore(name=ROUGE_SCORE, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_L,
-            ),
-            TestCaseSummarizationAccuracyEvaluateSample(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_response=[
-                    EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
-                    EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
-                ],
-                rouge_type=ROUGE_L,
+            TestCaseSummarizationAccuracyInvalidConfig(
+                rouge_type="rouge1",
+                bertscore_model_type="distilbert-base-uncased",
+                err_msg="Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
+                "SummarizationAccuracyConfig. Please choose from acceptable values: ["
+                "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli'].",
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.get_bert_score")
-    def test_summarization_accuracy_evaluate_sample(self, mock_get_bert_score, bertscore_helper_model, test_case):
+    def test_summarization_accuracy_invalid_config(self, rouge_type, bertscore_model_type, err_msg):
         """
-        GIVEN valid inputs
-        WHEN SummarizationAccuracy.evaluate_sample is called
-        THEN correct List of EvalScores is returned
+        GIVEN invalid inputs.
+        WHEN a SummarizationAccuracyConfig is initialized.
+        THEN an exception with the correct error message is raised.
         """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
-        mock_get_bert_score.return_value = BERTSCORE_DUMMY_VALUE
-        config = SummarizationAccuracyConfig(rouge_type=test_case.rouge_type)
-        eval_algorithm = SummarizationAccuracy(config)
-        actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
-        for actual_eval_score, expected_eval_score in zip(actual_response, test_case.expected_response):
+        with pytest.raises(EvalAlgorithmClientError, match=re.escape(err_msg)):
+            SummarizationAccuracyConfig(rouge_type=rouge_type, model_type_for_bertscore=bertscore_model_type)
+
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
+    def test_evaluate_sample(self, bertscore_model):
+        """
+        GIVEN valid inputs.
+        WHEN SummarizationAccuracy.evaluate_sample is called.
+        THEN the correct list of EvalScores is returned.
+        """
+        # Mock the BertscoreModel class so that the actual model doesn't get loaded into memory.
+        bertscore_model_instance = Mock(spec=BertscoreModel)
+        bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
+        bertscore_model.return_value = bertscore_model_instance
+
+        model_output = "Berlin: Art, Heritage, Exhibitions Hub."
+        target_output = "Berlin: an art metropolis."
+        expected_response = [
+            EvalScore(name=METEOR_SCORE, value=0.5009920634920636),
+            EvalScore(name=ROUGE_SCORE, value=0.4444444444444445),
+            EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
+        ]
+        config = SummarizationAccuracyConfig(rouge_type=ROUGE_L)
+        eval_algorithm = SummarizationAccuracy(config, use_ray=False)
+        actual_response = eval_algorithm.evaluate_sample(target_output, model_output)
+        for actual_eval_score, expected_eval_score in zip(actual_response, expected_response):
             assert actual_eval_score.name == expected_eval_score.name
             assert actual_eval_score.value == pytest.approx(expected_eval_score.value, rel=1e-5)
 
     @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyEvaluateSampleInvalid(
-                model_output="I like cake.",
-                target_output=None,
-                expected_error_message="Missing required input: target_output, for Summarization Accuracy "
-                "evaluate_sample",
-            ),
-            TestCaseSummarizationAccuracyEvaluateSampleInvalid(
-                model_output=None,
-                target_output="I like cake.",
-                expected_error_message="Missing required input: model_output, for Summarization Accuracy "
-                "evaluate_sample",
-            ),
-        ],
+        "missing_col", [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name]
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    def test_summarization_accuracy_evaluate_sample_invalid_input(self, bertscore_helper_model, test_case, config):
-        """
-        GIVEN invalid inputs
-        WHEN SummarizationAccuracy.evaluate_sample is called
-        THEN correct exception with proper message is raised
-        """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
-
-        eval_algorithm = SummarizationAccuracy(config)
-        with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
-            eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
-
-    @pytest.mark.parametrize(
-        "rouge_type, bertscore_model_type, expected_error_message",
-        [
-            (
-                "rouge3",
-                None,
-                "Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig, please choose "
-                "from acceptable values: ['rouge1', 'rouge2', 'rougeL']",
-            ),
-            (
-                "rouge1",
-                "distilbert-base-uncased",
-                "Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
-                "SummarizationAccuracyConfig, please choose from acceptable values: ["
-                "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli']",
-            ),
-        ],
-    )
-    def test_summarization_accuracy_invalid_config(self, rouge_type, bertscore_model_type, expected_error_message):
-        with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
-            SummarizationAccuracyConfig(rouge_type=rouge_type, model_type_for_bertscore=bertscore_model_type)
-
-    class TestCaseSummarizationAccuracyEvaluate(NamedTuple):
-        input_dataset: Dataset
-        prompt_template: Optional[str]
-        dataset_config: Optional[DataConfig]
-        input_dataset_with_generated_model_output: Optional[Dataset]
-        expected_response: List[EvalOutput]
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            # Built-in datasets evaluate for dataset without category
-            TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
-                        dataset_name=GIGAWORD,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_gigaword.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
-                        dataset_name=GOV_REPORT,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_gov_report.jsonl",
-                    ),
-                ],
-            ),
-            # Built-in datasets evaluate for dataset with category
-            TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET.drop_columns(
-                    cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GIGAWORD],
-                        dataset_name=GIGAWORD,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_gigaword.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[GOV_REPORT],
-                        dataset_name=GOV_REPORT,
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=[
-                            CategoryScore(
-                                name="dummy_category_1",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                            CategoryScore(
-                                name="dummy_category_2",
-                                scores=[
-                                    EvalScore(name="meteor", value=0.2),
-                                    EvalScore(name="rouge", value=0.2),
-                                    EvalScore(name="bertscore", value=0.2),
-                                ],
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/summarization_accuracy_gov_report.jsonl",
-                    ),
-                ],
-            ),
-            # Custom dataset evaluate with input prompt template
-            TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="Summarise: $feature",
-                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template="Summarise: $feature",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            # Custom dataset evaluate without input prompt template
-            TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(
-                    cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
-    def test_summarization_accuracy_evaluate(
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
+    def test_evaluate_dataset_validation_failure(
         self,
-        add_score_to_dataset,
-        bertscore_helper_model,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
+        get_dataset_configs,
         get_dataset,
-        model,
-        test_case,
-        config,
+        bertscore_model,
+        missing_col,
+        eval_algo,
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN SummarizationAccuracy evaluate() method is called
-        THEN correct EvalOutput is returned
+        GIVEN a dataset that is missing a required column.
+        WHEN SummarizationAccuracy.evaluate is called.
+        THEN validate_dataset raises an exception.
         """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        get_dataset_configs.return_value = [Mock()]
+        required_cols = {DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name}
+        mock_dataset = Mock()
+        mock_dataset.columns = Mock(return_value=list(required_cols - {missing_col}))
+        get_dataset.return_value = mock_dataset
 
-        add_score_to_dataset.return_value = DATASET_WITH_SCORES
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = SummarizationAccuracy(config)
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
-        )
-        assert save_dataset.called
-        assert len(actual_response) == len(test_case.expected_response)
-        for i in range(len(actual_response)):
-            assert_eval_output(actual_response[i], test_case.expected_response[i])
+        with pytest.raises(
+            EvalAlgorithmClientError, match=re.escape(f"Missing required column: {missing_col}, for evaluate() method")
+        ):
+            bertscore_model.return_value = Mock()
+            eval_algo.evaluate(
+                model=Mock(),
+                dataset_config=Mock(),
+                prompt_template="",
+            )
+
+    class TestCaseEvaluateDatasetWithoutModelOutputColumn(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        eval_output_prompt_template: str
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            # Built-in datasets evaluate for dataset without category
-            TestCaseSummarizationAccuracyEvaluate(
-                input_dataset=DATASET_NO_CATEGORY.drop_columns(cols=[DatasetColumns.PROMPT.value.name]),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="Summarise: $feature",
-                input_dataset_with_generated_model_output=DATASET_NO_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="summarization_accuracy",
-                        prompt_template=None,
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[
-                            EvalScore(name="meteor", value=0.2),
-                            EvalScore(name="rouge", value=0.2),
-                            EvalScore(name="bertscore", value=0.2),
-                        ],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
+            TestCaseEvaluateDatasetWithoutModelOutputColumn(
+                user_provided_prompt_template="Summarize $model_input",
+                eval_output_prompt_template="Summarize $model_input",
+            ),
+            TestCaseEvaluateDatasetWithoutModelOutputColumn(
+                user_provided_prompt_template=None,
+                eval_output_prompt_template="$model_input",
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.generate_model_predict_response_for_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.add_score_to_dataset")
-    def test_summarization_accuracy_evaluate_without_model(
+    @patch("fmeval.transforms.transform_pipeline.TransformPipeline.execute")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelResponse")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GeneratePrompt")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
+    def test_evaluate_where_dataset_is_missing_model_output(
         self,
-        add_score_to_dataset,
-        bertscore_helper_model,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
+        bertscore_model,
+        get_dataset_configs,
         get_dataset,
+        generate_prompt,
+        get_model_response,
+        pipeline_execute,
+        save_dataset,
         test_case,
-        config,
+        eval_algo,
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN SummarizationAccuracy evaluate() method is called
-        THEN correct EvalOutput is returned
+        GIVEN a valid dataset that doesn't contain a column for model outputs.
+        WHEN the SummarizationAccuracy evaluate method is called with save=True.
+        THEN the expected prompt-generation and model-invocation transforms are initialized,
+            EvalOutputs that are returned contain the correct scores,
+            the EvalOutputs indicate that the correct prompt templates were used,
+            and save_dataset is called.
         """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
+        # Set up mocks
+        model_runner = Mock()
+        bertscore_model.return_value = Mock()
 
-        add_score_to_dataset.return_value = DATASET_WITH_SCORES
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = SummarizationAccuracy(config)
-        actual_response = eval_algorithm.evaluate(
-            model=None, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=False
+        generate_prompt_instance = Mock(spec=GeneratePrompt)
+        generate_prompt_instance.output_keys = ["prompt"]
+        generate_prompt.return_value = generate_prompt_instance
+
+        get_model_response_instance = Mock(spec=GetModelResponse)
+        get_model_response_instance.output_keys = ["model_output"]
+        get_model_response.return_value = get_model_response_instance
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name]
         )
-        assert not save_dataset.called
-        assert not generate_model_predict_response_for_dataset.called
-        assert len(actual_response) == len(test_case.expected_response)
-        for i in range(len(actual_response)):
-            assert_eval_output(actual_response[i], test_case.expected_response[i])
+        get_dataset.return_value = mock_dataset
 
-    class TestCaseSummarizationAccuracyEvaluateInvalid(NamedTuple):
+        pipeline_execute.return_value = DATASET_WITH_SCORES
+
+        # Expected outputs from calling `evaluate`.
+        expected_dataset_scores = [
+            EvalScore(name="meteor", value=0.2),
+            EvalScore(name="rouge", value=0.2),
+            EvalScore(name="bertscore", value=0.2),
+        ]
+        expected_category_scores = [
+            CategoryScore(
+                name="dummy_category_1",
+                scores=[
+                    EvalScore(name="meteor", value=0.2),
+                    EvalScore(name="rouge", value=0.2),
+                    EvalScore(name="bertscore", value=0.2),
+                ],
+            ),
+            CategoryScore(
+                name="dummy_category_2",
+                scores=[
+                    EvalScore(name="meteor", value=0.2),
+                    EvalScore(name="rouge", value=0.2),
+                    EvalScore(name="bertscore", value=0.2),
+                ],
+            ),
+        ]
+        expected_outputs = [
+            EvalOutput(
+                eval_name="summarization_accuracy",
+                prompt_template=test_case.eval_output_prompt_template,
+                dataset_name="my_custom_dataset",
+                dataset_scores=expected_dataset_scores,
+                category_scores=expected_category_scores,
+                output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
+            )
+        ]
+
+        # Call `evaluate` and validate outputs.
+        eval_outputs = eval_algo.evaluate(
+            model=model_runner,
+            dataset_config=dataset_config,
+            prompt_template=test_case.user_provided_prompt_template,
+            save=True,
+        )
+
+        generate_prompt.assert_called_with(
+            input_keys=[DatasetColumns.MODEL_INPUT.value.name],
+            output_keys=[DatasetColumns.PROMPT.value.name],
+            prompt_template=test_case.eval_output_prompt_template,
+        )
+        get_model_response.assert_called_with(
+            input_key_to_response_keys={DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]},
+            model_runner=model_runner,
+        )
+        save_dataset.assert_called_once()
+        assert len(eval_outputs) == len(expected_outputs)
+        for expected, actual in zip(expected_outputs, eval_outputs):
+            assert_eval_output(expected, actual)
+
+    @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
+    @patch("fmeval.transforms.transform_pipeline.TransformPipeline.execute")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelResponse")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GeneratePrompt")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
+    def test_evaluate_where_dataset_contains_model_output(
+        self,
+        bertscore_model,
+        get_dataset_configs,
+        get_dataset,
+        generate_prompt,
+        get_model_response,
+        pipeline_execute,
+        save_dataset,
+        eval_algo,
+    ):
+        """
+        GIVEN a valid dataset that already contains a column for model outputs.
+        WHEN the SummarizationAccuracy evaluate method is called with save=False.
+        THEN the prompt-generation and model-invocation transforms are not initialized,
+            EvalOutputs that are returned contain the correct scores,
+            the EvalOutputs indicate that the correct prompt templates were used,
+            and save_dataset is not called.
+        """
+        # Set up mocks
+        bertscore_model.return_value = Mock()
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        mock_dataset.columns = Mock(
+            return_value=[
+                DatasetColumns.TARGET_OUTPUT.value.name,
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.MODEL_OUTPUT.value.name,
+            ]
+        )
+        get_dataset.return_value = mock_dataset
+
+        pipeline_execute.return_value = DATASET_WITH_SCORES.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
+
+        # Expected outputs from calling `evaluate`.
+        expected_outputs = [
+            EvalOutput(
+                eval_name="summarization_accuracy",
+                prompt_template=None,
+                dataset_name="my_custom_dataset",
+                dataset_scores=[
+                    EvalScore(name="meteor", value=0.2),
+                    EvalScore(name="rouge", value=0.2),
+                    EvalScore(name="bertscore", value=0.2),
+                ],
+                category_scores=None,
+                output_path="/tmp/eval_results/summarization_accuracy_my_custom_dataset.jsonl",
+            )
+        ]
+
+        # Call `evaluate` and validate outputs.
+        eval_outputs = eval_algo.evaluate(
+            model=None, dataset_config=dataset_config, prompt_template="Summarize $model_input", save=False
+        )
+
+        generate_prompt.assert_not_called()
+        get_model_response.assert_not_called()
+        save_dataset.assert_not_called()
+        assert len(eval_outputs) == len(expected_outputs)
+        for expected, actual in zip(expected_outputs, eval_outputs):
+            assert_eval_output(expected, actual)
+
+    class TestCaseEvaluateInvalid(NamedTuple):
         input_dataset: Dataset
         dataset_config: Optional[DataConfig]
         prompt_template: Optional[str]
@@ -579,7 +434,7 @@ class TestSummarizationAccuracy:
     @pytest.mark.parametrize(
         "test_case",
         [
-            TestCaseSummarizationAccuracyEvaluateInvalid(
+            TestCaseEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
                     cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
                 ),
@@ -588,7 +443,7 @@ class TestSummarizationAccuracy:
                 model_provided=False,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
-            TestCaseSummarizationAccuracyEvaluateInvalid(
+            TestCaseEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
                     cols=[DatasetColumns.PROMPT.value.name, DatasetColumns.MODEL_OUTPUT.value.name]
                 ),
@@ -605,7 +460,7 @@ class TestSummarizationAccuracy:
                 prompt_template=None,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
-            TestCaseSummarizationAccuracyEvaluateInvalid(
+            TestCaseEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
                     cols=[
                         DatasetColumns.PROMPT.value.name,
@@ -626,7 +481,7 @@ class TestSummarizationAccuracy:
                 model_provided=True,
                 expected_error_message="Missing required column: target_output, for evaluate() method",
             ),
-            TestCaseSummarizationAccuracyEvaluateInvalid(
+            TestCaseEvaluateInvalid(
                 input_dataset=DATASET_NO_CATEGORY.drop_columns(
                     cols=[
                         DatasetColumns.PROMPT.value.name,
@@ -651,107 +506,20 @@ class TestSummarizationAccuracy:
     )
     @patch("fmeval.model_runners.model_runner.ModelRunner")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
     def test_summarization_accuracy_evaluate_invalid_input(
-        self, bertscore_helper_model, get_dataset, model, test_case, config
+        self, bertscore_model, get_dataset, model, test_case, eval_algo
     ):
         """
-        GIVEN invalid inputs
-        WHEN SummarizationAccuracy.evaluate_sample is called
-        THEN correct exception with proper message is raised
+        GIVEN invalid inputs.
+        WHEN SummarizationAccuracy evaluate method is called.
+        THEN an exception with the proper message is raised.
         """
-        # We mock the BertscoreHelperModel class so that an actual ray actor doesn't get created
-        bertscore_helper_model_instance = MagicMock()
-        bertscore_helper_model.return_value = bertscore_helper_model_instance
-
-        eval_algorithm = SummarizationAccuracy(config)
+        bertscore_model.return_value = Mock()
         get_dataset.return_value = test_case.input_dataset
         if not test_case.model_provided:
             model = None
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            eval_algorithm.evaluate(
+            eval_algo.evaluate(
                 model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
             )
-
-    class TestCaseSummarizationAccuracyScores(NamedTuple):
-        model_output: str
-        target_output: str
-        rouge_type: Optional[str]
-        expected_score: float
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=0.9921875, rouge_type=None
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.5009920634920636,
-                rouge_type=None,
-            ),
-        ],
-    )
-    def test_get_meteor_score(self, test_case, load_meteor_helpers):
-        assert pytest.approx(test_case.expected_score, rel=1e-5) == get_meteor_score(
-            test_case.target_output,
-            test_case.model_output,
-        )
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge1"
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.0,
-                rouge_type="rouge1",
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rouge2"
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.0,
-                rouge_type="rouge2",
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="I like cake.", target_output="I like cake.", expected_score=1.0, rouge_type="rougeL"
-            ),
-            TestCaseSummarizationAccuracyScores(
-                model_output="Berlin: Art, Heritage, Exhibitions Hub.",
-                target_output="Berlin: an art metropolis.",
-                expected_score=0.0,
-                rouge_type="rougeL",
-            ),
-        ],
-    )
-    def test_get_rouge_score(self, test_case, load_meteor_helpers, config):
-        assert pytest.approx(test_case.expected_score, rel=1e-5) == get_rouge_score(
-            test_case.target_output,
-            test_case.model_output,
-            config=config,
-        )
-
-    @pytest.mark.parametrize(
-        "input_dataset",
-        [DATASET],
-    )
-    def test_add_score_to_dataset(self, input_dataset, config):
-        response_dataset = add_score_to_dataset(
-            dataset=input_dataset,
-            score_name_to_func={ROUGE_SCORE: get_rouge_score},
-            config=config,
-            helper_model=MagicMock(),
-        )
-        assert response_dataset.count() == input_dataset.count()
-        response_dataset_df = response_dataset.to_pandas()
-        response_dataset_df = response_dataset_df.sort_values(by=["rouge"])
-        assert response_dataset_df.iloc[0]["rouge"] == 0.0
-        assert response_dataset_df.iloc[1]["rouge"] == 0.0
-        assert response_dataset_df.iloc[2]["rouge"] == 1.0

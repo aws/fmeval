@@ -53,7 +53,7 @@ class TestJsonContentComposer:
 
 class TestPromptComposer:
     def test_compose(self):
-        composer = PromptComposer(template="Answer the following question: $feature")
+        composer = PromptComposer(template="Answer the following question: $model_input")
         prompt = "London is the capital of?"
         expected_result = "Answer the following question: London is the capital of?"
         result = composer.compose(prompt)
