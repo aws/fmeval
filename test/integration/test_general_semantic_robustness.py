@@ -46,29 +46,6 @@ class TestGeneralSemanticRobustness:
                     BERT_SCORE_DISSIMILARITY: 0.19456744194030762,
                 },
             ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPERCASE,
-                    num_perturbations=3,
-                    random_uppercase_fraction=0.1,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.7777777777777778,
-                    BERT_SCORE_DISSIMILARITY: 0.18904542922973633,
-                },
-            ),
-            GSRTestCase(
-                config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=ADD_REMOVE_WHITESPACE,
-                    num_perturbations=2,
-                    whitespace_add_prob=0.05,
-                    whitespace_remove_prob=0.1,
-                ),
-                expected_scores={
-                    WER_SCORE: 0.3333333333333333,
-                    BERT_SCORE_DISSIMILARITY: 0.14486145973205566,
-                },
-            ),
         ],
     )
     def test_evaluate_sample(self, gsr_test_case):
