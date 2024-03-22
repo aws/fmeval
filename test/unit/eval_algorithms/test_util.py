@@ -982,7 +982,7 @@ def test_evaluate_no_model_output_column(
         [call(mock_model, test_case.dataset_prompt_template) for _ in range(2)]
     )
     mock_transform_pipeline.assert_has_calls(
-        [call(invocation_pipeline, mock_pipeline) for invocation_pipeline in invocation_pipelines]
+        [call([invocation_pipeline, mock_pipeline]) for invocation_pipeline in invocation_pipelines]
     )
     mock_compute_and_aggregate.assert_has_calls(
         [

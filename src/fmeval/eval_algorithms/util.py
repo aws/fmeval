@@ -539,7 +539,7 @@ def evaluate(
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
-            pipeline_to_execute = TransformPipeline(model_invocation_pipeline, pipeline)
+            pipeline_to_execute = TransformPipeline([model_invocation_pipeline, pipeline])
 
         eval_output = compute_and_aggregate_metrics(
             pipeline_to_execute,
