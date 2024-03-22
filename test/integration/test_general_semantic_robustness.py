@@ -14,7 +14,7 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
 )
-from fmeval.eval_algorithms.semantic_robustness_utils import BUTTER_FINGER, RANDOM_UPPERCASE, ADD_REMOVE_WHITESPACE
+from fmeval.eval_algorithms.semantic_robustness_utils import ADD_REMOVE_WHITESPACE, BUTTER_FINGER
 
 from test.integration.models.model_runners import (
     sm_model_runner,
