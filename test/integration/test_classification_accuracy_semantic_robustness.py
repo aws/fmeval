@@ -13,8 +13,8 @@ from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustness,
     ClassificationAccuracySemanticRobustnessConfig,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
+    RANDOM_UPPERCASE,
+    ADD_REMOVE_WHITESPACE,
 )
 
 from test.integration.models.model_runners import (
@@ -53,7 +53,7 @@ class TestClassificationAccuracySemanticRobustness:
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
                     valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=RANDOM_UPPER_CASE,
+                    perturbation_type=RANDOM_UPPERCASE,
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
@@ -66,7 +66,7 @@ class TestClassificationAccuracySemanticRobustness:
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
                     valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
+                    perturbation_type=ADD_REMOVE_WHITESPACE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
@@ -169,7 +169,7 @@ class TestClassificationAccuracySemanticRobustness:
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
                     valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=RANDOM_UPPER_CASE,
+                    perturbation_type=RANDOM_UPPERCASE,
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
@@ -239,7 +239,7 @@ class TestClassificationAccuracySemanticRobustness:
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
                     valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
+                    perturbation_type=ADD_REMOVE_WHITESPACE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,

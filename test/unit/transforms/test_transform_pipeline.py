@@ -4,7 +4,6 @@ import pytest
 from unittest.mock import Mock, patch
 from typing import Any, List, NamedTuple, Dict
 
-from fmeval.constants import TRANSFORM_PIPELINE_MAX_SIZE
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt
 from fmeval.transforms.transform import Transform
@@ -70,12 +69,6 @@ class TestCaseInitFailure(NamedTuple):
                 "{GeneratePrompt(input_keys=['input_1'], output_keys=['output_1'], "
                 "args=[['input_1'], ['output_1'], '1'], kwargs={}): ['output_1']}"
             ),
-        ),
-        TestCaseInitFailure(
-            transforms=[
-                GeneratePrompt([f"input_{i}"], [f"output_{i}"], str(i)) for i in range(TRANSFORM_PIPELINE_MAX_SIZE + 1)
-            ],
-            err_msg=f"TransformPipeline initialized with {TRANSFORM_PIPELINE_MAX_SIZE + 1} Transforms.",
         ),
     ],
 )
