@@ -83,7 +83,7 @@ class CategoryScore:
 @dataclass(frozen=True)
 class EvalOutput:
     """
-    The class that contains evaluation scores from `EvalAlgorithmInterface`.
+    The class that contains evaluation scores from `EvalAlgorithm`.
 
     :param eval_name: The name of the evaluation
     :param dataset_name: The name of dataset used by eval_algo

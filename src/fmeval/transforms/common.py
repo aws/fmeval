@@ -27,6 +27,7 @@ class GeneratePrompt(Transform):
         """
         super().__init__(input_keys, output_keys, prompt_template)
         self.register_input_output_keys(input_keys, output_keys)
+        self.prompt_template = prompt_template
         self.prompt_composer = PromptComposer(prompt_template)
 
     @validate_call
@@ -41,7 +42,7 @@ class GeneratePrompt(Transform):
         return record
 
 
-class GetModelResponse(Transform):
+class GetModelResponses(Transform):
     """This transform invokes a ModelRunner's `predict` method and augments the input record with the response payload.
 
     An instance of this transform can be configured to get model responses for multiple inputs.
@@ -53,7 +54,7 @@ class GetModelResponse(Transform):
         input_key_to_response_keys: Dict[str, List[Tuple[str]]],
         model_runner: ModelRunner,
     ):
-        """GetModelResponse initializer.
+        """GetModelResponses initializer.
 
         :param input_key_to_response_keys: Maps an input key (corresponding to
             the input payload to the model) to a list of tuples, where each tuple

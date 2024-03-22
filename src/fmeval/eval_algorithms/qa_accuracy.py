@@ -24,10 +24,7 @@ from fmeval.eval_algorithms.util import (
     save_dataset,
     generate_output_dataset_path,
 )
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
@@ -230,7 +227,6 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: QA Accuracy eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
 
     def evaluate(
@@ -250,7 +246,7 @@ class QAAccuracy(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithm.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :returns: List of EvalOutput objects. Current implementation returns only one score.
@@ -314,7 +310,7 @@ class QAAccuracy(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -325,7 +321,7 @@ class QAAccuracy(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

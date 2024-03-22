@@ -11,17 +11,14 @@ import fmeval.util as util
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.util import save_dataset, generate_output_dataset_path
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
-    EvalAlgorithm,
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
     DATASET_CONFIGS,
     get_default_prompt_template,
+    EvalAlgorithm,
 )
 from fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -68,7 +65,6 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Factual knowledge eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = FACTUAL_KNOWLEDGE
         self._eval_algorithm_config = eval_algorithm_config
 
@@ -123,7 +119,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithm.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :return: List of EvalOutput objects. Current implementation returns only one score.
@@ -180,7 +176,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -191,7 +187,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[FACTUAL_KNOWLEDGE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

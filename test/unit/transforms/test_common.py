@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from typing import NamedTuple, List, Optional, Dict, Any, Tuple
 
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse, Mean
+from fmeval.transforms.common import GeneratePrompt, GetModelResponses, Mean
 from fmeval.util import EvalAlgorithmInternalError
 
 
@@ -45,7 +45,7 @@ def test_get_model_response_init_success():
     THEN the instance's attributes match what is expected.
     """
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
-        get_model_response = GetModelResponse(
+        get_model_response = GetModelResponses(
             input_key_to_response_keys={"prompt": [("model_output",)]}, model_runner=mock_model_runner
         )
         assert get_model_response.input_keys == ["prompt"]
@@ -85,13 +85,13 @@ class TestCaseGetModelResponseSuccess(NamedTuple):
 )
 def test_get_model_response_call_success(model_output, log_prob, response_keys, expected_result):
     """
-    GIVEN a GetModelResponse instance.
+    GIVEN a GetModelResponses instance.
     WHEN its __call__ method is called on a record.
     THEN the correct output is returned.
     """
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
         mock_model_runner.predict.return_value = (model_output, log_prob)
-        get_model_response = GetModelResponse(
+        get_model_response = GetModelResponses(
             input_key_to_response_keys={"input": response_keys}, model_runner=mock_model_runner
         )
         sample = {"input": "Hello"}
@@ -101,13 +101,13 @@ def test_get_model_response_call_success(model_output, log_prob, response_keys, 
 
 def test_get_model_response_call_multiple_inputs():
     """
-    GIVEN a GetModelResponse instance with multiple input keys configured.
+    GIVEN a GetModelResponses instance with multiple input keys configured.
     WHEN its __call__ method is called.
     THEN the correct output is returned.
     """
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
         mock_model_runner.predict.side_effect = [("output 1", -0.162), ("output 2", -0.189), ("output 3", -0.126)]
-        get_model_response = GetModelResponse(
+        get_model_response = GetModelResponses(
             input_key_to_response_keys={
                 "input_1": [("output_key_1", "log_prob_key_1"), ("output_key_2", "log_prob_key_2")],
                 "input_2": [("output_key_3", "log_prob_key_3")],
@@ -157,7 +157,7 @@ class TestCaseGetModelResponseFailure(NamedTuple):
 )
 def test_get_model_response_call_failure(model_output, log_prob, response_keys):
     """
-    GIVEN a GetModelResponse instance where the number of output keys corresponding to
+    GIVEN a GetModelResponses instance where the number of output keys corresponding to
         a particular input key does not match the number of non-null elements in its model runner's
         predict() response.
     WHEN its __call__ method is called.
@@ -166,7 +166,7 @@ def test_get_model_response_call_failure(model_output, log_prob, response_keys):
     sample = {"input": "Hello"}
     with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
         mock_model_runner.predict.return_value = (model_output, log_prob)
-        get_model_response = GetModelResponse(
+        get_model_response = GetModelResponses(
             input_key_to_response_keys={"input": response_keys},
             model_runner=mock_model_runner,
         )

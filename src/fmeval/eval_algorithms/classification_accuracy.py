@@ -18,13 +18,13 @@ from fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmConfig,
 )
 from fmeval.eval_algorithms import (
-    EvalAlgorithm,
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
     DATASET_CONFIGS,
     CategoryScore,
     get_default_prompt_template,
+    EvalAlgorithm,
 )
 from fmeval.eval_algorithms.util import (
     generate_prompt_column_for_dataset,
@@ -109,7 +109,6 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
         self._valid_labels = self._eval_algorithm_config.valid_labels
 
@@ -130,7 +129,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithm.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :returns: List of EvalOutput objects. Current implementation returns only one score.
@@ -250,7 +249,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=list(category_scores.values()) if category_scores else None,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -263,7 +262,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[CLASSIFICATION_ACCURACY_SCORE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

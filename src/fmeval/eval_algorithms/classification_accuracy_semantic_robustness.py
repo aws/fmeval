@@ -36,13 +36,13 @@ from fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmConfig,
 )
 from fmeval.eval_algorithms import (
-    EvalAlgorithm,
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
     DATASET_CONFIGS,
     get_default_prompt_template,
     DEFAULT_PROMPT_TEMPLATE,
+    EvalAlgorithm,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import PromptComposer
@@ -129,7 +129,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy Semantic Robustness eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
         self._classification_accuracy_eval_algo = ClassificationAccuracy(
@@ -181,7 +180,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithm.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :returns: A List of EvalOutput objects.
@@ -264,7 +263,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -277,7 +276,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[CLASSIFICATION_ACCURACY_SCORE, DELTA_CLASSIFICATION_ACCURACY_SCORE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

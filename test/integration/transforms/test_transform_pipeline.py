@@ -1,5 +1,5 @@
 from fmeval.data_loaders.util import get_dataset
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse
+from fmeval.transforms.common import GeneratePrompt, GetModelResponses
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.eval_algorithms import DATASET_CONFIGS, TREX
 from test.integration.models.model_runners import sm_model_runner
@@ -21,7 +21,7 @@ def test_pipeline_execution():
         prompt_template="Summarize the following text in one sentence: $model_input",
     )
 
-    get_model_response = GetModelResponse(
+    get_model_response = GetModelResponses(
         input_key_to_response_keys={gen_prompt.output_keys[0]: [("model_output",)]},
         model_runner=sm_model_runner,
     )

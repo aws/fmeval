@@ -151,7 +151,7 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
 
-        if not self.rouge_type in ROUGE_TYPES:
+        if self.rouge_type not in ROUGE_TYPES:
             raise EvalAlgorithmClientError(
                 f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig, "
                 f"please choose from acceptable values: {ROUGE_TYPES}"
@@ -187,7 +187,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
 
@@ -311,7 +310,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithm.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :return: List of EvalOutput objects.
@@ -362,7 +361,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -380,7 +379,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         DELTA_METEOR_SCORE,
                     ],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

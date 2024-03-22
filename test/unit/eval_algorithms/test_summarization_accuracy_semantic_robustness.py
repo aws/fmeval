@@ -21,7 +21,7 @@ from fmeval.eval_algorithms import (
     GIGAWORD,
     GOV_REPORT,
 )
-from fmeval.eval_algorithms.general_semantic_robustness import (
+from fmeval.eval_algorithms.semantic_robustness_utils import (
     RANDOM_UPPERCASE,
     ADD_REMOVE_WHITESPACE,
 )
