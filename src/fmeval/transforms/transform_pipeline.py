@@ -68,12 +68,21 @@ class TransformPipeline:
         :returns: The resulting Ray Dataset after all Transforms have been applied.
         """
         for transform in self.transforms:
-            dataset = dataset.map(
-                transform.__class__,
-                fn_constructor_args=transform.args,
-                fn_constructor_kwargs=transform.kwargs,
-                concurrency=(1, get_num_actors()),
-            ).materialize()
+            if not transform.batch_size:
+                dataset = dataset.map(
+                    transform.__class__,
+                    fn_constructor_args=transform.args,
+                    fn_constructor_kwargs=transform.kwargs,
+                    concurrency=(1, get_num_actors()),
+                ).materialize()
+            else:
+                dataset = dataset.map_batches(
+                    transform.__class__,
+                    batch_size=transform.batch_size if isinstance(transform.batch_size, int) else "default",
+                    fn_constructor_args=transform.args,
+                    fn_constructor_kwargs=transform.kwargs,
+                    concurrency=(1, get_num_actors()),
+                ).materialize()
         return dataset
 
     def execute_record(self, record: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from fmeval.transforms.util import validate_key_uniqueness
 from fmeval.util import assert_condition
@@ -59,6 +59,19 @@ class Transform(ABC):
             f"{self.__class__.__name__}(input_keys={self.input_keys}, output_keys={self.output_keys}, "
             f"args={list(self.args)}, kwargs={self.kwargs})"
         )
+
+    @property
+    def batch_size(self) -> Union[bool, int]:
+        """
+        Flag for batched computation of this transform.
+
+         :returns: If False, no batched computation is performed.
+                 If True or a non-negative integer is returned then this transform requires batch computation,
+                 in which case the `TransformPipeline.execute` will call `map_batch` upon processing this transform.
+                 If an integer is return then it will be used as batch size, otherwise map_batch will use a default
+                 value (the ray default, if using ray).
+        """
+        return False
 
     def register_input_output_keys(self, input_keys: List[str], output_keys: List[str], allow_duplicates: bool = False):
         """Assign self.input_keys and self.output_keys attributes.

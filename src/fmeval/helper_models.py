@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 import torch
 import transformers
 import evaluate as hf_evaluate
@@ -7,14 +9,24 @@ from typing import Dict, List
 from transformers import pipeline, AutoConfig
 
 
-class ToxigenModel:
+class ToxicityDetector(ABC):
+    """Base class for Toxicity detectors. To work alongside ToxicityScores transform"""
+
+    SCORE_NAMES: List[str]
+
+    @abstractmethod
+    def invoke_model(self, text_inputs: List[str]) -> Dict[str, List[float]]:
+        """Batch call to this toxicity detector model."""
+
+
+class ToxigenModel(ToxicityDetector):
     """Toxigen helper model.
 
     See https://huggingface.co/tomh/toxigen_roberta/tree/main
     """
 
     MODEL_NAME = "tomh/toxigen_roberta"
-    SCORE_NAME = "toxicity"
+    SCORE_NAMES = ["toxicity"]
 
     def __init__(self):
         """Load the helper model into memory."""
@@ -30,7 +42,7 @@ class ToxigenModel:
         """
         inference_output = self._model(text_inputs)
         return {
-            ToxigenModel.SCORE_NAME: [
+            ToxigenModel.SCORE_NAMES[0]: [
                 x["score"] if x["label"] == "LABEL_1" else 1.0 - x["score"] for x in inference_output
             ]
         }
@@ -40,7 +52,7 @@ class ToxigenModel:
         return self.__class__, ()
 
 
-class DetoxifyModel:
+class DetoxifyModel(ToxicityDetector):
     """Detoxify helper model.
 
     See https://github.com/unitaryai/detoxify
@@ -95,6 +107,7 @@ class DetoxifyModel:
         :param text_inputs: A list of text inputs for the model.
         :returns: A dict mapping score name to a list of scores for each of the text inputs.
         """
+        print('HERE', type(text_inputs), text_inputs)
         inputs = self._tokenizer(text_inputs, return_tensors="pt", truncation=True, padding=True).to(self._model.device)
         scores = torch.sigmoid(self._model(**inputs)[0]).cpu().detach().numpy()
         return {
@@ -167,3 +180,9 @@ class BertscoreModelTypes(Enum):
         Return a list of all the allowed models for computing BERTScore.
         """
         return [elem.value for elem in iter(cls)]
+
+
+if __name__ == '__main__':
+    detox = DetoxifyModel()
+    result = detox.invoke_model(['yes whatever', 'nope'])
+    print(result)

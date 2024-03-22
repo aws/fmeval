@@ -2,7 +2,9 @@ import re
 import pytest
 
 from unittest.mock import Mock, patch
-from typing import Any, List, NamedTuple, Dict
+from typing import Any, List, NamedTuple, Dict, Union
+
+import ray.data
 
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt
@@ -166,3 +168,38 @@ def test_execute_record():
     record = {"input": "asdf"}
     output_record = pipeline.execute_record(record)
     assert output_record == {"input": "asdf", "output_1": "asdf_1_a", "output_2": "asdf_2_b"}
+
+
+class TestBatchedTransform(Transform):
+    def __init__(self, inputs: List[str], outputs: List[str]):
+        super().__init__(inputs, outputs)
+        self.inputs = inputs
+        self.outputs = outputs
+        self.register_input_output_keys(inputs, outputs)
+
+    @property
+    def batch_size(self) -> Union[bool, int]:
+        return 2
+
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        for inp, out in zip(self.inputs, self.outputs):
+            stuff = record[inp]
+            print(len(stuff))
+            record[out] = [s + f"{i}" for i, s in enumerate(stuff)]
+        return record
+
+
+def test_batched_transform():
+    """
+    GIVEN a transform pipeline that contains a batched transform
+    WHEN the pipeline is executed
+    THEN the map_batch operation is executed as expected
+    """
+    dataset = ray.data.from_items(["this is", "a very important message"])
+    dummy = DummyTransform(["item"], ["output"], pos_arg=1, kw_arg=" lamp")
+    batched = TestBatchedTransform(inputs=dummy.output_keys, outputs=["batched-out"])
+    pipeline = TransformPipeline([dummy, batched])
+
+    items = pipeline.execute(dataset).take(2)
+    assert items[0]["batched-out"].endswith("0")
+    assert items[1]["batched-out"].endswith("1")
