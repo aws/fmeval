@@ -2,8 +2,14 @@ import re
 from unittest.mock import Mock
 
 import pytest
-from typing import NamedTuple, Set, Dict, Any, Optional, List
-from fmeval.transforms.util import validate_added_keys, validate_existing_keys, validate_key_uniqueness, validate_call
+from typing import NamedTuple, Set, Dict, Any, Optional, List, Tuple
+from fmeval.transforms.util import (
+    validate_added_keys,
+    validate_existing_keys,
+    validate_key_uniqueness,
+    validate_call,
+    create_output_key,
+)
 from fmeval.util import EvalAlgorithmInternalError
 
 
@@ -168,3 +174,29 @@ def test_validate_call_failure(input_keys, output_keys, err_msg):
 
     with pytest.raises(EvalAlgorithmInternalError, match=err_msg):
         validated_call_method(_self, {"input_key": "input"})
+
+
+class TestCaseCreateOutputKey(NamedTuple):
+    args: Tuple[Any]
+    kwargs: Dict[str, Any]
+    expected_output: str
+
+
+@pytest.mark.parametrize(
+    "args, kwargs, expected_output",
+    [
+        TestCaseCreateOutputKey(args=(), kwargs={}, expected_output="MyTransform()"),
+        TestCaseCreateOutputKey(args=("c", 2, ["r", 2]), kwargs={}, expected_output="MyTransform(c, 2, ['r', 2])"),
+        TestCaseCreateOutputKey(
+            args=(), kwargs={"c": 2, "r": ["c", 2]}, expected_output="MyTransform(c=2, r=['c', 2])"
+        ),
+        TestCaseCreateOutputKey(
+            args=("a", 1, ["2", "b"]),
+            kwargs={"c": 2, "r": ["c", 2]},
+            expected_output="MyTransform(a, 1, ['2', 'b'], c=2, r=['c', 2])",
+        ),
+    ],
+)
+def test_create_output_key(args, kwargs, expected_output):
+    actual_output = create_output_key("MyTransform", *args, **kwargs)
+    assert actual_output == expected_output

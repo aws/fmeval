@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from typing import NamedTuple, List, Optional, Dict, Any, Tuple
 
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse
+from fmeval.transforms.common import GeneratePrompt, GetModelResponse, Mean
 from fmeval.util import EvalAlgorithmInternalError
 
 
@@ -172,3 +172,14 @@ def test_get_model_response_call_failure(model_output, log_prob, response_keys):
         )
         with pytest.raises(EvalAlgorithmInternalError, match="The number of elements in model response"):
             get_model_response(sample)
+
+
+def test_mean_call():
+    """
+    GIVEN a Mean instance.
+    WHEN its __call__ method is called.
+    THEN the correct output is returned.
+    """
+    m = Mean(input_keys=["a", "b", "c"], output_key="mean")
+    sample = {"a": 1, "b": 6, "c": 2}
+    assert m(sample)["mean"] == 3.0

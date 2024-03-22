@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Callable
+from typing import Any, Dict, List, Set, Callable, Tuple
 from fmeval.util import assert_condition
 
 
@@ -103,3 +103,38 @@ def validate_call(call_method: Callable) -> Callable:
         return call_output
 
     return wrapper
+
+
+def create_output_key(transform_name: str, *args, **kwargs) -> str:
+    """Create an output key to be used by a Transform instance.
+
+    This method is used to create unique, easily-identifiable output keys
+    for Transform instances. *args and **kwargs are used purely for
+    ensuring key uniqueness, and need not be arguments to the Transform's
+    initializer, though they generally will be, for ease of interpretability.
+
+    :param transform_name: The name of the Transform class.
+        This argument is generally passed via the __name__ attribute of
+        a class. Note that we do not simply pass the class itself (which
+        would be the more intuitive approach), as Ray wraps actor classes
+        in its own wrapper class, which will cause the __name__ attribute
+        to return an unexpected value.
+    :param *args: Variable length argument list.
+    :param **kwargs: Arbitrary keyword arguments.
+    """
+
+    def args_to_str(positional_args: Tuple[str]) -> str:
+        return ", ".join(str(arg) for arg in positional_args)
+
+    def kwargs_to_str(keyword_args: Dict[str, Any]) -> str:
+        return ", ".join(f"{k}={str(v)}" for k, v in keyword_args.items())
+
+    args_string = args_to_str(args)
+    kwargs_string = kwargs_to_str(kwargs)
+    output_key = (
+        f"{transform_name}"
+        f"({args_string if args_string else ''}"
+        f"{', ' if args_string and kwargs_string else ''}"
+        f"{kwargs_string if kwargs_string else ''})"
+    )
+    return output_key
