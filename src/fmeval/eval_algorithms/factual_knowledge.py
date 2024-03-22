@@ -13,12 +13,12 @@ from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.util import save_dataset, generate_output_dataset_path
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
+    EvalAlgorithm,
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
     DATASET_CONFIGS,
     get_default_prompt_template,
-    EvalAlgorithm,
 )
 from fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -119,7 +119,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithm.EVAL_RESULTS_PATH
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
         :return: List of EvalOutput objects. Current implementation returns only one score.

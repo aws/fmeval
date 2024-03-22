@@ -88,7 +88,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             bertscore_keys=[BERT_SCORE],
             rouge_type=config.rouge_type,
             use_stemmer_for_rouge=config.use_stemmer_for_rouge,
-            bertscore_model_type=config.model_type_for_bertscore,
+            model_type_for_bertscore=config.model_type_for_bertscore,
             use_ray=use_ray,
         )
         self.pipeline = TransformPipeline([meteor_score, rouge_score, bert_score])
@@ -103,7 +103,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         rouge_type: str,
         use_stemmer_for_rouge: bool,
         bertscore_model: Optional[Union[BertscoreModel, ObjectRef]] = None,
-        bertscore_model_type: Optional[str] = None,
+        model_type_for_bertscore: Optional[str] = None,
         use_ray: bool = True,
     ) -> Tuple[MeteorScore, RougeScore, BertScore, Union[BertscoreModel, ObjectRef]]:
         meteor_transform = MeteorScore(
@@ -122,10 +122,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         )
         if bertscore_model is None:  # pragma: no branch
             require(
-                bertscore_model_type is not None,
-                "bertscore_model_type must not be None when bertscore_model is not provided.",
+                model_type_for_bertscore is not None,
+                "model_type_for_bertscore must not be None when bertscore_model is not provided.",
             )
-            bertscore_model = BertscoreModel(bertscore_model_type)
+            bertscore_model = BertscoreModel(model_type_for_bertscore)
             if use_ray:  # pragma: no branch
                 bertscore_model = create_shared_resource(bertscore_model)
         bert_transform = BertScore(

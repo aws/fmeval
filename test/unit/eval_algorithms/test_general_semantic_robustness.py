@@ -125,11 +125,11 @@ class TestGeneralSemanticRobustness:
         """
         model_name = "my_model"
         expected_error_message = (
-            f"Invalid bertscore_model_type: {model_name} requested in GeneralSemanticRobustnessConfig, "
+            f"Invalid model_type_for_bertscore: {model_name} requested in GeneralSemanticRobustnessConfig, "
             f"please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}."
         )
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
-            GeneralSemanticRobustnessConfig(bertscore_model_type=model_name)
+            GeneralSemanticRobustnessConfig(model_type_for_bertscore=model_name)
 
     def test_gsr_config_invalid_num_baseline_samples(self):
         """
@@ -183,7 +183,7 @@ class TestGeneralSemanticRobustness:
             create_shared_resource.assert_called_once()
         else:
             create_shared_resource.assert_not_called()
-            bertscore_model.assert_called_with(config.bertscore_model_type)
+            bertscore_model.assert_called_with(config.model_type_for_bertscore)
 
     @pytest.mark.parametrize("is_deterministic", [True, False])
     @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")

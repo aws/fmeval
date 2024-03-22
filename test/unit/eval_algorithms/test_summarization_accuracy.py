@@ -116,7 +116,7 @@ class TestSummarizationAccuracy:
             bertscore_keys=[BERT_SCORE],
             rouge_type=ROUGE_L,
             use_stemmer_for_rouge=True,
-            bertscore_model_type=BERTSCORE_DEFAULT_MODEL,
+            model_type_for_bertscore=BERTSCORE_DEFAULT_MODEL,
             use_ray=use_ray,
         )
         assert isinstance(meteor_score, MeteorScore)
@@ -154,13 +154,13 @@ class TestSummarizationAccuracy:
 
     def test_build_pipeline_missing_bertscore_model_type(self):
         """
-        GIVEN bertscore_model and bertscore_model_type arguments with value None.
+        GIVEN bertscore_model and model_type_for_bertscore arguments with value None.
         WHEN SummarizationAccuracy's build_pipeline method is called.
         THEN an exception is raised.
         """
         with pytest.raises(
             EvalAlgorithmClientError,
-            match="bertscore_model_type must not be None when bertscore_model is not provided.",
+            match="model_type_for_bertscore must not be None when bertscore_model is not provided.",
         ):
             SummarizationAccuracy.build_pipeline(
                 target_output_keys=["target_output"],
@@ -175,35 +175,35 @@ class TestSummarizationAccuracy:
 
     class TestCaseSummarizationAccuracyInvalidConfig(NamedTuple):
         rouge_type: str
-        bertscore_model_type: str
+        model_type_for_bertscore: str
         err_msg: str
 
     @pytest.mark.parametrize(
-        "rouge_type, bertscore_model_type, err_msg",
+        "rouge_type, model_type_for_bertscore, err_msg",
         [
             TestCaseSummarizationAccuracyInvalidConfig(
                 rouge_type="rouge3",
-                bertscore_model_type="n/a",
+                model_type_for_bertscore="n/a",
                 err_msg="Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig. Please choose "
                 "from acceptable values: ['rouge1', 'rouge2', 'rougeL'].",
             ),
             TestCaseSummarizationAccuracyInvalidConfig(
                 rouge_type="rouge1",
-                bertscore_model_type="distilbert-base-uncased",
-                err_msg="Invalid bertscore_model_type: distilbert-base-uncased requested in "
+                model_type_for_bertscore="distilbert-base-uncased",
+                err_msg="Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
                 "SummarizationAccuracyConfig. Please choose from acceptable values: ["
                 "'microsoft/deberta-xlarge-mnli', 'roberta-large-mnli'].",
             ),
         ],
     )
-    def test_summarization_accuracy_invalid_config(self, rouge_type, bertscore_model_type, err_msg):
+    def test_summarization_accuracy_invalid_config(self, rouge_type, model_type_for_bertscore, err_msg):
         """
         GIVEN invalid inputs.
         WHEN a SummarizationAccuracyConfig is initialized.
         THEN an exception with the correct error message is raised.
         """
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(err_msg)):
-            SummarizationAccuracyConfig(rouge_type=rouge_type, bertscore_model_type=bertscore_model_type)
+            SummarizationAccuracyConfig(rouge_type=rouge_type, model_type_for_bertscore=model_type_for_bertscore)
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
     def test_evaluate_sample(self, bertscore_model):

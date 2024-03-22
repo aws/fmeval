@@ -69,17 +69,17 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
         Used when perturbation_type is ADD_REMOVE_WHITESPACE.
     :param whitespace_add_prob: The probability of adding a whitespace character after a non-whitespace character.
         Used when perturbation_type is ADD_REMOVE_WHITESPACE.
-    :param bertscore_model_type: Model type to use for BERT score.
+    :param model_type_for_bertscore: Model type to use for BERT score.
     """
 
     num_baseline_samples: int = 4
-    bertscore_model_type: str = BERTSCORE_DEFAULT_MODEL
+    model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
         super().__post_init__()
         require(
-            BertscoreHelperModelTypes.model_is_allowed(self.bertscore_model_type),
-            f"Invalid bertscore_model_type: {self.bertscore_model_type} requested in "
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
             f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
         )
         require(
@@ -137,7 +137,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
-        self.bertscore_model = BertscoreModel(eval_algorithm_config.bertscore_model_type)
+        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
         if use_ray:
             self.bertscore_model = create_shared_resource(self.bertscore_model)
 
