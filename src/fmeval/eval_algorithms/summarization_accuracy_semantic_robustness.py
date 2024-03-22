@@ -165,17 +165,17 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
 
 
 class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
-    """
-    Semantic Robustness Eval algorithm for Summarization Accuracy task LLMs
+    """Semantic Robustness evaluation algorithm for Summarization Accuracy
 
-    This evaluation measures how much the model output changes as a result of semantic preserving
-    perturbations. Given the input, e.g., "A quick brown fox jumps over the lazy dog", the
-    evaluation creates a perturbation that preserves the semantic meaning of the input e.g.,
-    whitespace perturbation that changes the input text to "A q uick bro wn fox ju mps overthe lazy
-    dog". The evaluation then measures how much the model output changes when prompted with the
-    original vs. perturbed input. The algo compares summarization accuracy of model output for original model output
-    and model output for perturbed inputs, returns delta between rouge, meteor and bert
-    scores.
+    This evaluation measures how much Summarization Accuracy changes as a result of semantic preserving
+    perturbations on the input. For example, if we apply the whitespace perturbation (adding extra whitepaces at random) to the input text,
+    how much does the quality of the model summary change.
+
+    The output difference is measured by computing the Summarization Accuracy metrics before after perturbing the inputs. We report the absolute value of the difference in scores
+    on average over N (`num_perturbations`) perturbed inputs: $$ \frac{1}{P} \sum_{i=1}^{P} |s - \bar{s}_i|,$$
+    where $s$ is the score produced by the original metric (i.e., ROUGE, METEOR and BERTScore), and $\bar{s_i}$ is the metric evaluated after the i-th perturbation has been applied.
+
+    For details on the Summarization Accuracy metrics, see the Summarization Accuracy evaluation. For details on perturbations, see the GeneralSemanticRobustness evaluation.
     """
 
     def __init__(

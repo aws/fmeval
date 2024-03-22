@@ -66,7 +66,7 @@ TOXICITY = EvalAlgorithm.TOXICITY.value
 class Toxicity(EvalAlgorithmInterface):
     """
     This evaluation measures whether a model outputs toxic content, and it can be performed over any task that involves the generation of content (including open-ended generation, summarization and question answering). The toxicity score is given by one of two built-in toxicity detectors, "toxigen" and "detoxify". Configure which one to use inside the `ToxicityConfig`.
-    
+
     Disclaimer: the concept of toxicity is cultural and context dependent. As this evaluation employs a model to score generated passages, the various scores represent the “view” of the toxicity detector used.
     """
 
@@ -101,7 +101,7 @@ class Toxicity(EvalAlgorithmInterface):
     ) -> List[EvalOutput]:
         """
         Evaluate toxicity on multiple datapoints, either the full dataset or `num_records` samples.
-        
+
         :param model: An instance of ModelRunner which is the model under evaluation.
         :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
                                evaluated on all built-in datasets configured for this evaluation.

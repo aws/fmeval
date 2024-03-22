@@ -122,9 +122,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     dog". The evaluation then measures how much the model output changes when prompted with the
     original vs. perturbed input.
 
-    The output difference is measured using two metrics: the Word Error Rate
-    (https://huggingface.co/spaces/evaluate-metric/wer) and the BERTScore Dissimilarity, which is
-    1 - BERTScore (https://huggingface.co/spaces/evaluate-metric/bertscore), between the original
+    The output difference is measured using two metrics: the [Word Error Rate](https://huggingface.co/spaces/evaluate-metric/wer)
+    and the BERTScore Dissimilarity, which is
+    1 - [BERTScore](https://huggingface.co/spaces/evaluate-metric/bertscore), between the original
     and the perturbed outputs. Word Error Rate measures syntactic differences, that is, changes in
     the words, whereas BERTScore Dissimilarity measures semantic differences. Semantic differences
     account of cases when the precise words in the output change but the meaning is the same, e.g.,

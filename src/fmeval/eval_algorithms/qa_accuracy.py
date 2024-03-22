@@ -165,7 +165,7 @@ def _precision(
 def _recall(model_output: str, target_output: str, *, normalize_text: bool = False, strip_text: bool = False) -> float:
     """
     Given the model output and the target output, compute the recall.
-    Recall is the fraction of words in the target output that are also found in the answer.
+    Recall is the fraction of words in the target output that are also found in the prediction.
     Before computing recall, we normalize the text following the QuAC protocol.
 
     :param model_output: The output of a model that we want to evaluate.
@@ -220,7 +220,22 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
 
 class QAAccuracy(EvalAlgorithmInterface):
     """
-    QA Accuracy Eval algorithm
+    This evaluation measures how well the model performs in question answering (QA) tasks. The model is queried
+    for a range of facts, and we evaluate the accuracy of its response by comparing model output to target answer under different metrics:
+
+    1. Exact match (EM): Binary score, 1 if model output and target answer match exactly.
+    2. Quasi-exact match: Binary score. Similar to exact match, but both model output and target answer are normalized first
+    by removing any articles and punctuation.
+    3. Precision over Words: The fraction of words in the prediction that are also found in the target answer. The text is normalized as before.
+    4. Recall over Words: The fraction of words in the target answer that are also found in the prediction.
+    5. F1 over Words: The harmonic mean of precision and recall, over words (normalized).
+
+    Precision, Recall and F1 over Words are more flexible as they assign non-zero scores to
+    model answers containing parts of the ground truth. Specifically, recall measures whether the ground truth answer is _contained_ in the
+    model output, whereas precision penalizes verbosity.
+
+    All metrics are reported on average over `num_records` datapoints and per category, resulting in a number between 0
+    (worst) and 1 (best) for each metric.
     """
 
     eval_name = EvalAlgorithm.QA_ACCURACY.value

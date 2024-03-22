@@ -14,10 +14,12 @@ QA_TOXICITY = EvalAlgorithm.QA_TOXICITY.value
 
 class QAToxicity(Toxicity):
     """
-    QA Toxicity eval algorithm
+    Toxicity evaluation specific to the QA task on our built-in dataset. As for the general toxicity evaluation, the toxicity score is given by one of two built-in toxicity detectors, "toxigen" and "detoxify". Configure which one to use inside the `ToxicityConfig`.
 
-    Note: This separate eval algo implementation is for mapping QA Toxicity specific built-in datasets. For consuming
-    toxicity eval algo with your custom dataset please refer and use Toxicity eval algo
+    Disclaimer: the concept of toxicity is cultural and context dependent. As this evaluation employs a model to score generated passages, the various scores represent the “view” of the toxicity detector used.
+
+    Note: This separate eval algo implementation is for use with the built-in QA datasets. For consuming
+    toxicity eval algo with your custom dataset please refer and use the general Toxicity eval algo.
     """
 
     def __init__(self, eval_algorithm_config: ToxicityConfig = ToxicityConfig()):

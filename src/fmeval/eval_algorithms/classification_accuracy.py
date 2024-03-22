@@ -102,6 +102,19 @@ class ClassificationAccuracyConfig(EvalAlgorithmConfig):
 
 
 class ClassificationAccuracy(EvalAlgorithmInterface):
+    """This evaluation measures how accurately a model performs in text classification tasks. Our built-in example task is sentiment classification where the model predicts whether a user review is positive or negative.
+    The accuracy of its response is measured by comparing model output to target answer under different metrics:
+
+    1. Classification accuracy: Is `model_output == target_answer`? This metric is computed for each datapoint as well as on average over the whole dataset.
+    2. Precision: true positives / (true positives + false positives), computed once for the whole dataset. Its parameter `multiclass_average_stategy` can be set in the `ClassificationAccuracyConfig`.
+    3. Recall: true positives / (true positives + false negatives), computed once for the whole dataset. Its parameter `multiclass_average_stategy` can be set in the `ClassificationAccuracyConfig`.
+    4. Balanced classification accuracy: Same as accuracy in the binary case, otherwise averaged recall per class. This metric is computed once for the whole dataset.
+
+    All metrics are reported on average over `num_records` datapoints and per category, resulting in a number between 0
+    (worst) and 1 (best) for each metric.
+
+    """
+
     eval_name = EvalAlgorithm.CLASSIFICATION_ACCURACY.value
 
     def __init__(self, eval_algorithm_config: ClassificationAccuracyConfig = ClassificationAccuracyConfig()):
