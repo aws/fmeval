@@ -46,13 +46,13 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
         require(
             self.rouge_type in ROUGE_TYPES,
             f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig. "
-            f"Please choose from acceptable values: {ROUGE_TYPES}."
+            f"Please choose from acceptable values: {ROUGE_TYPES}.",
         )
         require(
             BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
             f"SummarizationAccuracyConfig. Please choose from acceptable values: "
-            f"{BertscoreModelTypes.model_list()}."
+            f"{BertscoreModelTypes.model_list()}.",
         )
 
 
