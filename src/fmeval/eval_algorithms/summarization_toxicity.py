@@ -9,4 +9,5 @@ class SummarizationToxicity(Toxicity):
     Note: This separate eval algo implementation is for mapping Summarization Toxicity specific built-in datasets.
     For consuming toxicity eval algo with your custom dataset please refer and use Toxicity eval algo
     """
+
     eval_name = EvalAlgorithm.SUMMARIZATION_TOXICITY.value

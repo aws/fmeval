@@ -39,7 +39,7 @@ class ToxicityScores(Transform):
         self.score_names = score_names
         self.toxicity_detector = toxicity_detector
         if len(self.text_keys) == 1 and output_keys is None:
-            output_keys = ['']  # default behaviour when there's only one input: use only the score names
+            output_keys = [""]  # default behaviour when there's only one input: use only the score names
         self.out_keys = output_keys if output_keys is not None else self.text_keys  # use the text_keys as default,
         # note this is not the self.output_keys that becomes populated by the method below
         self.register_input_output_keys(

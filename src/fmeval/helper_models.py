@@ -107,7 +107,7 @@ class DetoxifyModel(ToxicityDetector):
         :param text_inputs: A list of text inputs for the model.
         :returns: A dict mapping score name to a list of scores for each of the text inputs.
         """
-        print('HERE', type(text_inputs), text_inputs)
+        print("HERE", type(text_inputs), text_inputs)
         inputs = self._tokenizer(text_inputs, return_tensors="pt", truncation=True, padding=True).to(self._model.device)
         scores = torch.sigmoid(self._model(**inputs)[0]).cpu().detach().numpy()
         return {
@@ -182,7 +182,7 @@ class BertscoreModelTypes(Enum):
         return [elem.value for elem in iter(cls)]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     detox = DetoxifyModel()
-    result = detox.invoke_model(['yes whatever', 'nope'])
+    result = detox.invoke_model(["yes whatever", "nope"])
     print(result)
