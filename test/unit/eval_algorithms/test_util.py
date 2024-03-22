@@ -16,7 +16,22 @@ from fmeval.constants import (
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
 )
-from fmeval.eval_algorithms import EvalAlgorithm, DATASET_CONFIGS, BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS
+from fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    DATASET_CONFIGS,
+    BOOLQ,
+    TRIVIA_QA,
+    NATURAL_QUESTIONS,
+    CROWS_PAIRS,
+    TREX,
+    GIGAWORD,
+    GOV_REPORT,
+    BOLD,
+    WIKITEXT2,
+    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
+    REAL_TOXICITY_PROMPTS,
+    REAL_TOXICITY_PROMPTS_CHALLENGING,
+)
 from fmeval.eval_algorithms.eval_algorithm import EvalScore
 from fmeval.eval_algorithms.util import (
     generate_model_predict_response_for_dataset,
@@ -603,11 +618,78 @@ def test_get_bert_score(mock_ray_get, target_output, model_output):
     assert BERTSCORE_DUMMY_VALUE == get_bert_score(target_output, model_output, helper_model=MagicMock())
 
 
-def test_get_dataset_configs():
+def test_get_dataset_configs_custom_dataset():
+    """
+    GIVEN a custom dataset config.
+    WHEN get_dataset_configs is called.
+    THEN a single-element list with said dataset config is returned.
+    """
     custom_config = Mock()
     configs = get_dataset_configs(custom_config, "blah")
     assert configs == [custom_config]
 
-    # WLOG, use QA accuracy as the test case
-    configs = get_dataset_configs(None, EvalAlgorithm.QA_ACCURACY.value)
-    assert configs == [DATASET_CONFIGS[BOOLQ], DATASET_CONFIGS[TRIVIA_QA], DATASET_CONFIGS[NATURAL_QUESTIONS]]
+
+class TestCaseBuiltinDatasetConfigs(NamedTuple):
+    eval_name: str
+    dataset_names: List[str]
+
+
+@pytest.mark.parametrize(
+    "eval_name, dataset_names",
+    [
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value,
+            dataset_names=[TREX],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.QA_ACCURACY.value,
+            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+        ),
+        TestCaseBuiltinDatasetConfigs(eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_names=[CROWS_PAIRS]),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY.value,
+            dataset_names=[GIGAWORD, GOV_REPORT],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value,
+            dataset_names=[BOLD, TREX, WIKITEXT2],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY.value,
+            dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+            dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+            dataset_names=[GIGAWORD, GOV_REPORT],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.TOXICITY.value,
+            dataset_names=[BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.QA_TOXICITY.value,
+            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+        ),
+        TestCaseBuiltinDatasetConfigs(
+            eval_name=EvalAlgorithm.SUMMARIZATION_TOXICITY.value,
+            dataset_names=[GIGAWORD, GOV_REPORT],
+        ),
+    ],
+)
+def test_get_dataset_configs_builtin_dataset(eval_name, dataset_names):
+    """
+    GIVEN an input argument of None and an evaluation algorithm name.
+    WHEN get_dataset_configs is called.
+    THEN a list with all builtin dataset configs corresponding to the
+        evaluation algorithm is returned.
+    """
+    configs = get_dataset_configs(None, eval_name)
+    assert configs == [DATASET_CONFIGS[dataset_name] for dataset_name in dataset_names]

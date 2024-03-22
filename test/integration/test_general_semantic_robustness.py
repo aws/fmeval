@@ -1,9 +1,8 @@
 import os
-from copy import deepcopy
-from typing import NamedTuple, Dict
-
 import pytest
+
 from pytest import approx
+from typing import NamedTuple, Dict
 
 from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
@@ -11,11 +10,12 @@ from fmeval.eval_algorithms import (
 )
 from fmeval.eval_algorithms.general_semantic_robustness import (
     BUTTER_FINGER,
+    RANDOM_UPPERCASE,
+    ADD_REMOVE_WHITESPACE,
     GeneralSemanticRobustness,
     GeneralSemanticRobustnessConfig,
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
-    WHITESPACE_ADD_REMOVE,
 )
 
 from test.integration.models.model_runners import (
@@ -42,14 +42,14 @@ class TestGeneralSemanticRobustness:
                     butter_finger_perturbation_prob=0.1,
                 ),
                 expected_scores={
-                    WER_SCORE: 1.1,
-                    BERT_SCORE_DISSIMILARITY: 0.4326739013195038,
+                    WER_SCORE: 0.5666666666666667,
+                    BERT_SCORE_DISSIMILARITY: 0.19456744194030762,
                 },
-            )
+            ),
         ],
     )
     def test_evaluate_sample(self, gsr_test_case):
-        gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config)
+        gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config, use_ray=False)
         model_input = "London is the capital of "
         eval_scores = gen_semantic_robustness.evaluate_sample(
             model_input=model_input,
@@ -63,21 +63,21 @@ class TestGeneralSemanticRobustness:
         [
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
+                    perturbation_type=ADD_REMOVE_WHITESPACE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
                 ),
                 expected_scores={
-                    WER_SCORE: 0.6135412698412699,
-                    BERT_SCORE_DISSIMILARITY: 0.2815050273537636,
+                    WER_SCORE: 0.4727531746031748,
+                    BERT_SCORE_DISSIMILARITY: 0.2137835907936097,
                 },
             ),
         ],
     )
     def test_evaluate(self, gsr_test_case):
         gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config)
-        dataset_config = deepcopy(DATASET_CONFIGS[WIKITEXT2])
+        dataset_config = DATASET_CONFIGS[WIKITEXT2]
         eval_output = gen_semantic_robustness.evaluate(
             model=sm_model_runner,
             dataset_config=dataset_config,

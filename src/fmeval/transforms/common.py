@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Any, Dict, List, Tuple
 
 from fmeval.model_runners.composers.composers import PromptComposer
@@ -116,4 +117,28 @@ class GetModelResponse(Transform):
                 )
                 for model_response_key, model_response_item in zip(response_key_tuple, model_response):
                     record[model_response_key] = model_response_item
+        return record
+
+
+class Mean(Transform):
+    """This transform computes the arithmetic mean of specified values in a record and augments said record."""
+
+    def __init__(self, input_keys: List[str], output_key: str):
+        """Mean initializer.
+        :param input_keys: The keys corresponding to the values to take the mean of.
+        :param output_key: The key corresponding to the mean value, which gets
+            added to the record.
+        """
+        super().__init__(input_keys, output_key)
+        self.register_input_output_keys(input_keys, [output_key])
+        self.output_key = output_key
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the computed mean.
+        :param record: The input record.
+        :returns: The input record with the mean added in.
+        """
+        avg = np.mean([record[input_key] for input_key in self.input_keys])
+        record[self.output_key] = avg
         return record
