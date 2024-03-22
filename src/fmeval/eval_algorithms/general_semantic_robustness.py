@@ -34,7 +34,6 @@ from fmeval.eval_algorithms.util import (
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.transforms.summarization_accuracy_metrics import BertScore
 from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity, WER
 from fmeval.transforms.transform import Transform
@@ -78,7 +77,7 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     def __post_init__(self):
         super().__post_init__()
         require(
-            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
             f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
         )

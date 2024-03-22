@@ -487,7 +487,7 @@ def compute_and_aggregate_metrics(
         return eval_output
 
 
-def evaluate(
+def run_evaluation(
     eval_name: str,
     pipeline: TransformPipeline,
     metric_names: List[str],

@@ -10,7 +10,6 @@ from fmeval.util import assert_condition, require, create_shared_resource, get_e
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.summarization_accuracy_metrics import (
@@ -44,18 +43,17 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
     model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
-        if self.rouge_type not in ROUGE_TYPES:
-            raise EvalAlgorithmClientError(
-                f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig. "
-                f"Please choose from acceptable values: {ROUGE_TYPES}."
-            )
-
-        if not BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore):
-            raise EvalAlgorithmClientError(
-                f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig. Please choose from acceptable values: "
-                f"{BertscoreModelTypes.model_list()}."
-            )
+        require(
+            self.rouge_type in ROUGE_TYPES,
+            f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig. "
+            f"Please choose from acceptable values: {ROUGE_TYPES}."
+        )
+        require(
+            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+            f"SummarizationAccuracyConfig. Please choose from acceptable values: "
+            f"{BertscoreModelTypes.model_list()}."
+        )
 
 
 class SummarizationAccuracy(EvalAlgorithmInterface):
@@ -194,7 +192,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             "The use_ray instance attribute of SummarizationAccuracy must be True in order "
             "for the evaluate method to run successfully.",
         )
-        return util.evaluate(
+        return util.run_evaluation(
             eval_name=self.eval_name,
             pipeline=self.pipeline,
             metric_names=METRIC_NAMES,

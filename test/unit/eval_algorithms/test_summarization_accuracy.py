@@ -232,16 +232,16 @@ class TestSummarizationAccuracy:
             assert actual_eval_score.value == pytest.approx(expected_eval_score.value, rel=1e-5)
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_eval_results_path")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.util.evaluate")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.util.run_evaluation")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
     def test_evaluate(
-        self, mock_build_pipeline, mock_transform_pipeline_cls, mock_util_evaluate, mock_get_results_path
+        self, mock_build_pipeline, mock_transform_pipeline_cls, mock_run_evaluation, mock_get_results_path
     ):
         """
         GIVEN a SummarizationAccuracy instance whose `use_ray` attribute is True.
         WHEN its evaluate method is called with valid arguments.
-        THEN `util.evaluate` is called with the correct arguments.
+        THEN `util.run_evaluation` is called with the correct arguments.
         """
         mock_build_pipeline.return_value = Mock(), Mock(), Mock(), Mock()
         mock_get_results_path.return_value = "/path/to/results"
@@ -257,7 +257,7 @@ class TestSummarizationAccuracy:
             save=True,
         )
 
-        mock_util_evaluate.assert_called_once_with(
+        mock_run_evaluation.assert_called_once_with(
             eval_name=summ_acc.eval_name,
             pipeline=summ_acc.pipeline,
             metric_names=METRIC_NAMES,
@@ -269,7 +269,7 @@ class TestSummarizationAccuracy:
             num_records=162,
             save=True,
         )
-        assert output == mock_util_evaluate.return_value
+        assert output == mock_run_evaluation.return_value
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
