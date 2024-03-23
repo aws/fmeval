@@ -3,7 +3,7 @@ from typing import Tuple
 
 from fmeval.constants import BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, DatasetColumns
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.transforms.common import GeneratePrompt, GetModelResponses
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     SemanticPerturbation,
     ButterFinger,
@@ -90,7 +90,7 @@ def get_model_responses_from_perturbed_inputs(
     perturbation: SemanticPerturbation,
     prompt_template: str,
     model: ModelRunner,
-) -> Tuple[SemanticPerturbation, GeneratePrompt, GetModelResponses]:
+) -> Tuple[SemanticPerturbation, GeneratePrompt, GetModelOutputs]:
     # Generate prompts from perturbed inputs
     gen_perturbed_prompts = GeneratePrompt(
         input_keys=perturbation.output_keys,
@@ -102,12 +102,12 @@ def get_model_responses_from_perturbed_inputs(
     )
 
     # Invoke model with prompts generated above
-    get_perturbed_responses = GetModelResponses(
-        input_key_to_response_keys={
-            perturbed_prompt_key: [(create_output_key(GetModelResponses.__name__, perturbed_prompt_key),)]
+    get_perturbed_outputs = GetModelOutputs(
+        input_to_output_keys={
+            perturbed_prompt_key: [create_output_key(GetModelOutputs.__name__, perturbed_prompt_key)]
             for perturbed_prompt_key in gen_perturbed_prompts.output_keys
         },
         model_runner=model,
     )
 
-    return perturbation, gen_perturbed_prompts, get_perturbed_responses
+    return perturbation, gen_perturbed_prompts, get_perturbed_outputs

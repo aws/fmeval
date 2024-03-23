@@ -30,13 +30,7 @@ from fmeval.exceptions import EvalAlgorithmInternalError
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
-from fmeval.transforms.common import GeneratePrompt, GetModelResponses
-from fmeval.transforms.semantic_perturbations import (
-    SemanticPerturbation,
-    ButterFinger,
-    RandomUppercase,
-    AddRemoveWhitespace,
-)
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.util import get_num_actors
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
@@ -418,11 +412,11 @@ def create_model_invocation_pipeline(model: ModelRunner, prompt_template: str) -
         output_keys=[DatasetColumns.PROMPT.value.name],
         prompt_template=prompt_template,
     )
-    get_model_response = GetModelResponses(
-        input_key_to_response_keys={DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]},
+    get_model_outputs = GetModelOutputs(
+        input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
         model_runner=model,
     )
-    return TransformPipeline([gen_prompt, get_model_response])
+    return TransformPipeline([gen_prompt, get_model_outputs])
 
 
 def compute_and_aggregate_metrics(

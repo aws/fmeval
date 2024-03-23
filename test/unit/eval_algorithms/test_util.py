@@ -53,7 +53,7 @@ from fmeval.eval_algorithms.util import (
     create_model_invocation_pipeline,
 )
 from fmeval.exceptions import EvalAlgorithmInternalError
-from fmeval.transforms.common import GeneratePrompt, GetModelResponses
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.util import camel_to_snake, get_num_actors
 from fmeval.eval_algorithms.util import get_bert_score
 
@@ -820,7 +820,7 @@ def test_model_invocation_pipeline():
     assert gen_prompt.input_keys == [DatasetColumns.MODEL_INPUT.value.name]
     assert gen_prompt.output_keys == [DatasetColumns.PROMPT.value.name]
     assert gen_prompt.prompt_template == "Do something with $model_input"
-    assert isinstance(get_response, GetModelResponses)
+    assert isinstance(get_response, GetModelOutputs)
     assert get_response.input_keys == [DatasetColumns.PROMPT.value.name]
     assert get_response.output_keys == [DatasetColumns.MODEL_OUTPUT.value.name]
     assert get_response.model_runner == model
@@ -945,7 +945,7 @@ def test_run_evaluation_no_model_output_column(
     mock_standard_invocation_pipeline.side_effect = invocation_pipelines
 
     # The pipelines that are passed to `compute_and_aggregate_metrics`
-    # (which have the GeneratePrompt and GetModelResponses Transforms prepended)
+    # (which have the GeneratePrompt and GetModelOutputs Transforms prepended)
     pipeline_to_execute_1, pipeline_to_execute_2 = Mock(), Mock()
     pipelines_to_execute = [pipeline_to_execute_1, pipeline_to_execute_2]
     mock_transform_pipeline.side_effect = pipelines_to_execute

@@ -23,7 +23,7 @@ from fmeval.eval_algorithms.semantic_robustness_utils import (
     get_model_responses_from_perturbed_inputs,
 )
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
-from fmeval.transforms.common import GeneratePrompt, GetModelResponses
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     verify_model_determinism,
@@ -214,12 +214,8 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 create_output_key(GeneratePrompt.__name__, BASELINE_SUFFIX, i)
                 for i in range(self.num_baseline_samples - 1)
             ]
-            get_baseline_responses = GetModelResponses(
-                input_key_to_response_keys={
-                    DatasetColumns.PROMPT.value.name: [
-                        (baseline_response_key,) for baseline_response_key in baseline_response_keys
-                    ]
-                },
+            get_baseline_outputs = GetModelOutputs(
+                input_to_output_keys={DatasetColumns.PROMPT.value.name: baseline_response_keys},
                 model_runner=model,
             )
 
@@ -259,7 +255,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             # Extend the pipeline with these additional steps.
             additional_steps = TransformPipeline(
                 [
-                    get_baseline_responses,
+                    get_baseline_outputs,
                     get_baseline_bert_scores,
                     compute_baseline_bertscore_dissimilarity,
                     compute_baseline_wer_metric,

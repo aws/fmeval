@@ -22,7 +22,7 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.helper_models import BertscoreModel
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
-from fmeval.transforms.common import GeneratePrompt, GetModelResponses
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     ButterFinger,
     RandomUppercase,
@@ -219,7 +219,7 @@ class TestGeneralSemanticRobustness:
         assert isinstance(perturbation, ButterFinger)  # default perturbation type used by config is BUTTER_FINGER
         assert isinstance(gen_prompts, GeneratePrompt)
         assert len(gen_prompts.output_keys) == config.num_perturbations
-        assert isinstance(model_responses, GetModelResponses)
+        assert isinstance(model_responses, GetModelOutputs)
         assert len(model_responses.output_keys) == config.num_perturbations
         assert isinstance(bert_scores, BertScore)
         assert len(bert_scores.output_keys) == config.num_perturbations
@@ -233,7 +233,7 @@ class TestGeneralSemanticRobustness:
             baseline_wer = transforms[9]
             update_scores = transforms[10]
 
-            assert isinstance(baseline_responses, GetModelResponses)
+            assert isinstance(baseline_responses, GetModelOutputs)
             assert len(baseline_responses.output_keys) == config.num_baseline_samples - 1
             assert isinstance(baseline_bert, BertScore)
             assert len(baseline_bert.output_keys) == len(
