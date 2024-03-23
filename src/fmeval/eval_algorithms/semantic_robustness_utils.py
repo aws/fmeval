@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-from fmeval.constants import BUTTER_FINGER, RANDOM_UPPERCASE, ADD_REMOVE_WHITESPACE, DatasetColumns
+from fmeval.constants import BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, DatasetColumns
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.common import GeneratePrompt, GetModelResponses
 from fmeval.transforms.semantic_perturbations import (
@@ -15,8 +15,8 @@ from fmeval.util import require
 
 SEMANTIC_PERTURBATIONS = {
     BUTTER_FINGER: ButterFinger,
-    RANDOM_UPPERCASE: RandomUppercase,
-    ADD_REMOVE_WHITESPACE: AddRemoveWhitespace,
+    RANDOM_UPPER_CASE: RandomUppercase,
+    WHITESPACE_ADD_REMOVE: AddRemoveWhitespace,
 }
 
 
@@ -25,16 +25,16 @@ class SemanticRobustnessConfig:
     """Configures the semantic robustness evaluation algorithms.
 
     :param perturbation_type: Perturbation type for generating perturbed inputs.
-        Either BUTTER_FINGER, RANDOM_UPPERCASE, or ADD_REMOVE_WHITESPACE.
+        Either BUTTER_FINGER, RANDOM_UPPER_CASE, or WHITESPACE_ADD_REMOVE.
     :param num_perturbations: Number of perturbed outputs to be generated for robustness evaluation.
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed.
         Used when perturbation_type is BUTTER_FINGER.
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase.
-        Used when perturbation_type is RANDOM_UPPERCASE.
+        Used when perturbation_type is RANDOM_UPPER_CASE.
     :param whitespace_remove_prob: The probability of removing a whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     :param whitespace_add_prob: The probability of adding a whitespace character after a non-whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     """
 
     perturbation_type: str = BUTTER_FINGER
@@ -63,7 +63,7 @@ def get_perturbation_transform(config: SemanticRobustnessConfig) -> SemanticPert
             num_perturbations=config.num_perturbations,
             perturbation_prob=config.butter_finger_perturbation_prob,
         )
-    elif config.perturbation_type == RANDOM_UPPERCASE:
+    elif config.perturbation_type == RANDOM_UPPER_CASE:
         return RandomUppercase(
             input_key=DatasetColumns.MODEL_INPUT.value.name,
             output_keys=[

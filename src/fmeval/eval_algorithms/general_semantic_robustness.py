@@ -55,7 +55,7 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     """Configures the general semantic robustness evaluation algorithm.
 
     :param perturbation_type: Perturbation type for generating perturbed inputs.
-        Either BUTTER_FINGER, RANDOM_UPPERCASE, or ADD_REMOVE_WHITESPACE.
+        Either BUTTER_FINGER, RANDOM_UPPER_CASE, or WHITESPACE_ADD_REMOVE.
     :param num_perturbations: Number of perturbed outputs to be generated for robustness evaluation.
     :param num_baseline_samples: Only used for non-deterministic models. Number of times we generate
         the model output with the same input to compute the "baseline" change in model output. We
@@ -63,11 +63,11 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed.
         Used when perturbation_type is BUTTER_FINGER.
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase.
-        Used when perturbation_type is RANDOM_UPPERCASE.
+        Used when perturbation_type is RANDOM_UPPER_CASE.
     :param whitespace_remove_prob: The probability of removing a whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     :param whitespace_add_prob: The probability of adding a whitespace character after a non-whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     :param model_type_for_bertscore: Model type to use for BERT score.
     """
 

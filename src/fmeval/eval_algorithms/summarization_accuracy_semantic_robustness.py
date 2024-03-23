@@ -12,8 +12,8 @@ from fmeval.constants import (
     DatasetColumns,
     MEAN,
     BUTTER_FINGER,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
 )
 from fmeval.data_loaders.data_config import DataConfig
@@ -67,8 +67,8 @@ logger = logging.getLogger(__name__)
 # All the perturbation types supported by this eval algo
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
     BUTTER_FINGER: ButterFinger,
-    RANDOM_UPPERCASE: RandomUpperCase,
-    ADD_REMOVE_WHITESPACE: WhitespaceAddRemove,
+    RANDOM_UPPER_CASE: RandomUpperCase,
+    WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
 }
 
 DELTA_ROUGE_SCORE = PREFIX_FOR_DELTA_SCORES + ROUGE_SCORE
@@ -124,11 +124,11 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
         butter_finger perturbation_type
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
-        random_uppercase perturbation_type
+        random_upper_case perturbation_type
     :param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
-        add_remove_whitespace perturbation_type
+        whitespace_add_remove perturbation_type
     :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
-        add_remove_whitespace perturbation_type
+        whitespace_add_remove perturbation_type
     :param rouge_type: Type of rouge metric in eval results
     :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
     :param model_type_for_bertscore: model to use for bert score
@@ -192,7 +192,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
             self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
-        elif self._eval_algorithm_config.perturbation_type == RANDOM_UPPERCASE:
+        elif self._eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
             self._perturbation_config = RandomUpperCaseConfig(
                 self._eval_algorithm_config.random_uppercase_corrupt_proportion
             )

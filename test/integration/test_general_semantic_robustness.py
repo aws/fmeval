@@ -14,7 +14,7 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
 )
-from fmeval.eval_algorithms.semantic_robustness_utils import ADD_REMOVE_WHITESPACE, BUTTER_FINGER
+from fmeval.eval_algorithms.semantic_robustness_utils import WHITESPACE_ADD_REMOVE, BUTTER_FINGER
 
 from test.integration.models.model_runners import (
     sm_model_runner,
@@ -61,7 +61,7 @@ class TestGeneralSemanticRobustness:
         [
             GSRTestCase(
                 config=GeneralSemanticRobustnessConfig(
-                    perturbation_type=ADD_REMOVE_WHITESPACE,
+                    perturbation_type=WHITESPACE_ADD_REMOVE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
