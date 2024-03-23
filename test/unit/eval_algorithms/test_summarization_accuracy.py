@@ -18,7 +18,7 @@ from fmeval.eval_algorithms import (
     EvalScore,
 )
 from fmeval.helper_models import BertscoreModel
-from fmeval.transforms.common import GetModelResponse, GeneratePrompt
+from fmeval.transforms.common import GetModelOutputs, GeneratePrompt
 from fmeval.transforms.summarization_accuracy_metrics import ROUGE_L
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
@@ -245,7 +245,7 @@ class TestSummarizationAccuracy:
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
     @patch("fmeval.transforms.transform_pipeline.TransformPipeline.execute")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelResponse")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelOutputs")
     @patch("fmeval.eval_algorithms.summarization_accuracy.GeneratePrompt")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
@@ -255,8 +255,8 @@ class TestSummarizationAccuracy:
         bertscore_model,
         get_dataset_configs,
         get_dataset,
-        generate_prompt,
-        get_model_response,
+        generate_prompt_cls,
+        get_model_outputs_cls,
         pipeline_execute,
         save_dataset,
         test_case,
@@ -276,11 +276,11 @@ class TestSummarizationAccuracy:
 
         generate_prompt_instance = Mock(spec=GeneratePrompt)
         generate_prompt_instance.output_keys = ["prompt"]
-        generate_prompt.return_value = generate_prompt_instance
+        generate_prompt_cls.return_value = generate_prompt_instance
 
-        get_model_response_instance = Mock(spec=GetModelResponse)
-        get_model_response_instance.output_keys = ["model_output"]
-        get_model_response.return_value = get_model_response_instance
+        get_model_outputs_instance = Mock(spec=GetModelOutputs)
+        get_model_outputs_instance.output_keys = ["model_output"]
+        get_model_outputs_cls.return_value = get_model_outputs_instance
 
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
@@ -337,13 +337,13 @@ class TestSummarizationAccuracy:
             save=True,
         )
 
-        generate_prompt.assert_called_with(
+        generate_prompt_cls.assert_called_with(
             input_keys=[DatasetColumns.MODEL_INPUT.value.name],
             output_keys=[DatasetColumns.PROMPT.value.name],
             prompt_template=test_case.eval_output_prompt_template,
         )
-        get_model_response.assert_called_with(
-            input_key_to_response_keys={DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]},
+        get_model_outputs_cls.assert_called_with(
+            input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
             model_runner=model_runner,
         )
         save_dataset.assert_called_once()
@@ -353,7 +353,7 @@ class TestSummarizationAccuracy:
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.save_dataset")
     @patch("fmeval.transforms.transform_pipeline.TransformPipeline.execute")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelResponse")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.GetModelOutputs")
     @patch("fmeval.eval_algorithms.summarization_accuracy.GeneratePrompt")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
@@ -364,7 +364,7 @@ class TestSummarizationAccuracy:
         get_dataset_configs,
         get_dataset,
         generate_prompt,
-        get_model_response,
+        get_model_outputs,
         pipeline_execute,
         save_dataset,
         eval_algo,
@@ -418,7 +418,7 @@ class TestSummarizationAccuracy:
         )
 
         generate_prompt.assert_not_called()
-        get_model_response.assert_not_called()
+        get_model_outputs.assert_not_called()
         save_dataset.assert_not_called()
         assert len(eval_outputs) == len(expected_outputs)
         for expected, actual in zip(expected_outputs, eval_outputs):
