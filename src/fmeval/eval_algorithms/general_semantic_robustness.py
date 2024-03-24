@@ -32,7 +32,7 @@ from fmeval.eval_algorithms.util import (
     verify_model_determinism,
     get_dataset_configs,
     create_model_invocation_pipeline,
-    compute_and_aggregate_metrics,
+    evaluate_dataset,
 )
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -326,18 +326,17 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
-            model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
-            dataset = model_invocation_pipeline.execute(dataset)
-            is_deterministic = verify_model_determinism(model, dataset, DatasetColumns.PROMPT.value.name)
-            pipeline = self.build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic)
-            eval_output = compute_and_aggregate_metrics(
-                pipeline=pipeline,
+            is_deterministic = verify_model_determinism(model, dataset, dataset_prompt_template)
+            eval_output = evaluate_dataset(
                 dataset=dataset,
+                pipeline=self.build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
                 eval_results_path=get_eval_results_path(),
+                model=model,
                 prompt_template=dataset_prompt_template,
+                agg_method=MEAN,
                 save=save,
             )
             eval_outputs.append(eval_output)

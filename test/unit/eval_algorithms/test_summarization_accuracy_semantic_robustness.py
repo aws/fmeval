@@ -5,7 +5,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 from _pytest.fixtures import fixture
 
-from fmeval.constants import DatasetColumns, BUTTER_FINGER, WHITESPACE_ADD_REMOVE
+from fmeval.constants import DatasetColumns, BUTTER_FINGER, WHITESPACE_ADD_REMOVE, MEAN
 from fmeval.eval_algorithms import EvalScore
 from fmeval.eval_algorithms.semantic_robustness_utils import RANDOM_UPPER_CASE, SEMANTIC_PERTURBATIONS
 from fmeval.eval_algorithms.summarization_accuracy import METEOR_SCORE, ROUGE_SCORE, BERT_SCORE
@@ -175,46 +175,84 @@ class TestSummarizationAccuracySemanticRobustness:
             [call("Hi the model input"), call("Hi perturbed input 1"), call("Hi perturbed input 2")]
         )
 
+    class TestCaseEvaluate(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        dataset_prompt_template: str
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseEvaluate(
+                user_provided_prompt_template="Summarize: $model_input",
+                dataset_prompt_template="Summarize: $model_input",
+            ),
+            TestCaseEvaluate(
+                user_provided_prompt_template=None,
+                dataset_prompt_template="$model_input",
+            ),
+        ],
+    )
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_eval_results_path")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.evaluate_dataset")
     @patch(
         "fmeval.eval_algorithms.summarization_accuracy_semantic_robustness."
         "SummarizationAccuracySemanticRobustness.build_pipeline"
     )
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset_configs")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.BertscoreModel")
     def test_evaluate(
-        self, mock_bertscore_model_cls, mock_build_pipeline, mock_evaluate_dataset, mock_get_results_path
+        self,
+        mock_bertscore_model_cls,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+        test_case,
     ):
         """
-        GIVEN a SummarizationAccuracy instance whose `use_ray` attribute is True.
+        GIVEN a SummarizationAccuracySemanticRobustness instance.
         WHEN its evaluate method is called with valid arguments.
-        THEN `util.evaluate_dataset` is called with the correct arguments.
+        THEN `evaluate_dataset` is called with the correct arguments.
         """
+        mock_bertscore_model_cls.return_value = Mock()
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        mock_get_dataset.return_value = mock_dataset
+
         mock_build_pipeline.return_value = Mock()
         mock_get_results_path.return_value = "/path/to/results"
         model_runner = Mock()
-        dataset_config = Mock()
 
         sasr = SummarizationAccuracySemanticRobustness(use_ray=False)
         output = sasr.evaluate(
             model=model_runner,
             dataset_config=dataset_config,
-            prompt_template="Summarize $model_input, please.",
+            prompt_template=test_case.user_provided_prompt_template,
             num_records=162,
             save=True,
         )
 
         mock_evaluate_dataset.assert_called_once_with(
-            dataset_config=dataset_config,
+            dataset=mock_dataset,
             pipeline=mock_build_pipeline.return_value,
+            dataset_name=dataset_config.dataset_name,
             eval_name=sasr.eval_name,
             metric_names=ORIGINAL_SCORES + DELTA_SCORES,
-            required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
             eval_results_path="/path/to/results",
             model=model_runner,
-            prompt_template="Summarize $model_input, please.",
-            num_records=162,
+            prompt_template=test_case.dataset_prompt_template,
+            agg_method=MEAN,
             save=True,
         )
-        mock_build_pipeline.assert_called_with(model_runner, "Summarize $model_input, please.", use_ray=True)
+        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template, use_ray=True)
         assert output == [mock_evaluate_dataset.return_value]

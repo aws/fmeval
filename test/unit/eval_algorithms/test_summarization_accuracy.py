@@ -2,11 +2,11 @@ import pytest
 import re
 import ray
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 from unittest.mock import Mock, patch
 from _pytest.fixtures import fixture
 
-from fmeval.constants import DatasetColumns, BERTSCORE_DEFAULT_MODEL
+from fmeval.constants import DatasetColumns, BERTSCORE_DEFAULT_MODEL, MEAN
 from fmeval.eval_algorithms import EvalScore
 from fmeval.helper_models import BertscoreModel
 from fmeval.transforms.summarization_accuracy_metrics import ROUGE_L, MeteorScore, RougeScore, BertScore
@@ -231,12 +231,38 @@ class TestSummarizationAccuracy:
             assert actual_eval_score.name == expected_eval_score.name
             assert actual_eval_score.value == pytest.approx(expected_eval_score.value, rel=1e-5)
 
+    class TestCaseEvaluate(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        dataset_prompt_template: str
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseEvaluate(
+                user_provided_prompt_template="Summarize $model_input, please.",
+                dataset_prompt_template="Summarize $model_input, please.",
+            ),
+            TestCaseEvaluate(
+                user_provided_prompt_template=None,
+                dataset_prompt_template=None,
+            ),
+        ],
+    )
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_eval_results_path")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.util.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.evaluate_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
     def test_evaluate(
-        self, mock_build_pipeline, mock_transform_pipeline_cls, mock_evaluate_dataset, mock_get_results_path
+        self,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_transform_pipeline_cls,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+        test_case,
     ):
         """
         GIVEN a SummarizationAccuracy instance whose `use_ray` attribute is True.
@@ -245,28 +271,39 @@ class TestSummarizationAccuracy:
         """
         mock_build_pipeline.return_value = Mock(), Mock(), Mock(), Mock()
         mock_get_results_path.return_value = "/path/to/results"
+
         model_runner = Mock()
+
         dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        mock_get_dataset.return_value = mock_dataset
 
         summ_acc = SummarizationAccuracy()
         output = summ_acc.evaluate(
             model=model_runner,
             dataset_config=dataset_config,
-            prompt_template="Summarize $model_input, please.",
+            prompt_template=test_case.user_provided_prompt_template,
             num_records=162,
             save=True,
         )
 
         mock_evaluate_dataset.assert_called_once_with(
-            eval_name=summ_acc.eval_name,
+            dataset=mock_dataset,
             pipeline=summ_acc.pipeline,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=summ_acc.eval_name,
             metric_names=METRIC_NAMES,
-            required_columns=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name],
             eval_results_path="/path/to/results",
             model=model_runner,
-            dataset_config=dataset_config,
-            prompt_template="Summarize $model_input, please.",
-            num_records=162,
+            prompt_template=test_case.dataset_prompt_template,
+            agg_method=MEAN,
             save=True,
         )
         assert output == [mock_evaluate_dataset.return_value]

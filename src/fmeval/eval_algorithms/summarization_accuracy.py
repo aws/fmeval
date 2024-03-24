@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, List, Union, Tuple
 from ray import ObjectRef
 
-from fmeval.eval_algorithms import EvalScore, EvalOutput, EvalAlgorithm
+from fmeval.data_loaders.util import get_dataset
+from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms import util
-from fmeval.eval_algorithms.util import get_dataset_configs
+from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset, evaluate_dataset
 from fmeval.util import assert_condition, require, create_shared_resource, get_eval_results_path
-from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
@@ -197,7 +197,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluations will be run on all of this algorithm's built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.
-            If not provided, defaults will be used.
+            If not provided, defaults will be used. If provided, `model` must not be None.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
@@ -214,16 +214,18 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
-            eval_output = util.evaluate_dataset(
-                dataset_config=dataset_config,
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
+            eval_output = evaluate_dataset(
+                dataset=dataset,
                 pipeline=self.pipeline,
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=METRIC_NAMES,
-                required_columns=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name],
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=prompt_template,
-                num_records=num_records,
+                agg_method=MEAN,
                 save=save,
             )
             eval_outputs.append(eval_output)

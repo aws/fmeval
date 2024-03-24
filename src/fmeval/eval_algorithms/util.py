@@ -17,7 +17,6 @@ from fmeval.constants import (
     DATASET_COLUMNS,
 )
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
     EvalScore,
     CategoryScore,
@@ -26,7 +25,7 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     get_default_prompt_template,
 )
-from fmeval.exceptions import EvalAlgorithmInternalError
+from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
@@ -368,18 +367,29 @@ def generate_mean_delta_score(original_score: EvalScore, perturbed_input_scores:
     )
 
 
-def verify_model_determinism(model: ModelRunner, dataset: Dataset, prompt_column_name: str) -> bool:
+def verify_model_determinism(
+    model: ModelRunner,
+    dataset: Dataset,
+    prompt_template: str,
+    model_input_column_name: str = DatasetColumns.MODEL_INPUT.value.name,
+) -> bool:
+    """Heuristic for whether model is deterministic.
+
+    This function invokes the provided model twice on each of the first
+    NUM_ROWS_DETERMINISTIC rows in the dataset. If the two model outputs
+    for each input are the same for all rows, the model is considered deterministic.
+
+    :param model: A ModelRunner instance representing the model under investigation.
+    :param dataset: A Ray Dataset that includes a model input column.
+    :param prompt_template: The template used to compose the prompt from the model input.
+    :param model_input_column_name: Model input column name.
+    :returns: Whether the model is deterministic.
     """
-    Check model is not deterministic for first NUM_ROWS_DETERMINISTIC rows
-    :param model: An instance of ModelRunner which is the model under evaluation
-    :param dataset: a Ray Dataset that expected to include columns for prompts
-    :param prompt_column_name: Prompt column name
-    :return True if model is deterministic, False otherwise
-    """
+    prompt_composer = PromptComposer(prompt_template)
     for row in dataset.limit(NUM_ROWS_DETERMINISTIC).iter_rows():
-        original_prompt = row[prompt_column_name]
-        original_model_output = model.predict(original_prompt)[0]
-        if model.predict(original_prompt)[0] != original_model_output:
+        prompt = prompt_composer.compose(row[model_input_column_name])
+        model_output = model.predict(prompt)[0]
+        if model.predict(prompt)[0] != model_output:
             return False
     return True
 
@@ -397,40 +407,58 @@ def create_model_invocation_pipeline(model: ModelRunner, prompt_template: str) -
     return TransformPipeline([gen_prompt, get_model_outputs])
 
 
-def compute_and_aggregate_metrics(
-    pipeline: TransformPipeline,
+def evaluate_dataset(
     dataset: Dataset,
+    pipeline: TransformPipeline,
     dataset_name: str,
     eval_name: str,
     metric_names: List[str],
     eval_results_path: str,
-    prompt_template: Optional[str],
+    model: Optional[ModelRunner] = None,
+    prompt_template: Optional[str] = None,
     agg_method: str = MEAN,
     save: bool = False,
 ) -> EvalOutput:
-    """Execute an evaluation algorithm's pipeline on a single dataset to compute algorithm-specific metrics.
+    """Execute an evaluation algorithm's pipeline on a dataset.
 
-    This function is a helper function for the `evaluate` util function below.
-
-
-    :param pipeline: The evaluation algorithm's pipeline, to be executed on one or more datasets.
-    :param dataset: The dataset to execute the algorithm's pipeline on.
-    :param dataset_name: The name of the dataset.
+    :param dataset: The dataset to be evaluated.
+    :param pipeline: The evaluation algorithm's pipeline, to be executed on the dataset.
+    :param dataset_name: The name of the dataset being evaluated. This is metadata that
+        will be included in the returned EvalOutput object.
     :param eval_name: The name of the evaluation algorithm.
     :param metric_names: The names of the metrics that this evaluation algorithm computes.
-    :param eval_results_path: A file containing evaluation results will be stored under this directory.
-    :param prompt_template: The prompt template used to generate the prompts that are fed
-        to the model when it is invoked. Note that this argument is passed purely to be included
-        as metadata in the returned EvalOutput. The `pipeline` argument should already contain
-        the relevant prompt-generation and model-invocation transforms whose behavior is
-        configured by this argument. See the `evaluate_dataset` function for more details.
+        prior to performing any evaluation logic. This parameter is algorithm-specific.
+    :param eval_results_path: A file containing evaluation results will be stored at this path.
+    :param model: An instance of ModelRunner representing the model under evaluation.
+        If this argument is None, model responses cannot be obtained. In such cases,
+        the dataset configured by `dataset_config` should already contain a column for
+        model outputs.
+    :param prompt_template: A template used to generate prompts that are fed to the model.
+        If set to None, a default value will be used. Note that if this argument is not None,
+        `model` must also not be None.
     :param agg_method: The aggregation method to use when aggregating the computed metric values.
         Currently, only MEAN is supported.
     :param save: If set to true, prompt responses and scores will be saved to a file.
         The path that this file is stored at is configured by `eval_results_path`.
 
-    :return: A list of EvalOutput objects.
+    :return: An EvalOutput object encapsulating the results of the evaluation.
     """
+    if prompt_template:
+        util.require(model, "A model must be provided as well if the provided prompt template is not None.")
+    if model:
+        prompt_template = get_default_prompt_template(dataset_name) if not prompt_template else prompt_template
+        model_invocation_pipeline = create_model_invocation_pipeline(model, prompt_template)
+        pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
+    else:
+        try:
+            validate_dataset(dataset, [DatasetColumns.MODEL_OUTPUT.value.name])
+        except EvalAlgorithmClientError:
+            raise EvalAlgorithmClientError(
+                "evaluate_dataset has been given a dataset with no model output column "
+                "and no ModelRunner to obtain outputs from. Please either provide a model "
+                "or use a dataset that contains model outputs already."
+            )
+
     with (timed_block(f"Computing score and aggregation on dataset {dataset_name}", logger)):
         dataset = pipeline.execute(dataset)
         dataset_scores, category_scores = aggregate_evaluation_scores(dataset, metric_names, agg_method=agg_method)
@@ -457,70 +485,3 @@ def compute_and_aggregate_metrics(
             )
 
         return eval_output
-
-
-def evaluate_dataset(
-    dataset_config: DataConfig,
-    pipeline: TransformPipeline,
-    eval_name: str,
-    metric_names: List[str],
-    required_columns: List[str],
-    eval_results_path: str,
-    model: Optional[ModelRunner] = None,
-    prompt_template: Optional[str] = None,
-    num_records: int = 100,
-    agg_method: str = MEAN,
-    save: bool = False,
-) -> EvalOutput:
-    """Load and validate the dataset to be evaluated, and prepare the pipeline for execution.
-
-    This is a utility function used by the `evaluate` methods of all built-in evaluation algorithms.
-    The core logic for executing the pipeline itself is found in `compute_and_aggregate_metrics`;
-    this function simply handles the required pre-processing of the inputs.
-
-    :param dataset_config: Configures the dataset to be evaluated.
-    :param pipeline: The evaluation algorithm's pipeline, to be executed on the dataset.
-    :param eval_name: The name of the evaluation algorithm.
-    :param metric_names: The names of the metrics that this evaluation algorithm computes.
-    :param required_columns: The names of the columns that must be present in the dataset
-        prior to performing any evaluation logic. This parameter is algorithm-specific.
-    :param eval_results_path: A file containing evaluation results will be stored at this path.
-    :param model: An instance of ModelRunner representing the model under evaluation.
-        If this argument is None, model responses cannot be obtained. In such cases,
-        the dataset configured by `dataset_config` should already contain a column for
-        model outputs.
-    :param prompt_template: A template used to generate prompts that are fed to the model.
-        If set to None, a default value will be used. Note that if this argument is not None,
-        `model` must also not be None.
-    :param num_records: The number of records to be sampled randomly from the input dataset
-        used to perform the evaluation.
-    :param agg_method: The aggregation method to use when aggregating the computed metric values.
-        Currently, only MEAN is supported.
-    :param save: If set to true, prompt responses and scores will be saved to a file.
-        The path that this file is stored at is configured by `eval_results_path`.
-
-    :return: An EvalOutput object encapsulating the results of the evaluation.
-    """
-    dataset = get_dataset(dataset_config, num_records)
-    validate_dataset(dataset, required_columns)
-
-    if prompt_template:
-        util.require(model, "A model must be provided as well if the provided prompt template is not None.")
-    if model:
-        prompt_template = (
-            get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
-        )
-        model_invocation_pipeline = create_model_invocation_pipeline(model, prompt_template)
-        pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
-
-    return compute_and_aggregate_metrics(
-        pipeline=pipeline,
-        dataset=dataset,
-        dataset_name=dataset_config.dataset_name,
-        eval_name=eval_name,
-        metric_names=metric_names,
-        eval_results_path=eval_results_path,
-        prompt_template=prompt_template,
-        agg_method=agg_method,
-        save=save,
-    )

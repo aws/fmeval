@@ -7,8 +7,10 @@ from fmeval.constants import (
     DatasetColumns,
     PREFIX_FOR_DELTA_SCORES,
     BERTSCORE_DEFAULT_MODEL,
+    MEAN,
 )
 from fmeval.data_loaders.data_config import DataConfig
+from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalScore,
@@ -32,7 +34,12 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     BERT_SCORE,
 )
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
-from fmeval.eval_algorithms.util import get_dataset_configs, evaluate_dataset, create_model_invocation_pipeline
+from fmeval.eval_algorithms.util import (
+    get_dataset_configs,
+    evaluate_dataset,
+    create_model_invocation_pipeline,
+    validate_dataset,
+)
 from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeScore, BertScore
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
@@ -256,22 +263,21 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
-            # Although evaluate_dataset performs the same logic to
-            # get the dataset prompt template, we need to obtain it
-            # here, since the template is used by self.build_pipeline.
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
-                dataset_config=dataset_config,
+                dataset=dataset,
                 pipeline=self.build_pipeline(model, dataset_prompt_template, use_ray=True),
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
-                required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=dataset_prompt_template,
-                num_records=num_records,
+                agg_method=MEAN,
                 save=save,
             )
             eval_outputs.append(eval_output)
