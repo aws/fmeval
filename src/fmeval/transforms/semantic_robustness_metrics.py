@@ -1,5 +1,7 @@
 import evaluate as hf_evaluate
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
+
+import numpy as np
 
 from fmeval.util import require
 from fmeval.transforms.common import Mean
@@ -90,4 +92,53 @@ class WER(Transform):
             references=[record[reference_key] for reference_key in self.reference_keys],
         )
         record[self.output_key] = wer_metric
+        return record
+
+
+class MeanDeltaScores(Transform):
+    """This transform augments an input record with mean delta scores.
+
+    Given
+        1) An "original score", which is a score that was computed using
+            an "original" i.e. unperturbed input
+        2) A series of "perturbed scores", which are scores computed using
+            perturbations of the original input
+    the delta score for a particular perturbed score is computed using the
+    formula: abs(original_score - perturbed_score), and the mean delta score
+    is simply the arithmetic mean of all delta scores for the series of
+    perturbed scores.
+    """
+
+    def __init__(self, key_mapping: Dict[str, Tuple[List[str], str]]):
+        """MeanDeltaScores initializer.
+
+        :param key_mapping: Maps an original score key to a tuple of the form
+            (perturbed_score_keys, output_key). output_key will be used
+            as the output key corresponding to the mean delta score computed
+            using the original score and perturbed scores.
+        """
+        super().__init__(key_mapping)
+        original_score_keys = list(key_mapping.keys())
+        perturbed_score_keys = [key for tup in key_mapping.values() for key in tup[0]]
+        self.register_input_output_keys(
+            input_keys=original_score_keys + perturbed_score_keys,
+            output_keys=[tup[1] for tup in key_mapping.values()],
+        )
+        self.key_mapping = key_mapping
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the computed mean delta scores.
+
+        :param record: The input record.
+        :returns: The input record with the mean delta scores added in.
+        """
+        for original_score_key, tup in self.key_mapping.items():
+            perturbed_score_keys, output_key = tup
+            record[output_key] = np.mean(
+                [
+                    abs(record[original_score_key] - record[perturbed_score_key])
+                    for perturbed_score_key in perturbed_score_keys
+                ]
+            )
         return record

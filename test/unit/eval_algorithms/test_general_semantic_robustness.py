@@ -19,9 +19,8 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     UpdateRobustnessScores,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.helper_models import BertscoreModel
+from fmeval.helper_models import BertscoreModel, BertscoreModelTypes
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     ButterFinger,
@@ -126,7 +125,7 @@ class TestGeneralSemanticRobustness:
         model_name = "my_model"
         expected_error_message = (
             f"Invalid model_type_for_bertscore: {model_name} requested in GeneralSemanticRobustnessConfig, "
-            f"please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}."
+            f"please choose from acceptable values: {BertscoreModelTypes.model_list()}."
         )
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             GeneralSemanticRobustnessConfig(model_type_for_bertscore=model_name)

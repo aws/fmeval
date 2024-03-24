@@ -28,7 +28,7 @@ def format_input(input_str: str) -> str:
 class TestSummarizationAccuracy:
     def test_evaluate_sample_and_evaluate(self, integration_tests_dir):
         """
-        Instantiating a SummarizationAccuracy object will create a BertscoreHelperModel
+        Instantiating a SummarizationAccuracy object will create a BertscoreModel
         Ray actor. To avoid doing this twice (which would require us to shut down Ray
         in between tests due to Bert's high memory usage), we use a single SummarizationAccuracy
         object to test evaluate_sample and evaluate back-to-back (instead of following the

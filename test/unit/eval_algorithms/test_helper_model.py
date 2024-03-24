@@ -1,11 +1,9 @@
 from unittest.mock import patch, PropertyMock
-import ray
 import numpy as np
 import pytest
 
 from fmeval.eval_algorithms.helper_models.helper_model import (
     ToxigenHelperModel,
-    BertscoreHelperModel,
     TOXIGEN_SCORE_NAME,
     DETOXIFY_SCORE_NAMES,
     DetoxifyHelperModel,
@@ -151,12 +149,3 @@ class TestHelperModel:
         """
         test_helper = DetoxifyHelperModel()
         assert test_helper.get_score_names() == DETOXIFY_SCORE_NAMES
-
-    def test_bertscore_helper_model_roberta(self):
-        """
-        Test bertscore helper model
-        """
-        bertscore = BertscoreHelperModel.remote("distilbert-base-uncased")
-        assert ray.get(
-            bertscore.get_helper_scores.remote("sample text reference", "sample text prediction")
-        ) == pytest.approx(0.902793288230896)

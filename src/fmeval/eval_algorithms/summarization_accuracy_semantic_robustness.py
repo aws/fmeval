@@ -1,167 +1,80 @@
 import logging
-import ray
-import ray.data
 
-from ray.data import Dataset
-from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import List, Optional
 
-from fmeval import util
 from fmeval.constants import (
     DatasetColumns,
-    MEAN,
-    BUTTER_FINGER,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
     PREFIX_FOR_DELTA_SCORES,
+    BERTSCORE_DEFAULT_MODEL,
 )
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalScore,
     EvalOutput,
-    DATASET_CONFIGS,
-    EVAL_DATASETS,
     DEFAULT_PROMPT_TEMPLATE,
     get_default_prompt_template,
 )
-from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
-from fmeval.eval_algorithms.semantic_perturbation_utils import (
-    ButterFinger,
-    RandomUpperCase,
-    WhitespaceAddRemove,
-    ButterFingerConfig,
-    RandomUpperCaseConfig,
-    WhitespaceAddRemoveConfig,
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
+from fmeval.eval_algorithms.semantic_robustness_utils import (
+    SemanticRobustnessConfig,
+    get_perturbation_transform,
+    get_model_responses_from_perturbed_inputs,
 )
+from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores
 from fmeval.eval_algorithms.summarization_accuracy import (
-    ROUGE_2,
-    SummarizationAccuracyConfig,
-    ROUGE_TYPES,
     SummarizationAccuracy,
+    ROUGE_TYPES,
+    ROUGE_2,
     ROUGE_SCORE,
     METEOR_SCORE,
     BERT_SCORE,
 )
-from fmeval.constants import BERTSCORE_DEFAULT_MODEL
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
-from fmeval.eval_algorithms.util import (
-    validate_dataset,
-    save_dataset,
-    aggregate_evaluation_scores,
-    generate_output_dataset_path,
-    generate_prompt_column_for_dataset,
-    generate_mean_delta_score,
-    generate_model_predict_response_for_dataset,
-)
-from fmeval.util import get_num_actors
-from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.model_runners.composers.composers import PromptComposer
+from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
+from fmeval.eval_algorithms.util import get_dataset_configs, evaluate_dataset, create_model_invocation_pipeline
+from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeScore, BertScore
+from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.transforms.util import create_output_key
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.perf_util import timed_block
+from fmeval.util import require, create_shared_resource, get_eval_results_path
 
 logger = logging.getLogger(__name__)
-
-# All the perturbation types supported by this eval algo
-PERTURBATION_TYPE_TO_HELPER_CLASS = {
-    BUTTER_FINGER: ButterFinger,
-    RANDOM_UPPER_CASE: RandomUpperCase,
-    WHITESPACE_ADD_REMOVE: WhitespaceAddRemove,
-}
 
 DELTA_ROUGE_SCORE = PREFIX_FOR_DELTA_SCORES + ROUGE_SCORE
 DELTA_METEOR_SCORE = PREFIX_FOR_DELTA_SCORES + METEOR_SCORE
 DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
-
-
-@ray.remote(num_cpus=0)
-class SummarizationAccuracyActor:
-    """
-    This class represents the SummarizationAccuracy eval algo instance
-    that is tied to a SummarizationAccuracySemanticRobustness instance.
-
-    Since a SummarizationAccuracySemanticRobustness instance gets deserialized
-    by each of the K GenerateEvalScoresActors spun up by __add_scores, if we
-    initialize a SummarizationAccuracy instance inside of the __init__ method of
-    SummarizationAccuracySemanticRobustness, we will create K BertscoreHelperModel
-    actors (since each SummarizationAccuracy has a corresponding BertscoreHelperModel),
-    which is not the intended behavior.
-
-    By using this class, when we explicitly instantiate a SummarizationAccuracySemanticRobustness,
-    a single SummarizationAccuracy gets instantiated (and stored in self.eval_algo), and this
-    SummarizationAccuracy instance gets reused every time a SummarizationAccuracySemanticRobustness
-    instance gets deserialized by a GenerateEvalScoresActor.
-
-    Note: we set num_cpus=0 for this actor because it is simply a wrapper around
-    a SummarizationAccuracy instance, whose BertscoreHelperModel already
-    has num_cpus=1. By setting num_cpus=0, we indicate that this actor
-    doesn't actually use up any logical resources (again, the actor
-    that's *actually* consuming resources is the BertscoreHelperModel).
-
-    See the following Ray documentation about Ray resources in general:
-    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
-
-    Details on specifying resource requirements (as we do with num_cpus=0):
-    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html#specifying-task-or-actor-resource-requirements
-    """
-
-    def __init__(self, config: SummarizationAccuracyConfig):
-        self.eval_algo = SummarizationAccuracy(config)  # pragma: no cover
-
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
-        return self.eval_algo.evaluate_sample(target_output, model_output)  # pragma: no cover
+DELTA_SCORES = [DELTA_METEOR_SCORE, DELTA_ROUGE_SCORE, DELTA_BERT_SCORE]
+ORIGINAL_SCORES = [METEOR_SCORE, ROUGE_SCORE, BERT_SCORE]
 
 
 @dataclass(frozen=True)
-class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
-    """
-    Configuration for the summarization accuracy semantic robustness eval algorithm.
+class SummarizationAccuracySemanticRobustnessConfig(SemanticRobustnessConfig):
+    """Configures the summarization accuracy semantic robustness evaluation algorithm.
 
-    :param perturbation_type: perturbation type for generating perturbed inputs
-    :param num_perturbations: Number of perturbed inputs to be generated for robustness evaluation
-    :param butter_finger_perturbation_prob: The probability that a given character will be perturbed. Used for
-        butter_finger perturbation_type
-    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase. Used for
-        random_upper_case perturbation_type
-    :param whitespace_remove_prob: Given a whitespace, remove it with this much probability. Used for
-        whitespace_add_remove perturbation_type
-    :param whitespace_add_prob: Given a non-whitespace, add a whitespace before it with this probability. Used for
-        whitespace_add_remove perturbation_type
-    :param rouge_type: Type of rouge metric in eval results
-    :param use_stemmer_for_rouge: bool value to set using stemmer for rouge metric
-    :param model_type_for_bertscore: model to use for bert score
+    See SemanticRobustnessConfig for the configurable parameters that this config class inherits.
+
+    :param rouge_type: ROUGE metric type.
+    :param use_stemmer_for_rouge: Whether to use stemmer when computing ROUGE metric.
+    :param model_type_for_bertscore: BERT model type to use for computing BERT score.
     """
 
-    perturbation_type: str = BUTTER_FINGER
-    num_perturbations: int = 5
-    butter_finger_perturbation_prob: float = 0.1
-    random_uppercase_corrupt_proportion: float = 0.1
-    whitespace_remove_prob: float = 0.1
-    whitespace_add_prob: float = 0.05
     rouge_type: str = ROUGE_2
     use_stemmer_for_rouge: bool = True
     model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
-        if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
-            raise EvalAlgorithmClientError(
-                f"Invalid perturbation type '{self.perturbation_type} requested, please "
-                f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
-            )
-
-        if self.rouge_type not in ROUGE_TYPES:
-            raise EvalAlgorithmClientError(
-                f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracyConfig, "
-                f"please choose from acceptable values: {ROUGE_TYPES}"
-            )
-
-        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
-            raise EvalAlgorithmClientError(
-                f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
-            )
+        super().__post_init__()
+        require(
+            self.rouge_type in ROUGE_TYPES,
+            f"Invalid rouge_type: {self.rouge_type} requested in SummarizationAccuracySemanticRobustnessConfig. "
+            f"Please choose from acceptable values: {ROUGE_TYPES}.",
+        )
+        require(
+            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+            f"SummarizationAccuracySemanticRobustnessConfig. Please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
+        )
 
 
 class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
@@ -178,128 +91,153 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     For details on the Summarization Accuracy metrics, see the Summarization Accuracy evaluation. For details on perturbations, see the GeneralSemanticRobustness evaluation.
     """
 
+    eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
+
     def __init__(
         self,
         eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig = SummarizationAccuracySemanticRobustnessConfig(),
-        summ_acc_actor: Optional[SummarizationAccuracyActor] = None,
+        use_ray: bool = True,
     ):
-        """Default constructor
+        """SummarizationAccuracySemanticRobustness initializer.
 
-        :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
+        :param eval_algorithm_config: Summarization accuracy semantic robustness evaluation algorithm config.
         """
-        self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
-        self._eval_algorithm_config = eval_algorithm_config
+        self.config = eval_algorithm_config
+        self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
+        bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        if use_ray:  # pragma: no branch
+            bertscore_model = create_shared_resource(bertscore_model)
+        self.bertscore_model = bertscore_model
 
-        if self._eval_algorithm_config.perturbation_type == BUTTER_FINGER:
-            self._perturbation_config = ButterFingerConfig(self._eval_algorithm_config.butter_finger_perturbation_prob)
-        elif self._eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
-            self._perturbation_config = RandomUpperCaseConfig(
-                self._eval_algorithm_config.random_uppercase_corrupt_proportion
-            )
-        else:
-            self._perturbation_config = WhitespaceAddRemoveConfig(
-                self._eval_algorithm_config.whitespace_remove_prob, self._eval_algorithm_config.whitespace_add_prob
-            )
+    def build_pipeline(
+        self,
+        model: ModelRunner,
+        prompt_template: str,
+        use_ray: bool,
+    ) -> TransformPipeline:
+        """Build the TransformPipeline to be used by `evaluate` and `evaluate_sample`.
 
-        self._summarization_accuracy_eval_algo = (
-            SummarizationAccuracyActor.remote(  # type: ignore[attr-defined]
-                SummarizationAccuracyConfig(
-                    rouge_type=eval_algorithm_config.rouge_type,
-                    use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
-                    model_type_for_bertscore=eval_algorithm_config.model_type_for_bertscore,
-                )
-            )
-            if summ_acc_actor is None
-            else summ_acc_actor
+        While other evaluation algorithms (ex: Summarization Accuracy) can configure
+        their TransformPipeline at algorithm initialization, because the Summarization Accuracy
+        Semantic Robustness (SASR) algorithm's evaluation logic depends on the ModelRunner
+        and prompt template that are evaluation-specific (i.e. these parameters aren't
+        configured at the algorithm level), the pipeline used by the SASR algorithm is built
+        when `evaluate` or `evaluate_sample` is called.
+
+        :param model: The ModelRunner representing the model under evaluation.
+        :param prompt_template: A template that is used to construct the prompt fed to the model.
+        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
+            algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
+            as the execution of the transform pipeline relies on the BertscoreModel existing
+            in shared memory. This flag can be set to False if you only plan on invoking the
+            `evaluate_sample` method, which is a computationally cheap operation that does not
+            require utilizing Ray for parallel execution.
+        :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
+        """
+        transforms = get_model_responses_from_perturbed_inputs(
+            self.perturbation_transform,
+            prompt_template,
+            model,
+        )
+        get_perturbed_inputs, gen_perturbed_prompts, get_perturbed_responses = transforms
+
+        meteor_score, rouge_score, bert_score, _ = SummarizationAccuracy.build_pipeline(
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            meteor_keys=[METEOR_SCORE],
+            rouge_keys=[ROUGE_SCORE],
+            bertscore_keys=[BERT_SCORE],
+            rouge_type=self.config.rouge_type,
+            use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
+            bertscore_model=self.bertscore_model,
+            use_ray=use_ray,
         )
 
-    def __reduce__(self):  # pragma: no cover
-        """
-        Custom serializer method used by Ray when it serializes instances of this
-        class during dataset.map() operations.
-        """
-        serialized_data = (self._eval_algorithm_config, self._summarization_accuracy_eval_algo)
-        return SummarizationAccuracySemanticRobustness, serialized_data
+        perturbed_meteor_score, perturbed_rouge_score, perturbed_bert_score, _ = SummarizationAccuracy.build_pipeline(
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name for _ in range(self.config.num_perturbations)],
+            model_output_keys=get_perturbed_responses.output_keys,
+            meteor_keys=[
+                create_output_key(MeteorScore.__name__, "perturbed", i) for i in range(self.config.num_perturbations)
+            ],
+            rouge_keys=[
+                create_output_key(RougeScore.__name__, "perturbed", i) for i in range(self.config.num_perturbations)
+            ],
+            bertscore_keys=[
+                create_output_key(BertScore.__name__, "perturbed", i) for i in range(self.config.num_perturbations)
+            ],
+            rouge_type=self.config.rouge_type,
+            use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
+            bertscore_model=self.bertscore_model,
+            use_ray=use_ray,
+        )
+
+        delta_meteor_key = DELTA_METEOR_SCORE
+        delta_rouge_key = DELTA_ROUGE_SCORE
+        delta_bert_key = DELTA_BERT_SCORE
+        mean_delta_scores = MeanDeltaScores(
+            {
+                meteor_score.output_keys[0]: (perturbed_meteor_score.output_keys, delta_meteor_key),
+                rouge_score.output_keys[0]: (perturbed_rouge_score.output_keys, delta_rouge_key),
+                bert_score.output_keys[0]: (perturbed_bert_score.output_keys, delta_bert_key),
+            }
+        )
+
+        transforms = [
+            get_perturbed_inputs,
+            gen_perturbed_prompts,
+            get_perturbed_responses,
+            meteor_score,
+            rouge_score,
+            bert_score,
+            perturbed_meteor_score,
+            perturbed_rouge_score,
+            perturbed_bert_score,
+            mean_delta_scores,
+        ]
+        pipeline = TransformPipeline(transforms)
+        return pipeline
 
     def evaluate_sample(
         self,
         model_input: str,
         target_output: str,
         model: ModelRunner,
-        model_output: Optional[str] = None,
         prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
-    ) -> List[EvalScore]:  # type: ignore[override]
+    ) -> List[EvalScore]:
+        """Compute summarization accuracy semantic robustness metrics for a single sample.
+
+        A sample is defined as a model input and model output pair.
+
+        :param model_input: Text input, which will be composed into a prompt that gets fed to the model.
+        :param target_output: The expected response from the model.
+        :param model: An instance of ModelRunner representing the model under evaluation.
+        :param prompt_template: A template used to compose the prompt from `model_input`.
+        :return: A list of EvalScores.
         """
-        Summarization Accuracy Semantic Robustness evaluate sample.
+        sample = {
+            DatasetColumns.MODEL_INPUT.value.name: model_input,
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+        }
+        invoke_model = create_model_invocation_pipeline(model, prompt_template)
+        compute_metrics = self.build_pipeline(model, prompt_template, use_ray=False)
+        pipeline = TransformPipeline([invoke_model, compute_metrics])
+        output_record = pipeline.execute_record(sample)
 
-        :param model_input: text input for model
-        :param target_output: The expected responses from the model
-        :param model: An instance of ModelRunner which is the model under evaluation
-        :param model_output: The output of a model that we want to evaluate.
-        :param prompt_template: A template which can be used to compose prompt using model_input
-        :return: list of EvalScore object
-        """
-        util.require(
-            model_input,
-            "Missing required input: model_input, for SummarizationAccuracySemanticRobustness evaluate_sample",
-        )
-        util.require(
-            model,
-            "Missing required input: model i.e. ModelRunner, for "
-            "SummarizationAccuracySemanticRobustness evaluate_sample",
-        )
-        util.require(
-            target_output,
-            "Missing required input: target_output, for " "SummarizationAccuracySemanticRobustness evaluate_sample",
-        )
-
-        prompt_composer = PromptComposer(prompt_template)
-        original_prompt = prompt_composer.compose(model_input)
-        original_model_output = model_output if model_output else model.predict(original_prompt)[0]
-
-        perturbation = PERTURBATION_TYPE_TO_HELPER_CLASS[self._eval_algorithm_config.perturbation_type]()
-        perturbed_inputs = perturbation.perturb(
-            text=model_input,
-            config=self._perturbation_config,
-            num_perturbations=self._eval_algorithm_config.num_perturbations,
-        )
-        perturbed_input_prompts = [prompt_composer.compose(perturbed_input) for perturbed_input in perturbed_inputs]
-        perturbed_input_outputs = [model.predict(prompt)[0] for prompt in perturbed_input_prompts]
-
-        original_summarization_accuracy_scores = ray.get(
-            self._summarization_accuracy_eval_algo.evaluate_sample.remote(
-                target_output=target_output, model_output=original_model_output
-            )
-        )
-
-        perturbed_outputs_summarization_accuracy_scores = defaultdict(list)
-        for perturbed_input_output in perturbed_input_outputs:
-            accuracy_scores = ray.get(
-                self._summarization_accuracy_eval_algo.evaluate_sample.remote(
-                    target_output=target_output, model_output=perturbed_input_output
-                )
-            )
-            for accuracy_score in accuracy_scores:
-                perturbed_outputs_summarization_accuracy_scores[accuracy_score.name].append(accuracy_score)
-
-        delta_scores = [
-            EvalScore(
-                name=PREFIX_FOR_DELTA_SCORES + original_score.name,
-                value=generate_mean_delta_score(
-                    original_score, perturbed_outputs_summarization_accuracy_scores[original_score.name]
-                ),
-            )
-            for original_score in original_summarization_accuracy_scores
+        original_scores = [
+            EvalScore(name=score_name, value=output_record[score_name]) for score_name in ORIGINAL_SCORES
         ]
-        return original_summarization_accuracy_scores + delta_scores
+        delta_scores = [
+            EvalScore(name=delta_score_name, value=output_record[delta_score_name]) for delta_score_name in DELTA_SCORES
+        ]
+        return original_scores + delta_scores
 
-    def evaluate(  # type: ignore[override]
+    def evaluate(
         self,
         model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
-        save: bool = False,
         num_records: int = 100,
+        save: bool = False,
     ) -> List[EvalOutput]:
         """
         Semantic Robustness evaluate.
@@ -315,113 +253,27 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                             evaluation
         :return: List of EvalOutput objects.
         """
-        util.require(
-            model,
-            "Missing required input: model i.e. ModelRunner, for SummarizationAccuracySemanticRobustness "
-            "evaluate method",
-        )
-        if dataset_config:
-            dataset_configs = [dataset_config]
-        else:
-            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
-
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
-            dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
+            # Although evaluate_dataset performs the same logic to
+            # get the dataset prompt template, we need to obtain it
+            # here, since the template is used by self.build_pipeline.
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
-            dataset = generate_prompt_column_for_dataset(
-                dataset_prompt_template,
-                dataset,
-                DatasetColumns.MODEL_INPUT.value.name,
-                DatasetColumns.PROMPT.value.name,
-            )
-
-            dataset = generate_model_predict_response_for_dataset(
+            eval_output = evaluate_dataset(
+                dataset_config=dataset_config,
+                pipeline=self.build_pipeline(model, dataset_prompt_template, use_ray=True),
+                eval_name=self.eval_name,
+                metric_names=ORIGINAL_SCORES + DELTA_SCORES,
+                required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
+                eval_results_path=get_eval_results_path(),
                 model=model,
-                data=dataset,
-                model_input_column_name=DatasetColumns.PROMPT.value.name,
-                model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
+                prompt_template=dataset_prompt_template,
+                num_records=num_records,
+                save=save,
             )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-                dataset = self.__add_scores(model, dataset_prompt_template, dataset)
-
-                dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset,
-                    [ROUGE_SCORE, BERT_SCORE, METEOR_SCORE, DELTA_ROUGE_SCORE, DELTA_BERT_SCORE, DELTA_METEOR_SCORE],
-                    agg_method=MEAN,
-                )
-                eval_outputs.append(
-                    EvalOutput(
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                        prompt_template=dataset_prompt_template,
-                        dataset_scores=dataset_scores,
-                        category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=util.get_eval_results_path(),
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
-                    )
-                )
-            if save:
-                save_dataset(
-                    dataset=dataset,
-                    score_names=[
-                        ROUGE_SCORE,
-                        BERT_SCORE,
-                        METEOR_SCORE,
-                        DELTA_ROUGE_SCORE,
-                        DELTA_BERT_SCORE,
-                        DELTA_METEOR_SCORE,
-                    ],
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=util.get_eval_results_path(),
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
-                )
+            eval_outputs.append(eval_output)
 
         return eval_outputs
-
-    def __add_scores(self, model: ModelRunner, prompt_template: str, dataset: Dataset) -> Dataset:  # pragma: no cover
-        """
-        Private method to encapsulate map call on evaluate sample. Specifically created for cleaner mocking in
-        unit tests.
-        :param model: model to be used for evaluation
-        :param prompt_template: prompt template
-        :param dataset: input ray dataset
-        :returns: ray dataset with added score columns
-        """
-        evaluate_sample_fn = self.evaluate_sample
-
-        class GenerateEvalScoresActor:  # pragma: no cover
-            """
-            This class represents the Ray Actor that gets eval scores for every row in ray dataset by
-            calling evaluate_sample of the same class.
-
-            We use Ray Actors instead of Tasks because the Actor approach minimizes
-            the number of times the SummarizationAccuracy dependent class gets serialised/deserialized.
-            With Tasks, Ray will serialise and deserialize for every single row evaluation. With Actors,
-            class gets deserialized once per Actor when the Actor gets initialized.
-            """
-
-            def __call__(self, row: Dict[str, Any]) -> Dict[str, Any]:
-                assert prompt_template  # to satisfy mypy
-                scores = evaluate_sample_fn(
-                    model_input=row[DatasetColumns.MODEL_INPUT.value.name],
-                    target_output=row[DatasetColumns.TARGET_OUTPUT.value.name],
-                    model=model,
-                    model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
-                    prompt_template=prompt_template,
-                )
-                for score in scores:
-                    row[score.name] = score.value
-                return row
-
-        return dataset.map(
-            GenerateEvalScoresActor, compute=ray.data.ActorPoolStrategy(size=get_num_actors())  # type: ignore[arg-type]
-        ).materialize()
