@@ -9,7 +9,7 @@ from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import MagicMock, patch, Mock
 from _pytest.fixtures import fixture
 
-from fmeval.constants import DatasetColumns, BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, MEAN
+from fmeval.constants import BUTTER_FINGER, DatasetColumns, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
 from fmeval.eval_algorithms import EvalScore
 from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
@@ -455,14 +455,13 @@ class TestGeneralSemanticRobustness:
             model_runner, test_case.dataset_prompt_template, is_deterministic=test_case.is_deterministic
         )
         mock_compute_metrics.assert_called_once_with(
-            final_pipeline,
-            dataset_with_model_outputs,
-            dataset_config.dataset_name,
-            test_case.dataset_prompt_template,
-            GeneralSemanticRobustness.eval_name,
-            [BERT_SCORE_DISSIMILARITY, WER_SCORE],
-            "/path/to/eval/results",
-            agg_method=MEAN,
+            pipeline=final_pipeline,
+            dataset=dataset_with_model_outputs,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=GeneralSemanticRobustness.eval_name,
+            metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
+            eval_results_path="/path/to/eval/results",
+            prompt_template=test_case.dataset_prompt_template,
             save=test_case.save,
         )
 

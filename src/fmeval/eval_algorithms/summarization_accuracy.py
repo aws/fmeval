@@ -6,6 +6,7 @@ from ray import ObjectRef
 from fmeval.eval_algorithms import EvalScore, EvalOutput, EvalAlgorithm
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import util
+from fmeval.eval_algorithms.util import get_dataset_configs
 from fmeval.util import assert_condition, require, create_shared_resource, get_eval_results_path
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns
 from fmeval.transforms.transform_pipeline import TransformPipeline
@@ -176,14 +177,17 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         """Compute summarization accuracy metrics on one or more datasets.
 
         :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
         :param dataset_config: Configures the single dataset used for evaluation.
-            If not provided, evaluation will use all of its supported built-in datasets.
+            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.
             If not provided, defaults will be used.
-        :param num_records: The number of records to be sampled randomly from the input dataset
-            used to perform the evaluation.
+        :param num_records: The number of records to be sampled randomly from the input dataset(s)
+            used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
-            The path that this file is stored at is configured by `eval_results_path`.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
         :return: A list of EvalOutput objects.
         """
@@ -192,15 +196,20 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             "The use_ray instance attribute of SummarizationAccuracy must be True in order "
             "for the evaluate method to run successfully.",
         )
-        return util.run_evaluation(
-            eval_name=self.eval_name,
-            pipeline=self.pipeline,
-            metric_names=METRIC_NAMES,
-            required_columns=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name],
-            eval_results_path=get_eval_results_path(),
-            model=model,
-            dataset_config=dataset_config,
-            prompt_template=prompt_template,
-            num_records=num_records,
-            save=save,
-        )
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
+        eval_outputs = []
+        for dataset_config in dataset_configs:
+            eval_output = util.evaluate_dataset(
+                dataset_config=dataset_config,
+                pipeline=self.pipeline,
+                eval_name=self.eval_name,
+                metric_names=METRIC_NAMES,
+                required_columns=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name],
+                eval_results_path=get_eval_results_path(),
+                model=model,
+                prompt_template=prompt_template,
+                num_records=num_records,
+                save=save,
+            )
+            eval_outputs.append(eval_output)
+        return eval_outputs
