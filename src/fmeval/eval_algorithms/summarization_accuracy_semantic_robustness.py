@@ -24,7 +24,7 @@ from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
-    get_model_responses_from_perturbed_inputs,
+    get_model_outputs_from_perturbed_inputs,
 )
 from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores
 from fmeval.eval_algorithms.summarization_accuracy import (
@@ -137,7 +137,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             to a BertscoreHelperModel (i.e. a shared resource).
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
-        transforms = get_model_responses_from_perturbed_inputs(
+        transforms = get_model_outputs_from_perturbed_inputs(
             self.perturbation_transform,
             prompt_template,
             model,

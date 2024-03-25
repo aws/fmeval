@@ -20,7 +20,7 @@ from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
-    get_model_responses_from_perturbed_inputs,
+    get_model_outputs_from_perturbed_inputs,
 )
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
@@ -155,12 +155,11 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             multiple inputs from the dataset are used.
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
-
         (
             get_perturbed_inputs,
             gen_perturbed_prompts,
             get_perturbed_responses,
-        ) = get_model_responses_from_perturbed_inputs(
+        ) = get_model_outputs_from_perturbed_inputs(
             self.perturbation_transform,
             prompt_template,
             model,
