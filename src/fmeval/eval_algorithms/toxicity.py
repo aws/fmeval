@@ -12,12 +12,12 @@ from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
-    EvalAlgorithm,
     DATASET_CONFIGS,
     EVAL_DATASETS,
     get_default_prompt_template,
+    EvalAlgorithm,
 )
-from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, DetoxifyHelperModel
 from fmeval.eval_algorithms.util import (
     validate_dataset,
@@ -73,7 +73,6 @@ class Toxicity(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Toxicity eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
         self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()
@@ -153,7 +152,7 @@ class Toxicity(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -164,7 +163,7 @@ class Toxicity(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=self._helper_model.get_score_names(),
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

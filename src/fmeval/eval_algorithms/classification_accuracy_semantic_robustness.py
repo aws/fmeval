@@ -129,7 +129,6 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy Semantic Robustness eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
         self._classification_accuracy_eval_algo = ClassificationAccuracy(
@@ -264,7 +263,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -277,7 +276,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[CLASSIFICATION_ACCURACY_SCORE, DELTA_CLASSIFICATION_ACCURACY_SCORE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

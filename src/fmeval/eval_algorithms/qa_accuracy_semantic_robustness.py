@@ -35,10 +35,7 @@ from fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
 )
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
@@ -133,7 +130,6 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: QA Accuracy Semantic Robustness eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = QA_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
 
@@ -251,7 +247,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -273,7 +269,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                         DELTA_RECALL_OVER_WORDS,
                     ],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

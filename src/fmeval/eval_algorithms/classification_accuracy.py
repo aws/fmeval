@@ -109,7 +109,6 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
         self._valid_labels = self._eval_algorithm_config.valid_labels
 
@@ -250,7 +249,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=list(category_scores.values()) if category_scores else None,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -263,7 +262,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[CLASSIFICATION_ACCURACY_SCORE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

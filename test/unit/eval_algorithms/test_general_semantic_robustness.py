@@ -1,27 +1,21 @@
+import pytest
+import ray
 import itertools
 import random
 import re
 import string
+
 from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import MagicMock, patch, Mock
-
-import pytest
-import ray
 from _pytest.fixtures import fixture
 
-from fmeval.constants import (
-    DatasetColumns,
-    MIME_TYPE_JSON,
-)
-from fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
+from fmeval.constants import BUTTER_FINGER, DatasetColumns, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
+from fmeval.eval_algorithms import EvalScore
 from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
-    BUTTER_FINGER,
     UpdateRobustnessScores,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -30,7 +24,6 @@ from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
-    SemanticPerturbation,
     ButterFinger,
     RandomUppercase,
     AddRemoveWhitespace,
@@ -379,6 +372,7 @@ class TestGeneralSemanticRobustness:
         user_provided_prompt_template: Optional[str]
         dataset_prompt_template: str
         is_deterministic: bool
+        save: bool
 
     @pytest.mark.parametrize(
         "test_case",
@@ -387,45 +381,41 @@ class TestGeneralSemanticRobustness:
                 user_provided_prompt_template="Answer: $model_input",
                 dataset_prompt_template="Answer: $model_input",
                 is_deterministic=True,
+                save=True,
             ),
             TestCaseEvaluate(
                 user_provided_prompt_template=None,
                 dataset_prompt_template="$model_input",
                 is_deterministic=False,
+                save=False,
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.compute_and_aggregate_metrics")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneralSemanticRobustness.build_pipeline")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.TransformPipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.verify_model_determinism")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.GetModelOutputs")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneratePrompt")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.create_model_invocation_pipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset_configs")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
     def test_evaluate(
         self,
-        bertscore_model,
-        get_dataset_configs,
-        get_dataset,
-        generate_prompt,
-        get_model_outputs,
-        verify_model_determinism,
-        transform_pipeline,
-        build_pipeline,
-        save_dataset,
+        mock_bertscore_model,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_model_invocation_pipeline,
+        mock_verify_model_determinism,
+        mock_build_pipeline,
+        mock_compute_metrics,
+        mock_get_eval_results_path,
         test_case,
         config,
     ):
         """
-        GIVEN a valid dataset.
-        WHEN the GeneralSemanticRobustness evaluate method is called with save=True.
-        THEN two transform pipelines are created and executed (one for getting original
-            model responses and the other for handling the GSR logic),
-            the EvalOutputs that are returned contain the correct scores,
-            the EvalOutputs indicate that the correct prompt templates were used,
-            and save_dataset is called.
+        GIVEN a dataset config corresponding to a valid dataset.
+        WHEN the GeneralSemanticRobustness evaluate method is called.
+        THEN the relevant functions are called with correct arguments.
         """
         eval_algo = GeneralSemanticRobustness(
             config,
@@ -433,84 +423,46 @@ class TestGeneralSemanticRobustness:
         )
 
         model_runner = Mock()
-        bertscore_model.return_value = Mock()
-
-        generate_original_prompt = Mock(spec=GeneratePrompt)
-        generate_original_prompt.output_keys = ["prompt"]
-        generate_prompt.return_value = generate_original_prompt
-
-        get_original_model_outputs = Mock(spec=GetModelOutputs)
-        get_original_model_outputs.output_keys = ["model_output"]
-        get_model_outputs.return_value = get_original_model_outputs
+        mock_bertscore_model.return_value = Mock()
 
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
-        get_dataset_configs.return_value = [dataset_config]
+        mock_get_dataset_configs.return_value = [dataset_config]
 
         mock_dataset = Mock()
         mock_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_INPUT.value.name])
-        get_dataset.return_value = mock_dataset
+        mock_get_dataset.return_value = mock_dataset
 
-        verify_model_determinism.return_value = test_case.is_deterministic
+        dataset_with_model_outputs = Mock()
+        mock_model_invocation_pipeline.return_value = Mock()
+        mock_model_invocation_pipeline.return_value.execute = Mock(return_value=dataset_with_model_outputs)
 
-        # First pipeline that gets executed generates prompt and model output columns.
-        # Second pipeline (created via self.build_pipeline) that gets executed handles everything else.
-        transform_pipeline.execute = Mock(return_value=DATASET_WITH_MODEL_OUTPUT)
-        build_pipeline.return_value = Mock()
-        build_pipeline.return_value.execute = Mock(return_value=DATASET_WITH_SCORES)
+        mock_verify_model_determinism.return_value = test_case.is_deterministic
 
-        # Expected outputs from calling `evaluate`.
-        expected_dataset_scores = [
-            EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
-            EvalScore(name=WER_SCORE, value=0.0),
-        ]
-        expected_category_scores = [
-            CategoryScore(
-                name="dummy_category_1",
-                scores=[
-                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
-                    EvalScore(name=WER_SCORE, value=0.0),
-                ],
-            ),
-            CategoryScore(
-                name="dummy_category_2",
-                scores=[
-                    EvalScore(name=BERT_SCORE_DISSIMILARITY, value=BERTSCORE_DISSIMILARITY_DUMMY_VALUE),
-                    EvalScore(name=WER_SCORE, value=0.0),
-                ],
-            ),
-        ]
-        expected_outputs = [
-            EvalOutput(
-                eval_name="general_semantic_robustness",
-                prompt_template=test_case.dataset_prompt_template,
-                dataset_name="my_custom_dataset",
-                dataset_scores=expected_dataset_scores,
-                category_scores=expected_category_scores,
-                output_path="/tmp/eval_results/general_semantic_robustness_my_custom_dataset.jsonl",
-            )
-        ]
+        final_pipeline = Mock()
+        mock_build_pipeline.return_value = final_pipeline
 
-        # Call `evaluate` and validate outputs.
+        mock_get_eval_results_path.return_value = "/path/to/eval/results"
+
         eval_outputs = eval_algo.evaluate(
             model=model_runner,
             dataset_config=dataset_config,
             prompt_template=test_case.user_provided_prompt_template,
-            save=True,
+            save=test_case.save,
         )
 
-        generate_prompt.assert_called_with(
-            input_keys=[DatasetColumns.MODEL_INPUT.value.name],
-            output_keys=[DatasetColumns.PROMPT.value.name],
-            prompt_template=test_case.dataset_prompt_template,
-        )
-        get_model_outputs.assert_called_with(
-            input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
-            model_runner=model_runner,
-        )
-        transform_pipeline.assert_called_with([generate_original_prompt, get_original_model_outputs])
-        build_pipeline.assert_called_with(
+        mock_build_pipeline.assert_called_with(
             model_runner, test_case.dataset_prompt_template, is_deterministic=test_case.is_deterministic
         )
-        save_dataset.assert_called_once()
-        assert eval_outputs == expected_outputs
+        mock_compute_metrics.assert_called_once_with(
+            pipeline=final_pipeline,
+            dataset=dataset_with_model_outputs,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=GeneralSemanticRobustness.eval_name,
+            metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
+            eval_results_path="/path/to/eval/results",
+            prompt_template=test_case.dataset_prompt_template,
+            save=test_case.save,
+        )
+
+        assert eval_outputs == [mock_compute_metrics.return_value]

@@ -8,16 +8,13 @@ from fmeval.constants import (
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
+    EvalAlgorithm,
     EvalOutput,
     EvalScore,
     EVAL_DATASETS,
     DATASET_CONFIGS,
-    EvalAlgorithm,
     get_default_prompt_template,
 )
 from fmeval.eval_algorithms.util import (
@@ -48,9 +45,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
     stereotyping is quantified as $\log(p_{more} / p_{less}) = \log(p_{more}) - \log(p_{less}) $
     """
 
-    def __init__(self):
-        super(PromptStereotyping, self).__init__(EvalAlgorithmConfig())
-        self.eval_name = PROMPT_STEREOTYPING
+    eval_name = PROMPT_STEREOTYPING
 
     def evaluate(
         self,
@@ -152,7 +147,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -163,7 +158,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[LOG_PROBABILITY_DIFFERENCE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),

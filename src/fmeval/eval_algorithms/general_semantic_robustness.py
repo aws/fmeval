@@ -19,42 +19,33 @@ from fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     get_default_prompt_template,
 )
-from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
+from fmeval.eval_algorithms.semantic_robustness_utils import (
+    SemanticRobustnessConfig,
+    get_perturbation_transform,
+    get_model_responses_from_perturbed_inputs,
+)
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
-from fmeval.transforms.semantic_perturbations import (
-    ButterFinger,
-    RandomUppercase,
-    AddRemoveWhitespace,
-)
 from fmeval.eval_algorithms.util import (
     validate_dataset,
-    save_dataset,
-    aggregate_evaluation_scores,
-    generate_output_dataset_path,
     verify_model_determinism,
     get_dataset_configs,
+    create_model_invocation_pipeline,
+    compute_and_aggregate_metrics,
 )
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.perf_util import timed_block
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL
 from fmeval.transforms.summarization_accuracy_metrics import BertScore
 from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity, WER
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
-from fmeval.util import create_shared_resource
+from fmeval.util import create_shared_resource, require, get_eval_results_path
 
 logger = logging.getLogger(__name__)
 
-# All the perturbation types supported by this eval algo
-PERTURBATION_TYPE_TO_HELPER_CLASS = {
-    BUTTER_FINGER: ButterFinger,
-    RANDOM_UPPER_CASE: RandomUppercase,
-    WHITESPACE_ADD_REMOVE: AddRemoveWhitespace,
-}
 
 WER_SCORE = "word_error_rate"
 BERT_SCORE_DISSIMILARITY = "bertscore_dissimilarity"
@@ -64,51 +55,31 @@ BASELINE_BERT_SCORE_DISSIMILARITY = f"{BERT_SCORE_DISSIMILARITY}_{BASELINE_SUFFI
 
 
 @dataclass(frozen=True)
-class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
+class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     """Configures the general semantic robustness evaluation algorithm.
 
-    :param perturbation_type: Perturbation type for generating perturbed inputs.
-        Either BUTTER_FINGER, RANDOM_UPPER_CASE, or WHITESPACE_ADD_REMOVE.
-    :param num_perturbations: Number of perturbed outputs to be generated for robustness evaluation.
     :param num_baseline_samples: Only used for non-deterministic models. Number of times we generate
         the model output with the same input to compute the "baseline" change in model output. We
         compute differences between all pairs of outputs, i.e. between comb(num_baseline_samples, 2) pairs.
-    :param butter_finger_perturbation_prob: The probability that a given character will be perturbed.
-        Used when perturbation_type is BUTTER_FINGER.
-    :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase.
-        Used when perturbation_type is RANDOM_UPPER_CASE.
-    :param whitespace_remove_prob: The probability of removing a whitespace character.
-        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
-    :param whitespace_add_prob: The probability of adding a whitespace character after a non-whitespace character.
-        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
+
     :param model_type_for_bertscore: Model type to use for BERT score.
     """
 
-    perturbation_type: str = BUTTER_FINGER
-    num_perturbations: int = 5
     num_baseline_samples: int = 4
-    butter_finger_perturbation_prob: float = 0.1
-    random_uppercase_corrupt_proportion: float = 0.1
-    whitespace_add_prob: float = 0.05
-    whitespace_remove_prob: float = 0.1
     model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
-        if self.perturbation_type not in PERTURBATION_TYPE_TO_HELPER_CLASS.keys():
-            raise EvalAlgorithmClientError(
-                f"Invalid perturbation type '{self.perturbation_type} requested, please "
-                f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
-            )
-        if not BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore):
-            raise EvalAlgorithmClientError(
-                f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}."
-            )
-        if self.num_baseline_samples < 2:
-            raise EvalAlgorithmClientError(
-                f"Invalid num_baseline_samples: {self.num_baseline_samples} in GeneralSemanticRobustnessConfig. "
-                f"The value should be at least 2."
-            )
+        super().__post_init__()
+        require(
+            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+            f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
+        )
+        require(
+            self.num_baseline_samples >= 2,
+            f"Invalid num_baseline_samples: {self.num_baseline_samples} in GeneralSemanticRobustnessConfig. "
+            f"The value should be at least 2.",
+        )
 
 
 class GeneralSemanticRobustness(EvalAlgorithmInterface):
@@ -156,42 +127,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             `evaluate_sample` method, which is a computationally cheap operation that does not
             require utilizing Ray for parallel execution.
         """
-        super().__init__(eval_algorithm_config)
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
-
-        if eval_algorithm_config.perturbation_type == BUTTER_FINGER:
-            self.perturbation_transform = ButterFinger(
-                input_key=DatasetColumns.MODEL_INPUT.value.name,
-                output_keys=[
-                    create_output_key(ButterFinger.__name__, DatasetColumns.MODEL_INPUT.value.name, i)
-                    for i in range(self.num_perturbations)
-                ],
-                num_perturbations=self.num_perturbations,
-                perturbation_prob=eval_algorithm_config.butter_finger_perturbation_prob,
-            )
-        elif eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
-            self.perturbation_transform = RandomUppercase(
-                input_key=DatasetColumns.MODEL_INPUT.value.name,
-                output_keys=[
-                    create_output_key(RandomUppercase.__name__, DatasetColumns.MODEL_INPUT.value.name, i)
-                    for i in range(self.num_perturbations)
-                ],
-                num_perturbations=self.num_perturbations,
-                uppercase_fraction=eval_algorithm_config.random_uppercase_corrupt_proportion,
-            )
-        else:
-            self.perturbation_transform = AddRemoveWhitespace(
-                input_key=DatasetColumns.MODEL_INPUT.value.name,
-                output_keys=[
-                    create_output_key(AddRemoveWhitespace.__name__, DatasetColumns.MODEL_INPUT.value.name, i)
-                    for i in range(self.num_perturbations)
-                ],
-                num_perturbations=self.num_perturbations,
-                add_prob=eval_algorithm_config.whitespace_add_prob,
-                remove_prob=eval_algorithm_config.whitespace_remove_prob,
-            )
-
+        self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
         if use_ray:
             self.bertscore_model = create_shared_resource(self.bertscore_model)
@@ -220,26 +158,13 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             multiple inputs from the dataset are used.
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
-        get_perturbed_inputs = self.perturbation_transform
 
-        # Generate prompts from perturbed inputs
-        gen_perturbed_prompts = GeneratePrompt(
-            input_keys=get_perturbed_inputs.output_keys,
-            output_keys=[
-                create_output_key(GeneratePrompt.__name__, perturbed_input_key)
-                for perturbed_input_key in get_perturbed_inputs.output_keys
-            ],
-            prompt_template=prompt_template,
+        transforms = get_model_responses_from_perturbed_inputs(
+            self.perturbation_transform,
+            prompt_template,
+            model,
         )
-
-        # Invoke model with prompts generated above
-        get_perturbed_responses = GetModelOutputs(
-            input_to_output_keys={
-                perturbed_prompt_key: [create_output_key(GetModelOutputs.__name__, perturbed_prompt_key)]
-                for perturbed_prompt_key in gen_perturbed_prompts.output_keys
-            },
-            model_runner=model,
-        )
+        get_perturbed_inputs, gen_perturbed_prompts, get_perturbed_responses = transforms
 
         original_model_output_key = DatasetColumns.MODEL_OUTPUT.value.name
         # Compute BERTScores with target_output = the original model output
@@ -283,7 +208,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 create_output_key(GeneratePrompt.__name__, BASELINE_SUFFIX, i)
                 for i in range(self.num_baseline_samples - 1)
             ]
-            get_baseline_responses = GetModelOutputs(
+            get_baseline_outputs = GetModelOutputs(
                 input_to_output_keys={DatasetColumns.PROMPT.value.name: baseline_response_keys},
                 model_runner=model,
             )
@@ -324,7 +249,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             # Extend the pipeline with these additional steps.
             additional_steps = TransformPipeline(
                 [
-                    get_baseline_responses,
+                    get_baseline_outputs,
                     get_baseline_bert_scores,
                     compute_baseline_bertscore_dissimilarity,
                     compute_baseline_wer_metric,
@@ -376,20 +301,21 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
+        num_records: int = 100,
         save: bool = False,
-        num_records=100,
     ) -> List[EvalOutput]:
-        """Perform general semantic robustness evaluation on a dataset.
+        """Compute general semantic robustness metrics on one or more datasets.
 
         :param model: An instance of ModelRunner representing the model under evaluation.
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluation will use all of its supported built-in datasets.
-        :param prompt_template: A template used to generate prompts.
+        :param prompt_template: A template used to generate prompts that are fed to the model.
             If not provided, defaults will be used.
-        :param save: If set to true, prompt responses and scores will be saved to a file.
-            The output is written to EvalAlgorithmInterface.EVAL_RESULTS_PATH.
         :param num_records: The number of records to be sampled randomly from the input dataset
-            to perform the evaluation
+            used to perform the evaluation.
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The path that this file is stored at is configured by `eval_results_path`.
+
         :return: A list of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
@@ -400,49 +326,22 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
-            gen_prompt = GeneratePrompt(
-                input_keys=[DatasetColumns.MODEL_INPUT.value.name],
-                output_keys=[DatasetColumns.PROMPT.value.name],
-                prompt_template=dataset_prompt_template,
-            )
-            get_model_outputs = GetModelOutputs(
-                input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
-                model_runner=model,
-            )
-            model_invocation_pipeline = TransformPipeline([gen_prompt, get_model_outputs])
+            model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
             dataset = model_invocation_pipeline.execute(dataset)
             is_deterministic = verify_model_determinism(model, dataset, DatasetColumns.PROMPT.value.name)
             pipeline = self.build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic)
+            eval_output = compute_and_aggregate_metrics(
+                pipeline=pipeline,
+                dataset=dataset,
+                dataset_name=dataset_config.dataset_name,
+                eval_name=self.eval_name,
+                metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
+                eval_results_path=get_eval_results_path(),
+                prompt_template=dataset_prompt_template,
+                save=save,
+            )
+            eval_outputs.append(eval_output)
 
-            with (timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger)):
-                dataset = pipeline.execute(dataset)
-                dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [BERT_SCORE_DISSIMILARITY, WER_SCORE], agg_method=MEAN
-                )
-                eval_outputs.append(
-                    EvalOutput(
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                        prompt_template=dataset_prompt_template,
-                        dataset_scores=dataset_scores,
-                        category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
-                    )
-                )
-            if save:  # pragma: no branch
-                save_dataset(
-                    dataset=dataset,
-                    score_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
-                )
         return eval_outputs
 
 

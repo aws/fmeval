@@ -1,20 +1,21 @@
 import json
 import multiprocessing as mp
 import os
-from collections import OrderedDict
-from typing import Any, Dict, List, NamedTuple, Optional
-from unittest.mock import Mock, patch, MagicMock
-
 import numpy as np
 import pandas as pd
 import pytest
 import ray
+
+from collections import OrderedDict
+from typing import Any, Dict, List, NamedTuple, Optional
+from unittest.mock import MagicMock, Mock, patch
 from ray.data import Dataset
 
 from fmeval.constants import (
     DatasetColumns,
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
+    MEAN,
 )
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -31,6 +32,8 @@ from fmeval.eval_algorithms import (
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     REAL_TOXICITY_PROMPTS,
     REAL_TOXICITY_PROMPTS_CHALLENGING,
+    EvalOutput,
+    CategoryScore,
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalScore
 from fmeval.eval_algorithms.util import (
@@ -44,14 +47,87 @@ from fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     verify_model_determinism,
     get_dataset_configs,
+    compute_and_aggregate_metrics,
+    aggregate_evaluation_scores,
+    create_model_invocation_pipeline,
+    evaluate_dataset,
 )
-from fmeval.exceptions import EvalAlgorithmInternalError
+from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.util import camel_to_snake, get_num_actors
 from fmeval.eval_algorithms.util import get_bert_score
 
 BERTSCORE_DUMMY_VALUE = (
     0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
 )
+
+SCORE_1 = "score_1"
+SCORE_2 = "score_2"
+
+DATASET_WITH_SCORES = ray.data.from_items(
+    [
+        {
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_1",
+            DatasetColumns.PROMPT.value.name: "unused since we mock the model output",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            SCORE_1: 0.162,
+            SCORE_2: 0.189,
+        },
+        {
+            DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+            DatasetColumns.CATEGORY.value.name: "dummy_category_2",
+            DatasetColumns.PROMPT.value.name: "unused since we mock the model output",
+            DatasetColumns.MODEL_OUTPUT.value.name: "Some model output.",
+            SCORE_1: 0.126,
+            SCORE_2: 0.127,
+        },
+    ]
+)
+
+DATASET_WITH_SCORES_NO_CATEGORY = DATASET_WITH_SCORES.drop_columns(DatasetColumns.CATEGORY.value.name)
+
+DATASET_WITHOUT_SCORES = DATASET_WITH_SCORES.drop_columns(
+    cols=[
+        DatasetColumns.PROMPT.value.name,
+        DatasetColumns.MODEL_OUTPUT.value.name,
+        SCORE_1,
+        SCORE_2,
+    ]
+)
+
+DATASET_WITH_MODEL_OUTPUT = DATASET_WITHOUT_SCORES.drop_columns(cols=[SCORE_1, SCORE_2])
+
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(
+    cols=[DatasetColumns.MODEL_OUTPUT.value.name, DatasetColumns.PROMPT.value.name]
+)
+
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
+
+DATASET_SCORES = [
+    EvalScore(name=SCORE_1, value=(0.162 + 0.126) / 2),
+    EvalScore(name=SCORE_2, value=(0.189 + 0.127) / 2),
+]
+
+CATEGORY_SCORES = [
+    CategoryScore(
+        name="dummy_category_1",
+        scores=[
+            EvalScore(name=SCORE_1, value=0.162),
+            EvalScore(name=SCORE_2, value=0.189),
+        ],
+    ),
+    CategoryScore(
+        name="dummy_category_2",
+        scores=[
+            EvalScore(name=SCORE_1, value=0.126),
+            EvalScore(name=SCORE_2, value=0.127),
+        ],
+    ),
+]
+
+
+# DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
 
 
 def test_camel_to_snake():
@@ -693,3 +769,250 @@ def test_get_dataset_configs_builtin_dataset(eval_name, dataset_names):
     """
     configs = get_dataset_configs(None, eval_name)
     assert configs == [DATASET_CONFIGS[dataset_name] for dataset_name in dataset_names]
+
+
+class TestCaseAggregate(NamedTuple):
+    dataset: Dataset
+    expected_dataset_scores: List[EvalScore]
+    expected_category_scores: Optional[List[CategoryScore]]
+
+
+@pytest.mark.parametrize(
+    "dataset, expected_dataset_scores, expected_category_scores",
+    [
+        TestCaseAggregate(
+            dataset=DATASET_WITH_SCORES,
+            expected_dataset_scores=DATASET_SCORES,
+            expected_category_scores=CATEGORY_SCORES,
+        ),
+        TestCaseAggregate(
+            dataset=DATASET_WITH_SCORES_NO_CATEGORY,
+            expected_dataset_scores=DATASET_SCORES,
+            expected_category_scores=None,
+        ),
+    ],
+)
+def test_aggregate_evaluation_scores(dataset, expected_dataset_scores, expected_category_scores):
+    """
+    GIVEN a Ray dataset with scores (and potentially category columns).
+    WHEN aggregate_evaluation_scores is called.
+    THEN the correct outputs are returned.
+    """
+    dataset_scores, category_scores = aggregate_evaluation_scores(
+        dataset,
+        [SCORE_1, SCORE_2],
+        MEAN,
+    )
+    assert dataset_scores == expected_dataset_scores
+    assert category_scores == expected_category_scores
+
+
+def test_model_invocation_pipeline():
+    """
+    GIVEN a ModelRunner and prompt template.
+    WHEN create_model_invocation_pipeline is called.
+    THEN the correct TransformPipeline is returned.
+    """
+    model = Mock()
+    pipeline = create_model_invocation_pipeline(model, "Do something with $model_input")
+    gen_prompt, get_outputs = pipeline.transforms[0], pipeline.transforms[1]
+    assert isinstance(gen_prompt, GeneratePrompt)
+    assert gen_prompt.input_keys == [DatasetColumns.MODEL_INPUT.value.name]
+    assert gen_prompt.output_keys == [DatasetColumns.PROMPT.value.name]
+    assert gen_prompt.prompt_template == "Do something with $model_input"
+    assert isinstance(get_outputs, GetModelOutputs)
+    assert get_outputs.input_keys == [DatasetColumns.PROMPT.value.name]
+    assert get_outputs.output_keys == [DatasetColumns.MODEL_OUTPUT.value.name]
+    assert get_outputs.model_runner == model
+
+
+@pytest.mark.parametrize("save", [True, False])
+@patch("fmeval.eval_algorithms.util.generate_output_dataset_path")
+@patch("fmeval.eval_algorithms.util.save_dataset")
+@patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
+def test_compute_and_aggregate_metrics(mock_aggregate, mock_save, mock_generate_output_path, save):
+    """
+    GIVEN valid arguments.
+    WHEN compute_and_aggregate_metrics is called.
+    THEN expected function calls are made and the correct EvalOutput is returned.
+    """
+    mock_aggregate.return_value = DATASET_SCORES, CATEGORY_SCORES
+    pipeline = Mock()
+    pipeline.execute = Mock(return_value=Mock())
+    mock_generate_output_path.return_value = "path/to/output/dataset"
+
+    actual_eval_output = compute_and_aggregate_metrics(
+        pipeline=pipeline,
+        dataset=Mock(),
+        dataset_name="my_dataset",
+        eval_name="MyEvalAlgo",
+        metric_names=[SCORE_1, SCORE_2],
+        eval_results_path="/path/to/eval_results",
+        prompt_template="Do something with $model_input",
+        save=save,
+    )
+
+    mock_aggregate.assert_called_once_with(
+        pipeline.execute.return_value,
+        [SCORE_1, SCORE_2],
+        agg_method=MEAN,
+    )
+
+    mock_generate_output_path.assert_called_once_with(
+        path_to_parent_dir="/path/to/eval_results",
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
+    )
+
+    assert actual_eval_output == EvalOutput(
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
+        prompt_template="Do something with $model_input",
+        dataset_scores=DATASET_SCORES,
+        category_scores=CATEGORY_SCORES,
+        output_path="path/to/output/dataset",
+    )
+
+    if save:
+        mock_save.assert_called_once_with(
+            dataset=pipeline.execute.return_value,
+            score_names=[SCORE_1, SCORE_2],
+            path="path/to/output/dataset",
+        )
+    else:
+        mock_save.assert_not_called()
+
+
+class TestCaseEvaluateDataset(NamedTuple):
+    user_provided_prompt_template: Optional[str]
+    dataset_prompt_template: str
+    model_provided: bool
+    save: bool
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseEvaluateDataset(
+            user_provided_prompt_template="Answer: $model_input",
+            dataset_prompt_template="Answer: $model_input",
+            model_provided=True,
+            save=True,
+        ),
+        TestCaseEvaluateDataset(
+            user_provided_prompt_template=None,
+            dataset_prompt_template="$model_input",
+            model_provided=True,
+            save=False,
+        ),
+        TestCaseEvaluateDataset(
+            user_provided_prompt_template=None,
+            dataset_prompt_template=None,
+            model_provided=False,
+            save=False,
+        ),
+    ],
+)
+@patch("fmeval.eval_algorithms.util.compute_and_aggregate_metrics")
+@patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
+@patch("fmeval.eval_algorithms.util.TransformPipeline")
+@patch("fmeval.eval_algorithms.util.validate_dataset")
+@patch("fmeval.eval_algorithms.util.get_dataset")
+def test_evaluate_dataset(
+    mock_get_dataset,
+    mock_validate_dataset,
+    mock_transform_pipeline_cls,
+    mock_create_invocation_pipeline,
+    mock_compute_and_aggregate,
+    test_case,
+):
+    """
+    GIVEN a valid dataset config and valid combinations of a ModelRunner and prompt template.
+        (The invalid combination is when ModelRunner is None, but a non-null prompt template
+        is provided. This case is handled in another test).
+    WHEN the `evaluate_dataset` function is called.
+    THEN all expected functions are called with the correct arguments and an
+        EvalOutput generated by `compute_and_aggregate_metrics` is returned.
+    """
+    # Inputs to evaluate_dataset
+    dataset_config = Mock()
+    pipeline = Mock()
+    model = Mock()
+
+    mock_get_dataset.return_value = Mock()
+    mock_create_invocation_pipeline.return_value = Mock()
+    # The pipeline that is passed to `compute_and_aggregate_metrics`
+    # (which has the GeneratePrompt and GetModelOutputs Transforms prepended).
+    mock_transform_pipeline_cls.return_value = Mock()
+
+    expected_eval_output = EvalOutput(
+        eval_name="my_eval",
+        dataset_name="my_dataset_1",
+        dataset_scores=[EvalScore(name=SCORE_1, value=0.162), EvalScore(name=SCORE_2, value=0.189)],
+    )
+    mock_compute_and_aggregate.return_value = expected_eval_output
+
+    eval_output = evaluate_dataset(
+        dataset_config=dataset_config,
+        eval_name="MyEvalAlgo",
+        pipeline=pipeline,
+        metric_names=[SCORE_1, SCORE_2],
+        required_columns=["required_1", "required_2"],
+        eval_results_path="/path/to/eval/results",
+        model=model if test_case.model_provided else None,
+        prompt_template=test_case.user_provided_prompt_template,
+        num_records=200,
+        save=test_case.save,
+    )
+
+    mock_get_dataset.assert_called_once_with(dataset_config, 200)
+    mock_validate_dataset.assert_called_once_with(mock_get_dataset.return_value, ["required_1", "required_2"])
+
+    if test_case.model_provided:
+        mock_create_invocation_pipeline.assert_called_once_with(model, test_case.dataset_prompt_template)
+        mock_transform_pipeline_cls.assert_called_once_with([mock_create_invocation_pipeline.return_value, pipeline])
+    else:
+        mock_create_invocation_pipeline.assert_not_called()
+        mock_transform_pipeline_cls.assert_not_called()
+
+    mock_compute_and_aggregate.assert_called_once_with(
+        pipeline=(mock_transform_pipeline_cls.return_value if test_case.model_provided else pipeline),
+        dataset=mock_get_dataset.return_value,
+        dataset_name=dataset_config.dataset_name,
+        eval_name="MyEvalAlgo",
+        metric_names=[SCORE_1, SCORE_2],
+        eval_results_path="/path/to/eval/results",
+        prompt_template=test_case.dataset_prompt_template,
+        agg_method=MEAN,
+        save=test_case.save,
+    )
+
+    assert eval_output == expected_eval_output
+
+
+@patch("fmeval.eval_algorithms.util.validate_dataset")
+@patch("fmeval.eval_algorithms.util.get_dataset")
+def test_evaluate_dataset_invalid_args(
+    mock_get_dataset,
+    mock_validate_dataset,
+):
+    """
+    GIVEN a dataset config, no ModelRunner, and a prompt template.
+    WHEN the `evaluate_dataset` function is called.
+    THEN the correct exception is raised.
+    """
+    prompt_template = "Do something with $model_input."
+    err_msg = "A model must be provided as well if the provided prompt template is not None."
+    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+        evaluate_dataset(
+            dataset_config=Mock(),
+            pipeline=Mock(),
+            eval_name="MyEvalAlgo",
+            metric_names=[SCORE_1, SCORE_2],
+            required_columns=["required_1", "required_2"],
+            eval_results_path="/path/to/eval/results",
+            model=None,
+            prompt_template=prompt_template,
+            num_records=200,
+            save=False,
+        )
