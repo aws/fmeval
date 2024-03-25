@@ -25,8 +25,8 @@ from fmeval.eval_algorithms import (
 from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustnessConfig,
     QAAccuracySemanticRobustness,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
     BUTTER_FINGER,
     DELTA_F1_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
@@ -124,7 +124,7 @@ class TestQAAccuracySemanticRobustness:
                 target_output_delimiter="<OR>",
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
-                "acceptable values: dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
+                "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
             ),
             TestCaseQAAccuracySemanticRobustnessInvalidConfig(
                 target_output_delimiter="",
@@ -218,7 +218,7 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
-                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPERCASE
+                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
                 ),
             ),
             TestCaseQAAccuracySemanticRobustnessEvaluateSample(
@@ -240,7 +240,7 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
-                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=ADD_REMOVE_WHITESPACE
+                    target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
                 ),
             ),
         ],

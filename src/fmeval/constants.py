@@ -97,8 +97,8 @@ SEED = 1234
 
 # Semantic robustness perturbation types
 BUTTER_FINGER = "butter_finger"
-RANDOM_UPPERCASE = "random_uppercase"
-ADD_REMOVE_WHITESPACE = "add_remove_whitespace"
+RANDOM_UPPER_CASE = "random_upper_case"
+WHITESPACE_ADD_REMOVE = "whitespace_add_remove"
 
 PREFIX_FOR_DELTA_SCORES = "delta_"
 

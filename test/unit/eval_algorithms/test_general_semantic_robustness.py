@@ -19,8 +19,8 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     BERT_SCORE_DISSIMILARITY,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
     BUTTER_FINGER,
     UpdateRobustnessScores,
 )
@@ -111,7 +111,7 @@ class TestGeneralSemanticRobustness:
             (
                 "my_perturb",
                 "Invalid perturbation type 'my_perturb requested, please choose from acceptable values: "
-                "dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
+                "dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
             )
         ],
     )
@@ -153,7 +153,7 @@ class TestGeneralSemanticRobustness:
             GeneralSemanticRobustnessConfig(num_baseline_samples=num_baseline_samples)
 
     @pytest.mark.parametrize("use_ray", [True, False])
-    @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPERCASE, ADD_REMOVE_WHITESPACE])
+    @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE])
     @patch("fmeval.eval_algorithms.general_semantic_robustness.create_shared_resource")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
     def test_init(self, bertscore_model, create_shared_resource, perturbation_type, use_ray):
@@ -176,7 +176,7 @@ class TestGeneralSemanticRobustness:
             assert isinstance(perturbation, ButterFinger)
             assert perturbation.num_perturbations == config.num_perturbations
             assert perturbation.perturbation_prob == config.butter_finger_perturbation_prob
-        elif perturbation_type == RANDOM_UPPERCASE:
+        elif perturbation_type == RANDOM_UPPER_CASE:
             assert isinstance(perturbation, RandomUppercase)
             assert perturbation.num_perturbations == config.num_perturbations
             assert perturbation.uppercase_fraction == config.random_uppercase_corrupt_proportion
