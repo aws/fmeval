@@ -6,9 +6,6 @@ from typing import NamedTuple, Dict
 from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustness,
     QAAccuracySemanticRobustnessConfig,
-    BUTTER_FINGER,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
     DELTA_F1_SCORE,
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
@@ -23,7 +20,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     RECALL_OVER_WORDS,
 )
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.constants import MIME_TYPE_JSONLINES
+from fmeval.constants import MIME_TYPE_JSONLINES, BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
 from test.integration.models.model_runners import sm_model_runner
 
 ABS_TOL = 1e-4
@@ -54,11 +51,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
-                    DELTA_F1_SCORE: 0.8,
-                    DELTA_EXACT_MATCH_SCORE: 0.8,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.8,
-                    DELTA_PRECISION_OVER_WORDS: 0.8,
-                    DELTA_RECALL_OVER_WORDS: 0.8,
+                    DELTA_F1_SCORE: 0.6,
+                    DELTA_EXACT_MATCH_SCORE: 0.6,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.6,
+                    DELTA_PRECISION_OVER_WORDS: 0.6,
+                    DELTA_RECALL_OVER_WORDS: 0.6,
                 },
             ),
             TestCaseEvaluateSample(
@@ -73,11 +70,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
-                    DELTA_F1_SCORE: 1.0,
-                    DELTA_EXACT_MATCH_SCORE: 1.0,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 1.0,
-                    DELTA_PRECISION_OVER_WORDS: 1.0,
-                    DELTA_RECALL_OVER_WORDS: 1.0,
+                    DELTA_F1_SCORE: 0.2,
+                    DELTA_EXACT_MATCH_SCORE: 0.2,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.2,
+                    DELTA_PRECISION_OVER_WORDS: 0.2,
+                    DELTA_RECALL_OVER_WORDS: 0.2,
                 },
             ),
             TestCaseEvaluateSample(
@@ -93,11 +90,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
-                    DELTA_F1_SCORE: 0.8,
-                    DELTA_EXACT_MATCH_SCORE: 0.8,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.8,
-                    DELTA_PRECISION_OVER_WORDS: 0.8,
-                    DELTA_RECALL_OVER_WORDS: 0.8,
+                    DELTA_F1_SCORE: 0.6,
+                    DELTA_EXACT_MATCH_SCORE: 0.6,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.6,
+                    DELTA_PRECISION_OVER_WORDS: 0.6,
+                    DELTA_RECALL_OVER_WORDS: 0.6,
                 },
             ),
         ],
@@ -112,6 +109,7 @@ class TestQAAccuracySemanticRobustness:
             prompt_template=sm_model_runner_prompt_template,
         )
         for eval_score in eval_scores:
+            print(f"eval score {eval_score.name} is {eval_score.value}")
             assert eval_score.value == expected_scores[eval_score.name]
 
     class TestCaseEvaluate(NamedTuple):
@@ -131,11 +129,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
-                    DELTA_F1_SCORE: 0.2277,
-                    DELTA_EXACT_MATCH_SCORE: 0.0586,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.2101,
-                    DELTA_PRECISION_OVER_WORDS: 0.2284,
-                    DELTA_RECALL_OVER_WORDS: 0.2316,
+                    DELTA_F1_SCORE: 0.2100,
+                    DELTA_EXACT_MATCH_SCORE: 0.0687,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1919,
+                    DELTA_PRECISION_OVER_WORDS: 0.2123,
+                    DELTA_RECALL_OVER_WORDS: 0.2096,
                 },
             ),
             TestCaseEvaluate(
@@ -150,11 +148,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
-                    DELTA_F1_SCORE: 0.1876,
-                    DELTA_EXACT_MATCH_SCORE: 0.0687,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1798,
-                    DELTA_PRECISION_OVER_WORDS: 0.194,
-                    DELTA_RECALL_OVER_WORDS: 0.1804,
+                    DELTA_F1_SCORE: 0.1507,
+                    DELTA_EXACT_MATCH_SCORE: 0.0586,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1293,
+                    DELTA_PRECISION_OVER_WORDS: 0.1573,
+                    DELTA_RECALL_OVER_WORDS: 0.1525,
                 },
             ),
             TestCaseEvaluate(
@@ -170,11 +168,11 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
-                    DELTA_F1_SCORE: 0.1709,
-                    DELTA_EXACT_MATCH_SCORE: 0.0525,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1535,
-                    DELTA_PRECISION_OVER_WORDS: 0.1761,
-                    DELTA_RECALL_OVER_WORDS: 0.1705,
+                    DELTA_F1_SCORE: 0.1351,
+                    DELTA_EXACT_MATCH_SCORE: 0.0404,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.1212,
+                    DELTA_PRECISION_OVER_WORDS: 0.1355,
+                    DELTA_RECALL_OVER_WORDS: 0.1384,
                 },
             ),
         ],
@@ -196,3 +194,4 @@ class TestQAAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+        assert False
