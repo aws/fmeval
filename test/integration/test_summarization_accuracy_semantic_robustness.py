@@ -17,8 +17,8 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     DELTA_METEOR_SCORE,
     DELTA_BERT_SCORE,
     BUTTER_FINGER,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
 )
 from test.integration.models.model_runners import sm_model_runner
 
@@ -30,13 +30,13 @@ BUTTER_FINGER_CONFIG = SummarizationAccuracySemanticRobustnessConfig(
 )
 
 RANDOM_UPPER_CASE_CONFIG = SummarizationAccuracySemanticRobustnessConfig(
-    perturbation_type=RANDOM_UPPERCASE,
+    perturbation_type=RANDOM_UPPER_CASE,
     num_perturbations=5,
     random_uppercase_corrupt_proportion=0.1,
 )
 
 WHITESPACE_CONFIG = SummarizationAccuracySemanticRobustnessConfig(
-    perturbation_type=ADD_REMOVE_WHITESPACE,
+    perturbation_type=WHITESPACE_ADD_REMOVE,
     num_perturbations=5,
     whitespace_remove_prob=0.1,
     whitespace_add_prob=0.05,

@@ -7,8 +7,8 @@ from fmeval.constants import (
     DatasetColumns,
     MEAN,
     BUTTER_FINGER,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -40,7 +40,6 @@ from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.transforms.summarization_accuracy_metrics import BertScore
 from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity, WER
 from fmeval.transforms.transform import Transform
@@ -53,8 +52,8 @@ logger = logging.getLogger(__name__)
 # All the perturbation types supported by this eval algo
 PERTURBATION_TYPE_TO_HELPER_CLASS = {
     BUTTER_FINGER: ButterFinger,
-    RANDOM_UPPERCASE: RandomUppercase,
-    ADD_REMOVE_WHITESPACE: AddRemoveWhitespace,
+    RANDOM_UPPER_CASE: RandomUppercase,
+    WHITESPACE_ADD_REMOVE: AddRemoveWhitespace,
 }
 
 WER_SCORE = "word_error_rate"
@@ -69,7 +68,7 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     """Configures the general semantic robustness evaluation algorithm.
 
     :param perturbation_type: Perturbation type for generating perturbed inputs.
-        Either BUTTER_FINGER, RANDOM_UPPERCASE, or ADD_REMOVE_WHITESPACE.
+        Either BUTTER_FINGER, RANDOM_UPPER_CASE, or WHITESPACE_ADD_REMOVE.
     :param num_perturbations: Number of perturbed outputs to be generated for robustness evaluation.
     :param num_baseline_samples: Only used for non-deterministic models. Number of times we generate
         the model output with the same input to compute the "baseline" change in model output. We
@@ -77,11 +76,11 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
     :param butter_finger_perturbation_prob: The probability that a given character will be perturbed.
         Used when perturbation_type is BUTTER_FINGER.
     :param random_uppercase_corrupt_proportion: Fraction of characters to be changed to uppercase.
-        Used when perturbation_type is RANDOM_UPPERCASE.
+        Used when perturbation_type is RANDOM_UPPER_CASE.
     :param whitespace_remove_prob: The probability of removing a whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     :param whitespace_add_prob: The probability of adding a whitespace character after a non-whitespace character.
-        Used when perturbation_type is ADD_REMOVE_WHITESPACE.
+        Used when perturbation_type is WHITESPACE_ADD_REMOVE.
     :param model_type_for_bertscore: Model type to use for BERT score.
     """
 
@@ -100,7 +99,7 @@ class GeneralSemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"Invalid perturbation type '{self.perturbation_type} requested, please "
                 f"choose from acceptable values: {PERTURBATION_TYPE_TO_HELPER_CLASS.keys()}"
             )
-        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
                 f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}."
@@ -171,7 +170,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 num_perturbations=self.num_perturbations,
                 perturbation_prob=eval_algorithm_config.butter_finger_perturbation_prob,
             )
-        elif eval_algorithm_config.perturbation_type == RANDOM_UPPERCASE:
+        elif eval_algorithm_config.perturbation_type == RANDOM_UPPER_CASE:
             self.perturbation_transform = RandomUppercase(
                 input_key=DatasetColumns.MODEL_INPUT.value.name,
                 output_keys=[
