@@ -6,6 +6,9 @@ from typing import Optional, List, Dict, Any
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -43,6 +46,7 @@ from fmeval.util import create_shared_resource, require, get_eval_results_path
 
 logger = logging.getLogger(__name__)
 
+
 WER_SCORE = "word_error_rate"
 BERT_SCORE_DISSIMILARITY = "bertscore_dissimilarity"
 BASELINE_SUFFIX = "baseline"
@@ -57,6 +61,7 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     :param num_baseline_samples: Only used for non-deterministic models. Number of times we generate
         the model output with the same input to compute the "baseline" change in model output. We
         compute differences between all pairs of outputs, i.e. between comb(num_baseline_samples, 2) pairs.
+
     :param model_type_for_bertscore: Model type to use for BERT score.
     """
 
