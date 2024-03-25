@@ -26,6 +26,7 @@ from fmeval.eval_algorithms import (
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.transforms.util import validate_call
 from fmeval.util import get_eval_results_path, require
 
 ENGLISH_ARTICLES = ["a", "an", "the"]
@@ -229,6 +230,7 @@ class QAAccuracyScores(Transform):
         possible_targets = target_output.split(self.target_output_delimiter)
         return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
 
+    @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
         target_output = record[self.target_output_key]
         model_output = record[self.model_output_key]
