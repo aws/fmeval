@@ -21,7 +21,7 @@ from fmeval.eval_algorithms import (
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     ButterFinger,
     RandomUppercase,
@@ -234,9 +234,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         )
 
         # Invoke model with prompts generated above
-        get_perturbed_responses = GetModelResponse(
-            input_key_to_response_keys={
-                perturbed_prompt_key: [(create_output_key(GetModelResponse.__name__, perturbed_prompt_key),)]
+        get_perturbed_responses = GetModelOutputs(
+            input_to_output_keys={
+                perturbed_prompt_key: [create_output_key(GetModelOutputs.__name__, perturbed_prompt_key)]
                 for perturbed_prompt_key in gen_perturbed_prompts.output_keys
             },
             model_runner=model,
@@ -284,12 +284,8 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 create_output_key(GeneratePrompt.__name__, BASELINE_SUFFIX, i)
                 for i in range(self.num_baseline_samples - 1)
             ]
-            get_baseline_responses = GetModelResponse(
-                input_key_to_response_keys={
-                    DatasetColumns.PROMPT.value.name: [
-                        (baseline_response_key,) for baseline_response_key in baseline_response_keys
-                    ]
-                },
+            get_baseline_responses = GetModelOutputs(
+                input_to_output_keys={DatasetColumns.PROMPT.value.name: baseline_response_keys},
                 model_runner=model,
             )
 
@@ -410,13 +406,11 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 output_keys=[DatasetColumns.PROMPT.value.name],
                 prompt_template=dataset_prompt_template,
             )
-            get_model_response = GetModelResponse(
-                input_key_to_response_keys={
-                    DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]
-                },
+            get_model_outputs = GetModelOutputs(
+                input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
                 model_runner=model,
             )
-            model_invocation_pipeline = TransformPipeline([gen_prompt, get_model_response])
+            model_invocation_pipeline = TransformPipeline([gen_prompt, get_model_outputs])
             dataset = model_invocation_pipeline.execute(dataset)
             is_deterministic = verify_model_determinism(model, dataset, DatasetColumns.PROMPT.value.name)
             pipeline = self.build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic)
