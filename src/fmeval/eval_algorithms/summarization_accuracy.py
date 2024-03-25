@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 
 from fmeval.perf_util import timed_block
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.util import require
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.data_loaders.data_config import DataConfig
@@ -184,13 +184,11 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                     output_keys=[DatasetColumns.PROMPT.value.name],
                     prompt_template=dataset_prompt_template,
                 )
-                get_model_response = GetModelResponse(
-                    input_key_to_response_keys={
-                        DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]
-                    },
+                get_model_outputs = GetModelOutputs(
+                    input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
                     model_runner=model,
                 )
-                pipeline = TransformPipeline([gen_prompt, get_model_response, pipeline])
+                pipeline = TransformPipeline([gen_prompt, get_model_outputs, pipeline])
 
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = pipeline.execute(dataset)

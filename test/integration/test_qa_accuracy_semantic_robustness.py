@@ -7,8 +7,8 @@ from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     QAAccuracySemanticRobustness,
     QAAccuracySemanticRobustnessConfig,
     BUTTER_FINGER,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
     DELTA_F1_SCORE,
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
@@ -63,7 +63,7 @@ class TestQAAccuracySemanticRobustness:
             ),
             TestCaseEvaluateSample(
                 config=QAAccuracySemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPERCASE,
+                    perturbation_type=RANDOM_UPPER_CASE,
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
@@ -82,7 +82,7 @@ class TestQAAccuracySemanticRobustness:
             ),
             TestCaseEvaluateSample(
                 config=QAAccuracySemanticRobustnessConfig(
-                    perturbation_type=ADD_REMOVE_WHITESPACE,
+                    perturbation_type=WHITESPACE_ADD_REMOVE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
@@ -140,7 +140,7 @@ class TestQAAccuracySemanticRobustness:
             ),
             TestCaseEvaluate(
                 config=QAAccuracySemanticRobustnessConfig(
-                    perturbation_type=RANDOM_UPPERCASE,
+                    perturbation_type=RANDOM_UPPER_CASE,
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
                 ),
@@ -159,7 +159,7 @@ class TestQAAccuracySemanticRobustness:
             ),
             TestCaseEvaluate(
                 config=QAAccuracySemanticRobustnessConfig(
-                    perturbation_type=ADD_REMOVE_WHITESPACE,
+                    perturbation_type=WHITESPACE_ADD_REMOVE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,

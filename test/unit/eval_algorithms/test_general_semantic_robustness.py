@@ -19,8 +19,8 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     BERT_SCORE_DISSIMILARITY,
     GeneralSemanticRobustnessConfig,
     GeneralSemanticRobustness,
-    RANDOM_UPPERCASE,
-    ADD_REMOVE_WHITESPACE,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
     BUTTER_FINGER,
     UpdateRobustnessScores,
 )
@@ -28,7 +28,7 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.helper_models import BertscoreModel
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
-from fmeval.transforms.common import GeneratePrompt, GetModelResponse
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     SemanticPerturbation,
     ButterFinger,
@@ -111,7 +111,7 @@ class TestGeneralSemanticRobustness:
             (
                 "my_perturb",
                 "Invalid perturbation type 'my_perturb requested, please choose from acceptable values: "
-                "dict_keys(['butter_finger', 'random_uppercase', 'add_remove_whitespace'])",
+                "dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
             )
         ],
     )
@@ -153,7 +153,7 @@ class TestGeneralSemanticRobustness:
             GeneralSemanticRobustnessConfig(num_baseline_samples=num_baseline_samples)
 
     @pytest.mark.parametrize("use_ray", [True, False])
-    @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPERCASE, ADD_REMOVE_WHITESPACE])
+    @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE])
     @patch("fmeval.eval_algorithms.general_semantic_robustness.create_shared_resource")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
     def test_init(self, bertscore_model, create_shared_resource, perturbation_type, use_ray):
@@ -176,7 +176,7 @@ class TestGeneralSemanticRobustness:
             assert isinstance(perturbation, ButterFinger)
             assert perturbation.num_perturbations == config.num_perturbations
             assert perturbation.perturbation_prob == config.butter_finger_perturbation_prob
-        elif perturbation_type == RANDOM_UPPERCASE:
+        elif perturbation_type == RANDOM_UPPER_CASE:
             assert isinstance(perturbation, RandomUppercase)
             assert perturbation.num_perturbations == config.num_perturbations
             assert perturbation.uppercase_fraction == config.random_uppercase_corrupt_proportion
@@ -226,7 +226,7 @@ class TestGeneralSemanticRobustness:
         assert isinstance(perturbation, ButterFinger)  # default perturbation type used by config is BUTTER_FINGER
         assert isinstance(gen_prompts, GeneratePrompt)
         assert len(gen_prompts.output_keys) == config.num_perturbations
-        assert isinstance(model_responses, GetModelResponse)
+        assert isinstance(model_responses, GetModelOutputs)
         assert len(model_responses.output_keys) == config.num_perturbations
         assert isinstance(bert_scores, BertScore)
         assert len(bert_scores.output_keys) == config.num_perturbations
@@ -240,7 +240,7 @@ class TestGeneralSemanticRobustness:
             baseline_wer = transforms[9]
             update_scores = transforms[10]
 
-            assert isinstance(baseline_responses, GetModelResponse)
+            assert isinstance(baseline_responses, GetModelOutputs)
             assert len(baseline_responses.output_keys) == config.num_baseline_samples - 1
             assert isinstance(baseline_bert, BertScore)
             assert len(baseline_bert.output_keys) == len(
@@ -399,7 +399,7 @@ class TestGeneralSemanticRobustness:
     @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneralSemanticRobustness.build_pipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.TransformPipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.verify_model_determinism")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.GetModelResponse")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.GetModelOutputs")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneratePrompt")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset_configs")
@@ -410,7 +410,7 @@ class TestGeneralSemanticRobustness:
         get_dataset_configs,
         get_dataset,
         generate_prompt,
-        get_model_response,
+        get_model_outputs,
         verify_model_determinism,
         transform_pipeline,
         build_pipeline,
@@ -439,9 +439,9 @@ class TestGeneralSemanticRobustness:
         generate_original_prompt.output_keys = ["prompt"]
         generate_prompt.return_value = generate_original_prompt
 
-        get_original_model_response = Mock(spec=GetModelResponse)
-        get_original_model_response.output_keys = ["model_output"]
-        get_model_response.return_value = get_original_model_response
+        get_original_model_outputs = Mock(spec=GetModelOutputs)
+        get_original_model_outputs.output_keys = ["model_output"]
+        get_model_outputs.return_value = get_original_model_outputs
 
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
@@ -504,11 +504,11 @@ class TestGeneralSemanticRobustness:
             output_keys=[DatasetColumns.PROMPT.value.name],
             prompt_template=test_case.dataset_prompt_template,
         )
-        get_model_response.assert_called_with(
-            input_key_to_response_keys={DatasetColumns.PROMPT.value.name: [(DatasetColumns.MODEL_OUTPUT.value.name,)]},
+        get_model_outputs.assert_called_with(
+            input_to_output_keys={DatasetColumns.PROMPT.value.name: [DatasetColumns.MODEL_OUTPUT.value.name]},
             model_runner=model_runner,
         )
-        transform_pipeline.assert_called_with([generate_original_prompt, get_original_model_response])
+        transform_pipeline.assert_called_with([generate_original_prompt, get_original_model_outputs])
         build_pipeline.assert_called_with(
             model_runner, test_case.dataset_prompt_template, is_deterministic=test_case.is_deterministic
         )
