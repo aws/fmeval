@@ -1,6 +1,9 @@
 import json
 import os
+import time
+
 import pytest
+import ray
 
 from typing import NamedTuple, Dict
 from pytest import approx
@@ -147,3 +150,7 @@ class TestSummarizationAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+
+        # Explicitly kill the BertscoreModel actor
+        ray.kill(eval_algo.bertscore_model)
+        time.sleep(5)
