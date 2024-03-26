@@ -81,34 +81,31 @@ EVAL_RESULTS_PATH = "/tmp/eval_results/"
 class TestSummarizationAccuracy:
     @fixture(scope="module")
     def eval_algo(self) -> SummarizationAccuracy:
-        return SummarizationAccuracy(SummarizationAccuracyConfig(), use_ray=False)
+        return SummarizationAccuracy(SummarizationAccuracyConfig())
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
-    def test_init(self, mock_build_pipeline, mock_transform_pipeline_cls):
+    @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.get_transforms_and_model")
+    def test_init(self, mock_get_transforms, mock_transform_pipeline_cls):
         """
         GIVEN default arguments.
         WHEN a SummarizationAccuracy is initialized.
-        THEN SummarizationAccuracy.build_pipeline is called, a TransformPipeline
-            is initialized with the correct Transforms, and said pipeline is set
-            to the instance's `pipeline` attribute.
+        THEN SummarizationAccuracy.get_transforms_and_model is called,
+            a TransformPipeline is initialized with the correct Transforms,
+            and said pipeline is set to the instance's `pipeline` attribute.
         """
         mock_meteor, mock_rouge, mock_bertscore = Mock(), Mock(), Mock()
-        mock_build_pipeline.return_value = mock_meteor, mock_rouge, mock_bertscore, Mock()
+        mock_get_transforms.return_value = mock_meteor, mock_rouge, mock_bertscore, Mock()
         summ_acc = SummarizationAccuracy()
         mock_transform_pipeline_cls.assert_called_with([mock_meteor, mock_rouge, mock_bertscore])
         assert summ_acc.pipeline == mock_transform_pipeline_cls.return_value
 
-    @pytest.mark.parametrize("use_ray", [True, False])
-    @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
-    def test_build_pipeline(self, mock_shared_resource, use_ray):
+    def test_get_transforms_and_model(self):
         """
         GIVEN valid arguments where the bertscore_model argument is None.
-        WHEN SummarizationAccuracy's build_pipeline method is called.
-        THEN the correct outputs are returned, and create_shared_resource
-            is called if `use_ray` is True (and not called otherwise).
+        WHEN SummarizationAccuracy's get_transforms_and_model function is called.
+        THEN the correct transforms and model are returned.
         """
-        meteor_score, rouge_score, bert_score, bertscore_model = SummarizationAccuracy.build_pipeline(
+        meteor_score, rouge_score, bert_score, bertscore_model = SummarizationAccuracy.get_transforms_and_model(
             target_output_keys=["target_output"],
             model_output_keys=["model_output"],
             meteor_keys=[METEOR_SCORE],
@@ -117,28 +114,22 @@ class TestSummarizationAccuracy:
             rouge_type=ROUGE_L,
             use_stemmer_for_rouge=True,
             model_type_for_bertscore=BERTSCORE_DEFAULT_MODEL,
-            use_ray=use_ray,
         )
         assert isinstance(meteor_score, MeteorScore)
         assert isinstance(rouge_score, RougeScore)
         assert isinstance(bert_score, BertScore)
-        if use_ray:
-            mock_shared_resource.assert_called_once()
-            assert bertscore_model == mock_shared_resource.return_value
-        else:
-            mock_shared_resource.assert_not_called()
-            assert isinstance(bertscore_model, BertscoreModel)
+        assert isinstance(bertscore_model, BertscoreModel)
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
-    def test_build_pipeline_with_existing_bertscore_model(self, mock_bertscore_model_cls):
+    def test_get_transforms_and_model_with_existing_bertscore_model(self, mock_bertscore_model_cls):
         """
         GIVEN a `bertscore_model` argument that is not None.
-        WHEN SummarizationAccuracy's build_pipeline method is called.
-        THEN the bertscore_model that is returned by build_pipeline is
+        WHEN SummarizationAccuracy's `get_transforms_and_model` function is called.
+        THEN the BertscoreModel that is returned by get_transforms_and_model is
             the same object that was passed in.
         """
         bertscore_model_instance = Mock()
-        _, _, _, bertscore_model = SummarizationAccuracy.build_pipeline(
+        _, _, _, bertscore_model = SummarizationAccuracy.get_transforms_and_model(
             target_output_keys=["target_output"],
             model_output_keys=["model_output"],
             meteor_keys=[METEOR_SCORE],
@@ -147,22 +138,21 @@ class TestSummarizationAccuracy:
             rouge_type=ROUGE_L,
             use_stemmer_for_rouge=True,
             bertscore_model=bertscore_model_instance,
-            use_ray=False,
         )
         assert bertscore_model is bertscore_model_instance
         mock_bertscore_model_cls.assert_not_called()
 
-    def test_build_pipeline_missing_bertscore_model_type(self):
+    def test_get_transforms_and_model_missing_bertscore_model_type(self):
         """
         GIVEN bertscore_model and model_type_for_bertscore arguments with value None.
-        WHEN SummarizationAccuracy's build_pipeline method is called.
+        WHEN SummarizationAccuracy's get_transforms_and_model function is called.
         THEN an exception is raised.
         """
         with pytest.raises(
             EvalAlgorithmClientError,
             match="model_type_for_bertscore must not be None when bertscore_model is not provided.",
         ):
-            SummarizationAccuracy.build_pipeline(
+            SummarizationAccuracy.get_transforms_and_model(
                 target_output_keys=["target_output"],
                 model_output_keys=["model_output"],
                 meteor_keys=[METEOR_SCORE],
@@ -170,7 +160,6 @@ class TestSummarizationAccuracy:
                 bertscore_keys=[BERT_SCORE],
                 rouge_type=ROUGE_L,
                 use_stemmer_for_rouge=True,
-                use_ray=False,
             )
 
     class TestCaseSummarizationAccuracyInvalidConfig(NamedTuple):
@@ -225,7 +214,7 @@ class TestSummarizationAccuracy:
             EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
         ]
         config = SummarizationAccuracyConfig(rouge_type=ROUGE_L)
-        eval_algorithm = SummarizationAccuracy(config, use_ray=False)
+        eval_algorithm = SummarizationAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(target_output, model_output)
         for actual_eval_score, expected_eval_score in zip(actual_response, expected_response):
             assert actual_eval_score.name == expected_eval_score.name
@@ -249,27 +238,31 @@ class TestSummarizationAccuracy:
         ],
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.get_transforms_and_model")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
         mock_get_dataset,
-        mock_build_pipeline,
+        mock_get_transforms,
         mock_transform_pipeline_cls,
+        mock_create_shared_resource,
         mock_evaluate_dataset,
+        mock_cleanup_shared_resource,
         mock_get_results_path,
         test_case,
     ):
         """
-        GIVEN a SummarizationAccuracy instance whose `use_ray` attribute is True.
+        GIVEN a SummarizationAccuracy instance.
         WHEN its evaluate method is called with valid arguments.
         THEN `util.evaluate_dataset` is called with the correct arguments.
         """
-        mock_build_pipeline.return_value = Mock(), Mock(), Mock(), Mock()
+        mock_get_transforms.return_value = Mock(), Mock(), Mock(), Mock()
         mock_get_results_path.return_value = "/path/to/results"
 
         model_runner = Mock()
@@ -294,6 +287,7 @@ class TestSummarizationAccuracy:
             save=True,
         )
 
+        mock_create_shared_resource.assert_called_once_with(summ_acc.bertscore_model)
         mock_evaluate_dataset.assert_called_once_with(
             dataset=mock_dataset,
             pipeline=summ_acc.pipeline,
@@ -306,22 +300,5 @@ class TestSummarizationAccuracy:
             agg_method=MEAN,
             save=True,
         )
+        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
-
-    @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy.build_pipeline")
-    def test_evaluate_failure(self, mock_build_pipeline, mock_transform_pipeline_cls):
-        """
-        GIVEN a SummarizationAccuracy instance whose `use_ray` attribute is False.
-        WHEN its evaluate method is called.
-        THEN an exception is raised.
-        """
-
-        mock_build_pipeline.return_value = Mock(), Mock(), Mock(), Mock()
-        summ_acc = SummarizationAccuracy(use_ray=False)
-        err_msg = (
-            "The use_ray instance attribute of SummarizationAccuracy must be True in order "
-            "for the evaluate method to run successfully."
-        )
-        with pytest.raises(EvalAlgorithmClientError, match=err_msg):
-            summ_acc.evaluate()

@@ -77,25 +77,17 @@ class TestSummarizationAccuracySemanticRobustness:
                 model_type_for_bertscore=test_case.model_type_for_bertscore,
             )
 
-    @pytest.mark.parametrize("use_ray", [True, False])
     @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE])
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.create_shared_resource")
-    def test_init(self, mock_create_shared_resource, perturbation_type, use_ray):
+    def test_init(self, perturbation_type):
         """
         GIVEN valid arguments.
         WHEN a SummarizationAccuracySemanticRobustness is initialized.
-        THEN its instance attributes are of the correct type and create_shared_resource
-            is called (or not called) as appropriate.
+        THEN its instance attributes are of the correct type.
         """
         config = SummarizationAccuracySemanticRobustnessConfig(perturbation_type=perturbation_type)
-        sasr = SummarizationAccuracySemanticRobustness(config, use_ray=use_ray)
+        sasr = SummarizationAccuracySemanticRobustness(config)
         assert isinstance(sasr.perturbation_transform, SEMANTIC_PERTURBATIONS[perturbation_type])
-        if use_ray:
-            mock_create_shared_resource.assert_called_once()
-            assert sasr.bertscore_model == mock_create_shared_resource.return_value
-        else:
-            mock_create_shared_resource.assert_not_called()
-            assert isinstance(sasr.bertscore_model, BertscoreModel)
+        assert isinstance(sasr.bertscore_model, BertscoreModel)
 
     class TestCaseEvaluateSample(NamedTuple):
         original_meteor_score: float
@@ -163,7 +155,6 @@ class TestSummarizationAccuracySemanticRobustness:
                 perturbation_type=RANDOM_UPPER_CASE,
                 num_perturbations=2,
             ),
-            use_ray=False,
         )
         assert (
             eval_algorithm.evaluate_sample(
@@ -193,7 +184,9 @@ class TestSummarizationAccuracySemanticRobustness:
         ],
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.create_shared_resource")
     @patch(
         "fmeval.eval_algorithms.summarization_accuracy_semantic_robustness."
         "SummarizationAccuracySemanticRobustness.build_pipeline"
@@ -207,7 +200,9 @@ class TestSummarizationAccuracySemanticRobustness:
         mock_get_dataset_configs,
         mock_get_dataset,
         mock_build_pipeline,
+        mock_create_shared_resource,
         mock_evaluate_dataset,
+        mock_cleanup_shared_resource,
         mock_get_results_path,
         test_case,
     ):
@@ -233,7 +228,7 @@ class TestSummarizationAccuracySemanticRobustness:
         mock_get_results_path.return_value = "/path/to/results"
         model_runner = Mock()
 
-        sasr = SummarizationAccuracySemanticRobustness(use_ray=False)
+        sasr = SummarizationAccuracySemanticRobustness()
         output = sasr.evaluate(
             model=model_runner,
             dataset_config=dataset_config,
@@ -242,6 +237,7 @@ class TestSummarizationAccuracySemanticRobustness:
             save=True,
         )
 
+        mock_create_shared_resource.assert_called_once_with(sasr.bertscore_model)
         mock_evaluate_dataset.assert_called_once_with(
             dataset=mock_dataset,
             pipeline=mock_build_pipeline.return_value,
@@ -254,5 +250,6 @@ class TestSummarizationAccuracySemanticRobustness:
             agg_method=MEAN,
             save=True,
         )
-        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template, use_ray=True)
+        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template)
+        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]

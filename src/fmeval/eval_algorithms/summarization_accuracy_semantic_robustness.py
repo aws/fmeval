@@ -44,7 +44,7 @@ from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeS
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.util import require, create_shared_resource, get_eval_results_path
+from fmeval.util import require, create_shared_resource, get_eval_results_path, cleanup_shared_resource
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
     def __init__(
         self,
         eval_algorithm_config: SummarizationAccuracySemanticRobustnessConfig = SummarizationAccuracySemanticRobustnessConfig(),
-        use_ray: bool = True,
     ):
         """SummarizationAccuracySemanticRobustness initializer.
 
@@ -112,15 +111,12 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         self.config = eval_algorithm_config
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
-        if use_ray:  # pragma: no branch
-            bertscore_model = create_shared_resource(bertscore_model)
         self.bertscore_model = bertscore_model
 
     def build_pipeline(
         self,
         model: ModelRunner,
         prompt_template: str,
-        use_ray: bool,
     ) -> TransformPipeline:
         """Build the TransformPipeline to be used by `evaluate` and `evaluate_sample`.
 
@@ -133,12 +129,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param model: The ModelRunner representing the model under evaluation.
         :param prompt_template: A template that is used to construct the prompt fed to the model.
-        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
-            algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreModel existing
-            in shared memory. This flag can be set to False if you only plan on invoking the
-            `evaluate_sample` method, which is a computationally cheap operation that does not
-            require utilizing Ray for parallel execution.
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
         transforms = get_model_responses_from_perturbed_inputs(
@@ -148,7 +138,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         )
         get_perturbed_inputs, gen_perturbed_prompts, get_perturbed_responses = transforms
 
-        meteor_score, rouge_score, bert_score, _ = SummarizationAccuracy.build_pipeline(
+        meteor_score, rouge_score, bert_score, _ = SummarizationAccuracy.get_transforms_and_model(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             meteor_keys=[METEOR_SCORE],
@@ -157,10 +147,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             rouge_type=self.config.rouge_type,
             use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
             bertscore_model=self.bertscore_model,
-            use_ray=use_ray,
         )
 
-        perturbed_meteor_score, perturbed_rouge_score, perturbed_bert_score, _ = SummarizationAccuracy.build_pipeline(
+        (
+            perturbed_meteor_score,
+            perturbed_rouge_score,
+            perturbed_bert_score,
+            _,
+        ) = SummarizationAccuracy.get_transforms_and_model(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name for _ in range(self.config.num_perturbations)],
             model_output_keys=get_perturbed_responses.output_keys,
             meteor_keys=[
@@ -175,7 +169,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             rouge_type=self.config.rouge_type,
             use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
             bertscore_model=self.bertscore_model,
-            use_ray=use_ray,
         )
 
         delta_meteor_key = DELTA_METEOR_SCORE
@@ -226,7 +219,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
         }
         invoke_model = create_model_invocation_pipeline(model, prompt_template)
-        compute_metrics = self.build_pipeline(model, prompt_template, use_ray=False)
+        compute_metrics = self.build_pipeline(model, prompt_template)
         pipeline = TransformPipeline([invoke_model, compute_metrics])
         output_record = pipeline.execute_record(sample)
 
@@ -260,6 +253,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                             evaluation
         :return: List of EvalOutput objects.
         """
+        # Create a shared resource to be used during the evaluation.
+        # It will be cleaned up at the end of the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -270,7 +266,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self.build_pipeline(model, dataset_prompt_template, use_ray=True),
+                pipeline=self.build_pipeline(model, dataset_prompt_template),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
@@ -282,4 +278,5 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
             eval_outputs.append(eval_output)
 
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs

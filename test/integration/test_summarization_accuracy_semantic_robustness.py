@@ -1,9 +1,7 @@
 import json
 import os
-import time
 
 import pytest
-import ray
 
 from typing import NamedTuple, Dict
 from pytest import approx
@@ -88,7 +86,7 @@ class TestSummarizationAccuracySemanticRobustness:
         ],
     )
     def test_evaluate_sample(self, config, expected_scores, integration_tests_dir):
-        eval_algo = SummarizationAccuracySemanticRobustness(config, use_ray=False)
+        eval_algo = SummarizationAccuracySemanticRobustness(config)
         with open(os.path.join(integration_tests_dir, "datasets", "gigaword_sample.jsonl")) as fh:
             json_obj = json.loads(fh.readline())
             model_input = json_obj["document"]
@@ -140,7 +138,7 @@ class TestSummarizationAccuracySemanticRobustness:
         ],
     )
     def test_evaluate(self, config, expected_scores):
-        eval_algo = SummarizationAccuracySemanticRobustness(config, use_ray=True)
+        eval_algo = SummarizationAccuracySemanticRobustness(config)
         dataset_config = DATASET_CONFIGS[GIGAWORD]
         eval_output = eval_algo.evaluate(
             model=sm_model_runner,
@@ -150,7 +148,3 @@ class TestSummarizationAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
-
-        # Explicitly kill the BertscoreModel actor
-        ray.kill(eval_algo.bertscore_model)
-        time.sleep(5)

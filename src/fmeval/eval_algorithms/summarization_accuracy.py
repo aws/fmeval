@@ -1,13 +1,18 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, List, Union, Tuple
-from ray import ObjectRef
+from typing import List, Optional, Tuple
 
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset, evaluate_dataset
-from fmeval.util import assert_condition, require, create_shared_resource, get_eval_results_path
+from fmeval.util import (
+    assert_condition,
+    require,
+    create_shared_resource,
+    get_eval_results_path,
+    cleanup_shared_resource,
+)
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
@@ -82,19 +87,12 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
     eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY.value
 
-    def __init__(self, config: SummarizationAccuracyConfig = SummarizationAccuracyConfig(), use_ray: bool = True):
+    def __init__(self, config: SummarizationAccuracyConfig = SummarizationAccuracyConfig()):
         """SummarizationAccuracy initializer.
 
         :param config: Summarization Accuracy evaluation algorithm config.
-        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
-            algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreModel existing
-            in shared memory. This flag can be set to False if you only plan on invoking the
-            `evaluate_sample` method, which is a computationally cheap operation that does not
-            require utilizing Ray for parallel execution.
         """
-        self.use_ray = use_ray
-        meteor_score, rouge_score, bert_score, self.bertscore_model = SummarizationAccuracy.build_pipeline(
+        meteor_score, rouge_score, bert_score, self.bertscore_model = SummarizationAccuracy.get_transforms_and_model(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             meteor_keys=[METEOR_SCORE],
@@ -103,12 +101,11 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             rouge_type=config.rouge_type,
             use_stemmer_for_rouge=config.use_stemmer_for_rouge,
             model_type_for_bertscore=config.model_type_for_bertscore,
-            use_ray=use_ray,
         )
         self.pipeline = TransformPipeline([meteor_score, rouge_score, bert_score])
 
     @staticmethod
-    def build_pipeline(
+    def get_transforms_and_model(
         target_output_keys: List[str],
         model_output_keys: List[str],
         meteor_keys: List[str],
@@ -116,10 +113,26 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         bertscore_keys: List[str],
         rouge_type: str,
         use_stemmer_for_rouge: bool,
-        bertscore_model: Optional[Union[BertscoreModel, ObjectRef]] = None,
+        bertscore_model: Optional[BertscoreModel] = None,
         model_type_for_bertscore: Optional[str] = None,
-        use_ray: bool = True,
-    ) -> Tuple[MeteorScore, RougeScore, BertScore, Union[BertscoreModel, ObjectRef]]:
+    ) -> Tuple[MeteorScore, RougeScore, BertScore, BertscoreModel]:
+        """Create summarization accuracy score transforms and a BertscoreModel to be used for evaluations.
+
+        :param target_output_keys: See the corresponding parameter in MeteorScore, RougeScore, and BertScore.
+        :param model_output_keys: See the corresponding parameter in MeteorScore, RougeScore, and BertScore.
+        :param meteor_keys: The `output_keys` parameter for the returned MeteorScore instance.
+        :param rouge_keys: The `output_keys` parameter for the returned RougeScore instance.
+        :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
+        :param rouge_type: See the corresponding parameter in RougeScore.
+        :param use_stemmer_for_rouge: See `use_stemmer` in RougeScore.
+        :param bertscore_model: An optional BertscoreModel instance. If None, one will be created.
+            Otherwise, this model will be passed as an input to the returned BertScore instance.
+        :param model_type_for_bertscore: See the corresponding parameter in BertScore.
+            This parameter is required if the `bertscore_model` parameter above is None, as a
+            BertScoreModel will be created.
+        :returns: The created MeteorScore, RougeScore, BertScore instances, and a newly-created
+            BertscoreModel, or the same BertscoreModel that was passed in as input.
+        """
         meteor_transform = MeteorScore(
             target_output_keys=target_output_keys,
             model_output_keys=model_output_keys,
@@ -136,12 +149,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         )
         if bertscore_model is None:  # pragma: no branch
             require(
-                model_type_for_bertscore is not None,
+                model_type_for_bertscore,
                 "model_type_for_bertscore must not be None when bertscore_model is not provided.",
             )
             bertscore_model = BertscoreModel(model_type_for_bertscore)
-            if use_ray:  # pragma: no branch
-                bertscore_model = create_shared_resource(bertscore_model)
         bert_transform = BertScore(
             target_output_keys=target_output_keys,
             model_output_keys=model_output_keys,
@@ -151,20 +162,6 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         )
         return meteor_transform, rouge_transform, bert_transform, bertscore_model
 
-    @staticmethod
-    def create_sample(target_output: str, model_output: str) -> Dict[str, Any]:
-        """Create a sample in the record format used by Transforms.
-
-        This function's primary use is to be called by evaluate_sample.
-
-        :param target_output: The target_output parameter passed to evaluate_sample.
-        :param model_output: The model_output parameter passed to evaluate_sample.
-        """
-        return {
-            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
-            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
-        }
-
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
         """Compute summarization accuracy metrics for a single sample.
 
@@ -172,7 +169,10 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param model_output: The actual model output.
         :returns: A list of EvalScore objects, one for each of the summarization accuracy metrics.
         """
-        sample = SummarizationAccuracy.create_sample(target_output=target_output, model_output=model_output)
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
         output_record = self.pipeline.execute_record(sample)
         assert_condition(
             all(metric_name in output_record for metric_name in METRIC_NAMES),
@@ -206,11 +206,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
         :return: A list of EvalOutput objects.
         """
-        require(
-            self.use_ray,
-            "The use_ray instance attribute of SummarizationAccuracy must be True in order "
-            "for the evaluate method to run successfully.",
-        )
+        # Create a shared resource to be used during the evaluation.
+        # It will be cleaned up at the end of the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -229,4 +227,6 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                 save=save,
             )
             eval_outputs.append(eval_output)
+
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs
