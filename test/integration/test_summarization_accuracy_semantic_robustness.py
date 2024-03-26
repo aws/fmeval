@@ -1,11 +1,9 @@
 import json
 import os
-
+import ray
 import pytest
 
 from typing import NamedTuple, Dict
-
-import ray
 from pytest import approx
 
 from fmeval.eval_algorithms import DATASET_CONFIGS, GIGAWORD
