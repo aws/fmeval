@@ -112,3 +112,15 @@ def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
     resource_cls, serialized_data = resource.__reduce__()  # type: ignore[misc]
     wrapped_resource_cls = ray.remote(num_cpus=num_cpus)(resource_cls)
     return wrapped_resource_cls.remote(*serialized_data)
+
+
+def cleanup_shared_resource(resource: ObjectRef) -> None:
+    """Removes the resource from shared memory.
+    Concretely, this function kills the Ray actor corresponding
+    to `resource`, which in most cases will be an actor created
+    via create_shared_resource.
+    :param resource: A Ray actor handle to a shared resource
+        (ex: a BertscoreModel).
+    :returns: None
+    """
+    ray.kill(resource)

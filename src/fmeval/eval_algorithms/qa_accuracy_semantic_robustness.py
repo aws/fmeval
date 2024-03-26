@@ -139,6 +139,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: QA Accuracy Semantic Robustness eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self.eval_name = QA_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
 

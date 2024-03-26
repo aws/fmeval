@@ -187,6 +187,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Summarization Accuracy Semantic Robustness eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self.eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value
         self._eval_algorithm_config = eval_algorithm_config
 

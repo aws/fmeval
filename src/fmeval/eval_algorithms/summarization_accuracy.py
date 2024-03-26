@@ -1,14 +1,20 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, List, Union, Tuple
+from typing import List, Optional, Tuple, Union
+
 from ray import ObjectRef
 
-from fmeval.eval_algorithms import EvalScore, EvalOutput, EvalAlgorithm
+from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms import util
-from fmeval.eval_algorithms.util import get_dataset_configs
-from fmeval.util import assert_condition, require, create_shared_resource, get_eval_results_path
-from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns
+from fmeval.eval_algorithms.util import evaluate_dataset, get_dataset_configs
+from fmeval.util import (
+    assert_condition,
+    require,
+    create_shared_resource,
+    get_eval_results_path,
+    cleanup_shared_resource,
+)
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
@@ -82,33 +88,30 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
     eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY.value
 
-    def __init__(self, config: SummarizationAccuracyConfig = SummarizationAccuracyConfig(), use_ray: bool = True):
+    def __init__(self, eval_algorithm_config: SummarizationAccuracyConfig = SummarizationAccuracyConfig()):
         """SummarizationAccuracy initializer.
 
-        :param config: Summarization Accuracy evaluation algorithm config.
-        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
-            algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreModel existing
-            in shared memory. This flag can be set to False if you only plan on invoking the
-            `evaluate_sample` method, which is a computationally cheap operation that does not
-            require utilizing Ray for parallel execution.
+        :param eval_algorithm_config: Summarization Accuracy evaluation algorithm config.
         """
-        self.use_ray = use_ray
-        meteor_score, rouge_score, bert_score, self.bertscore_model = SummarizationAccuracy.build_pipeline(
+        super().__init__(eval_algorithm_config)
+        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        meteor_score, rouge_score, bert_score = SummarizationAccuracy._create_transforms(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             meteor_keys=[METEOR_SCORE],
             rouge_keys=[ROUGE_SCORE],
             bertscore_keys=[BERT_SCORE],
-            rouge_type=config.rouge_type,
-            use_stemmer_for_rouge=config.use_stemmer_for_rouge,
-            model_type_for_bertscore=config.model_type_for_bertscore,
-            use_ray=use_ray,
+            rouge_type=eval_algorithm_config.rouge_type,
+            use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
+            bertscore_model=self.bertscore_model,
         )
+        self.meteor_score = meteor_score
+        self.rouge_score = rouge_score
+        self.bert_score = bert_score
         self.pipeline = TransformPipeline([meteor_score, rouge_score, bert_score])
 
     @staticmethod
-    def build_pipeline(
+    def _create_transforms(
         target_output_keys: List[str],
         model_output_keys: List[str],
         meteor_keys: List[str],
@@ -116,10 +119,21 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         bertscore_keys: List[str],
         rouge_type: str,
         use_stemmer_for_rouge: bool,
-        bertscore_model: Optional[Union[BertscoreModel, ObjectRef]] = None,
-        model_type_for_bertscore: Optional[str] = None,
-        use_ray: bool = True,
-    ) -> Tuple[MeteorScore, RougeScore, BertScore, Union[BertscoreModel, ObjectRef]]:
+        bertscore_model: Union[BertscoreModel, ObjectRef],
+    ) -> Tuple[MeteorScore, RougeScore, BertScore]:
+        """Create a TransformPipeline containing summarization accuracy score transforms.
+
+        :param target_output_keys: See the corresponding parameter in MeteorScore, RougeScore, and BertScore.
+        :param model_output_keys: See the corresponding parameter in MeteorScore, RougeScore, and BertScore.
+        :param meteor_keys: The `output_keys` parameter for the returned MeteorScore instance.
+        :param rouge_keys: The `output_keys` parameter for the returned RougeScore instance.
+        :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
+        :param rouge_type: See the corresponding parameter in RougeScore.
+        :param use_stemmer_for_rouge: See `use_stemmer` in RougeScore.
+        :param bertscore_model: A BertscoreModel or Ray actor handle corresponding to a BertscoreModel
+            (i.e. a shared resource) used in the creation of the returned BertScore instance.
+        :returns: A tuple containing the created MeteorScore, RougeScore, and BertScore instances.
+        """
         meteor_transform = MeteorScore(
             target_output_keys=target_output_keys,
             model_output_keys=model_output_keys,
@@ -134,14 +148,6 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             rouge_type=rouge_type,
             use_stemmer=use_stemmer_for_rouge,
         )
-        if bertscore_model is None:  # pragma: no branch
-            require(
-                model_type_for_bertscore is not None,
-                "model_type_for_bertscore must not be None when bertscore_model is not provided.",
-            )
-            bertscore_model = BertscoreModel(model_type_for_bertscore)
-            if use_ray:  # pragma: no branch
-                bertscore_model = create_shared_resource(bertscore_model)
         bert_transform = BertScore(
             target_output_keys=target_output_keys,
             model_output_keys=model_output_keys,
@@ -149,30 +155,19 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             allow_duplicate_input_keys=True,
             bertscore_model=bertscore_model,
         )
-        return meteor_transform, rouge_transform, bert_transform, bertscore_model
+        return meteor_transform, rouge_transform, bert_transform
 
-    @staticmethod
-    def create_sample(target_output: str, model_output: str) -> Dict[str, Any]:
-        """Create a sample in the record format used by Transforms.
-
-        This function's primary use is to be called by evaluate_sample.
-
-        :param target_output: The target_output parameter passed to evaluate_sample.
-        :param model_output: The model_output parameter passed to evaluate_sample.
-        """
-        return {
-            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
-            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
-        }
-
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """Compute summarization accuracy metrics for a single sample.
 
         :param target_output: The expected/desired model output.
         :param model_output: The actual model output.
         :returns: A list of EvalScore objects, one for each of the summarization accuracy metrics.
         """
-        sample = SummarizationAccuracy.create_sample(target_output=target_output, model_output=model_output)
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
         output_record = self.pipeline.execute_record(sample)
         assert_condition(
             all(metric_name in output_record for metric_name in METRIC_NAMES),
@@ -197,7 +192,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluations will be run on all of this algorithm's built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.
-            If not provided, defaults will be used.
+            If not provided, defaults will be used. If provided, `model` must not be None.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
@@ -206,25 +201,38 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
         :return: A list of EvalOutput objects.
         """
-        require(
-            self.use_ray,
-            "The use_ray instance attribute of SummarizationAccuracy must be True in order "
-            "for the evaluate method to run successfully.",
+        # Create a shared resource to be used during the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
+        # Create a new pipeline that uses the shared resource instead of self.bertscore_model.
+        meteor_score, rouge_score, bert_score = SummarizationAccuracy._create_transforms(
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            meteor_keys=[METEOR_SCORE],
+            rouge_keys=[ROUGE_SCORE],
+            bertscore_keys=[BERT_SCORE],
+            rouge_type=self.rouge_score.rouge_type,
+            use_stemmer_for_rouge=self.rouge_score.use_stemmer,
+            bertscore_model=bertscore_shared_resource,
         )
+        pipeline = TransformPipeline([meteor_score, rouge_score, bert_score])
+
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
-            eval_output = util.evaluate_dataset(
+            eval_output = evaluate_dataset(
                 dataset_config=dataset_config,
-                pipeline=self.pipeline,
+                pipeline=pipeline,
                 eval_name=self.eval_name,
                 metric_names=METRIC_NAMES,
-                required_columns=[DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name],
+                required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=prompt_template,
                 num_records=num_records,
+                agg_method=MEAN,
                 save=save,
             )
             eval_outputs.append(eval_output)
+
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs

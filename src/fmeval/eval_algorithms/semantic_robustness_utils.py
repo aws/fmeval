@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from fmeval.constants import BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, DatasetColumns
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
@@ -21,7 +22,7 @@ SEMANTIC_PERTURBATIONS = {
 
 
 @dataclass(frozen=True)
-class SemanticRobustnessConfig:
+class SemanticRobustnessConfig(EvalAlgorithmConfig):
     """Configures the semantic robustness evaluation algorithms.
 
     :param perturbation_type: Perturbation type for generating perturbed inputs.
@@ -53,6 +54,12 @@ class SemanticRobustnessConfig:
 
 
 def get_perturbation_transform(config: SemanticRobustnessConfig) -> SemanticPerturbation:
+    """Returns a semantic perturbation transform based on parameters in `config`.
+
+    :param config: A config that specifies a perturbation type, which dictates the
+        SemanticPerturbation that gets returned, and its configurable parameters.
+    :returns: A SemanticPerturbation instance, initialized with parameters passed via `config`.
+    """
     if config.perturbation_type == BUTTER_FINGER:
         return ButterFinger(
             input_key=DatasetColumns.MODEL_INPUT.value.name,
@@ -91,6 +98,14 @@ def get_model_responses_from_perturbed_inputs(
     prompt_template: str,
     model: ModelRunner,
 ) -> Tuple[SemanticPerturbation, GeneratePrompt, GetModelOutputs]:
+    """Returns a tuple of transforms for perturbing model inputs, composing prompts, and getting model outputs.
+
+    :param perturbation: The semantic perturbation transform used to perturb inputs.
+    :param prompt_template: The template used for composing prompts out of the perturbed inputs.
+    :param model: The model that is invoked on the prompts constructed from perturbed inputs.
+    :returns: A tuple of three transforms, where the first is the same SemanticPerturbation
+        that was passed in, and the second two are created in this function.
+    """
     # Generate prompts from perturbed inputs
     gen_perturbed_prompts = GeneratePrompt(
         input_keys=perturbation.output_keys,
