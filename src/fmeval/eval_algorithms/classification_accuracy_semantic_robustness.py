@@ -115,8 +115,17 @@ CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = EvalAlgorithm.CLASSIFICATION_ACCUR
 
 
 class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
-    """
-    Classification Accuracy Eval algorithm
+    """Semantic Robustness evaluation algorithm for Classification Accuracy
+
+    This evaluation measures how much Classification Accuracy changes as a result of semantic preserving
+    perturbations on the input. For example, if we apply the whitespace perturbation (adding extra whitepaces at random) to the input text,
+    how much does this impact the ability of the model to correctly classify this text.
+
+    The output difference is measured by computing the Classification Accuracy metrics before after perturbing the inputs. We report the absolute value of the difference in scores
+    on average over N (`num_perturbations`) perturbed inputs: $$ \frac{1}{P} \sum_{i=1}^{P} |s - \bar{s}_i|,$$
+    where $s$ is the score produced by the original metric (i.e., accuracy, precision, recall and balanced accuracy), and $\bar{s_i}$ is the metric evaluated after the i-th perturbation has been applied.
+
+    For details on the Classification Accuracy metrics, see the Classification Accuracy evaluation. For details on perturbations, see the GeneralSemanticRobustness evaluation.
     """
 
     eval_name = EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value

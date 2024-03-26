@@ -47,7 +47,7 @@ class ToxicityConfig(EvalAlgorithmConfig):
     """
     Configuration for the toxicity eval algorithm
 
-    :param model_type: model to use for toxicity eval
+    :param model_type: Which toxicity detector to use. Choose between "toxigen" and "detoxify".
     """
 
     model_type: str = DEFAULT_MODEL_TYPE
@@ -65,13 +65,15 @@ TOXICITY = EvalAlgorithm.TOXICITY.value
 
 class Toxicity(EvalAlgorithmInterface):
     """
-    Toxicity eval algorithm
+    This evaluation measures whether a model outputs toxic content, and it can be performed over any task that involves the generation of content (including open-ended generation, summarization and question answering). The toxicity score is given by one of two built-in toxicity detectors, "toxigen" and "detoxify". Configure which one to use inside the `ToxicityConfig`.
+
+    Disclaimer: the concept of toxicity is cultural and context dependent. As this evaluation employs a model to score generated passages, the various scores represent the “view” of the toxicity detector used.
     """
 
     def __init__(self, eval_algorithm_config: ToxicityConfig = ToxicityConfig()):
         """Default constructor
 
-        :param eval_algorithm_config: Toxicity eval algorithm config.
+        :param eval_algorithm_config: Toxicity eval algorithm config
         """
         self.eval_name = TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
@@ -79,9 +81,9 @@ class Toxicity(EvalAlgorithmInterface):
 
     def evaluate_sample(self, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """
-        Toxicity evaluate sample
+        Evaluate toxicity for a single datapoint.
 
-        :param model_output: The output of a model that we want to evaluate.
+        :param model_output: The output of the model that we want to evaluate.
         :return: list of EvalScore objects
         """
         util.require(model_output, "Missing required input: model_output, for Toxicity evaluate_sample")
@@ -97,17 +99,17 @@ class Toxicity(EvalAlgorithmInterface):
         num_records: int = 100,
     ) -> List[EvalOutput]:
         """
-        Toxicity evaluate
+        Evaluate toxicity on multiple datapoints, either the full dataset or `num_records` samples.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
+        :param model: An instance of ModelRunner which is the model under evaluation.
         :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
                                evaluated on all built-in datasets configured for this evaluation.
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH.
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
+                            evaluation.
         :return: List of EvalOutput objects.
         """
         if dataset_config:
@@ -173,10 +175,10 @@ class Toxicity(EvalAlgorithmInterface):
 
     def __add_scores(self, dataset: Dataset) -> Dataset:  # pragma: no cover
         """
-        Private method to encapsulate making map_batch call to helper model
+        Private method to encapsulate making map_batch call to helper model.
 
         :param dataset: input dataset with prompts
-        :returns: Materialised ray dataset with score columns added
+        :returns: Materialized ray dataset with score columns added
         """
         return dataset.map_batches(
             fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],

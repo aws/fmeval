@@ -57,7 +57,15 @@ FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
 
 class FactualKnowledge(EvalAlgorithmInterface):
     """
-    Factual Knowledge Eval algorithm
+    This evaluation measures the ability of language models to reproduce facts about the real world. The evaluation queries the model with prompts like ''Berlin is the capital of'' and ''Tata Motors is a subsidiary of''
+    and compares the model generation with one of more target answers. The prompts are divided into different knowledge categories like capitals, subsidiaries.
+    This evaluation was proposed by [Petroni et al.](https://arxiv.org/pdf/1909.01066.pdf).
+
+    This evaluation outputs a single binary metric. The metric value is 1 if the lower-cased expected answer is contained anywhere within the lower-cased model response. For instance, consider the prompt ''Berlin is
+    the capital of'' with the expected answer ''Germany''. If the model generation is ''Germany, and is also its most populous city'', then the metric evaluates to 1.
+
+    If there is more than one correct target answer, answers are seperated by the `target_output_delimiter` which can be configure inside the `FactualKnowledgeConfig`. It defaults to `<OR>`,i.e, the
+    target answer in this example could be Germany<OR>Berlin (since Berlin is its own federal state).
     """
 
     def __init__(self, eval_algorithm_config: FactualKnowledgeConfig = FactualKnowledgeConfig()):

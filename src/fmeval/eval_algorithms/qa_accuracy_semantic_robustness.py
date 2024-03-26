@@ -119,8 +119,17 @@ QA_ACCURACY_SEMANTIC_ROBUSTNESS = EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.
 
 
 class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
-    """
-    QA Accuracy Semantic Robustness Eval algorithm
+    """Semantic Robustness evaluation algorithm for QA Accuracy
+
+    This evaluation measures how much QA Accuracy changes as a result of semantic preserving
+    perturbations on the input. For example, if we apply the whitespace perturbation (adding extra whitepaces at random) to the input text,
+    how much does the quality of the model answer change.
+
+    The output difference is measured by computing the QA Accuracy metrics before after perturbing the inputs. We report the absolute value of the difference in scores
+    on average over N (`num_perturbations`) perturbed inputs: $$ \frac{1}{P} \sum_{i=1}^{P} |s - \bar{s}_i|,$$
+    where $s$ is the score produced by the original metric (i.e., exact match, quasi-exact match, precision over words, recall over words and F1 over words), and $\bar{s_i}$ is the metric evaluated after the i-th perturbation has been applied.
+
+    For details on the QA Accuracy metrics, see the QA Accuracy evaluation. For details on perturbations, see the GeneralSemanticRobustness evaluation.
     """
 
     def __init__(
