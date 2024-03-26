@@ -71,6 +71,44 @@ class TestSummarizationAccuracySemanticRobustness:
                     DELTA_BERT_SCORE: 0.031421,
                 },
             ),
+            TestCase(
+                config=RANDOM_UPPER_CASE_CONFIG,
+                evaluate_sample_scores={
+                    ROUGE_SCORE: 0.0,
+                    METEOR_SCORE: 0.0,
+                    BERT_SCORE: 0.536162,
+                    DELTA_ROUGE_SCORE: 0.0,
+                    DELTA_METEOR_SCORE: 0.064103,
+                    DELTA_BERT_SCORE: 0.056435,
+                },
+                evaluate_scores={
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.105540,
+                    BERT_SCORE: 0.559893,
+                    DELTA_ROUGE_SCORE: 0.032086,
+                    DELTA_METEOR_SCORE: 0.057150,
+                    DELTA_BERT_SCORE: 0.026943,
+                },
+            ),
+            TestCase(
+                config=WHITESPACE_CONFIG,
+                evaluate_sample_scores={
+                    ROUGE_SCORE: 0.0,
+                    METEOR_SCORE: 0.0,
+                    BERT_SCORE: 0.536162,
+                    DELTA_ROUGE_SCORE: 0.0,
+                    DELTA_METEOR_SCORE: 0.038462,
+                    DELTA_BERT_SCORE: 0.039566,
+                },
+                evaluate_scores={
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.105540,
+                    BERT_SCORE: 0.559893,
+                    DELTA_ROUGE_SCORE: 0.020407,
+                    DELTA_METEOR_SCORE: 0.048702,
+                    DELTA_BERT_SCORE: 0.026193,
+                },
+            ),
         ],
     )
     def test_evaluate_sample_and_evaluate(self, config, evaluate_sample_scores, evaluate_scores, integration_tests_dir):
