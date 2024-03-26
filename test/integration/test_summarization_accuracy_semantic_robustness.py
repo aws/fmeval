@@ -4,6 +4,8 @@ import os
 import pytest
 
 from typing import NamedTuple, Dict
+
+import ray
 from pytest import approx
 
 from fmeval.eval_algorithms import DATASET_CONFIGS, GIGAWORD
@@ -148,3 +150,4 @@ class TestSummarizationAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+        ray.shutdown()
