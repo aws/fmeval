@@ -189,7 +189,7 @@ class TestSummarizationAccuracySemanticRobustness:
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.create_shared_resource")
     @patch(
         "fmeval.eval_algorithms.summarization_accuracy_semantic_robustness."
-        "SummarizationAccuracySemanticRobustness.build_pipeline"
+        "SummarizationAccuracySemanticRobustness._build_pipeline"
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_dataset_configs")
@@ -250,6 +250,10 @@ class TestSummarizationAccuracySemanticRobustness:
             agg_method=MEAN,
             save=True,
         )
-        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template)
+        mock_build_pipeline.assert_called_once_with(
+            model_runner,
+            test_case.dataset_prompt_template,
+            mock_create_shared_resource.return_value,
+        )
         mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
