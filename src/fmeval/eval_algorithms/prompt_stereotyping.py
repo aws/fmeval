@@ -8,7 +8,7 @@ from fmeval.constants import (
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
-from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
@@ -52,6 +52,9 @@ class PromptStereotyping(EvalAlgorithmInterface):
     """
 
     eval_name = PROMPT_STEREOTYPING
+
+    def __init__(self):
+        super().__init__(EvalAlgorithmConfig())
 
     def evaluate(
         self,

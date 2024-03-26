@@ -75,6 +75,7 @@ class Toxicity(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Toxicity eval algorithm config
         """
+        super().__init__(eval_algorithm_config)
         self.eval_name = TOXICITY
         self._eval_algorithm_config = eval_algorithm_config
         self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()

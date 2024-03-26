@@ -407,6 +407,14 @@ def get_bert_score(
 
 
 def create_model_invocation_pipeline(model: ModelRunner, prompt_template: str) -> TransformPipeline:
+    """Create a transform pipeline for performing the standard action of invoking a model on a prompt.
+
+    :param model: The model to be invoked.
+    :param prompt_template: The template used for constructing prompts (out of raw inputs)
+        that will be fed to the model.
+    :returns: A TransformPipeline instance containing a GeneratePrompt transform that uses `prompt_template`
+        and a GetModelOutputs transform for invoking the model on the generated prompts.
+    """
     gen_prompt = GeneratePrompt(
         input_keys=[DatasetColumns.MODEL_INPUT.value.name],
         output_keys=[DatasetColumns.PROMPT.value.name],

@@ -73,6 +73,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Factual knowledge eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self.eval_name = FACTUAL_KNOWLEDGE
         self._eval_algorithm_config = eval_algorithm_config
 

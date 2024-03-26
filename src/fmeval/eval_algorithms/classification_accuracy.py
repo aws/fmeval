@@ -122,6 +122,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
         self._valid_labels = self._eval_algorithm_config.valid_labels
 

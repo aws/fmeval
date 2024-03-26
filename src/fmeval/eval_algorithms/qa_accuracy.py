@@ -242,6 +242,7 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: QA Accuracy eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
 
     def evaluate(

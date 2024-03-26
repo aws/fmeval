@@ -6,7 +6,14 @@ from unittest.mock import patch, Mock
 
 from fmeval.constants import DEFAULT_EVAL_RESULTS_PATH
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.util import require, project_root, singleton, create_shared_resource, get_eval_results_path
+from fmeval.util import (
+    require,
+    project_root,
+    singleton,
+    create_shared_resource,
+    get_eval_results_path,
+    cleanup_shared_resource,
+)
 
 
 def test_require():
@@ -97,3 +104,15 @@ def test_create_shared_resource():
         mock_ray_remote.assert_called_once_with(num_cpus=num_cpus)
         mock_actor_class.assert_called_once_with(Dummy)
         mock_wrapped_resource_class.remote.assert_called_once_with("C", 2)
+
+
+@patch("fmeval.util.ray.kill")
+def test_cleanup_shared_resource(mock_ray_kill):
+    """
+    GIVEN a shared resource.
+    WHEN cleanup_shared_resource is called.
+    THEN ray.kill is called on this resource.
+    """
+    resource = Mock()
+    cleanup_shared_resource(resource)
+    mock_ray_kill.assert_called_once_with(resource)
