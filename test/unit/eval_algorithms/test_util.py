@@ -7,8 +7,8 @@ import pytest
 import ray
 
 from collections import OrderedDict
-from typing import Any, Dict, List, NamedTuple, Optional
-from unittest.mock import MagicMock, Mock, patch
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from unittest.mock import Mock, call, patch
 from ray.data import Dataset
 
 from fmeval.constants import (
@@ -16,6 +16,7 @@ from fmeval.constants import (
     EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     PARALLELIZATION_FACTOR,
     MEAN,
+    NUM_ROWS_DETERMINISTIC,
 )
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -47,7 +48,6 @@ from fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     verify_model_determinism,
     get_dataset_configs,
-    compute_and_aggregate_metrics,
     aggregate_evaluation_scores,
     create_model_invocation_pipeline,
     evaluate_dataset,
@@ -55,7 +55,6 @@ from fmeval.eval_algorithms.util import (
 from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.util import camel_to_snake, get_num_actors
-from fmeval.eval_algorithms.util import get_bert_score
 
 BERTSCORE_DUMMY_VALUE = (
     0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
@@ -560,138 +559,121 @@ def test_generate_mean_delta_score(test_case):
 
 
 class TestCaseVerifyModelDeterminism(NamedTuple):
-    dataset: Dataset
-    prompt_column_name: str
-    expect_num_predict_calls: int
-    predict_result: List
-    expect_response: bool
+    dataset: List[Dict]
+    predict_responses: List[Tuple]
+    expected_num_predict_calls: int
+    expected_result: bool
 
 
 @pytest.mark.parametrize(
     "test_case",
     [
-        # dataset fewer than 5 rows
+        # Dataset contains > NUM_ROWS_DETERMINISTIC rows, model is deterministic
         TestCaseVerifyModelDeterminism(
-            dataset=ray.data.from_items(
-                [
-                    {
-                        DatasetColumns.MODEL_INPUT.value.name: "Summarize: Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-                        "another prompt column": "Cake is so delicious, I really like cake. I want to open a bakery when I grow up.",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "I like cake.",
-                    },
-                    {
-                        DatasetColumns.MODEL_INPUT.value.name: "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
-                        "museum landscape and numerous UNESCO World Heritage sites."
-                        " It is also an international exhibition venue. "
-                        "You will find a selection of current and upcoming exhibitions here.",
-                        "another prompt column": "Summarize: The art metropolis of Berlin inspires locals and visitors with its famous "
-                        "museum landscape and numerous UNESCO World Heritage sites."
-                        " It is also an international exhibition venue. "
-                        "You will find a selection of current and upcoming exhibitions here.",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "Berlin: an art metropolis.",
-                    },
-                ]
-            ),
-            predict_result=[("model output 1",), ("model output 1",), ("model output 2",), ("model output 2",)],
-            expect_num_predict_calls=4,
-            prompt_column_name="another prompt column",
-            expect_response=True,
-        ),
-        # only test first 5 rows
-        TestCaseVerifyModelDeterminism(
-            dataset=ray.data.from_items(
-                [
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of Italy?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of England?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "London",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: What is the color of blood?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "Red",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: Who directed Pulp Fiction?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "Quentin Tarantino",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022",
-                    },
-                ]
-            ),
-            predict_result=[
-                ("model output 1",),
-                ("model output 1",),
-                ("model output 2",),
-                ("model output 2",),
-                ("model output 2",),
-                ("model output 2",),
-                ("model output 4",),
-                ("model output 4",),
-                ("model output 5",),
-                ("model output 5",),
+            dataset=[
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "What is the capital of Italy?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "When did Argentina win the FIFA World Cup?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "What is the capital of England?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "London",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "What is the color of blood?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "Red",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "Who directed Pulp Fiction?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "Quentin Tarantino",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "When did Argentina win the FIFA World Cup?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022",
+                },
             ],
-            expect_num_predict_calls=10,
-            prompt_column_name=DatasetColumns.PROMPT.value.name,
-            expect_response=True,
+            predict_responses=[
+                ("model output 1", None),
+                ("model output 1", None),
+                ("model output 2", None),
+                ("model output 2", None),
+                ("model output 2", None),
+                ("model output 2", None),
+                ("model output 4", None),
+                ("model output 4", None),
+                ("model output 5", None),
+                ("model output 5", None),
+            ],
+            expected_num_predict_calls=10,
+            expected_result=True,
         ),
-        # dataset fewer than 5 rows
+        # Dataset contains fewer than NUM_ROWS_DETERMINISTIC rows, model is deterministic
         TestCaseVerifyModelDeterminism(
-            dataset=ray.data.from_items(
-                [
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: What is the capital of Italy?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
-                    },
-                    {
-                        DatasetColumns.PROMPT.value.name: "Answer: When did Argentina win the FIFA World Cup?",
-                        DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
-                    },
-                ]
-            ),
-            predict_result=[
+            dataset=[
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "What is the capital of Italy?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "When did Argentina win the FIFA World Cup?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
+                },
+            ],
+            predict_responses=[
+                ("model output 1", None),
+                ("model output 1", None),
+                ("model output 2", None),
+                ("model output 2", None),
+            ],
+            expected_num_predict_calls=4,
+            expected_result=True,
+        ),
+        # Dataset contains fewer than NUM_ROWS_DETERMINISTIC rows, model is not deterministic
+        TestCaseVerifyModelDeterminism(
+            dataset=[
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "What is the capital of Italy?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "Rome",
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "When did Argentina win the FIFA World Cup?",
+                    DatasetColumns.TARGET_OUTPUT.value.name: "1978<OR>1986<OR>2022.",
+                },
+            ],
+            predict_responses=[
                 ("model output 1",),
                 ("different model output 1",),
-                ("model output 2",),
-                ("different model output 2",),
             ],
-            expect_num_predict_calls=2,
-            prompt_column_name=DatasetColumns.PROMPT.value.name,
-            expect_response=False,
+            expected_num_predict_calls=2,
+            expected_result=False,
         ),
     ],
 )
 def test_verify_model_determinism(test_case):
     """
-    GIVEN a deterministic model and other inputs
-    WHEN verify_model_determinism is called
-    THEN no Exception raised
+    GIVEN a model.
+    WHEN verify_model_determinism is called.
+    THEN the correct result is returned.
     """
-    model = MagicMock()
-    model.predict.side_effect = test_case.predict_result
+    model = Mock()
+    model.predict.side_effect = test_case.predict_responses
     result = verify_model_determinism(
-        model=model, dataset=test_case.dataset, prompt_column_name=test_case.prompt_column_name
+        model=model,
+        dataset=ray.data.from_items(test_case.dataset),
+        prompt_template="Answer: $model_input",
+        model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
     )
-    assert model.predict.call_count == test_case.expect_num_predict_calls
-    assert result == test_case.expect_response
-
-
-@pytest.mark.parametrize(
-    "target_output,model_output",
-    [("I like cake.", "I like cake."), ("Berlin: Art, Heritage, Exhibitions Hub.", "Berlin: an art metropolis.")],
-)
-@patch("fmeval.eval_algorithms.util.ray.get")
-def test_get_bert_score(mock_ray_get, target_output, model_output):
-    mock_ray_get.return_value = BERTSCORE_DUMMY_VALUE
-    assert BERTSCORE_DUMMY_VALUE == get_bert_score(target_output, model_output, helper_model=MagicMock())
+    assert model.predict.call_count == test_case.expected_num_predict_calls
+    assert result == test_case.expected_result
+    if test_case.expected_result:
+        expected_calls = []
+        for row in test_case.dataset[:NUM_ROWS_DETERMINISTIC]:
+            expected_calls += [call(f"Answer: {row[DatasetColumns.MODEL_INPUT.value.name]}")] * 2
+        model.predict.assert_has_calls(expected_calls)
 
 
 def test_get_dataset_configs_custom_dataset():
@@ -826,56 +808,96 @@ def test_model_invocation_pipeline():
     assert get_outputs.model_runner == model
 
 
-@pytest.mark.parametrize("save", [True, False])
+class TestCaseEvaluateDatasetWithModel(NamedTuple):
+    user_provided_prompt_template: Optional[str]
+    dataset_prompt_template: Optional[str]
+    save: bool
+    agg_method: str = MEAN
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseEvaluateDatasetWithModel(
+            user_provided_prompt_template=None,
+            dataset_prompt_template="$model_input",
+            save=True,
+        ),
+        TestCaseEvaluateDatasetWithModel(
+            user_provided_prompt_template="Do something with $model_input",
+            dataset_prompt_template="Do something with $model_input",
+            save=False,
+        ),
+    ],
+)
 @patch("fmeval.eval_algorithms.util.generate_output_dataset_path")
 @patch("fmeval.eval_algorithms.util.save_dataset")
 @patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
-def test_compute_and_aggregate_metrics(mock_aggregate, mock_save, mock_generate_output_path, save):
+@patch("fmeval.eval_algorithms.util.TransformPipeline")
+@patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
+def test_evaluate_dataset_with_model(
+    mock_create_invocation_pipeline,
+    mock_transform_pipeline_cls,
+    mock_aggregate,
+    mock_save,
+    mock_generate_output_path,
+    test_case,
+):
     """
-    GIVEN valid arguments.
-    WHEN compute_and_aggregate_metrics is called.
-    THEN expected function calls are made and the correct EvalOutput is returned.
+    GIVEN valid arguments and a `model` argument that is not None.
+    WHEN `evaluate_dataset` is called.
+    THEN a model invocation pipeline (created using `model`) is prepended
+        to the input pipeline and the correct EvalOutput is returned.
     """
+    mock_create_invocation_pipeline.return_value = Mock()
+    # The pipeline that has the GeneratePrompt and GetModelOutputs Transforms prepended.
+    final_pipeline = Mock()
+    mock_transform_pipeline_cls.return_value = final_pipeline
+    final_pipeline.execute = Mock()
+
     mock_aggregate.return_value = DATASET_SCORES, CATEGORY_SCORES
-    pipeline = Mock()
-    pipeline.execute = Mock(return_value=Mock())
     mock_generate_output_path.return_value = "path/to/output/dataset"
 
-    actual_eval_output = compute_and_aggregate_metrics(
-        pipeline=pipeline,
-        dataset=Mock(),
+    input_dataset = Mock()
+    input_pipeline = Mock()
+    model_runner = Mock()
+
+    eval_output = evaluate_dataset(
+        dataset=input_dataset,
+        pipeline=input_pipeline,
         dataset_name="my_dataset",
         eval_name="MyEvalAlgo",
         metric_names=[SCORE_1, SCORE_2],
         eval_results_path="/path/to/eval_results",
-        prompt_template="Do something with $model_input",
-        save=save,
+        model=model_runner,
+        prompt_template=test_case.user_provided_prompt_template,
+        save=test_case.save,
     )
 
+    mock_create_invocation_pipeline.assert_called_once_with(model_runner, test_case.dataset_prompt_template)
+    mock_transform_pipeline_cls.assert_called_once_with([mock_create_invocation_pipeline.return_value, input_pipeline])
+    final_pipeline.execute.assert_called_once_with(input_dataset)
     mock_aggregate.assert_called_once_with(
-        pipeline.execute.return_value,
+        final_pipeline.execute.return_value,
         [SCORE_1, SCORE_2],
-        agg_method=MEAN,
+        agg_method=test_case.agg_method,
     )
-
     mock_generate_output_path.assert_called_once_with(
         path_to_parent_dir="/path/to/eval_results",
         eval_name="MyEvalAlgo",
         dataset_name="my_dataset",
     )
-
-    assert actual_eval_output == EvalOutput(
+    assert eval_output == EvalOutput(
         eval_name="MyEvalAlgo",
         dataset_name="my_dataset",
-        prompt_template="Do something with $model_input",
+        prompt_template=test_case.dataset_prompt_template,
         dataset_scores=DATASET_SCORES,
         category_scores=CATEGORY_SCORES,
         output_path="path/to/output/dataset",
     )
-
-    if save:
+    if test_case.save:
         mock_save.assert_called_once_with(
-            dataset=pipeline.execute.return_value,
+            dataset=final_pipeline.execute.return_value,
             score_names=[SCORE_1, SCORE_2],
             path="path/to/output/dataset",
         )
@@ -883,121 +905,89 @@ def test_compute_and_aggregate_metrics(mock_aggregate, mock_save, mock_generate_
         mock_save.assert_not_called()
 
 
-class TestCaseEvaluateDataset(NamedTuple):
-    user_provided_prompt_template: Optional[str]
-    dataset_prompt_template: str
-    model_provided: bool
-    save: bool
-
-
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCaseEvaluateDataset(
-            user_provided_prompt_template="Answer: $model_input",
-            dataset_prompt_template="Answer: $model_input",
-            model_provided=True,
-            save=True,
-        ),
-        TestCaseEvaluateDataset(
-            user_provided_prompt_template=None,
-            dataset_prompt_template="$model_input",
-            model_provided=True,
-            save=False,
-        ),
-        TestCaseEvaluateDataset(
+        TestCaseEvaluateDatasetWithModel(
             user_provided_prompt_template=None,
             dataset_prompt_template=None,
-            model_provided=False,
-            save=False,
+            save=True,
         ),
     ],
 )
-@patch("fmeval.eval_algorithms.util.compute_and_aggregate_metrics")
-@patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
+@patch("fmeval.eval_algorithms.util.generate_output_dataset_path")
+@patch("fmeval.eval_algorithms.util.save_dataset")
+@patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
 @patch("fmeval.eval_algorithms.util.TransformPipeline")
-@patch("fmeval.eval_algorithms.util.validate_dataset")
-@patch("fmeval.eval_algorithms.util.get_dataset")
-def test_evaluate_dataset(
-    mock_get_dataset,
-    mock_validate_dataset,
-    mock_transform_pipeline_cls,
+@patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
+def test_evaluate_dataset_no_model(
     mock_create_invocation_pipeline,
-    mock_compute_and_aggregate,
+    mock_transform_pipeline_cls,
+    mock_aggregate,
+    mock_save,
+    mock_generate_output_path,
     test_case,
 ):
     """
-    GIVEN a valid dataset config and valid combinations of a ModelRunner and prompt template.
-        (The invalid combination is when ModelRunner is None, but a non-null prompt template
-        is provided. This case is handled in another test).
-    WHEN the `evaluate_dataset` function is called.
-    THEN all expected functions are called with the correct arguments and an
-        EvalOutput generated by `compute_and_aggregate_metrics` is returned.
+    GIVEN valid arguments and a `model` argument that is not None.
+    WHEN `evaluate_dataset` is called.
+    THEN the pipeline that gets executed is the input pipeline (i.e.
+        no model invocation transforms are prepended)
+        and the correct EvalOutput is returned.
     """
-    # Inputs to evaluate_dataset
-    dataset_config = Mock()
-    pipeline = Mock()
-    model = Mock()
+    mock_aggregate.return_value = DATASET_SCORES, CATEGORY_SCORES
+    mock_generate_output_path.return_value = "path/to/output/dataset"
 
-    mock_get_dataset.return_value = Mock()
-    mock_create_invocation_pipeline.return_value = Mock()
-    # The pipeline that is passed to `compute_and_aggregate_metrics`
-    # (which has the GeneratePrompt and GetModelOutputs Transforms prepended).
-    mock_transform_pipeline_cls.return_value = Mock()
-
-    expected_eval_output = EvalOutput(
-        eval_name="my_eval",
-        dataset_name="my_dataset_1",
-        dataset_scores=[EvalScore(name=SCORE_1, value=0.162), EvalScore(name=SCORE_2, value=0.189)],
-    )
-    mock_compute_and_aggregate.return_value = expected_eval_output
+    input_dataset = Mock()
+    input_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_OUTPUT.value.name])
+    input_pipeline = Mock()
 
     eval_output = evaluate_dataset(
-        dataset_config=dataset_config,
+        dataset=input_dataset,
+        pipeline=input_pipeline,
+        dataset_name="my_dataset",
         eval_name="MyEvalAlgo",
-        pipeline=pipeline,
         metric_names=[SCORE_1, SCORE_2],
-        required_columns=["required_1", "required_2"],
-        eval_results_path="/path/to/eval/results",
-        model=model if test_case.model_provided else None,
-        prompt_template=test_case.user_provided_prompt_template,
-        num_records=200,
+        eval_results_path="/path/to/eval_results",
+        model=None,
+        prompt_template=None,
         save=test_case.save,
     )
 
-    mock_get_dataset.assert_called_once_with(dataset_config, 200)
-    mock_validate_dataset.assert_called_once_with(mock_get_dataset.return_value, ["required_1", "required_2"])
-
-    if test_case.model_provided:
-        mock_create_invocation_pipeline.assert_called_once_with(model, test_case.dataset_prompt_template)
-        mock_transform_pipeline_cls.assert_called_once_with([mock_create_invocation_pipeline.return_value, pipeline])
-    else:
-        mock_create_invocation_pipeline.assert_not_called()
-        mock_transform_pipeline_cls.assert_not_called()
-
-    mock_compute_and_aggregate.assert_called_once_with(
-        pipeline=(mock_transform_pipeline_cls.return_value if test_case.model_provided else pipeline),
-        dataset=mock_get_dataset.return_value,
-        dataset_name=dataset_config.dataset_name,
+    mock_create_invocation_pipeline.assert_not_called()
+    mock_transform_pipeline_cls.assert_not_called()
+    input_pipeline.execute.assert_called_once_with(input_dataset)
+    mock_aggregate.assert_called_once_with(
+        input_pipeline.execute.return_value,
+        [SCORE_1, SCORE_2],
+        agg_method=test_case.agg_method,
+    )
+    mock_generate_output_path.assert_called_once_with(
+        path_to_parent_dir="/path/to/eval_results",
         eval_name="MyEvalAlgo",
-        metric_names=[SCORE_1, SCORE_2],
-        eval_results_path="/path/to/eval/results",
+        dataset_name="my_dataset",
+    )
+    assert eval_output == EvalOutput(
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
         prompt_template=test_case.dataset_prompt_template,
-        agg_method=MEAN,
-        save=test_case.save,
+        dataset_scores=DATASET_SCORES,
+        category_scores=CATEGORY_SCORES,
+        output_path="path/to/output/dataset",
     )
+    if test_case.save:
+        mock_save.assert_called_once_with(
+            dataset=input_pipeline.execute.return_value,
+            score_names=[SCORE_1, SCORE_2],
+            path="path/to/output/dataset",
+        )
+    else:
+        mock_save.assert_not_called()
 
-    assert eval_output == expected_eval_output
 
-
-@patch("fmeval.eval_algorithms.util.validate_dataset")
-@patch("fmeval.eval_algorithms.util.get_dataset")
-def test_evaluate_dataset_invalid_args(
-    mock_get_dataset,
-    mock_validate_dataset,
-):
+def test_evaluate_dataset_with_prompt_template_without_model():
     """
-    GIVEN a dataset config, no ModelRunner, and a prompt template.
+    GIVEN invalid arguments: a non-Null prompt template, but no model.
     WHEN the `evaluate_dataset` function is called.
     THEN the correct exception is raised.
     """
@@ -1005,14 +995,39 @@ def test_evaluate_dataset_invalid_args(
     err_msg = "A model must be provided as well if the provided prompt template is not None."
     with pytest.raises(EvalAlgorithmClientError, match=err_msg):
         evaluate_dataset(
-            dataset_config=Mock(),
+            dataset=Mock(),
             pipeline=Mock(),
+            dataset_name="my_dataset",
             eval_name="MyEvalAlgo",
             metric_names=[SCORE_1, SCORE_2],
-            required_columns=["required_1", "required_2"],
             eval_results_path="/path/to/eval/results",
             model=None,
             prompt_template=prompt_template,
-            num_records=200,
-            save=False,
+        )
+
+
+def test_evaluate_dataset_no_model_no_model_output_column():
+    """
+    GIVEN invalid arguments: a `model` that is None and a dataset
+        without a model output column.
+    WHEN the `evaluate_dataset` function is called.
+    THEN the correct exception is raised.
+    """
+    mock_dataset = Mock()
+    mock_dataset.columns = Mock(return_value=[])
+    err_msg = (
+        "evaluate_dataset has been given a dataset with no model output column "
+        "and no ModelRunner to obtain outputs from. Please either provide a model "
+        "or use a dataset that contains model outputs already."
+    )
+    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+        evaluate_dataset(
+            dataset=mock_dataset,
+            pipeline=Mock(),
+            dataset_name="my_dataset",
+            eval_name="MyEvalAlgo",
+            metric_names=[SCORE_1, SCORE_2],
+            eval_results_path="/path/to/eval/results",
+            model=None,
+            prompt_template=None,
         )

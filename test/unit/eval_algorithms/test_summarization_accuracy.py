@@ -186,10 +186,12 @@ class TestSummarizationAccuracy:
     @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy._create_transforms")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
+        mock_get_dataset,
         mock_create_transforms,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
@@ -225,6 +227,13 @@ class TestSummarizationAccuracy:
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
 
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        mock_get_dataset.return_value = mock_dataset
+
         summ_acc = SummarizationAccuracy()
         output = summ_acc.evaluate(
             model=model_runner,
@@ -240,15 +249,14 @@ class TestSummarizationAccuracy:
             [call([meteor_score, rouge_score, bert_score]), call([pipeline_meteor, pipeline_rouge, pipeline_bertscore])]
         )
         mock_evaluate_dataset.assert_called_once_with(
-            dataset_config=dataset_config,
+            dataset=mock_dataset,
             pipeline=executed_pipeline,
+            dataset_name=dataset_config.dataset_name,
             eval_name=summ_acc.eval_name,
             metric_names=METRIC_NAMES,
-            required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
             eval_results_path="/path/to/results",
             model=model_runner,
             prompt_template=test_case.dataset_prompt_template,
-            num_records=162,
             agg_method=MEAN,
             save=True,
         )

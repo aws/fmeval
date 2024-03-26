@@ -46,7 +46,6 @@ from fmeval.eval_algorithms.summarization_accuracy import (
     BERT_SCORE,
 )
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     save_dataset,
@@ -56,6 +55,7 @@ from fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
 )
+from fmeval.helper_models import BertscoreModelTypes
 from fmeval.util import get_num_actors
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import PromptComposer
@@ -157,10 +157,10 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}"
             )
 
 

@@ -1,12 +1,12 @@
 import logging
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
-
 from ray import ObjectRef
 
+from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms.util import evaluate_dataset, get_dataset_configs
+from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset, evaluate_dataset
 from fmeval.util import (
     assert_condition,
     require,
@@ -219,16 +219,17 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
-                dataset_config=dataset_config,
+                dataset=dataset,
                 pipeline=pipeline,
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=METRIC_NAMES,
-                required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=prompt_template,
-                num_records=num_records,
                 agg_method=MEAN,
                 save=save,
             )
