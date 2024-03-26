@@ -186,12 +186,10 @@ class TestSummarizationAccuracy:
     @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy._create_transforms")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
-        mock_get_dataset,
         mock_create_transforms,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
@@ -226,13 +224,6 @@ class TestSummarizationAccuracy:
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
-
-        mock_dataset = Mock()
-        # So that validate_dataset does not error
-        mock_dataset.columns = Mock(
-            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
-        )
-        mock_get_dataset.return_value = mock_dataset
 
         summ_acc = SummarizationAccuracy()
         output = summ_acc.evaluate(
