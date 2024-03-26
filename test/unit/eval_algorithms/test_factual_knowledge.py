@@ -11,7 +11,7 @@ from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
 )
-from fmeval.eval_algorithms.eval_algorithm import DataConfig
+from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm, DEFAULT_PROMPT_TEMPLATE
 from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from fmeval.exceptions import EvalAlgorithmClientError

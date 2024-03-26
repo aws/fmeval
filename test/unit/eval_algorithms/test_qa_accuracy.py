@@ -12,7 +12,7 @@ from fmeval.constants import (
     MIME_TYPE_JSON,
     DEFAULT_EVAL_RESULTS_PATH,
 )
-from fmeval.eval_algorithms.eval_algorithm import DataConfig
+from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,

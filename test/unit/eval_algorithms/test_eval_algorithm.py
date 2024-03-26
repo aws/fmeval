@@ -1,69 +1,7 @@
-import os
-import tempfile
+import pytest
 from typing import List, NamedTuple, Optional
 from contextlib import nullcontext as does_not_raise
-
-import pytest
-
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-    DataConfig,
-)
 from fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, get_default_prompt_template
-from fmeval.model_runners.model_runner import ModelRunner
-
-
-class TestEvalAlgorithmInterface:
-    def test_evaluation_name_for_new_algorithm_with_results_path_environment_variable(self):
-        class MyAlgorithm(EvalAlgorithmInterface):
-            def evaluate(
-                self,
-                model: Optional[ModelRunner] = None,
-                dataset_config: Optional[DataConfig] = None,
-                prompt_template: str = None,
-                save: bool = False,
-                num_records=100,
-            ) -> EvalOutput:
-                pass
-
-            def evaluate_sample(
-                self,
-                model_input: Optional[str] = None,
-                target_output: Optional[str] = None,
-                model_output: Optional[str] = None,
-            ) -> float:
-                pass
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            results_path = os.path.join(tmpdir, "custom", "path")
-            os.environ["EVAL_RESULTS_PATH"] = results_path
-            assert MyAlgorithm(EvalAlgorithmConfig())._eval_results_path == results_path
-            assert os.path.exists(os.path.abspath(results_path))
-            os.environ.pop("EVAL_RESULTS_PATH")
-
-    def test_evaluation_name_for_new_algorithm(self):
-        class MyAlgorithm(EvalAlgorithmInterface):
-            def evaluate(
-                self,
-                model: Optional[ModelRunner] = None,
-                dataset_config: Optional[DataConfig] = None,
-                prompt_template: str = None,
-                save: bool = False,
-                num_records=100,
-            ) -> EvalOutput:
-                pass
-
-            def evaluate_sample(
-                self,
-                model_input: Optional[str] = None,
-                target_output: Optional[str] = None,
-                model_output: Optional[str] = None,
-            ) -> float:
-                pass
-
-        assert MyAlgorithm(EvalAlgorithmConfig())._eval_results_path == "/tmp/eval_results/"
-        assert os.path.exists("/tmp/eval_results/")
 
 
 class TestEvalOutput:

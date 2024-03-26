@@ -1,8 +1,12 @@
+import tempfile
+
 import pytest
 import os
 from unittest.mock import patch, Mock
+
+from fmeval.constants import DEFAULT_EVAL_RESULTS_PATH
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.util import require, project_root, singleton, create_shared_resource
+from fmeval.util import require, project_root, singleton, create_shared_resource, get_eval_results_path
 
 
 def test_require():
@@ -25,6 +29,23 @@ def test_project_root():
     assert os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_util.py") == os.path.abspath(
         os.path.join(project_root(__name__), "test", "unit", "test_util.py")
     )
+
+
+def test_eval_get_results_path():
+    """
+    GIVEN the EVAL_RESULTS_PATH env variable is set (or not set).
+    WHEN get_eval_results_path is called.
+    THEN the correct path is returned and the directory exists.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        results_path = os.path.join(tmpdir, "custom", "path")
+        os.environ["EVAL_RESULTS_PATH"] = results_path
+        assert get_eval_results_path() == results_path
+        assert os.path.exists(os.path.abspath(results_path))
+        os.environ.pop("EVAL_RESULTS_PATH")
+
+    assert get_eval_results_path() == DEFAULT_EVAL_RESULTS_PATH
+    assert os.path.exists(os.path.abspath(DEFAULT_EVAL_RESULTS_PATH))
 
 
 @singleton

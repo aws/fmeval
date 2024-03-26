@@ -21,7 +21,7 @@ from fmeval.eval_algorithms import (
     GIGAWORD,
     GOV_REPORT,
 )
-from fmeval.eval_algorithms.general_semantic_robustness import (
+from fmeval.eval_algorithms.semantic_robustness_utils import (
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
 )
@@ -361,7 +361,7 @@ class TestSummarizationAccuracySemanticRobustness:
 
     class TestCaseSemanticRobustnessInvalidConfig(NamedTuple):
         rouge_type: str
-        bertscore_model_type: str
+        model_type_for_bertscore: str
         perturbation_type: str
         expected_error_message: str
 
@@ -370,14 +370,14 @@ class TestSummarizationAccuracySemanticRobustness:
         [
             TestCaseSemanticRobustnessInvalidConfig(
                 rouge_type="rouge3",
-                bertscore_model_type=None,
+                model_type_for_bertscore=None,
                 perturbation_type="butter_finger",
                 expected_error_message="Invalid rouge_type: rouge3 requested in SummarizationAccuracyConfig, "
                 "please choose from acceptable values: ['rouge1', 'rouge2', 'rougeL']",
             ),
             TestCaseSemanticRobustnessInvalidConfig(
                 rouge_type="rouge1",
-                bertscore_model_type="distilbert-base-uncased",
+                model_type_for_bertscore="distilbert-base-uncased",
                 perturbation_type="butter_finger",
                 expected_error_message="Invalid model_type_for_bertscore: distilbert-base-uncased requested in "
                 "SummarizationAccuracyConfig, please choose from acceptable values: ["
@@ -385,7 +385,7 @@ class TestSummarizationAccuracySemanticRobustness:
             ),
             TestCaseSemanticRobustnessInvalidConfig(
                 rouge_type="rouge1",
-                bertscore_model_type="distilbert-base-uncased",
+                model_type_for_bertscore="distilbert-base-uncased",
                 perturbation_type="my_perturb",
                 expected_error_message="Invalid perturbation type 'my_perturb requested, please choose from "
                 "acceptable values: dict_keys(['butter_finger', 'random_upper_case', 'whitespace_add_remove'])",
@@ -397,7 +397,7 @@ class TestSummarizationAccuracySemanticRobustness:
             SummarizationAccuracySemanticRobustnessConfig(
                 perturbation_type=test_case.perturbation_type,
                 rouge_type=test_case.rouge_type,
-                model_type_for_bertscore=test_case.bertscore_model_type,
+                model_type_for_bertscore=test_case.model_type_for_bertscore,
             )
 
     class TestCaseSummarizationAccuracySemanticRobustnessEvaluate(NamedTuple):

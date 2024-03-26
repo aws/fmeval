@@ -26,6 +26,7 @@ class GeneratePrompt(Transform):
         """
         super().__init__(input_keys, output_keys, prompt_template)
         self.register_input_output_keys(input_keys, output_keys)
+        self.prompt_template = prompt_template
         self.prompt_composer = PromptComposer(prompt_template)
 
     @validate_call

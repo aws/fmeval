@@ -9,14 +9,12 @@ from fmeval.eval_algorithms import (
     WIKITEXT2,
 )
 from fmeval.eval_algorithms.general_semantic_robustness import (
-    BUTTER_FINGER,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
     GeneralSemanticRobustness,
     GeneralSemanticRobustnessConfig,
     WER_SCORE,
     BERT_SCORE_DISSIMILARITY,
 )
+from fmeval.eval_algorithms.semantic_robustness_utils import WHITESPACE_ADD_REMOVE, BUTTER_FINGER
 
 from test.integration.models.model_runners import (
     sm_model_runner,

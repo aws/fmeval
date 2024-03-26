@@ -11,10 +11,7 @@ import fmeval.util as util
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.util import save_dataset, generate_output_dataset_path
-from fmeval.eval_algorithms.eval_algorithm import (
-    EvalAlgorithmInterface,
-    EvalAlgorithmConfig,
-)
+from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
@@ -76,7 +73,6 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Factual knowledge eval algorithm config.
         """
-        super().__init__(eval_algorithm_config)
         self.eval_name = FACTUAL_KNOWLEDGE
         self._eval_algorithm_config = eval_algorithm_config
 
@@ -188,7 +184,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
                         output_path=generate_output_dataset_path(
-                            path_to_parent_dir=self._eval_results_path,
+                            path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
                             dataset_name=dataset_config.dataset_name,
                         ),
@@ -199,7 +195,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                     dataset=dataset,
                     score_names=[FACTUAL_KNOWLEDGE],
                     path=generate_output_dataset_path(
-                        path_to_parent_dir=self._eval_results_path,
+                        path_to_parent_dir=util.get_eval_results_path(),
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                     ),
