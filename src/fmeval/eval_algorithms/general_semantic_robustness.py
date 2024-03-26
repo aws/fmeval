@@ -6,9 +6,6 @@ from typing import Optional, List, Dict, Any
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
-    BUTTER_FINGER,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -127,6 +124,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             `evaluate_sample` method, which is a computationally cheap operation that does not
             require utilizing Ray for parallel execution.
         """
+        super().__init__(eval_algorithm_config)
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
@@ -134,7 +132,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         if use_ray:
             self.bertscore_model = create_shared_resource(self.bertscore_model)
 
-    def build_pipeline(
+    def _build_pipeline(
         self,
         model: ModelRunner,
         prompt_template: str,
@@ -159,12 +157,15 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
 
-        transforms = get_model_responses_from_perturbed_inputs(
+        (
+            get_perturbed_inputs,
+            gen_perturbed_prompts,
+            get_perturbed_responses,
+        ) = get_model_responses_from_perturbed_inputs(
             self.perturbation_transform,
             prompt_template,
             model,
         )
-        get_perturbed_inputs, gen_perturbed_prompts, get_perturbed_responses = transforms
 
         original_model_output_key = DatasetColumns.MODEL_OUTPUT.value.name
         # Compute BERTScores with target_output = the original model output
@@ -286,7 +287,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             DatasetColumns.PROMPT.value.name: prompt,
             DatasetColumns.MODEL_OUTPUT.value.name: model_output,
         }
-        pipeline = self.build_pipeline(model, prompt_template, is_deterministic=is_deterministic)
+        pipeline = self._build_pipeline(model, prompt_template, is_deterministic=is_deterministic)
         output_record = pipeline.execute_record(sample)
 
         bert_score_dissimilarity_value = output_record[BERT_SCORE_DISSIMILARITY]
@@ -329,7 +330,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             is_deterministic = verify_model_determinism(model, dataset, dataset_prompt_template)
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self.build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic),
+                pipeline=self._build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],

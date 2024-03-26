@@ -138,6 +138,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Classification Accuracy Semantic Robustness eval algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self.eval_name = CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS
         self._eval_algorithm_config = eval_algorithm_config
         self._classification_accuracy_eval_algo = ClassificationAccuracy(

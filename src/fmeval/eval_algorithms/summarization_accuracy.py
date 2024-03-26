@@ -89,20 +89,21 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
 
     eval_name = EvalAlgorithm.SUMMARIZATION_ACCURACY.value
 
-    def __init__(self, config: SummarizationAccuracyConfig = SummarizationAccuracyConfig()):
+    def __init__(self, eval_algorithm_config: SummarizationAccuracyConfig = SummarizationAccuracyConfig()):
         """SummarizationAccuracy initializer.
 
-        :param config: Summarization Accuracy evaluation algorithm config.
+        :param eval_algorithm_config: Summarization Accuracy evaluation algorithm config.
         """
-        self.bertscore_model = BertscoreModel(config.model_type_for_bertscore)
+        super().__init__(eval_algorithm_config)
+        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
         meteor_score, rouge_score, bert_score = SummarizationAccuracy._create_transforms(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             meteor_keys=[METEOR_SCORE],
             rouge_keys=[ROUGE_SCORE],
             bertscore_keys=[BERT_SCORE],
-            rouge_type=config.rouge_type,
-            use_stemmer_for_rouge=config.use_stemmer_for_rouge,
+            rouge_type=eval_algorithm_config.rouge_type,
+            use_stemmer_for_rouge=eval_algorithm_config.use_stemmer_for_rouge,
             bertscore_model=self.bertscore_model,
         )
         self.meteor_score = meteor_score
@@ -157,7 +158,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         )
         return meteor_transform, rouge_transform, bert_transform
 
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
         """Compute summarization accuracy metrics for a single sample.
 
         :param target_output: The expected/desired model output.

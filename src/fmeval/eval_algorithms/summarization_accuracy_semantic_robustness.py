@@ -110,6 +110,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param eval_algorithm_config: Summarization accuracy semantic robustness evaluation algorithm config.
         """
+        super().__init__(eval_algorithm_config)
         self.config = eval_algorithm_config
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
@@ -203,7 +204,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         target_output: str,
         model: ModelRunner,
         prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
-    ) -> List[EvalScore]:
+    ) -> List[EvalScore]:  # type: ignore[override]
         """Compute summarization accuracy semantic robustness metrics for a single sample.
 
         A sample is defined as a model input and model output pair.

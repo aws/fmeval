@@ -189,14 +189,14 @@ class TestGeneralSemanticRobustness:
     def test_build_pipeline(self, bertscore_model, is_deterministic, config):
         """
         GIVEN a deterministic model.
-        WHEN `build_pipeline` is called.
+        WHEN a GeneralSemanticRobustness' `_build_pipeline` method is called.
         THEN a TransformPipeline with the correct Transforms is returned.
         """
         # Mock BertscoreModel so that the actual model doesn't get loaded into memory during test.
         bertscore_model.return_value = Mock(spec=BertscoreModel)
 
         eval_algo = GeneralSemanticRobustness(config, use_ray=False)
-        pipeline = eval_algo.build_pipeline(
+        pipeline = eval_algo._build_pipeline(
             model=Mock(),
             prompt_template="$model_input",
             is_deterministic=is_deterministic,
@@ -392,7 +392,7 @@ class TestGeneralSemanticRobustness:
     )
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_eval_results_path")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.evaluate_dataset")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneralSemanticRobustness.build_pipeline")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneralSemanticRobustness._build_pipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.verify_model_determinism")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset_configs")
