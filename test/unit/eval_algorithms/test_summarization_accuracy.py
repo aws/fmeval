@@ -249,14 +249,15 @@ class TestSummarizationAccuracy:
             [call([meteor_score, rouge_score, bert_score]), call([pipeline_meteor, pipeline_rouge, pipeline_bertscore])]
         )
         mock_evaluate_dataset.assert_called_once_with(
-            dataset=mock_dataset,
+            dataset_config=dataset_config,
             pipeline=executed_pipeline,
-            dataset_name=dataset_config.dataset_name,
             eval_name=summ_acc.eval_name,
             metric_names=METRIC_NAMES,
+            required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
             eval_results_path="/path/to/results",
             model=model_runner,
             prompt_template=test_case.dataset_prompt_template,
+            num_records=162,
             agg_method=MEAN,
             save=True,
         )
