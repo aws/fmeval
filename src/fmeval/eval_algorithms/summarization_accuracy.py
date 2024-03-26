@@ -235,5 +235,5 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             )
             eval_outputs.append(eval_output)
 
-        cleanup_shared_resource(bertscore_shared_resource)
+        # cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs

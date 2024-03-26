@@ -46,7 +46,7 @@ from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeS
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.util import require, create_shared_resource, get_eval_results_path, cleanup_shared_resource
+from fmeval.util import create_shared_resource, get_eval_results_path, require
 
 logger = logging.getLogger(__name__)
 
@@ -278,5 +278,5 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
             eval_outputs.append(eval_output)
 
-        cleanup_shared_resource(bertscore_shared_resource)
+        # cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs
