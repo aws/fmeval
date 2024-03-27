@@ -25,14 +25,14 @@ from fmeval.eval_algorithms.semantic_robustness_utils import (
     get_perturbation_transform,
     get_model_responses_from_perturbed_inputs,
 )
-from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     verify_model_determinism,
     get_dataset_configs,
     create_model_invocation_pipeline,
-    compute_and_aggregate_metrics,
+    evaluate_dataset,
 )
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -71,9 +71,9 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     def __post_init__(self):
         super().__post_init__()
         require(
-            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-            f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
+            f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}.",
         )
         require(
             self.num_baseline_samples >= 2,
@@ -120,9 +120,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         """GeneralSemanticRobustness initializer.
 
         :param eval_algorithm_config: General semantic robustness evaluation algorithm config.
-        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
+        :param use_ray: Whether to create a Ray actor for the BertscoreHelperModel used by this evaluation
             algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreModel existing
+            as the execution of the transform pipeline relies on the BertscoreHelperModel existing
             in shared memory. This flag can be set to False if you only plan on invoking the
             `evaluate_sample` method, which is a computationally cheap operation that does not
             require utilizing Ray for parallel execution.
@@ -131,7 +131,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
-        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
         if use_ray:
             self.bertscore_model = create_shared_resource(self.bertscore_model)
 
@@ -311,6 +311,10 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         """Compute general semantic robustness metrics on one or more datasets.
 
         :param model: An instance of ModelRunner representing the model under evaluation.
+            This is a required argument, as even if the dataset contains model outputs,
+            semantic robustness algorithms rely on invoking a model on perturbed inputs
+            to see how the model outputs from the perturbed inputs differ from the original
+            model outputs.
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluation will use all of its supported built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.
@@ -330,18 +334,17 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset_prompt_template = (
                 get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
-            model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
-            dataset = model_invocation_pipeline.execute(dataset)
-            is_deterministic = verify_model_determinism(model, dataset, DatasetColumns.PROMPT.value.name)
-            pipeline = self._build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic)
-            eval_output = compute_and_aggregate_metrics(
-                pipeline=pipeline,
+            is_deterministic = verify_model_determinism(model, dataset, dataset_prompt_template)
+            eval_output = evaluate_dataset(
                 dataset=dataset,
+                pipeline=self._build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
                 eval_results_path=get_eval_results_path(),
+                model=model,
                 prompt_template=dataset_prompt_template,
+                agg_method=MEAN,
                 save=save,
             )
             eval_outputs.append(eval_output)

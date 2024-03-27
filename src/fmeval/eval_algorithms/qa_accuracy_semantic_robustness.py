@@ -179,7 +179,11 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         """
         QA Accuracy Semantic Robustness evaluate.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            This is a required argument, as even if the dataset contains model outputs,
+            semantic robustness algorithms rely on invoking a model on perturbed inputs
+            to see how the model outputs from the perturbed inputs differ from the original
+            model outputs.
         :param dataset_config: Configures the single dataset used for evaluation. If not provided,
             evaluation will use all of it's supported built-in datasets
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults

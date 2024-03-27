@@ -116,11 +116,13 @@ def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
 
 def cleanup_shared_resource(resource: ObjectRef) -> None:
     """Removes the resource from shared memory.
+
     Concretely, this function kills the Ray actor corresponding
     to `resource`, which in most cases will be an actor created
     via create_shared_resource.
+
     :param resource: A Ray actor handle to a shared resource
-        (ex: a BertscoreModel).
+        (ex: a BertscoreHelperModel).
     :returns: None
     """
     ray.kill(resource)

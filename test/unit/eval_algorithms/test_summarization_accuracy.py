@@ -8,7 +8,7 @@ from _pytest.fixtures import fixture
 
 from fmeval.constants import DatasetColumns, MEAN
 from fmeval.eval_algorithms import EvalScore
-from fmeval.helper_models import BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.transforms.summarization_accuracy_metrics import ROUGE_L
 from fmeval.eval_algorithms.summarization_accuracy import (
     SummarizationAccuracyConfig,
@@ -85,7 +85,7 @@ class TestSummarizationAccuracy:
 
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy._create_transforms")
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_init(self, bertscore_model_cls, mock_create_transforms, mock_transform_pipeline_cls):
         """
         GIVEN default arguments.
@@ -137,15 +137,15 @@ class TestSummarizationAccuracy:
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(err_msg)):
             SummarizationAccuracyConfig(rouge_type=rouge_type, model_type_for_bertscore=model_type_for_bertscore)
 
-    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreModel")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.BertscoreHelperModel")
     def test_evaluate_sample(self, bertscore_model_cls):
         """
         GIVEN valid inputs.
         WHEN SummarizationAccuracy.evaluate_sample is called.
         THEN the correct list of EvalScores is returned.
         """
-        # Mock the BertscoreModel class so that the actual model doesn't get loaded into memory.
-        bertscore_model_instance = Mock(spec=BertscoreModel)
+        # Mock the BertscoreHelperModel class so that the actual model doesn't get loaded into memory.
+        bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model_cls.return_value = bertscore_model_instance
 
@@ -186,10 +186,12 @@ class TestSummarizationAccuracy:
     @patch("fmeval.eval_algorithms.summarization_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy.TransformPipeline")
     @patch("fmeval.eval_algorithms.summarization_accuracy.SummarizationAccuracy._create_transforms")
+    @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
+        mock_get_dataset,
         mock_create_transforms,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
@@ -201,7 +203,7 @@ class TestSummarizationAccuracy:
         """
         GIVEN a SummarizationAccuracy instance.
         WHEN its evaluate method is called with valid arguments.
-        THEN a new TransformPipeline that uses a BertscoreModel shared resource
+        THEN a new TransformPipeline that uses a BertscoreHelperModel shared resource
             is created, and `evaluate_dataset` is called with the correct arguments.
         """
         # The transforms that are saved as instance attributes of the SummarizationAccuracy instance
@@ -225,6 +227,13 @@ class TestSummarizationAccuracy:
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
 
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        mock_get_dataset.return_value = mock_dataset
+
         summ_acc = SummarizationAccuracy()
         output = summ_acc.evaluate(
             model=model_runner,
@@ -240,15 +249,14 @@ class TestSummarizationAccuracy:
             [call([meteor_score, rouge_score, bert_score]), call([pipeline_meteor, pipeline_rouge, pipeline_bertscore])]
         )
         mock_evaluate_dataset.assert_called_once_with(
-            dataset_config=dataset_config,
+            dataset=mock_dataset,
             pipeline=executed_pipeline,
+            dataset_name=dataset_config.dataset_name,
             eval_name=summ_acc.eval_name,
             metric_names=METRIC_NAMES,
-            required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
             eval_results_path="/path/to/results",
             model=model_runner,
             prompt_template=test_case.dataset_prompt_template,
-            num_records=162,
             agg_method=MEAN,
             save=True,
         )

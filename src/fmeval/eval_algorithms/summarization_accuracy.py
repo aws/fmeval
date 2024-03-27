@@ -1,12 +1,12 @@
 import logging
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
-
 from ray import ObjectRef
 
+from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms.util import evaluate_dataset, get_dataset_configs
+from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset, evaluate_dataset
 from fmeval.util import (
     assert_condition,
     require,
@@ -17,7 +17,7 @@ from fmeval.util import (
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.summarization_accuracy_metrics import (
     MeteorScore,
@@ -56,10 +56,10 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
             f"Please choose from acceptable values: {ROUGE_TYPES}.",
         )
         require(
-            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
             f"SummarizationAccuracyConfig. Please choose from acceptable values: "
-            f"{BertscoreModelTypes.model_list()}.",
+            f"{BertscoreHelperModelTypes.model_list()}.",
         )
 
 
@@ -94,7 +94,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param eval_algorithm_config: Summarization Accuracy evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
         meteor_score, rouge_score, bert_score = SummarizationAccuracy._create_transforms(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
@@ -119,7 +119,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         bertscore_keys: List[str],
         rouge_type: str,
         use_stemmer_for_rouge: bool,
-        bertscore_model: Union[BertscoreModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
     ) -> Tuple[MeteorScore, RougeScore, BertScore]:
         """Create a TransformPipeline containing summarization accuracy score transforms.
 
@@ -130,7 +130,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
         :param rouge_type: See the corresponding parameter in RougeScore.
         :param use_stemmer_for_rouge: See `use_stemmer` in RougeScore.
-        :param bertscore_model: A BertscoreModel or Ray actor handle corresponding to a BertscoreModel
+        :param bertscore_model: A BertscoreHelperModel or Ray actor handle corresponding to a BertscoreHelperModel
             (i.e. a shared resource) used in the creation of the returned BertScore instance.
         :returns: A tuple containing the created MeteorScore, RougeScore, and BertScore instances.
         """
@@ -219,16 +219,17 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
+            dataset = get_dataset(dataset_config, num_records)
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
-                dataset_config=dataset_config,
+                dataset=dataset,
                 pipeline=pipeline,
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=METRIC_NAMES,
-                required_columns=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name],
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=prompt_template,
-                num_records=num_records,
                 agg_method=MEAN,
                 save=save,
             )

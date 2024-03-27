@@ -9,7 +9,7 @@ from typing import NamedTuple, List, Optional, Tuple
 from unittest.mock import MagicMock, patch, Mock
 from _pytest.fixtures import fixture
 
-from fmeval.constants import BUTTER_FINGER, DatasetColumns, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
+from fmeval.constants import BUTTER_FINGER, DatasetColumns, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, MEAN
 from fmeval.eval_algorithms import EvalScore
 from fmeval.eval_algorithms.general_semantic_robustness import (
     WER_SCORE,
@@ -19,9 +19,8 @@ from fmeval.eval_algorithms.general_semantic_robustness import (
     UpdateRobustnessScores,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.helper_models import BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel, BertscoreHelperModelTypes
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.transforms.semantic_perturbations import (
     ButterFinger,
@@ -148,7 +147,7 @@ class TestGeneralSemanticRobustness:
     @pytest.mark.parametrize("use_ray", [True, False])
     @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE])
     @patch("fmeval.eval_algorithms.general_semantic_robustness.create_shared_resource")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_init(self, bertscore_model, create_shared_resource, perturbation_type, use_ray):
         """
         GIVEN valid arguments.
@@ -156,7 +155,7 @@ class TestGeneralSemanticRobustness:
         THEN its instance attributes match what is expected and `create_shared_resource` is called
             (or not called) depending on the `use_ray` flag.
         """
-        bertscore_model.return_value = Mock(spec=BertscoreModel)
+        bertscore_model.return_value = Mock(spec=BertscoreHelperModel)
 
         config = GeneralSemanticRobustnessConfig(perturbation_type=perturbation_type)
         eval_algo = GeneralSemanticRobustness(config, use_ray=use_ray)
@@ -186,15 +185,15 @@ class TestGeneralSemanticRobustness:
             bertscore_model.assert_called_with(config.model_type_for_bertscore)
 
     @pytest.mark.parametrize("is_deterministic", [True, False])
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_build_pipeline(self, bertscore_model, is_deterministic, config):
         """
         GIVEN a deterministic model.
         WHEN a GeneralSemanticRobustness' `_build_pipeline` method is called.
         THEN a TransformPipeline with the correct Transforms is returned.
         """
-        # Mock BertscoreModel so that the actual model doesn't get loaded into memory during test.
-        bertscore_model.return_value = Mock(spec=BertscoreModel)
+        # Mock BertscoreHelperModel so that the actual model doesn't get loaded into memory during test.
+        bertscore_model.return_value = Mock(spec=BertscoreHelperModel)
 
         eval_algo = GeneralSemanticRobustness(config, use_ray=False)
         pipeline = eval_algo._build_pipeline(
@@ -295,7 +294,7 @@ class TestGeneralSemanticRobustness:
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_evaluate_sample_deterministic_model(self, bertscore_model, test_case, config):
         """
         GIVEN a deterministic model
@@ -309,7 +308,7 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_1, None),  # Output on the first perturbation
             (test_case.perturbed_model_output_2, None),  # Output on the second perturbation
         ]
-        bertscore_model_instance = Mock(spec=BertscoreModel)
+        bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model.return_value = bertscore_model_instance
 
@@ -332,14 +331,14 @@ class TestGeneralSemanticRobustness:
             )
         ],
     )
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_semantic_robustness_evaluate_sample_non_deterministic_model(self, bertscore_model, test_case, config):
         """
         GIVEN a non-deterministic model.
         WHEN GeneralSemanticRobustness.evaluate_sample is called.
         THEN the robustness score value is smaller than it would be for a deterministic model.
         """
-        bertscore_model_instance = Mock(spec=BertscoreModel)
+        bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model.return_value = bertscore_model_instance
 
@@ -392,22 +391,20 @@ class TestGeneralSemanticRobustness:
         ],
     )
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_eval_results_path")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.compute_and_aggregate_metrics")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.evaluate_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.GeneralSemanticRobustness._build_pipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.verify_model_determinism")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.create_model_invocation_pipeline")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.general_semantic_robustness.get_dataset_configs")
-    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreModel")
+    @patch("fmeval.eval_algorithms.general_semantic_robustness.BertscoreHelperModel")
     def test_evaluate(
         self,
         mock_bertscore_model,
         mock_get_dataset_configs,
         mock_get_dataset,
-        mock_model_invocation_pipeline,
         mock_verify_model_determinism,
         mock_build_pipeline,
-        mock_compute_metrics,
+        mock_evaluate_dataset,
         mock_get_eval_results_path,
         test_case,
         config,
@@ -417,52 +414,46 @@ class TestGeneralSemanticRobustness:
         WHEN the GeneralSemanticRobustness evaluate method is called.
         THEN the relevant functions are called with correct arguments.
         """
-        eval_algo = GeneralSemanticRobustness(
-            config,
-            use_ray=False,
-        )
-
-        model_runner = Mock()
         mock_bertscore_model.return_value = Mock()
+        model_runner = Mock()
 
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
 
         mock_dataset = Mock()
+        # So that validate_dataset does not error
         mock_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_INPUT.value.name])
         mock_get_dataset.return_value = mock_dataset
 
-        dataset_with_model_outputs = Mock()
-        mock_model_invocation_pipeline.return_value = Mock()
-        mock_model_invocation_pipeline.return_value.execute = Mock(return_value=dataset_with_model_outputs)
-
         mock_verify_model_determinism.return_value = test_case.is_deterministic
-
-        final_pipeline = Mock()
-        mock_build_pipeline.return_value = final_pipeline
-
+        mock_build_pipeline.return_value = Mock()
         mock_get_eval_results_path.return_value = "/path/to/eval/results"
 
+        eval_algo = GeneralSemanticRobustness(config, use_ray=False)
         eval_outputs = eval_algo.evaluate(
             model=model_runner,
             dataset_config=dataset_config,
             prompt_template=test_case.user_provided_prompt_template,
+            num_records=200,
             save=test_case.save,
         )
 
+        mock_verify_model_determinism.assert_called_with(model_runner, mock_dataset, test_case.dataset_prompt_template)
         mock_build_pipeline.assert_called_with(
             model_runner, test_case.dataset_prompt_template, is_deterministic=test_case.is_deterministic
         )
-        mock_compute_metrics.assert_called_once_with(
-            pipeline=final_pipeline,
-            dataset=dataset_with_model_outputs,
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_get_dataset.return_value,
+            pipeline=mock_build_pipeline.return_value,
             dataset_name=dataset_config.dataset_name,
             eval_name=GeneralSemanticRobustness.eval_name,
             metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
             eval_results_path="/path/to/eval/results",
+            model=model_runner,
             prompt_template=test_case.dataset_prompt_template,
+            agg_method=MEAN,
             save=test_case.save,
         )
 
-        assert eval_outputs == [mock_compute_metrics.return_value]
+        assert eval_outputs == [mock_evaluate_dataset.return_value]
