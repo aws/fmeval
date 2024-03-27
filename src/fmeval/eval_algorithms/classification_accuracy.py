@@ -82,30 +82,41 @@ class ClassificationAccuracyScores(Transform):
 
     def __init__(
         self,
-        valid_labels: List[str],
         target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
         model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
         classified_model_output_key: str = CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
         classification_accuracy_score_key: str = CLASSIFICATION_ACCURACY_SCORE,
+        valid_labels: Optional[List[str]] = None,
         converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label,
     ):
+        """ClassificationAccuracyScores initializer.
+
+        :param target_output_key: The record key corresponding to the target output.
+        :param model_output_key: The record key corresponding to the model output.
+        :param classified_model_output_key: The key to use for the classified model output
+            that will be added to the record.
+        :param classification_accuracy_score_key: The key to use for the classification accuracy
+            score that will be added to the record.
+        :param valid_labels: See corresponding parameter in ClassificationAccuracyConfig.
+        :param converter_fn: See corresponding parameter in ClassificationAccuracyConfig.
+        """
         super().__init__(
-            valid_labels,
             target_output_key,
             model_output_key,
             classified_model_output_key,
             classification_accuracy_score_key,
+            valid_labels,
             converter_fn,
         )
         self.register_input_output_keys(
             input_keys=[target_output_key, model_output_key],
             output_keys=[classified_model_output_key, classification_accuracy_score_key],
         )
-        self.valid_labels = valid_labels
         self.target_output_key = target_output_key
         self.model_output_key = model_output_key
         self.classified_model_output_key = classified_model_output_key
         self.classification_accuracy_score_key = classification_accuracy_score_key
+        self.valid_labels = valid_labels
         self.converter_fn = converter_fn
 
     @validate_call
@@ -187,15 +198,20 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
             "ClassificationAccuracy evaluate_sample method requires the `valid_labels` "
             "attribute of the ClassificationAccuracy instance to be set.",
         )
-        score = int(self.converter_fn(model_output, self.valid_labels) == str(target_output))  # type: ignore
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
+        pipeline = self._build_pipeline(self.valid_labels)
+        result = pipeline.execute_record(sample)
         return [
             EvalScore(
                 name=CLASSIFICATION_ACCURACY_SCORE,
-                value=score,  # type: ignore
+                value=result[CLASSIFICATION_ACCURACY_SCORE],  # type: ignore
             )
         ]
 
-    def _build_pipeline(self, valid_labels: List[str]) -> TransformPipeline:
+    def _build_pipeline(self, valid_labels: Optional[List[str]]) -> TransformPipeline:
         return TransformPipeline(
             [ClassificationAccuracyScores(valid_labels=valid_labels, converter_fn=self.converter_fn)]
         )
