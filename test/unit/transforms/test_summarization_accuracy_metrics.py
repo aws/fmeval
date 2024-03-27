@@ -114,7 +114,7 @@ def test_bert_score_call_with_bertscore_model_object():
     we already have @validate_call to handle that.
     """
     mock_bertscore_model = Mock(spec=BertscoreHelperModel)
-    mock_bertscore_model.invoke_model = Mock()
+    mock_bertscore_model.get_helper_scores = Mock()
 
     bs = BertScore(
         target_output_keys=["target_output"],
@@ -125,7 +125,7 @@ def test_bert_score_call_with_bertscore_model_object():
     )
     sample = {"target_output": "Hello there!", "model_output": "Hi"}
     bs(sample)
-    mock_bertscore_model.invoke_model.assert_called_once_with("Hello there!", "Hi")
+    mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
 
 
 def test_bert_score_call_with_ray_actor_handle():
@@ -138,8 +138,8 @@ def test_bert_score_call_with_ray_actor_handle():
     we already have @validate_call to handle that.
     """
     mock_bertscore_model = Mock(spec=ObjectRef)
-    mock_bertscore_model.invoke_model = Mock()
-    mock_bertscore_model.invoke_model.remote = Mock(return_value="remote invocation result")
+    mock_bertscore_model.get_helper_scores = Mock()
+    mock_bertscore_model.get_helper_scores.remote = Mock(return_value="remote invocation result")
 
     with patch("fmeval.transforms.summarization_accuracy_metrics.ray.get") as mock_ray_get:
         bs = BertScore(
@@ -151,7 +151,7 @@ def test_bert_score_call_with_ray_actor_handle():
         )
         sample = {"target_output": "Hello there!", "model_output": "Hi"}
         bs(sample)
-        mock_bertscore_model.invoke_model.remote.assert_called_once_with("Hello there!", "Hi")
+        mock_bertscore_model.get_helper_scores.remote.assert_called_once_with("Hello there!", "Hi")
         mock_ray_get.assert_called_once_with("remote invocation result")
 
 

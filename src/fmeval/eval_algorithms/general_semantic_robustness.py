@@ -6,9 +6,6 @@ from typing import Optional, List, Dict, Any
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
-    BUTTER_FINGER,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
@@ -31,7 +28,6 @@ from fmeval.eval_algorithms.util import (
     validate_dataset,
     verify_model_determinism,
     get_dataset_configs,
-    create_model_invocation_pipeline,
     evaluate_dataset,
 )
 from fmeval.model_runners.composers.composers import PromptComposer
