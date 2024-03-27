@@ -78,7 +78,8 @@ class TestSummarizationAccuracySemanticRobustness:
             )
 
     @pytest.mark.parametrize("perturbation_type", [BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE])
-    def test_init(self, perturbation_type):
+    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.create_shared_resource")
+    def test_init(self, mock_created_shared_resource, perturbation_type):
         """
         GIVEN valid arguments.
         WHEN a SummarizationAccuracySemanticRobustness is initialized.
@@ -87,7 +88,7 @@ class TestSummarizationAccuracySemanticRobustness:
         config = SummarizationAccuracySemanticRobustnessConfig(perturbation_type=perturbation_type)
         sasr = SummarizationAccuracySemanticRobustness(config)
         assert isinstance(sasr.perturbation_transform, SEMANTIC_PERTURBATIONS[perturbation_type])
-        assert isinstance(sasr.bertscore_model, BertscoreHelperModel)
+        mock_created_shared_resource.assert_called_once()
 
     class TestCaseEvaluateSample(NamedTuple):
         original_meteor_score: float
@@ -184,7 +185,6 @@ class TestSummarizationAccuracySemanticRobustness:
         ],
     )
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.get_eval_results_path")
-    @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.evaluate_dataset")
     @patch("fmeval.eval_algorithms.summarization_accuracy_semantic_robustness.create_shared_resource")
     @patch(
@@ -202,7 +202,6 @@ class TestSummarizationAccuracySemanticRobustness:
         mock_build_pipeline,
         mock_create_shared_resource,
         mock_evaluate_dataset,
-        mock_cleanup_shared_resource,
         mock_get_results_path,
         test_case,
     ):
@@ -237,7 +236,6 @@ class TestSummarizationAccuracySemanticRobustness:
             save=True,
         )
 
-        mock_create_shared_resource.assert_called_once_with(sasr.bertscore_model)
         mock_evaluate_dataset.assert_called_once_with(
             dataset=mock_dataset,
             pipeline=mock_build_pipeline.return_value,
@@ -253,7 +251,5 @@ class TestSummarizationAccuracySemanticRobustness:
         mock_build_pipeline.assert_called_once_with(
             model_runner,
             test_case.dataset_prompt_template,
-            mock_create_shared_resource.return_value,
         )
-        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
