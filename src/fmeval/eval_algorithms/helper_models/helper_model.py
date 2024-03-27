@@ -195,13 +195,6 @@ class BertscoreHelperModel(BaseHelperModel):
         self._bertscore = hf_evaluate.load("bertscore")
         self._model_type = model_type
 
-        # Dummy call to download the model within constructor
-        self._bertscore.compute(
-            predictions=["dummy_prediction"],
-            references=["dummy_reference"],
-            model_type=self._model_type,
-        )
-
     def get_helper_scores(self, target_output: str, model_output: str) -> float:  # type: ignore[override]
         """
         Method to invoke the concerned model and get bertscore
