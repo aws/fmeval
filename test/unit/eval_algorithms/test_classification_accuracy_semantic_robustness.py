@@ -5,13 +5,15 @@ from unittest.mock import patch, MagicMock, Mock
 import pytest
 import ray
 from _pytest.fixtures import fixture
-from ray.data import Dataset
 
 from fmeval.constants import (
     DatasetColumns,
-    MIME_TYPE_JSON, BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE, MEAN,
+    MIME_TYPE_JSON,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    MEAN,
 )
-from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
@@ -246,17 +248,19 @@ class TestClassificationAccuracySemanticRobustness:
     )
     @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_eval_results_path")
     @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.evaluate_dataset")
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracySemanticRobustness._build_pipeline")
+    @patch(
+        "fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracySemanticRobustness._build_pipeline"
+    )
     @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset_configs")
     def test_evaluate(
-            self,
-            mock_get_dataset_configs,
-            mock_get_dataset,
-            mock_build_pipeline,
-            mock_evaluate_dataset,
-            mock_get_results_path,
-            test_case,
+        self,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+        test_case,
     ):
         """
         GIVEN a ClassificationAccuracySemanticRobustness instance.
@@ -307,6 +311,6 @@ class TestClassificationAccuracySemanticRobustness:
         mock_build_pipeline.assert_called_with(
             model_runner,
             test_case.dataset_prompt_template,
-            test_case.valid_labels if test_case.valid_labels else mock_dataset.unique.return_value
+            test_case.valid_labels if test_case.valid_labels else mock_dataset.unique.return_value,
         )
         assert output == [mock_evaluate_dataset.return_value]
