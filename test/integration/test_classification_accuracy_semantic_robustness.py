@@ -3,18 +3,16 @@ import pytest
 from pytest import approx
 from typing import NamedTuple, Dict
 
+from fmeval.constants import BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
 from fmeval.eval_algorithms import (
     DATASET_CONFIGS,
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
-    BUTTER_FINGER,
     CLASSIFICATION_ACCURACY_SCORE,
     ClassificationAccuracySemanticRobustness,
     ClassificationAccuracySemanticRobustnessConfig,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
 )
 
 from test.integration.models.model_runners import (
@@ -39,10 +37,10 @@ class TestClassificationAccuracySemanticRobustness:
         [
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=SAMPLE_VALID_LABELS,
                     perturbation_type=BUTTER_FINGER,
                     num_perturbations=5,
                     butter_finger_perturbation_prob=0.1,
+                    valid_labels=SAMPLE_VALID_LABELS,
                 ),
                 aggregate_scores={
                     CLASSIFICATION_ACCURACY_SCORE: 1,
@@ -52,10 +50,10 @@ class TestClassificationAccuracySemanticRobustness:
             ),
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=SAMPLE_VALID_LABELS,
                     perturbation_type=RANDOM_UPPER_CASE,
                     num_perturbations=5,
                     random_uppercase_corrupt_proportion=0.1,
+                    valid_labels=SAMPLE_VALID_LABELS,
                 ),
                 aggregate_scores={
                     CLASSIFICATION_ACCURACY_SCORE: 1,
@@ -65,11 +63,11 @@ class TestClassificationAccuracySemanticRobustness:
             ),
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=SAMPLE_VALID_LABELS,
                     perturbation_type=WHITESPACE_ADD_REMOVE,
                     num_perturbations=5,
                     whitespace_remove_prob=0.1,
                     whitespace_add_prob=0.05,
+                    valid_labels=SAMPLE_VALID_LABELS,
                 ),
                 aggregate_scores={
                     CLASSIFICATION_ACCURACY_SCORE: 1,
@@ -86,8 +84,8 @@ class TestClassificationAccuracySemanticRobustness:
         "or 1 (positive sentiment). Review: $model_input. Classification:"
         eval_scores = ca_semantic_robustness.evaluate_sample(
             model_input=model_input,
-            model=hf_model_runner,
             target_output="1",
+            model=hf_model_runner,
             prompt_template=prompt_template,
         )
         for eval_score in eval_scores:
@@ -98,217 +96,11 @@ class TestClassificationAccuracySemanticRobustness:
         [
             CASRTestCase(
                 config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=SAMPLE_VALID_LABELS,
                     perturbation_type=BUTTER_FINGER,
                     num_perturbations=5,
                     butter_finger_perturbation_prob=0.1,
-                ),
-                aggregate_scores={
-                    CLASSIFICATION_ACCURACY_SCORE: 0.83,
-                    DELTA_CLASSIFICATION_ACCURACY_SCORE: 0,
-                },
-                category_scores={
-                    "Blouses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Dresses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8571428571428571,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Fine gauge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jackets": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jeans": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Knits": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.9166666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Lounge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Outerwear": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Pants": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Shorts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.6666666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Skirts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Sweaters": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.7142857142857143,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Swim": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Trend": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                },
-            ),
-            CASRTestCase(
-                config=ClassificationAccuracySemanticRobustnessConfig(
                     valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=RANDOM_UPPER_CASE,
-                    num_perturbations=5,
-                    random_uppercase_corrupt_proportion=0.1,
                 ),
-                aggregate_scores={
-                    CLASSIFICATION_ACCURACY_SCORE: 0.83,
-                    DELTA_CLASSIFICATION_ACCURACY_SCORE: 0,
-                },
-                category_scores={
-                    "Blouses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Dresses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8571428571428571,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Fine gauge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jackets": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jeans": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Knits": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.9166666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Lounge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Outerwear": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Pants": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Shorts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.6666666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Skirts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Sweaters": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.7142857142857143,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Swim": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Trend": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                },
-            ),
-            CASRTestCase(
-                config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=SAMPLE_VALID_LABELS,
-                    perturbation_type=WHITESPACE_ADD_REMOVE,
-                    num_perturbations=5,
-                    whitespace_remove_prob=0.1,
-                    whitespace_add_prob=0.05,
-                ),
-                aggregate_scores={
-                    CLASSIFICATION_ACCURACY_SCORE: 0.83,
-                    DELTA_CLASSIFICATION_ACCURACY_SCORE: 0,
-                },
-                category_scores={
-                    "Blouses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Dresses": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8571428571428571,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Fine gauge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jackets": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Jeans": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Knits": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.9166666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Lounge": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.75,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Outerwear": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Pants": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Shorts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.6666666666666666,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Skirts": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.8,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Sweaters": {
-                        CLASSIFICATION_ACCURACY_SCORE: 0.7142857142857143,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Swim": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                    "Trend": {
-                        CLASSIFICATION_ACCURACY_SCORE: 1.0,
-                        DELTA_CLASSIFICATION_ACCURACY_SCORE: 0.0,
-                    },
-                },
-            ),
-            CASRTestCase(
-                config=None,
                 aggregate_scores={
                     CLASSIFICATION_ACCURACY_SCORE: 0.83,
                     DELTA_CLASSIFICATION_ACCURACY_SCORE: 0,
@@ -375,12 +167,7 @@ class TestClassificationAccuracySemanticRobustness:
         ],
     )
     def test_evaluate(self, casr_test_case):
-        if casr_test_case.config:
-            ca_semantic_robustness = ClassificationAccuracySemanticRobustness(
-                eval_algorithm_config=casr_test_case.config
-            )
-        else:
-            ca_semantic_robustness = ClassificationAccuracySemanticRobustness()
+        ca_semantic_robustness = ClassificationAccuracySemanticRobustness(eval_algorithm_config=casr_test_case.config)
         prompt_template = "Classify the sentiment of the following review with 0 (negative sentiment) "
         "or 1 (positive sentiment). Review: $model_input. Classification:"
         dataset_config = DATASET_CONFIGS[WOMENS_CLOTHING_ECOMMERCE_REVIEWS]

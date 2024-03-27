@@ -1,17 +1,19 @@
 import re
 from typing import NamedTuple, List, Optional, Tuple
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 
 import pytest
 import ray
 from _pytest.fixtures import fixture
-from ray.data import Dataset
 
 from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
+    BUTTER_FINGER,
+    RANDOM_UPPER_CASE,
+    WHITESPACE_ADD_REMOVE,
+    MEAN,
 )
-from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
     EvalScore,
     EvalOutput,
@@ -23,9 +25,6 @@ from fmeval.eval_algorithms import (
 from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,
     ClassificationAccuracySemanticRobustness,
-    RANDOM_UPPER_CASE,
-    WHITESPACE_ADD_REMOVE,
-    BUTTER_FINGER,
     DELTA_CLASSIFICATION_ACCURACY_SCORE,
 )
 from fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
@@ -214,9 +213,9 @@ class TestClassificationAccuracySemanticRobustness:
         """
         model = MagicMock()
         model.predict.side_effect = [
-            (test_case.original_model_output,),
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
+            (test_case.original_model_output, None),
+            (test_case.perturbed_model_output_1, None),
+            (test_case.perturbed_model_output_2, None),
         ]
 
         eval_algorithm = ClassificationAccuracySemanticRobustness(test_case.config)
@@ -228,270 +227,90 @@ class TestClassificationAccuracySemanticRobustness:
         )
         assert model.predict.call_count == 3
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateSample(
-                model_input="Ok brownie.",
-                original_model_output="3",
-                perturbed_model_output_1="Some model output.",
-                perturbed_model_output_2="Some model output.",
-                target_output="3",
-                expected_response=[
-                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=1.0),
-                    EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=1.0),
-                ],
-                config=ClassificationAccuracySemanticRobustnessConfig(
-                    valid_labels=["1", "2", "3", "4", "5"],
-                    num_perturbations=2,
-                ),
-            )
-        ],
-    )
-    def test_classification_accuracy_semantic_robustness_evaluate_sample_with_model_output(self, test_case):
-        """
-        GIVEN valid inputs with model_output
-        WHEN ClassificationAccuracySemanticRobustness.evaluate_sample is called
-        THEN correct List of EvalScores is returned
-        """
-        model = MagicMock()
-        model.predict.side_effect = [
-            (test_case.perturbed_model_output_1,),
-            (test_case.perturbed_model_output_2,),
-        ]
-
-        eval_algorithm = ClassificationAccuracySemanticRobustness(test_case.config)
-        assert (
-            eval_algorithm.evaluate_sample(
-                model_input=test_case.model_input,
-                model=model,
-                model_output=test_case.original_model_output,
-                target_output=test_case.target_output,
-            )
-            == test_case.expected_response
-        )
-        assert model.predict.call_count == 2
-
-    class TestCaseClassificationAccuracySemanticRobustnessEvaluate(NamedTuple):
-        input_dataset: Dataset
-        input_dataset_with_generated_model_output: Dataset
-        prompt_template: Optional[str]
-        dataset_config: Optional[DataConfig]
-        expected_response: List[EvalOutput]
-        save_data: bool
+    class TestCaseEvaluate(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        dataset_prompt_template: str
+        valid_labels: Optional[List[str]] = None
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            # Built-in datasets evaluate for dataset without category
-            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
-                input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
-                dataset_config=None,
-                prompt_template=None,
-                save_data=True,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_womens_clothing_ecommerce_reviews.jsonl",
-                    ),
-                ],
+            TestCaseEvaluate(
+                user_provided_prompt_template="Summarize: $model_input",
+                dataset_prompt_template="Summarize: $model_input",
+                valid_labels=["0", "1"],
             ),
-            # Built-in datasets evaluate for dataset with category
-            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT,
-                input_dataset_with_generated_model_output=DATASET,
-                dataset_config=None,
-                prompt_template=None,
-                save_data=True,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name=WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_womens_clothing_ecommerce_reviews.jsonl",
-                    ),
-                ],
-            ),
-            # Custom dataset evaluate, with input prompt template
-            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
-                input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$model_input",
-                save_data=False,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template="$model_input",
-                        category_scores=None,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_my_custom_dataset.jsonl",
-                    ),
-                ],
-            ),
-            # Custom dataset evaluate, without input prompt template
-            TestCaseClassificationAccuracySemanticRobustnessEvaluate(
-                input_dataset=DATASET_WITHOUT_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name),
-                input_dataset_with_generated_model_output=DATASET_WITHOUT_CATEGORY,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                save_data=False,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="classification_accuracy_semantic_robustness",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[
-                            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                            EvalScore(name=DELTA_CLASSIFICATION_ACCURACY_SCORE, value=0.0),
-                        ],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/classification_accuracy_semantic_robustness_my_custom_dataset.jsonl",
-                    ),
-                ],
+            TestCaseEvaluate(
+                user_provided_prompt_template=None,
+                dataset_prompt_template="$model_input",
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.save_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.evaluate_dataset")
     @patch(
-        "fmeval.eval_algorithms.classification_accuracy_semantic_robustness.generate_model_predict_response_for_dataset"
+        "fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracySemanticRobustness._build_pipeline"
     )
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
-    def test_classification_accuracy_semantic_robustness_evaluate(
-        self,
-        classification_accuracy,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
-        get_dataset,
-        test_case,
-        config,
-    ):
-        """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN ClassificationAccuracySemanticRobustness evaluate() method is called
-        THEN correct EvalOutput is returned
-        """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        classification_accuracy.return_value = MagicMock()
-
-        eval_algorithm = ClassificationAccuracySemanticRobustness()
-        actual_response = eval_algorithm.evaluate(
-            model=ConstantModel(),
-            dataset_config=test_case.dataset_config,
-            save=test_case.save_data,
-            prompt_template=test_case.prompt_template,
-        )
-        assert save_dataset.called == test_case.save_data
-        assert actual_response == test_case.expected_response
-
-    class TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(NamedTuple):
-        input_dataset: Dataset
-        dataset_config: Optional[DataConfig]
-        prompt_template: Optional[str]
-        model_provided: bool
-        expected_error_message: str
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_WITHOUT_CATEGORY,
-                dataset_config=None,
-                prompt_template=None,
-                model_provided=False,
-                expected_error_message="Missing required input: model i.e. ModelRunner, for ClassificationAccuracySemanticRobustness "
-                "evaluate",
-            ),
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name]),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: model_input, for evaluate",
-            ),
-            TestCaseClassificationAccuracySemanticRobustnessEvaluateInvalid(
-                input_dataset=DATASET_WITHOUT_CATEGORY.drop_columns(cols=[DatasetColumns.TARGET_OUTPUT.value.name]),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: target_output, for evaluate",
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
     @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset")
-    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.ClassificationAccuracy")
-    def test_classification_accuracy_semantic_robustness_evaluate_invalid_input(
+    @patch("fmeval.eval_algorithms.classification_accuracy_semantic_robustness.get_dataset_configs")
+    def test_evaluate(
         self,
-        classification_accuracy,
-        get_dataset,
-        model,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_evaluate_dataset,
+        mock_get_results_path,
         test_case,
-        config,
     ):
         """
-        GIVEN invalid inputs
-        WHEN ClassificationAccuracySemanticRobustness evaluate is called
-        THEN correct exception with proper message is raised
+        GIVEN a ClassificationAccuracySemanticRobustness instance.
+        WHEN its evaluate method is called with valid arguments.
+        THEN `evaluate_dataset` is called with the correct arguments.
         """
-        classification_accuracy.return_value = MagicMock()
-        eval_algorithm = ClassificationAccuracySemanticRobustness(config)
-        get_dataset.return_value = test_case.input_dataset
-        if not test_case.model_provided:
-            model = None
-        with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            eval_algorithm.evaluate(
-                model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
-            )
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        mock_dataset.unique = Mock(return_value=["0", "1", "2"])
+        # So that the uniqueness factor check passes
+        mock_dataset.count = Mock(return_value=100)
+        mock_get_dataset.return_value = mock_dataset
+
+        mock_build_pipeline.return_value = Mock()
+        mock_get_results_path.return_value = "/path/to/results"
+        model_runner = Mock()
+
+        eval_algo = ClassificationAccuracySemanticRobustness(
+            ClassificationAccuracySemanticRobustnessConfig(valid_labels=test_case.valid_labels)
+        )
+        output = eval_algo.evaluate(
+            model=model_runner,
+            dataset_config=dataset_config,
+            prompt_template=test_case.user_provided_prompt_template,
+            num_records=162,
+            save=True,
+        )
+
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_dataset,
+            pipeline=mock_build_pipeline.return_value,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=eval_algo.eval_name,
+            metric_names=[CLASSIFICATION_ACCURACY_SCORE, DELTA_CLASSIFICATION_ACCURACY_SCORE],
+            eval_results_path="/path/to/results",
+            model=model_runner,
+            prompt_template=test_case.dataset_prompt_template,
+            agg_method=MEAN,
+            save=True,
+        )
+        mock_build_pipeline.assert_called_with(
+            model_runner,
+            test_case.dataset_prompt_template,
+            test_case.valid_labels if test_case.valid_labels else mock_dataset.unique.return_value,
+        )
+        assert output == [mock_evaluate_dataset.return_value]

@@ -122,7 +122,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         self.target_output_delimiter = eval_algorithm_config.target_output_delimiter
 
-    def build_pipeline(
+    def _build_pipeline(
         self,
         model: ModelRunner,
         prompt_template: str,
@@ -187,7 +187,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
     ) -> List[EvalScore]:
         """Compute question answering accuracy semantic robustness metrics for a single sample.
 
-        A sample is defined as a model input and model output pair.
+        A sample is defined as a model input and target output pair.
 
         :param model_input: Text input, which will be composed into a prompt that gets fed to the model.
         :param target_output: The expected response from the model.
@@ -200,7 +200,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
         }
         invoke_model = create_model_invocation_pipeline(model, prompt_template)
-        compute_metrics = self.build_pipeline(model, prompt_template)
+        compute_metrics = self._build_pipeline(model, prompt_template)
         pipeline = TransformPipeline([invoke_model, compute_metrics])
         output_record = pipeline.execute_record(sample)
 
@@ -247,7 +247,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self.build_pipeline(model, dataset_prompt_template),
+                pipeline=self._build_pipeline(model, dataset_prompt_template),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
