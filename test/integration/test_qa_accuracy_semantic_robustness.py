@@ -109,7 +109,6 @@ class TestQAAccuracySemanticRobustness:
             prompt_template=sm_model_runner_prompt_template,
         )
         for eval_score in eval_scores:
-            print(f"eval score {eval_score.name} is {eval_score.value}")
             assert eval_score.value == expected_scores[eval_score.name]
 
     class TestCaseEvaluate(NamedTuple):
@@ -194,4 +193,3 @@ class TestQAAccuracySemanticRobustness:
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
-        assert False
