@@ -224,7 +224,7 @@ class TestQAAccuracySemanticRobustness:
     )
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_eval_results_path")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.evaluate_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness." "QAAccuracySemanticRobustness.build_pipeline")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracySemanticRobustness._build_pipeline")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset_configs")
     def test_evaluate(
