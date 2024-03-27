@@ -188,30 +188,6 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
 }
 
 
-def _get_score(
-    target_output: str,
-    model_output: str,
-    target_output_delimiter: Optional[str],
-    score_fn: Callable[..., float],
-    **fn_kwargs,
-) -> float:
-    """Compute an accuracy score from target_output and model_output.
-
-    :param target_output: A single string potentially containing multiple
-        target output values. If there are multiple target output values,
-        they will be separated by `target_output_delimiter`.
-        For example, if valid target outputs for a question are ["UK", "England"]
-        and the delimiter is "<OR>", then `target_output` will be "UK<OR>England".
-    :param model_output: The model output.
-    :param target_output_delimiter: The delimiter used to separate the possible
-        target outputs within the `target_output` string.
-    :param score_fn: One of the functions in QA_ACCURACY_SCORES_TO_FUNCS.
-    :returns: A computed QA accuracy score.
-    """
-    possible_targets = target_output.split(target_output_delimiter)
-    return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
-
-
 class QAAccuracyScores(Transform):
     def __init__(
         self,
@@ -230,14 +206,36 @@ class QAAccuracyScores(Transform):
         self.output_keys = output_keys
         self.target_output_delimiter = target_output_delimiter
 
+    def _get_score(
+        self,
+        target_output: str,
+        model_output: str,
+        score_fn: Callable[..., float],
+        **fn_kwargs,
+    ) -> float:
+        """Compute an accuracy score from target_output and model_output.
+
+        :param target_output: A single string potentially containing multiple
+            target output values. If there are multiple target output values,
+            they will be separated by `target_output_delimiter`.
+            For example, if valid target outputs for a question are ["UK", "England"]
+            and the delimiter is "<OR>", then `target_output` will be "UK<OR>England".
+        :param model_output: The model output.
+        :param target_output_delimiter: The delimiter used to separate the possible
+            target outputs within the `target_output` string.
+        :param score_fn: One of the functions in QA_ACCURACY_SCORES_TO_FUNCS.
+        :returns: A computed QA accuracy score.
+        """
+        possible_targets = target_output.split(self.target_output_delimiter)
+        return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
+
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
         target_output = record[self.target_output_key]
         model_output = record[self.model_output_key]
         for output_key, score_name in zip(self.output_keys, SCORE_NAMES):
-            record[output_key] = _get_score(
+            record[output_key] = self._get_score(
                 target_output=target_output,
                 model_output=model_output,
-                target_output_delimiter=self.target_output_delimiter,
                 score_fn=QA_ACCURACY_SCORES_TO_FUNCS[score_name],
             )
         return record
