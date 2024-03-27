@@ -10,7 +10,7 @@ from nltk.translate import meteor_score
 
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
-from fmeval.helper_models import BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.util import assert_condition
 
 METEOR_SCORE = "meteor"
@@ -251,7 +251,7 @@ class BertScore(SummarizationAccuracyMetric):
         model_output_keys: List[str],
         output_keys: List[str],
         allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
     ):
         """BertScore initializer.
 
@@ -260,7 +260,7 @@ class BertScore(SummarizationAccuracyMetric):
         :param output_keys: The output keys for this Transform, which correspond
             to the BERT scores that get computed.
         :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
-        :param bertscore_model: A BertscoreModel instance or a Ray actor handle for a BertscoreModel.
+        :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
         """
         super().__init__(
             target_output_keys, model_output_keys, output_keys, allow_duplicate_input_keys, bertscore_model
@@ -274,7 +274,7 @@ class BertScore(SummarizationAccuracyMetric):
         :param model_output: The actual output produced by the model.
         :returns: The BERT metric value.
         """
-        if isinstance(self.bertscore_model, BertscoreModel):
+        if isinstance(self.bertscore_model, BertscoreHelperModel):
             return self.bertscore_model.invoke_model(target_output, model_output)
         else:
             return ray.get(  # type: ignore[return-value]

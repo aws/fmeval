@@ -451,13 +451,16 @@ def evaluate_dataset(
 
     :return: An EvalOutput object encapsulating the results of the evaluation.
     """
-    if prompt_template:
-        util.require(model, "A model must be provided as well if the provided prompt template is not None.")
     if model:
         prompt_template = get_default_prompt_template(dataset_name) if not prompt_template else prompt_template
         model_invocation_pipeline = create_model_invocation_pipeline(model, prompt_template)
         pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
     else:
+        if prompt_template:
+            logger.warning(
+                "A prompt template, but no corresponding model, was provided."
+                "Model outputs from the dataset will be used, and this prompt template will be ignored."
+            )
         try:
             validate_dataset(dataset, [DatasetColumns.MODEL_OUTPUT.value.name])
         except EvalAlgorithmClientError:

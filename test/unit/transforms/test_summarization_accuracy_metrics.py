@@ -1,10 +1,9 @@
 import pytest
 from unittest.mock import patch, call, Mock
 from typing import NamedTuple, Optional
-
 from ray import ObjectRef
 
-from fmeval.helper_models import BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeScore, BertScore, ROUGE_2
 
 
@@ -107,14 +106,14 @@ def test_rouge_score_call():
 
 def test_bert_score_call_with_bertscore_model_object():
     """
-    GIVEN a BertScore instance, where its `bertscore_model` is a BertscoreModel object.
+    GIVEN a BertScore instance, where its `bertscore_model` is a BertscoreHelperModel object.
     WHEN its __call__ method is invoked.
     THEN self.bertscore_model is invoked with the correct arguments.
 
     Note: we don't validate the structure of the __call__ output since
     we already have @validate_call to handle that.
     """
-    mock_bertscore_model = Mock(spec=BertscoreModel)
+    mock_bertscore_model = Mock(spec=BertscoreHelperModel)
     mock_bertscore_model.invoke_model = Mock()
 
     bs = BertScore(

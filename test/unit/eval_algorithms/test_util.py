@@ -985,25 +985,38 @@ def test_evaluate_dataset_no_model(
         mock_save.assert_not_called()
 
 
-def test_evaluate_dataset_with_prompt_template_without_model():
+@patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
+@patch("fmeval.eval_algorithms.util.logging.Logger.warning")
+def test_evaluate_dataset_with_prompt_template_without_model(
+    mock_logger,
+    mock_aggregate,
+):
     """
     GIVEN invalid arguments: a non-Null prompt template, but no model.
     WHEN the `evaluate_dataset` function is called.
-    THEN the correct exception is raised.
+    THEN a warning is logged.
     """
+    mock_aggregate.return_value = [EvalScore(name="a", value=1.0)], None
     prompt_template = "Do something with $model_input."
-    err_msg = "A model must be provided as well if the provided prompt template is not None."
-    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
-        evaluate_dataset(
-            dataset=Mock(),
-            pipeline=Mock(),
-            dataset_name="my_dataset",
-            eval_name="MyEvalAlgo",
-            metric_names=[SCORE_1, SCORE_2],
-            eval_results_path="/path/to/eval/results",
-            model=None,
-            prompt_template=prompt_template,
-        )
+    dataset = Mock()
+    dataset.columns = Mock(return_value=[DatasetColumns.MODEL_OUTPUT.value.name])
+
+    evaluate_dataset(
+        dataset=dataset,
+        pipeline=Mock(),
+        dataset_name="my_dataset",
+        eval_name="MyEvalAlgo",
+        metric_names=[SCORE_1, SCORE_2],
+        eval_results_path="/path/to/eval/results",
+        model=None,
+        prompt_template=prompt_template,
+    )
+
+    warning_msg = (
+        "A prompt template, but no corresponding model, was provided."
+        "Model outputs from the dataset will be used, and this prompt template will be ignored."
+    )
+    mock_logger.assert_called_once_with(warning_msg)
 
 
 def test_evaluate_dataset_no_model_no_model_output_column():

@@ -55,7 +55,7 @@ from fmeval.eval_algorithms.util import (
     generate_mean_delta_score,
     generate_model_predict_response_for_dataset,
 )
-from fmeval.helper_models import BertscoreModelTypes
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes
 from fmeval.util import get_num_actors
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import PromptComposer
@@ -157,10 +157,10 @@ class SummarizationAccuracySemanticRobustnessConfig(EvalAlgorithmConfig):
                 f"please choose from acceptable values: {ROUGE_TYPES}"
             )
 
-        if not BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore):
+        if not BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore):
             raise EvalAlgorithmClientError(
                 f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}"
+                f"SummarizationAccuracyConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}"
             )
 
 
@@ -305,7 +305,11 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         """
         Semantic Robustness evaluate.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            This is a required argument, as even if the dataset contains model outputs,
+            semantic robustness algorithms rely on invoking a model on perturbed inputs
+            to see how the model outputs from the perturbed inputs differ from the original
+            model outputs.
         :param dataset_config: Configures the single dataset used for evaluation. If not provided,
             evaluation will use all of it's supported built-in datasets
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults

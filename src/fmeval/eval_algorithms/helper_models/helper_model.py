@@ -1,8 +1,11 @@
 import numpy as np
+import evaluate as hf_evaluate
 import torch
+import transformers
+
+from enum import Enum
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
-import transformers
 from transformers import pipeline, AutoConfig
 from fmeval.constants import DatasetColumns
 
@@ -39,6 +42,10 @@ class BaseHelperModel(ABC):
         :param text_input: model text input
         :returns: model output
         """
+
+    def __reduce__(self):
+        """Serializer method."""
+        return self.__class__, ()  # pragma: no cover
 
 
 class ToxigenHelperModel(BaseHelperModel):
@@ -140,14 +147,10 @@ class DetoxifyHelperModel(BaseHelperModel):
         """
         inputs = self._tokenizer(text_input, return_tensors="pt", truncation=True, padding=True).to(self._model.device)
         scores = torch.sigmoid(self._model(**inputs)[0]).cpu().detach().numpy()
-        results = {}
-        for i, cla in enumerate(DetoxifyHelperModel.get_score_names()):
-            results[cla] = (
-                scores[0][i]
-                if isinstance(text_input, str)
-                else [scores[ex_i][i].tolist() for ex_i in range(len(scores))]
-            )
-        return results
+        return {
+            score_name: [score[i].tolist() for score in scores]
+            for i, score_name in enumerate(DetoxifyHelperModel.get_score_names())
+        }
 
     def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
@@ -169,3 +172,71 @@ class DetoxifyHelperModel(BaseHelperModel):
         :returns: List of score names
         """
         return DETOXIFY_SCORE_NAMES
+
+
+class BertscoreHelperModel(BaseHelperModel):
+    """
+    BERTscore is a similarity-based metric that compares the embedding of the prediction and target sentences
+    under a (learned) model, typically, from the BERT family.
+    This score may lead to increased flexibility compared to rouge and METEOR in terms of rephrasing since
+    semantically similar sentences are (typically) embedded similarly.
+    https://huggingface.co/spaces/evaluate-metric/bertscore
+    Note: we specify that this Ray actor requires num_cpus=1 in order to limit the number of concurrently
+    running tasks or actors to avoid out of memory issues.
+    See https://docs.ray.io/en/latest/ray-core/patterns/limit-running-tasks.html#core-patterns-limit-running-tasks
+    for a detailed explanation.
+    """
+
+    def __init__(self, model_type: str):  # pragma: no cover
+        """
+        Default constructor
+        :param model_type: Model type to be used for bertscore
+        """
+        self._bertscore = hf_evaluate.load("bertscore")
+        self._model_type = model_type
+
+        # Dummy call to download the model within constructor
+        self._bertscore.compute(
+            predictions=["dummy_prediction"],
+            references=["dummy_reference"],
+            model_type=self._model_type,
+        )
+
+    def get_helper_scores(self, target_output: str, model_output: str) -> float:  # type: ignore[override]
+        """
+        Method to invoke the concerned model and get bertscore
+        :param target_output: Reference text
+        :model_output: Model prediction text
+        """
+        # Note: the following code is covered by unit tests,
+        # but since it gets executed by Ray, Mypy marks it
+        # as not covered.
+        return self._bertscore.compute(  # pragma: no cover
+            predictions=[model_output],
+            references=[target_output],
+            model_type=self._model_type,
+        )["f1"][0]
+
+
+class BertscoreHelperModelTypes(Enum):
+    """This class holds the names of all the allowed models for computing the BERTScore."""
+
+    MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
+    ROBERTA_MODEL = "roberta-large-mnli"
+
+    @classmethod
+    def model_is_allowed(cls, model_name: str) -> bool:
+        """
+        Given a model name like 'roberta-large-mnli', check if this is an allowed model for computing BERTScore.
+        """
+        for elem in iter(cls):
+            if elem.value == model_name:
+                return True
+        return False
+
+    @classmethod
+    def model_list(cls) -> List[str]:
+        """
+        Return a list of all the allowed models for computing BERTScore.
+        """
+        return [elem.value for elem in iter(cls)]

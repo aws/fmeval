@@ -89,7 +89,7 @@ def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
     """Create a Ray actor out of `resource`.
 
     Typically, `resource` will be an object that consumes a significant amount of
-    memory (ex: a BertscoreModel instance) that you do not want to create
+    memory (ex: a BertscoreHelperModel instance) that you do not want to create
     on a per-transform (i.e. per-process) basis, but rather wish to have as a "global resource".
 
     Conceptually, the object that is returned from this function can be thought
@@ -122,7 +122,7 @@ def cleanup_shared_resource(resource: ObjectRef) -> None:
     via create_shared_resource.
 
     :param resource: A Ray actor handle to a shared resource
-        (ex: a BertscoreModel).
+        (ex: a BertscoreHelperModel).
     :returns: None
     """
     ray.kill(resource)

@@ -25,7 +25,7 @@ from fmeval.eval_algorithms.semantic_robustness_utils import (
     get_perturbation_transform,
     get_model_responses_from_perturbed_inputs,
 )
-from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.eval_algorithms.util import (
     validate_dataset,
@@ -71,9 +71,9 @@ class GeneralSemanticRobustnessConfig(SemanticRobustnessConfig):
     def __post_init__(self):
         super().__post_init__()
         require(
-            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-            f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreModelTypes.model_list()}.",
+            f"GeneralSemanticRobustnessConfig, please choose from acceptable values: {BertscoreHelperModelTypes.model_list()}.",
         )
         require(
             self.num_baseline_samples >= 2,
@@ -120,9 +120,9 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         """GeneralSemanticRobustness initializer.
 
         :param eval_algorithm_config: General semantic robustness evaluation algorithm config.
-        :param use_ray: Whether to create a Ray actor for the BertscoreModel used by this evaluation
+        :param use_ray: Whether to create a Ray actor for the BertscoreHelperModel used by this evaluation
             algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreModel existing
+            as the execution of the transform pipeline relies on the BertscoreHelperModel existing
             in shared memory. This flag can be set to False if you only plan on invoking the
             `evaluate_sample` method, which is a computationally cheap operation that does not
             require utilizing Ray for parallel execution.
@@ -131,7 +131,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
-        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
         if use_ray:
             self.bertscore_model = create_shared_resource(self.bertscore_model)
 
@@ -311,6 +311,10 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         """Compute general semantic robustness metrics on one or more datasets.
 
         :param model: An instance of ModelRunner representing the model under evaluation.
+            This is a required argument, as even if the dataset contains model outputs,
+            semantic robustness algorithms rely on invoking a model on perturbed inputs
+            to see how the model outputs from the perturbed inputs differ from the original
+            model outputs.
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluation will use all of its supported built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.

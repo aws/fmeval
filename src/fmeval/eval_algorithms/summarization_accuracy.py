@@ -17,7 +17,7 @@ from fmeval.util import (
 from fmeval.constants import BERTSCORE_DEFAULT_MODEL, DatasetColumns, MEAN
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.helper_models import BertscoreModelTypes, BertscoreModel
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.summarization_accuracy_metrics import (
     MeteorScore,
@@ -56,10 +56,10 @@ class SummarizationAccuracyConfig(EvalAlgorithmConfig):
             f"Please choose from acceptable values: {ROUGE_TYPES}.",
         )
         require(
-            BertscoreModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
             f"SummarizationAccuracyConfig. Please choose from acceptable values: "
-            f"{BertscoreModelTypes.model_list()}.",
+            f"{BertscoreHelperModelTypes.model_list()}.",
         )
 
 
@@ -94,7 +94,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param eval_algorithm_config: Summarization Accuracy evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.bertscore_model = BertscoreModel(eval_algorithm_config.model_type_for_bertscore)
+        self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
         meteor_score, rouge_score, bert_score = SummarizationAccuracy._create_transforms(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
@@ -119,7 +119,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         bertscore_keys: List[str],
         rouge_type: str,
         use_stemmer_for_rouge: bool,
-        bertscore_model: Union[BertscoreModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
     ) -> Tuple[MeteorScore, RougeScore, BertScore]:
         """Create a TransformPipeline containing summarization accuracy score transforms.
 
@@ -130,7 +130,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
         :param rouge_type: See the corresponding parameter in RougeScore.
         :param use_stemmer_for_rouge: See `use_stemmer` in RougeScore.
-        :param bertscore_model: A BertscoreModel or Ray actor handle corresponding to a BertscoreModel
+        :param bertscore_model: A BertscoreHelperModel or Ray actor handle corresponding to a BertscoreHelperModel
             (i.e. a shared resource) used in the creation of the returned BertScore instance.
         :returns: A tuple containing the created MeteorScore, RougeScore, and BertScore instances.
         """
