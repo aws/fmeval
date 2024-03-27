@@ -19,7 +19,6 @@ from fmeval.eval_algorithms.summarization_accuracy_semantic_robustness import (
     DELTA_SCORES,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.model_runners.model_runner import ModelRunner
 
 

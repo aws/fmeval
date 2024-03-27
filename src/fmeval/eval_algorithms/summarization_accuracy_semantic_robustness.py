@@ -1,9 +1,8 @@
 import logging
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from ray import ObjectRef
 
 from fmeval.constants import (
     DatasetColumns,
@@ -46,7 +45,7 @@ from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeS
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.util import create_shared_resource, get_eval_results_path, require, cleanup_shared_resource
+from fmeval.util import create_shared_resource, get_eval_results_path, require
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +112,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.config = eval_algorithm_config
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
-        bertscore_model = create_shared_resource(
-            BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
-        )
+        bertscore_model = create_shared_resource(BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore))
         self.bertscore_model = bertscore_model
 
     def _build_pipeline(
