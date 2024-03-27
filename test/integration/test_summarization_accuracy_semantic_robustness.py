@@ -1,7 +1,7 @@
 import json
 import os
-import ray
 import pytest
+import ray
 
 from typing import NamedTuple, Dict
 from pytest import approx
@@ -43,17 +43,16 @@ WHITESPACE_CONFIG = SummarizationAccuracySemanticRobustnessConfig(
 
 class TestCase(NamedTuple):
     config: SummarizationAccuracySemanticRobustnessConfig
-    evaluate_sample_scores: Dict[str, float]
-    evaluate_scores: Dict[str, float]
+    expected_scores: Dict[str, float]
 
 
 class TestSummarizationAccuracySemanticRobustness:
     @pytest.mark.parametrize(
-        "config, evaluate_sample_scores, evaluate_scores",
+        "config, expected_scores",
         [
             TestCase(
                 config=BUTTER_FINGER_CONFIG,
-                evaluate_sample_scores={
+                expected_scores={
                     ROUGE_SCORE: 0.0,
                     METEOR_SCORE: 0.0,
                     BERT_SCORE: 0.536162,
@@ -61,18 +60,10 @@ class TestSummarizationAccuracySemanticRobustness:
                     DELTA_METEOR_SCORE: 0.037836,
                     DELTA_BERT_SCORE: 0.024666,
                 },
-                evaluate_scores={
-                    ROUGE_SCORE: 0.021908,
-                    METEOR_SCORE: 0.105540,
-                    BERT_SCORE: 0.559893,
-                    DELTA_ROUGE_SCORE: 0.023259,
-                    DELTA_METEOR_SCORE: 0.059768,
-                    DELTA_BERT_SCORE: 0.031421,
-                },
             ),
             TestCase(
                 config=RANDOM_UPPER_CASE_CONFIG,
-                evaluate_sample_scores={
+                expected_scores={
                     ROUGE_SCORE: 0.0,
                     METEOR_SCORE: 0.0,
                     BERT_SCORE: 0.536162,
@@ -80,18 +71,10 @@ class TestSummarizationAccuracySemanticRobustness:
                     DELTA_METEOR_SCORE: 0.064103,
                     DELTA_BERT_SCORE: 0.056435,
                 },
-                evaluate_scores={
-                    ROUGE_SCORE: 0.021908,
-                    METEOR_SCORE: 0.105540,
-                    BERT_SCORE: 0.559893,
-                    DELTA_ROUGE_SCORE: 0.032086,
-                    DELTA_METEOR_SCORE: 0.057150,
-                    DELTA_BERT_SCORE: 0.026943,
-                },
             ),
             TestCase(
                 config=WHITESPACE_CONFIG,
-                evaluate_sample_scores={
+                expected_scores={
                     ROUGE_SCORE: 0.0,
                     METEOR_SCORE: 0.0,
                     BERT_SCORE: 0.536162,
@@ -99,21 +82,11 @@ class TestSummarizationAccuracySemanticRobustness:
                     DELTA_METEOR_SCORE: 0.038462,
                     DELTA_BERT_SCORE: 0.039566,
                 },
-                evaluate_scores={
-                    ROUGE_SCORE: 0.021908,
-                    METEOR_SCORE: 0.105540,
-                    BERT_SCORE: 0.559893,
-                    DELTA_ROUGE_SCORE: 0.020407,
-                    DELTA_METEOR_SCORE: 0.048702,
-                    DELTA_BERT_SCORE: 0.026193,
-                },
             ),
         ],
     )
-    def test_evaluate_sample_and_evaluate(self, config, evaluate_sample_scores, evaluate_scores, integration_tests_dir):
+    def test_evaluate_sample(self, config, expected_scores, integration_tests_dir):
         eval_algo = SummarizationAccuracySemanticRobustness(config)
-
-        # Test evaluate_sample
         with open(os.path.join(integration_tests_dir, "datasets", "gigaword_sample.jsonl")) as fh:
             json_obj = json.loads(fh.readline())
             model_input = json_obj["document"]
@@ -124,9 +97,48 @@ class TestSummarizationAccuracySemanticRobustness:
                 model=sm_model_runner,
             )
             for eval_score in eval_scores:
-                assert eval_score.value == approx(evaluate_sample_scores[eval_score.name], abs=ABS_TOL)
+                assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
 
-        # Test evaluate
+    @pytest.mark.parametrize(
+        "config, expected_scores",
+        [
+            TestCase(
+                config=BUTTER_FINGER_CONFIG,
+                expected_scores={
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.105540,
+                    BERT_SCORE: 0.559893,
+                    DELTA_ROUGE_SCORE: 0.023259,
+                    DELTA_METEOR_SCORE: 0.059768,
+                    DELTA_BERT_SCORE: 0.031421,
+                },
+            ),
+            TestCase(
+                config=RANDOM_UPPER_CASE_CONFIG,
+                expected_scores={
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.105540,
+                    BERT_SCORE: 0.559893,
+                    DELTA_ROUGE_SCORE: 0.032086,
+                    DELTA_METEOR_SCORE: 0.057150,
+                    DELTA_BERT_SCORE: 0.026943,
+                },
+            ),
+            TestCase(
+                config=WHITESPACE_CONFIG,
+                expected_scores={
+                    ROUGE_SCORE: 0.021908,
+                    METEOR_SCORE: 0.105540,
+                    BERT_SCORE: 0.559893,
+                    DELTA_ROUGE_SCORE: 0.020407,
+                    DELTA_METEOR_SCORE: 0.048702,
+                    DELTA_BERT_SCORE: 0.026193,
+                },
+            ),
+        ],
+    )
+    def test_evaluate(self, config, expected_scores):
+        eval_algo = SummarizationAccuracySemanticRobustness(config)
         dataset_config = DATASET_CONFIGS[GIGAWORD]
         eval_output = eval_algo.evaluate(
             model=sm_model_runner,
@@ -135,6 +147,5 @@ class TestSummarizationAccuracySemanticRobustness:
             num_records=20,
         )[0]
         for eval_score in eval_output.dataset_scores:
-            assert eval_score.value == approx(evaluate_scores[eval_score.name], abs=ABS_TOL)
-
+            assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
         ray.shutdown()
