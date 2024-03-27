@@ -1,6 +1,6 @@
 import re
 from typing import NamedTuple, List, Optional, Union
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 import ray
@@ -28,6 +28,8 @@ from fmeval.eval_algorithms.classification_accuracy import (
     BALANCED_ACCURACY_SCORE,
     PRECISION_SCORE,
     RECALL_SCORE,
+    ClassificationAccuracyScores,
+    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
 )
 from ray.data import Dataset
 
@@ -62,6 +64,10 @@ CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT = CLASSIFICATION_DATASET.drop_column
 )
 
 CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT = CLASSIFICATION_DATASET.drop_columns(DatasetColumns.MODEL_INPUT.value.name)
+
+CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT_OR_MODEL_OUTPUT = CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT.drop_columns(
+    DatasetColumns.MODEL_OUTPUT.value.name
+)
 
 CLASSIFICATION_DATASET_WITHOUT_TARGET_OUTPUT = CLASSIFICATION_DATASET.drop_columns(
     DatasetColumns.TARGET_OUTPUT.value.name
@@ -153,24 +159,24 @@ class TestClassificationAccuracy:
             )
         ],
     )
-    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.create_model_invocation_pipeline")
     @patch("fmeval.eval_algorithms.classification_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
     def test_classification_accuracy_evaluate_without_model(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
+        self, get_dataset, save_dataset, create_model_invocation_pipeline, test_case, config
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset with model_outputs,
-            and no request to save records with scores
-        WHEN ClassificationAccuracy.evaluate() is called
-        THEN correct EvalOutput is returned
+        GIVEN an input dataset with model outputs, no model,
+            and a `save` argument of False.
+        WHEN ClassificationAccuracy.evaluate is called.
+        THEN the correct EvalOutput is returned, and neither save_dataset
+            nor create_model_invocation_pipeline is called.
         """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
+        get_dataset.return_value = test_case.input_dataset_with_generated_model_output
         eval_algorithm = ClassificationAccuracy(config)
         actual_response = eval_algorithm.evaluate(model=None, dataset_config=test_case.dataset_config)
-        assert not generate_model_predict_response_for_dataset.called
-        assert not save_dataset.called
+        create_model_invocation_pipeline.assert_not_called()
+        save_dataset.assert_not_called()
         assert actual_response == test_case.expected_response
 
     @pytest.mark.parametrize(
@@ -266,24 +272,28 @@ class TestClassificationAccuracy:
             ),
         ],
     )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.classification_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.classification_accuracy.generate_model_predict_response_for_dataset")
-    def test_classification_accuracy_evaluate(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case
-    ):
+    @patch("fmeval.eval_algorithms.classification_accuracy.get_dataset")
+    def test_classification_accuracy_evaluate(self, get_dataset, save_dataset, test_case):
         """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores, without a ClassificationAccuracyConfig
-        WHEN ClassificationAccuracy.evaluate is called
-        THEN correct EvalOutput is returned
+        GIVEN an input dataset without model outputs, a ModelRunner,
+            and `save` argument of True.
+        WHEN ClassificationAccuracy.evaluate is called.
+        THEN correct EvalOutput is returned.
         """
+        model_runner = Mock()
+        # We mock the behavior of generating the model output column in
+        # CLASSIFICATION_DATASET from CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT.
+        model_runner.predict.side_effect = [("4", None), ("4", None), ("2", None)]
+
         get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
+
         eval_algorithm = ClassificationAccuracy()
         actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
+            model=model_runner,
+            dataset_config=test_case.dataset_config,
+            prompt_template=test_case.prompt_template,
+            save=True,
         )
         assert actual_response == test_case.expected_response
         assert save_dataset.called
@@ -298,6 +308,7 @@ class TestClassificationAccuracy:
     @pytest.mark.parametrize(
         "test_case",
         [
+            # Assert that model is provided when built-in datasets are used
             TestCaseClassificationAccuracyEvaluateInvalid(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT,
                 dataset_config=None,
@@ -305,6 +316,7 @@ class TestClassificationAccuracy:
                 model_provided=False,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
+            # Assert that model is provided when a dataset without model output col is provided
             TestCaseClassificationAccuracyEvaluateInvalid(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_MODEL_OUTPUT,
                 dataset_config=DataConfig(
@@ -320,6 +332,8 @@ class TestClassificationAccuracy:
                 prompt_template=None,
                 expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
             ),
+            # Assert that target output column is present in dataset.
+            # This applies for both when a model is provided and when it's not.
             TestCaseClassificationAccuracyEvaluateInvalid(
                 input_dataset=CLASSIFICATION_DATASET_WITHOUT_TARGET_OUTPUT,
                 dataset_config=DataConfig(
@@ -336,7 +350,24 @@ class TestClassificationAccuracy:
                 expected_error_message="Missing required column: target_output, for evaluate() method",
             ),
             TestCaseClassificationAccuracyEvaluateInvalid(
-                input_dataset=CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT,
+                input_dataset=CLASSIFICATION_DATASET_WITHOUT_TARGET_OUTPUT,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                prompt_template=None,
+                model_provided=False,
+                expected_error_message="Missing required column: target_output, for evaluate() method",
+            ),
+            # Assert that the dataset contains a model input column, only if
+            # the dataset doesn't contain a model output column.
+            TestCaseClassificationAccuracyEvaluateInvalid(
+                input_dataset=CLASSIFICATION_DATASET_WITHOUT_MODEL_INPUT_OR_MODEL_OUTPUT,
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -403,41 +434,25 @@ class TestClassificationAccuracy:
         THEN correct List of EvalScores is returned
         """
         eval_algorithm = ClassificationAccuracy(config)
-        actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
+        actual_response = eval_algorithm.evaluate_sample(
+            test_case.target_output,
+            test_case.model_output,
+        )
         assert test_case.expected_response == actual_response
 
-    class TestCaseClassificationAccuracyEvaluateSampleInvalid(NamedTuple):
-        model_input: Optional[str]
-        model_output: str
-        target_output: Optional[str]
-        expected_error_message: str
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseClassificationAccuracyEvaluateSampleInvalid(
-                model_input="Delicious cake! Would buy again.",
-                model_output="4",
-                target_output=None,
-                expected_error_message="Missing required input: target_output, for Classification Accuracy evaluate_sample",
-            ),
-            TestCaseClassificationAccuracyEvaluateSampleInvalid(
-                model_input="Tasty cake! Absolutely must eat.",
-                model_output=None,
-                target_output="4",
-                expected_error_message="Missing required input: model_output, for Classification Accuracy evaluate_sample",
-            ),
-        ],
-    )
-    def test_classification_accuracy_evaluate_sample_invalid_input(self, test_case, config):
+    def test_classification_accuracy_evaluate_sample_missing_valid_labels(self):
         """
-        GIVEN invalid inputs
-        WHEN ClassificationAccuracy.evaluate_sample is called
-        THEN correct exception with proper message is raised
+        GIVEN a ClassificationAccuracy where its `valid_labels` attribute is not set.
+        WHEN its evaluate_sample method is called.
+        THEN the correct exception is raised.
         """
-        eval_algorithm = ClassificationAccuracy(config)
-        with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
-            eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
+        err_msg = (
+            "ClassificationAccuracy evaluate_sample method requires the `valid_labels` "
+            "attribute of the ClassificationAccuracy instance to be set."
+        )
+        eval_algorithm = ClassificationAccuracy()
+        with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+            eval_algorithm.evaluate_sample("some target output", "some model output")
 
     class TestCaseLabelConversion(NamedTuple):
         model_output: Union[str, int]
@@ -468,3 +483,41 @@ class TestClassificationAccuracy:
             convert_model_output_to_label(model_output=test_case.model_output, valid_labels=test_case.valid_labels)
             == test_case.expected_label
         )
+
+    class TestCaseClassificationAccuracyScores(NamedTuple):
+        model_output: str
+        target_output: str
+        expected_score: float
+        expected_classified_output: str
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseClassificationAccuracyScores(
+                model_output="4  ",
+                target_output="4",
+                expected_score=1.0,
+                expected_classified_output="4",
+            ),
+            TestCaseClassificationAccuracyScores(
+                model_output="  1",
+                target_output="2",
+                expected_score=0.0,
+                expected_classified_output="1",
+            ),
+        ],
+    )
+    def test_classification_accuracy_transform(self, test_case):
+        """
+        GIVEN a ClassificationAccuracyScores instance.
+        WHEN its __call__ method is invoked.
+        THEN the correct output is returned.
+        """
+        get_scores = ClassificationAccuracyScores(valid_labels=["1", "2", "3", "4", "5"])
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: test_case.target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: test_case.model_output,
+        }
+        result = get_scores(sample)
+        assert result[CLASSIFICATION_ACCURACY_SCORE] == test_case.expected_score
+        assert result[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == test_case.expected_classified_output

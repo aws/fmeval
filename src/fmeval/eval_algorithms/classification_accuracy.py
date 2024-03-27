@@ -1,7 +1,7 @@
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Any
+from typing import Callable, Dict, List, Optional, Any, Tuple
 
 from ray.data import Dataset
 from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score
@@ -21,22 +21,22 @@ from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
     EvalScore,
-    EVAL_DATASETS,
-    DATASET_CONFIGS,
     CategoryScore,
     get_default_prompt_template,
 )
 from fmeval.eval_algorithms.util import (
-    generate_prompt_column_for_dataset,
-    generate_model_predict_response_for_dataset,
     validate_dataset,
     category_wise_aggregation,
     save_dataset,
     generate_output_dataset_path,
+    get_dataset_configs,
+    create_model_invocation_pipeline,
 )
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
+from fmeval.transforms.transform import Transform
+from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.transforms.util import validate_call
 
 CLASSIFICATION_ACCURACY_SCORE = "classification_accuracy_score"
 BALANCED_ACCURACY_SCORE = "balanced_accuracy_score"
@@ -44,6 +44,7 @@ PRECISION_SCORE = "precision_score"
 RECALL_SCORE = "recall_score"
 UNKNOWN_LABEL = "unknown"
 CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME = "classified_model_output"
+OUTPUT_KEYS = [CLASSIFICATION_ACCURACY_SCORE, CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME]
 CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
     BALANCED_ACCURACY_SCORE: balanced_accuracy_score,
     PRECISION_SCORE: precision_score,
@@ -76,10 +77,68 @@ def convert_model_output_to_label(model_output: str, valid_labels: List[str]) ->
     return string_label
 
 
+class ClassificationAccuracyScores(Transform):
+    """This transform augments its input record with computed classification accuracy scores."""
+
+    def __init__(
+        self,
+        target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
+        model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
+        classified_model_output_key: str = CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
+        classification_accuracy_score_key: str = CLASSIFICATION_ACCURACY_SCORE,
+        valid_labels: Optional[List[str]] = None,
+        converter_fn: Callable[[str, List[str]], str] = convert_model_output_to_label,
+    ):
+        """ClassificationAccuracyScores initializer.
+
+        :param target_output_key: The record key corresponding to the target output.
+        :param model_output_key: The record key corresponding to the model output.
+        :param classified_model_output_key: The key to use for the classified model output
+            that will be added to the record.
+        :param classification_accuracy_score_key: The key to use for the classification accuracy
+            score that will be added to the record.
+        :param valid_labels: See corresponding parameter in ClassificationAccuracyConfig.
+        :param converter_fn: See corresponding parameter in ClassificationAccuracyConfig.
+        """
+        super().__init__(
+            target_output_key,
+            model_output_key,
+            classified_model_output_key,
+            classification_accuracy_score_key,
+            valid_labels,
+            converter_fn,
+        )
+        self.register_input_output_keys(
+            input_keys=[target_output_key, model_output_key],
+            output_keys=[classified_model_output_key, classification_accuracy_score_key],
+        )
+        self.target_output_key = target_output_key
+        self.model_output_key = model_output_key
+        self.classified_model_output_key = classified_model_output_key
+        self.classification_accuracy_score_key = classification_accuracy_score_key
+        self.valid_labels = valid_labels
+        self.converter_fn = converter_fn
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with computed classification accuracy scores.
+
+        :param record: The input record.
+        :returns: The input record with the classification accuracy score
+            and the classified model output added in.
+        """
+        target_output = record[self.target_output_key]
+        model_output = record[self.model_output_key]
+        record[self.classified_model_output_key] = self.converter_fn(model_output, self.valid_labels)  # type: ignore
+        record[self.classification_accuracy_score_key] = int(
+            record[self.classified_model_output_key] == str(target_output)
+        )
+        return record
+
+
 @dataclass(frozen=True)
 class ClassificationAccuracyConfig(EvalAlgorithmConfig):
-    """
-    Configuration for the Classification Accuracy Evaluation
+    """Configures the Classification Accuracy evaluation algorithm.
 
     :param valid_labels: The labels of the classes predicted from the model.
     :param converter_fn: Function to process model output to labels, defaults to simple integer conversion.
@@ -123,145 +182,104 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         :param eval_algorithm_config: Classification Accuracy eval algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self._eval_algorithm_config = eval_algorithm_config
-        self._valid_labels = self._eval_algorithm_config.valid_labels
+        self.valid_labels = eval_algorithm_config.valid_labels
+        self.converter_fn = eval_algorithm_config.converter_fn
+        self.multiclass_average_strategy = eval_algorithm_config.multiclass_average_strategy
+
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
+        """Compute classification accuracy metrics for a single sample.
+
+        :param target_output: The expected/desired model output.
+        :param model_output: The actual model output.
+        :returns: A single-element list with an EvalScore for the classification accuracy score.
+        """
+        util.require(
+            self.valid_labels,
+            "ClassificationAccuracy evaluate_sample method requires the `valid_labels` "
+            "attribute of the ClassificationAccuracy instance to be set.",
+        )
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
+        pipeline = self._build_pipeline(self.valid_labels)
+        result = pipeline.execute_record(sample)
+        return [
+            EvalScore(
+                name=CLASSIFICATION_ACCURACY_SCORE,
+                value=result[CLASSIFICATION_ACCURACY_SCORE],  # type: ignore
+            )
+        ]
+
+    def _build_pipeline(self, valid_labels: Optional[List[str]]) -> TransformPipeline:
+        return TransformPipeline(
+            [ClassificationAccuracyScores(valid_labels=valid_labels, converter_fn=self.converter_fn)]
+        )
 
     def evaluate(
         self,
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
+        num_records: int = 100,
         save: bool = False,
-        num_records=100,
     ) -> List[EvalOutput]:
-        """
-        Classification Accuracy evaluate.
+        """Compute classification accuracy metrics on one or more datasets.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
-        :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
-                               evaluated on all built-in datasets configured for this evaluation.
-        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
-            will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
-        :returns: List of EvalOutput objects. Current implementation returns only one score.
-        """
-        if dataset_config:
-            dataset_configs = [dataset_config]
-        else:
-            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
+        :param dataset_config: Configures the single dataset used for evaluation.
+            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param prompt_template: A template used to generate prompts that are fed to the model.
+            If not provided, defaults will be used. If provided, `model` must not be None.
+        :param num_records: The number of records to be sampled randomly from the input dataset(s)
+            used to perform the evaluation(s).
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
+        :return: A list of EvalOutput objects.
+        """
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs: List[EvalOutput] = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
+
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name])
+            valid_labels = (
+                self.valid_labels
+                if self.valid_labels
+                else dataset.unique(column=DatasetColumns.TARGET_OUTPUT.value.name)
+            )
+            row_count = dataset.count()
+            if len(valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR:  # pragma: no cover
+                logger.warning(
+                    f"The number of classes: {len(valid_labels)} in the dataset is too large "
+                    f"for the number of rows in the dataset: {row_count}",
+                )
+
+            pipeline = self._build_pipeline(valid_labels)
             dataset_prompt_template = None
             if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
+                validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
                 dataset_prompt_template = (
                     get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
-                dataset = generate_prompt_column_for_dataset(
-                    prompt_template=dataset_prompt_template,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
-                    prompt_column_name=DatasetColumns.PROMPT.value.name,
-                )
-                assert model  # to satisfy mypy
-                dataset = generate_model_predict_response_for_dataset(
-                    model=model,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.PROMPT.value.name,
-                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
-                )
+                model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
+                pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
 
-            if not self._valid_labels:
-                self._valid_labels = dataset.unique(column=DatasetColumns.TARGET_OUTPUT.value.name)
-                row_count = dataset.count()
-                assert self._valid_labels is not None  # to satisfy mypy
-                if len(self._valid_labels) / (row_count + 1) < UNIQUENESS_FACTOR:  # pragma: no cover
-                    logger.warning(
-                        f"The number of classes: {len(self._valid_labels)} in the dataset is too large "
-                        f"for the number of rows in the dataset: {row_count}",
-                    )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-
-                def _generate_columns(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-                    """
-                    Map function for generating classified model output and classification accuracy
-                    columns for dataset.
-                    """
-                    row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] = self._eval_algorithm_config.converter_fn(
-                        row[DatasetColumns.MODEL_OUTPUT.value.name], self._valid_labels  # type: ignore
-                    )
-                    row[CLASSIFICATION_ACCURACY_SCORE] = int(
-                        row[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME] == str(row[DatasetColumns.TARGET_OUTPUT.value.name])
-                    )
-                    return row
-
-                dataset = dataset.map(_generate_columns)
-                dataset = dataset.materialize()
-
-                df = dataset.to_pandas()
-                dataset_scores = [
-                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=dataset.mean(CLASSIFICATION_ACCURACY_SCORE))
-                ]
-
-                for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
-                    dataset_scores.append(
-                        EvalScore(
-                            name=eval_score,
-                            value=self._get_score(
-                                # TODO dataloader should ensure target output is string
-                                y_true=df[DatasetColumns.TARGET_OUTPUT.value.name],
-                                y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
-                                eval_fn=eval_fn,
-                            ),
-                        )
-                    )
-
-                category_scores: Optional[Dict[str, CategoryScore]] = None
-                if DatasetColumns.CATEGORY.value.name in dataset.columns():
-                    category_scores = {
-                        name: CategoryScore(name=name, scores=[])
-                        for name in dataset.unique(DatasetColumns.CATEGORY.value.name)
-                    }
-                    category_aggregate: Dataset = category_wise_aggregation(
-                        dataset, CLASSIFICATION_ACCURACY_SCORE, MEAN
-                    )
-                    for row in category_aggregate.iter_rows():
-                        category_scores[row[DatasetColumns.CATEGORY.value.name]].scores.append(
-                            EvalScore(
-                                name=CLASSIFICATION_ACCURACY_SCORE, value=row[f"mean({CLASSIFICATION_ACCURACY_SCORE})"]
-                            )
-                        )
-                        categorical_y_true = df.loc[
-                            df[DatasetColumns.CATEGORY.value.name] == row[DatasetColumns.CATEGORY.value.name],
-                            DatasetColumns.TARGET_OUTPUT.value.name,
-                        ]
-                        categorical_y_pred = df.loc[
-                            df[DatasetColumns.CATEGORY.value.name] == row[DatasetColumns.CATEGORY.value.name],
-                            CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
-                        ]
-                        for eval_score, eval_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
-                            category_scores[row[DatasetColumns.CATEGORY.value.name]].scores.append(
-                                EvalScore(
-                                    name=eval_score,
-                                    value=self._get_score(
-                                        y_true=categorical_y_true, y_pred=categorical_y_pred, eval_fn=eval_fn
-                                    ),
-                                )
-                            )
-
+                dataset = pipeline.execute(dataset)
+                dataset_scores, category_scores = self._generate_dataset_and_category_level_scores(dataset)
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
                         dataset_name=dataset_config.dataset_name,
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
-                        category_scores=list(category_scores.values()) if category_scores else None,
+                        category_scores=category_scores,
                         output_path=generate_output_dataset_path(
                             path_to_parent_dir=util.get_eval_results_path(),
                             eval_name=self.eval_name,
@@ -269,8 +287,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         ),
                     )
                 )
-            # set it back to the same value as before the start of evaluating this dataset
-            self._valid_labels = self._eval_algorithm_config.valid_labels
+
             if save:
                 save_dataset(
                     dataset=dataset,
@@ -281,43 +298,68 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         dataset_name=dataset_config.dataset_name,
                     ),
                 )
+
         return eval_outputs
 
-    def _get_score(self, y_true, y_pred, eval_fn: Callable[..., float]) -> float:
+    def _get_score(self, y_true, y_pred, score_fn: Callable[..., float]) -> float:
         """
         Method to generate accuracy score
         :param y_true: Ground truth (correct) target values.
         :param y_pred: Estimated targets as returned by a classifier.
-        :param eval_fn: Score evaluate function.
+        :param score_fn: Function for computing one of the classification accuracy scores.
         :returns: Computed score
         """
-        if eval_fn == recall_score or eval_fn == precision_score:
-            return eval_fn(y_true, y_pred, average=self._eval_algorithm_config.multiclass_average_strategy)
-        return eval_fn(y_true, y_pred)
+        if score_fn == recall_score or score_fn == precision_score:
+            return score_fn(y_true, y_pred, average=self.multiclass_average_strategy)
+        return score_fn(y_true, y_pred)
 
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
-        """
-        Evaluate a single Classification record.
-
-        :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
-                             evaluation.
-        :param target_output: The expected responses from the model.
-        :returns: A List of EvalScores computed for prompts and responses.
-        """
-        if target_output is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: target_output, for Classification Accuracy evaluate_sample"
-            )
-        if model_output is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: model_output, for Classification Accuracy evaluate_sample"
-            )
-        util.require(self._valid_labels, "`valid_labels` must be provided to `evaluate_sample`")
-        return [
-            EvalScore(
-                name=CLASSIFICATION_ACCURACY_SCORE,
-                value=int(
-                    self._eval_algorithm_config.converter_fn(model_output, self._valid_labels) == str(target_output)  # type: ignore
-                ),
-            )
+    def _generate_dataset_and_category_level_scores(
+        self, dataset: Dataset
+    ) -> Tuple[List[EvalScore], Optional[List[CategoryScore]]]:
+        df = dataset.to_pandas()
+        dataset_scores = [
+            EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=dataset.mean(CLASSIFICATION_ACCURACY_SCORE))
         ]
+
+        for eval_score, score_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
+            dataset_scores.append(
+                EvalScore(
+                    name=eval_score,
+                    value=self._get_score(
+                        # TODO dataloader should ensure target output is string
+                        y_true=df[DatasetColumns.TARGET_OUTPUT.value.name],
+                        y_pred=df[CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME],
+                        score_fn=score_fn,
+                    ),
+                )
+            )
+
+        category_scores: Optional[Dict[str, CategoryScore]] = None
+        if DatasetColumns.CATEGORY.value.name in dataset.columns():
+            category_scores = {
+                name: CategoryScore(name=name, scores=[]) for name in dataset.unique(DatasetColumns.CATEGORY.value.name)
+            }
+            category_aggregate: Dataset = category_wise_aggregation(dataset, CLASSIFICATION_ACCURACY_SCORE, MEAN)
+            for row in category_aggregate.iter_rows():
+                category_scores[row[DatasetColumns.CATEGORY.value.name]].scores.append(
+                    EvalScore(name=CLASSIFICATION_ACCURACY_SCORE, value=row[f"mean({CLASSIFICATION_ACCURACY_SCORE})"])
+                )
+                categorical_y_true = df.loc[
+                    df[DatasetColumns.CATEGORY.value.name] == row[DatasetColumns.CATEGORY.value.name],
+                    DatasetColumns.TARGET_OUTPUT.value.name,
+                ]
+                categorical_y_pred = df.loc[
+                    df[DatasetColumns.CATEGORY.value.name] == row[DatasetColumns.CATEGORY.value.name],
+                    CLASSIFIED_MODEL_OUTPUT_COLUMN_NAME,
+                ]
+                for eval_score, score_fn in CLASSIFICATION_ACCURACY_SCORES_TO_FUNCS.items():
+                    category_scores[row[DatasetColumns.CATEGORY.value.name]].scores.append(
+                        EvalScore(
+                            name=eval_score,
+                            value=self._get_score(
+                                y_true=categorical_y_true, y_pred=categorical_y_pred, score_fn=score_fn
+                            ),
+                        )
+                    )
+
+        return dataset_scores, list(category_scores.values()) if category_scores else None
