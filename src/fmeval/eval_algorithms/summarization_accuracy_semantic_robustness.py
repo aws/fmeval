@@ -1,8 +1,9 @@
 import logging
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
+from ray import ObjectRef
 
 from fmeval.constants import (
     DatasetColumns,
@@ -45,7 +46,7 @@ from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeS
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.util import create_shared_resource, get_eval_results_path, require
+from fmeval.util import create_shared_resource, get_eval_results_path, require, cleanup_shared_resource
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +113,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
         self.config = eval_algorithm_config
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
-        bertscore_model = create_shared_resource(BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore))
+        bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
         self.bertscore_model = bertscore_model
 
     def _build_pipeline(
         self,
         model: ModelRunner,
         prompt_template: str,
+        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
     ) -> TransformPipeline:
         """Build the TransformPipeline to be used by `evaluate` and `evaluate_sample`.
 
@@ -131,6 +133,8 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param model: The ModelRunner representing the model under evaluation.
         :param prompt_template: A template that is used to construct the prompt fed to the model.
+        :param bertscore_model: Either a BertscoreHelperModel instance or a Ray actor handle corresponding
+            to a BertscoreHelperModel (i.e. a shared resource).
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
         transforms = get_model_responses_from_perturbed_inputs(
@@ -148,7 +152,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             bertscore_keys=[BERT_SCORE],
             rouge_type=self.config.rouge_type,
             use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
-            bertscore_model=self.bertscore_model,
+            bertscore_model=bertscore_model,
         )
 
         perturbed_meteor, perturbed_rouge, perturbed_bert_score = SummarizationAccuracy._create_transforms(
@@ -165,7 +169,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             ],
             rouge_type=self.config.rouge_type,
             use_stemmer_for_rouge=self.config.use_stemmer_for_rouge,
-            bertscore_model=self.bertscore_model,
+            bertscore_model=bertscore_model,
         )
 
         delta_meteor_key = DELTA_METEOR_SCORE
@@ -216,7 +220,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
         }
         invoke_model = create_model_invocation_pipeline(model, prompt_template)
-        compute_metrics = self._build_pipeline(model, prompt_template)
+        compute_metrics = self._build_pipeline(model, prompt_template, self.bertscore_model)
         pipeline = TransformPipeline([invoke_model, compute_metrics])
         output_record = pipeline.execute_record(sample)
 
@@ -254,6 +258,9 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                             evaluation
         :return: List of EvalOutput objects.
         """
+        # Create a shared resource to be used during the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
+
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -264,7 +271,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self._build_pipeline(model, dataset_prompt_template),
+                pipeline=self._build_pipeline(model, dataset_prompt_template, bertscore_shared_resource),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
@@ -276,4 +283,5 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             )
             eval_outputs.append(eval_output)
 
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs
