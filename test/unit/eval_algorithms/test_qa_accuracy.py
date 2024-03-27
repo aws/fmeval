@@ -1,6 +1,6 @@
 import re
 from typing import NamedTuple, List, Optional
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 import ray
@@ -11,6 +11,7 @@ from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
     DEFAULT_EVAL_RESULTS_PATH,
+    MEAN,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import (
@@ -36,6 +37,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _precision,
     _recall,
     _split,
+    SCORE_NAMES,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -175,12 +177,6 @@ class TestQAAccuracy:
         target_output: str
         expected_response: List[EvalScore]
 
-    class TestCaseQAAccuracyEvaluateSampleInvalid(NamedTuple):
-        model_input: Optional[str]
-        model_output: str
-        target_output: Optional[str]
-        expected_error_message: str
-
     @pytest.mark.parametrize(
         "test_case",
         [
@@ -274,177 +270,73 @@ class TestQAAccuracy:
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
         assert test_case.expected_response == actual_response
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseQAAccuracyEvaluateSampleInvalid(
-                model_input="London is the capital of",
-                model_output="England",
-                target_output=None,
-                expected_error_message="Missing required input: target_output, for QA Accuracy evaluate_sample",
-            ),
-            TestCaseQAAccuracyEvaluateSampleInvalid(
-                model_input="Pulp Fiction was directed by",
-                model_output=None,
-                target_output="QUENTIN TARANTINO",
-                expected_error_message="Missing required input: model_output, for QA Accuracy evaluate_sample",
-            ),
-        ],
-    )
-    def test_qa_accuracy_evaluate_sample_invalid_input(self, test_case, config):
+    @patch("fmeval.eval_algorithms.qa_accuracy.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
+    @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset_configs")
+    def test_evaluate(
+        self,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_transform_pipeline_cls,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+    ):
         """
-        GIVEN invalid inputs
-        WHEN QAAccuracy.evaluate_sample is called
-        THEN correct exception with proper message is raised
+        GIVEN a QAAccuracy instance.
+        WHEN its evaluate method is called with valid arguments.
+        THEN `evaluate_dataset` is called with the correct arguments.
         """
-        eval_algorithm = QAAccuracy(config)
-        with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
-            eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(return_value=[DatasetColumns.TARGET_OUTPUT.value.name])
+        mock_get_dataset.return_value = mock_dataset
+
+        mock_get_results_path.return_value = "/path/to/results"
+        model_runner = Mock()
+
+        qa_acc = QAAccuracy()
+        output = qa_acc.evaluate(
+            model=model_runner,
+            dataset_config=dataset_config,
+            prompt_template="Answer $model_input, please.",
+            num_records=162,
+            save=True,
+        )
+
+        mock_transform_pipeline_cls.assert_called_once_with([qa_acc.transform])
+
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_dataset,
+            pipeline=mock_transform_pipeline_cls.return_value,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=qa_acc.eval_name,
+            metric_names=SCORE_NAMES,
+            eval_results_path="/path/to/results",
+            model=model_runner,
+            prompt_template="Answer $model_input, please.",
+            agg_method=MEAN,
+            save=True,
+        )
+
+        assert output == [mock_evaluate_dataset.return_value]
 
     class TestCaseQAAccuracyEvaluate(NamedTuple):
         input_dataset: Dataset
-        prompt_template: Optional[str]
         dataset_config: Optional[DataConfig]
-        input_dataset_with_generated_model_output: Optional[Dataset]
         expected_response: List[EvalOutput]
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            TestCaseQAAccuracyEvaluate(
-                input_dataset=QA_DATASET_WITHOUT_MODEL_OUTPUT,
-                prompt_template=None,
-                dataset_config=None,
-                input_dataset_with_generated_model_output=QA_DATASET,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name=BOOLQ,
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[BOOLQ],
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/qa_accuracy_boolq.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name=TRIVIA_QA,
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[TRIVIA_QA],
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/qa_accuracy_trivia_qa.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name=NATURAL_QUESTIONS,
-                        prompt_template=BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES[NATURAL_QUESTIONS],
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/qa_accuracy_natural_questions.jsonl",
-                    ),
-                ],
-            ),
-            TestCaseQAAccuracyEvaluate(
-                input_dataset=QA_DATASET_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Answer: $model_input",
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                input_dataset_with_generated_model_output=QA_DATASET,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name="my_custom_dataset",
-                        prompt_template="Answer: $model_input",
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=CATEGORY_SCORES,
-                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            TestCaseQAAccuracyEvaluate(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
-                prompt_template="Answer: $model_input",
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                input_dataset_with_generated_model_output=QA_DATASET_WITHOUT_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name="my_custom_dataset",
-                        prompt_template="Answer: $model_input",
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            TestCaseQAAccuracyEvaluate(
-                input_dataset=QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT,
-                prompt_template=None,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                input_dataset_with_generated_model_output=QA_DATASET_WITHOUT_CATEGORY,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="qa_accuracy",
-                        dataset_name="my_custom_dataset",
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_scores=DATASET_SCORES,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
-    def test_qa_accuracy_evaluate(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
-    ):
-        """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN QAAccuracy.evaluate is called
-        THEN correct EvalOutput is returned
-        """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = QAAccuracy(config)
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
-        )
-        assert actual_response == test_case.expected_response
-        assert save_dataset.called
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
+            # Dataset with category
             TestCaseQAAccuracyEvaluate(
                 input_dataset=QA_DATASET,
-                prompt_template=None,
                 dataset_config=DataConfig(
                     dataset_name="my_custom_dataset",
                     dataset_uri="tba",
@@ -454,7 +346,6 @@ class TestQAAccuracy:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                input_dataset_with_generated_model_output=None,
                 expected_response=[
                     EvalOutput(
                         eval_name="qa_accuracy",
@@ -465,109 +356,50 @@ class TestQAAccuracy:
                         output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
                     )
                 ],
-            )
+            ),
+            # Dataset without category
+            TestCaseQAAccuracyEvaluate(
+                input_dataset=QA_DATASET_WITHOUT_CATEGORY,
+                dataset_config=DataConfig(
+                    dataset_name="my_custom_dataset",
+                    dataset_uri="tba",
+                    dataset_mime_type=MIME_TYPE_JSON,
+                    model_input_location="tba",
+                    target_output_location="tba",
+                    model_output_location=None,
+                    category_location="tba",
+                ),
+                expected_response=[
+                    EvalOutput(
+                        eval_name="qa_accuracy",
+                        dataset_name="my_custom_dataset",
+                        prompt_template=None,
+                        dataset_scores=DATASET_SCORES,
+                        category_scores=None,
+                        output_path="/tmp/eval_results/qa_accuracy_my_custom_dataset.jsonl",
+                    )
+                ],
+            ),
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy.save_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy.generate_model_predict_response_for_dataset")
-    def test_qa_accuracy_evaluate_without_model(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
-    ):
+    def test_qa_accuracy_evaluate(self, mock_get_dataset, test_case, config):
         """
-        GIVEN valid inputs i.e. input data config for a dataset with model_outputs,
-            and no request to save records with scores
-        WHEN QAACCURACY.evaluate() is called
-        THEN correct EvalOutput is returned
+        GIVEN dataset(s) with model outputs already present.
+        WHEN the QAAccuracy evaluate method is called.
+        THEN the correct EvalOutput is returned.
+
+        Note: this is basically an integration test rather than a unit test like `test_evaluate` above.
+        It uses a special toy dataset where we are able to compute the exact expected scores by hand.
+        The purpose of this test is really to ensure that the correct scores are being generated.
         """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
+        mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = QAAccuracy(config)
-        actual_response = eval_algorithm.evaluate(model=None, dataset_config=test_case.dataset_config)
-        assert not generate_model_predict_response_for_dataset.called
-        assert not save_dataset.called
+        actual_response = eval_algorithm.evaluate(
+            dataset_config=test_case.dataset_config,
+            save=True,
+        )
         assert actual_response == test_case.expected_response
-
-    class TestCaseQAAccuracyEvaluateInvalid(NamedTuple):
-        input_dataset: Dataset
-        dataset_config: Optional[DataConfig]
-        prompt_template: Optional[str]
-        model_provided: bool
-        expected_error_message: str
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseQAAccuracyEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_MODEL_OUTPUT,
-                dataset_config=None,
-                prompt_template=None,
-                model_provided=False,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseQAAccuracyEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_MODEL_OUTPUT,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=False,
-                prompt_template=None,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseQAAccuracyEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_TARGET_OUTPUT,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: target_output, for evaluate() method",
-            ),
-            TestCaseQAAccuracyEvaluateInvalid(
-                input_dataset=QA_DATASET_WITHOUT_MODEL_INPUT,
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
-    def test_qa_accuracy_evaluate_invalid_input(self, get_dataset, model, test_case, config):
-        """
-        GIVEN invalid inputs
-        WHEN QAAccuracy.evaluate is called
-        THEN correct exception with proper message is raised
-        """
-        eval_algorithm = QAAccuracy(config)
-        get_dataset.return_value = test_case.input_dataset
-        if not test_case.model_provided:
-            model = None
-        with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            eval_algorithm.evaluate(
-                model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
-            )
 
     class TestCaseQAAccuracyEvalScore(NamedTuple):
         model_output: str

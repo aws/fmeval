@@ -452,6 +452,13 @@ def evaluate_dataset(
     :return: An EvalOutput object encapsulating the results of the evaluation.
     """
     if model:
+        try:
+            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
+        except EvalAlgorithmClientError:
+            raise EvalAlgorithmClientError(
+                "evaluate_dataset has been given a ModelRunner to obtain outputs from "
+                "but the provided dataset does not contain a model input column."
+            )
         prompt_template = get_default_prompt_template(dataset_name) if not prompt_template else prompt_template
         model_invocation_pipeline = create_model_invocation_pipeline(model, prompt_template)
         pipeline = TransformPipeline([model_invocation_pipeline, pipeline])

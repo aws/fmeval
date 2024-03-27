@@ -1,15 +1,11 @@
 import logging
 import string
+
 from functools import partial
-
-
-from typing import Any, Callable, List, Optional, Dict, Set
-
+from typing import Any, Callable, Dict, List, Optional, Set
 from dataclasses import dataclass
-
 from nltk.metrics.scores import f_measure, precision, recall
 
-import fmeval.util as util
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
@@ -17,25 +13,20 @@ from fmeval.constants import (
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.util import (
-    generate_model_predict_response_for_dataset,
-    generate_prompt_column_for_dataset,
-    aggregate_evaluation_scores,
     validate_dataset,
-    save_dataset,
-    generate_output_dataset_path,
+    get_dataset_configs,
+    evaluate_dataset,
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
     EvalScore,
-    EVAL_DATASETS,
-    DATASET_CONFIGS,
-    get_default_prompt_template,
 )
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.perf_util import timed_block
+from fmeval.transforms.transform import Transform
+from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.util import get_eval_results_path, require
 
 ENGLISH_ARTICLES = ["a", "an", "the"]
 ENGLISH_PUNCTUATIONS = string.punctuation
@@ -45,27 +36,9 @@ EXACT_MATCH_SCORE = "exact_match_score"
 QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
 PRECISION_OVER_WORDS = "precision_over_words"
 RECALL_OVER_WORDS = "recall_over_words"
+SCORE_NAMES = [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS]
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class QAAccuracyConfig(EvalAlgorithmConfig):
-    """
-    Configuration for the QA Accuracy Evaluation
-
-    :param target_output_delimiter: Target Output can have multiple answers. We expect customer to combine all the
-        possible answers into a single string and use the delimiter to separate them. For instance,
-        if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
-    """
-
-    target_output_delimiter: Optional[str] = "<OR>"
-
-    def __post_init__(self):
-        if self.target_output_delimiter == "":
-            raise EvalAlgorithmClientError(
-                "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
-            )
 
 
 def _normalize_text_quac_protocol(text: str) -> str:
@@ -215,6 +188,79 @@ QA_ACCURACY_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
 }
 
 
+class QAAccuracyScores(Transform):
+    def __init__(
+        self,
+        target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
+        model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
+        output_keys: List[str] = SCORE_NAMES,
+        target_output_delimiter: Optional[str] = "<OR>",
+    ):
+        super().__init__(target_output_key, model_output_key, output_keys, target_output_delimiter)
+        self.register_input_output_keys(
+            input_keys=[target_output_key, model_output_key],
+            output_keys=output_keys,
+        )
+        self.target_output_key = target_output_key
+        self.model_output_key = model_output_key
+        self.output_keys = output_keys
+        self.target_output_delimiter = target_output_delimiter
+
+    def _get_score(
+        self,
+        target_output: str,
+        model_output: str,
+        score_fn: Callable[..., float],
+        **fn_kwargs,
+    ) -> float:
+        """Compute an accuracy score from target_output and model_output.
+
+        :param target_output: A single string potentially containing multiple
+            target output values. If there are multiple target output values,
+            they will be separated by `target_output_delimiter`.
+            For example, if valid target outputs for a question are ["UK", "England"]
+            and the delimiter is "<OR>", then `target_output` will be "UK<OR>England".
+        :param model_output: The model output.
+        :param target_output_delimiter: The delimiter used to separate the possible
+            target outputs within the `target_output` string.
+        :param score_fn: One of the functions in QA_ACCURACY_SCORES_TO_FUNCS.
+        :returns: A computed QA accuracy score.
+        """
+        possible_targets = target_output.split(self.target_output_delimiter)
+        return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
+
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        target_output = record[self.target_output_key]
+        model_output = record[self.model_output_key]
+        for output_key, score_name in zip(self.output_keys, SCORE_NAMES):
+            record[output_key] = self._get_score(
+                target_output=target_output,
+                model_output=model_output,
+                score_fn=QA_ACCURACY_SCORES_TO_FUNCS[score_name],
+            )
+        return record
+
+
+@dataclass(frozen=True)
+class QAAccuracyConfig(EvalAlgorithmConfig):
+    """Configures the QA Accuracy evaluation algorithm.
+
+    :param target_output_delimiter: There can be multiple valid target outputs for a given question.
+        This delimiter is used to combine all possible target outputs into a single string.
+        For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>", then the
+        target output text will be "UK<OR>England".
+    """
+
+    target_output_delimiter: Optional[str] = "<OR>"
+
+    def __post_init__(self):
+        require(
+            self.target_output_delimiter != "",
+            "Empty target_output_delimiter is provided. "
+            "Please either provide a non-empty string, or set it to None.",
+        )
+
+
 class QAAccuracy(EvalAlgorithmInterface):
     """
     This evaluation measures how well the model performs in question answering (QA) tasks. The model is queried
@@ -238,145 +284,69 @@ class QAAccuracy(EvalAlgorithmInterface):
     eval_name = EvalAlgorithm.QA_ACCURACY.value
 
     def __init__(self, eval_algorithm_config: QAAccuracyConfig = QAAccuracyConfig()):
-        """Default constructor
+        """QAAccuracy initializer.
 
-        :param eval_algorithm_config: QA Accuracy eval algorithm config.
+        :param eval_algorithm_config: QA Accuracy evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
         self._eval_algorithm_config = eval_algorithm_config
+        self.transform = QAAccuracyScores(target_output_delimiter=eval_algorithm_config.target_output_delimiter)
+
+    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
+        """Compute QA accuracy metrics for a single sample.
+
+        :param target_output: The expected/desired model output.
+        :param model_output: The actual model output.
+        :returns: A list of EvalScore objects, one for each of the QA accuracy metrics.
+        """
+        target_output_key = self.transform.target_output_key
+        model_output_key = self.transform.model_output_key
+        sample = {target_output_key: target_output, model_output_key: model_output}
+        pipeline = TransformPipeline([self.transform])
+        result = pipeline.execute_record(sample)
+        return [EvalScore(name=score_name, value=result[score_name]) for score_name in SCORE_NAMES]
 
     def evaluate(
         self,
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
+        num_records: int = 100,
         save: bool = False,
-        num_records=100,
     ) -> List[EvalOutput]:
-        """
-        QA Accuracy evaluate.
+        """Compute QA accuracy metrics on one or more datasets.
 
-        :param model: An instance of ModelRunner which is the model under evaluation
-        :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
-                               evaluated on all built-in datasets configured for this evaluation.
-        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
-            will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
-        :returns: List of EvalOutput objects. Current implementation returns only one score.
-        """
-        if dataset_config:
-            dataset_configs = [dataset_config]
-        else:
-            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
+        :param dataset_config: Configures the single dataset used for evaluation.
+            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param prompt_template: A template used to generate prompts that are fed to the model.
+            If not provided, defaults will be used. If provided, `model` must not be None.
+        :param num_records: The number of records to be sampled randomly from the input dataset(s)
+            used to perform the evaluation(s).
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
-        eval_outputs: List[EvalOutput] = []
+        :return: A list of EvalOutput objects.
+        """
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
+        eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
-            dataset_prompt_template = None
-            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
-                util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
-                dataset_prompt_template = (
-                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
-                )
-                dataset = generate_prompt_column_for_dataset(
-                    prompt_template=dataset_prompt_template,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.MODEL_INPUT.value.name,
-                    prompt_column_name=DatasetColumns.PROMPT.value.name,
-                )
-                assert model  # to satisfy mypy
-                dataset = generate_model_predict_response_for_dataset(
-                    model=model,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.PROMPT.value.name,
-                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
-                    model_log_probability_column_name=DatasetColumns.MODEL_LOG_PROBABILITY.value.name,
-                )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-
-                def _generate_eval_scores(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-                    """
-                    Map function generating the scores for every input record in input dataset
-                    """
-                    for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items():
-                        row[eval_score] = self._get_score(
-                            target_output=row[DatasetColumns.TARGET_OUTPUT.value.name],
-                            model_output=row[DatasetColumns.MODEL_OUTPUT.value.name],
-                            eval_fn=eval_fn,
-                        )
-                    return row
-
-                dataset = dataset.map(_generate_eval_scores).materialize()
-
-                dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset,
-                    [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS],
-                    agg_method=MEAN,
-                )
-
-                eval_outputs.append(
-                    EvalOutput(
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                        prompt_template=dataset_prompt_template,
-                        dataset_scores=dataset_scores,
-                        category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=util.get_eval_results_path(),
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
-                    )
-                )
-            if save:
-                save_dataset(
-                    dataset=dataset,
-                    score_names=list(QA_ACCURACY_SCORES_TO_FUNCS.keys()),
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=util.get_eval_results_path(),
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
-                )
-
-        return eval_outputs
-
-    def _get_score(
-        self, target_output: str, model_output: str, eval_fn: Callable[..., float], **fn_kwargs: Any
-    ) -> float:
-        """
-        Method to generate accuracy score for a target_output and model_output
-
-        :param target_output: Target output
-        :param model_output: Model output
-        :returns: Computed score
-        """
-        possible_targets = target_output.split(self._eval_algorithm_config.target_output_delimiter)
-
-        return max([eval_fn(model_output, target, **fn_kwargs) for target in possible_targets])
-
-    def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
-        """
-        Evaluate a single QA record.
-
-        :param target_output: The expected responses from the model.
-        :param model_output: An instance of ModelOutput which contains the responses from the model needed for this
-                             evaluation.
-        :returns: A List of EvalScores computed for prompts and responses.
-        """
-        if target_output is None:
-            raise EvalAlgorithmClientError("Missing required input: target_output, for QA Accuracy evaluate_sample")
-        if model_output is None:
-            raise EvalAlgorithmClientError("Missing required input: model_output, for QA Accuracy evaluate_sample")
-
-        return [
-            EvalScore(
-                name=eval_score,
-                value=self._get_score(target_output=target_output, model_output=model_output, eval_fn=eval_fn),
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name])
+            eval_output = evaluate_dataset(
+                dataset=dataset,
+                pipeline=TransformPipeline([self.transform]),
+                dataset_name=dataset_config.dataset_name,
+                eval_name=self.eval_name,
+                metric_names=SCORE_NAMES,
+                eval_results_path=get_eval_results_path(),
+                model=model,
+                prompt_template=prompt_template,
+                agg_method=MEAN,
+                save=save,
             )
-            for eval_score, eval_fn in QA_ACCURACY_SCORES_TO_FUNCS.items()
-        ]
+            eval_outputs.append(eval_output)
+        return eval_outputs

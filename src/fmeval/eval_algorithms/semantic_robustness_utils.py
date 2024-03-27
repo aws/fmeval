@@ -93,7 +93,7 @@ def get_perturbation_transform(config: SemanticRobustnessConfig) -> SemanticPert
         )
 
 
-def get_model_responses_from_perturbed_inputs(
+def get_model_outputs_from_perturbed_inputs(
     perturbation: SemanticPerturbation,
     prompt_template: str,
     model: ModelRunner,

@@ -808,7 +808,7 @@ def test_model_invocation_pipeline():
     assert get_outputs.model_runner == model
 
 
-class TestCaseEvaluateDatasetWithModel(NamedTuple):
+class TestCaseEvaluateDataset(NamedTuple):
     user_provided_prompt_template: Optional[str]
     dataset_prompt_template: Optional[str]
     save: bool
@@ -818,12 +818,12 @@ class TestCaseEvaluateDatasetWithModel(NamedTuple):
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCaseEvaluateDatasetWithModel(
+        TestCaseEvaluateDataset(
             user_provided_prompt_template=None,
             dataset_prompt_template="$model_input",
             save=True,
         ),
-        TestCaseEvaluateDatasetWithModel(
+        TestCaseEvaluateDataset(
             user_provided_prompt_template="Do something with $model_input",
             dataset_prompt_template="Do something with $model_input",
             save=False,
@@ -859,6 +859,8 @@ def test_evaluate_dataset_with_model(
     mock_generate_output_path.return_value = "path/to/output/dataset"
 
     input_dataset = Mock()
+    # So that validate_dataset does not error
+    input_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_INPUT.value.name])
     input_pipeline = Mock()
     model_runner = Mock()
 
@@ -908,7 +910,7 @@ def test_evaluate_dataset_with_model(
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCaseEvaluateDatasetWithModel(
+        TestCaseEvaluateDataset(
             user_provided_prompt_template=None,
             dataset_prompt_template=None,
             save=True,
@@ -983,6 +985,31 @@ def test_evaluate_dataset_no_model(
         )
     else:
         mock_save.assert_not_called()
+
+
+def test_evaluate_dataset_with_model_no_model_input_column():
+    """
+    GIVEN a model and a dataset that does not contain a model input column.
+    WHEN the `evaluate_dataset` function is called.
+    THEN the correct exception is raised.
+    """
+    mock_dataset = Mock()
+    mock_dataset.columns = Mock(return_value=[])
+    err_msg = (
+        "evaluate_dataset has been given a ModelRunner to obtain outputs from "
+        "but the provided dataset does not contain a model input column."
+    )
+    with pytest.raises(EvalAlgorithmClientError, match=err_msg):
+        evaluate_dataset(
+            dataset=mock_dataset,
+            pipeline=Mock(),
+            dataset_name="my_dataset",
+            eval_name="MyEvalAlgo",
+            metric_names=[SCORE_1, SCORE_2],
+            eval_results_path="/path/to/eval/results",
+            model=Mock(),
+            prompt_template=None,
+        )
 
 
 @patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
