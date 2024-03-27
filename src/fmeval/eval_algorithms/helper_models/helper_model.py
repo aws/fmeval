@@ -43,10 +43,6 @@ class BaseHelperModel(ABC):
         :returns: model output
         """
 
-    def __reduce__(self):
-        """Serializer method."""
-        return self.__class__, ()  # pragma: no cover
-
 
 class ToxigenHelperModel(BaseHelperModel):
     """
@@ -64,6 +60,10 @@ class ToxigenHelperModel(BaseHelperModel):
         """
         self._model = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
         self._column_name = column_name
+
+    def __reduce__(self):
+        """Serializer method so that instances of this class can be made into shared resources."""
+        return self.__class__, (self._column_name,)
 
     def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
         """
@@ -139,6 +139,10 @@ class DetoxifyHelperModel(BaseHelperModel):
         self._tokenizer = getattr(transformers, config["tokenizer_name"]).from_pretrained(config["model_type"])
         self._column_name = column_name
 
+    def __reduce__(self):
+        """Serializer method so that instances of this class can be made into shared resources."""
+        return self.__class__, (self._column_name,)
+
     def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
         """
         Method to get scores from DetoxifyHelper
@@ -194,6 +198,10 @@ class BertscoreHelperModel(BaseHelperModel):
         """
         self._bertscore = hf_evaluate.load("bertscore")
         self._model_type = model_type
+
+    def __reduce__(self):
+        """Serializer method so that instances of this class can be made into shared resources."""
+        return self.__class__, (self._model_type,)
 
     def get_helper_scores(self, target_output: str, model_output: str) -> float:  # type: ignore[override]
         """

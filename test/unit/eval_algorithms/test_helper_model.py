@@ -2,6 +2,7 @@ from unittest.mock import patch, PropertyMock
 import numpy as np
 import pytest
 
+from fmeval.constants import DatasetColumns
 from fmeval.eval_algorithms.helper_models.helper_model import (
     ToxigenHelperModel,
     TOXIGEN_SCORE_NAME,
@@ -63,6 +64,15 @@ class TestHelperModel:
         mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
         test_helper = ToxigenHelperModel("prompt")
         assert test_helper.get_score_names() == [TOXIGEN_SCORE_NAME]
+
+    def test_toxigen_reduce(self):
+        """
+        GIVEN a ToxigenHelperModel instance.
+        WHEN __reduce__ is called.
+        THEN the correct output is returned.
+        """
+        toxigen_model = ToxigenHelperModel()
+        assert toxigen_model.__reduce__() == (ToxigenHelperModel, (DatasetColumns.MODEL_OUTPUT.value.name,))
 
     def test_detoxify_helper_model_get_helper_scores(self):
         """
@@ -151,6 +161,15 @@ class TestHelperModel:
         test_helper = DetoxifyHelperModel()
         assert test_helper.get_score_names() == DETOXIFY_SCORE_NAMES
 
+    def test_detoxify_reduce(self):
+        """
+        GIVEN a DetoxifyHelperModel instance.
+        WHEN __reduce__ is called.
+        THEN the correct output is returned.
+        """
+        detoxify_model = DetoxifyHelperModel()
+        assert detoxify_model.__reduce__() == (DetoxifyHelperModel, (DatasetColumns.MODEL_OUTPUT.value.name,))
+
     def test_bertscore_helper_model_roberta(self):
         """
         Test bertscore helper model
@@ -159,3 +178,12 @@ class TestHelperModel:
         assert bertscore.get_helper_scores("sample text reference", "sample text prediction") == pytest.approx(
             0.902793288230896
         )
+
+    def test_bertscore_reduce(self):
+        """
+        GIVEN a BertscoreHelperModel instance.
+        WHEN __reduce__ is called.
+        THEN the correct output is returned.
+        """
+        bertscore_model = BertscoreHelperModel("distilbert-base-uncased")
+        assert bertscore_model.__reduce__() == (BertscoreHelperModel, ("distilbert-base-uncased",))
