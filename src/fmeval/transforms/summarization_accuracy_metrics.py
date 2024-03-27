@@ -275,8 +275,8 @@ class BertScore(SummarizationAccuracyMetric):
         :returns: The BERT metric value.
         """
         if isinstance(self.bertscore_model, BertscoreHelperModel):
-            return self.bertscore_model.invoke_model(target_output, model_output)
+            return self.bertscore_model.get_helper_scores(target_output, model_output)
         else:
             return ray.get(  # type: ignore[return-value]
-                self.bertscore_model.invoke_model.remote(target_output, model_output)  # type: ignore[union-attr]
+                self.bertscore_model.get_helper_scores.remote(target_output, model_output)  # type: ignore[union-attr]
             )

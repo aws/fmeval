@@ -309,7 +309,7 @@ class TestGeneralSemanticRobustness:
             (test_case.perturbed_model_output_2, None),  # Output on the second perturbation
         ]
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
-        bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
+        bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model.return_value = bertscore_model_instance
 
         eval_algo = GeneralSemanticRobustness(config, use_ray=False)
@@ -339,7 +339,7 @@ class TestGeneralSemanticRobustness:
         THEN the robustness score value is smaller than it would be for a deterministic model.
         """
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
-        bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
+        bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model.return_value = bertscore_model_instance
 
         deterministic_model = MagicMock()

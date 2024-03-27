@@ -16,7 +16,7 @@ class TestUtil:
             `remote` and `get`).
 
         Note that the input payload and expected result are copied from
-        the BertscoreHelperModel.invoke_model unit test.
+        the BertscoreHelperModel.get_helper_scores unit test.
         """
         bertscore_model = BertscoreHelperModel(BertscoreHelperModelTypes.ROBERTA_MODEL.value)
         actor_handle = create_shared_resource(bertscore_model)

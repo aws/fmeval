@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from fmeval.util import EvalAlgorithmClientError
-from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity, WER
+from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity, WER, MeanDeltaScores
 
 
 def test_bertscore_dissimilarity_call():
@@ -62,3 +62,51 @@ def test_wer_call():
             references=["d", "e", "f"],
         )
         assert result == 0.123
+
+
+def test_mean_delta_scores_init():
+    """
+    GIVEN valid arguments.
+    WHEN a MeanDeltaScores is initialized.
+    THEN its input_keys and output_keys attributes are set correctly.
+    """
+    mds = MeanDeltaScores(
+        key_mapping={
+            "original_a": (["perturbed_a_1", "perturbed_a_2"], "mean_delta_a"),
+            "original_b": (["perturbed_b_1", "perturbed_b_2"], "mean_delta_b"),
+        }
+    )
+    assert mds.input_keys == [
+        "original_a",
+        "original_b",
+        "perturbed_a_1",
+        "perturbed_a_2",
+        "perturbed_b_1",
+        "perturbed_b_2",
+    ]
+    assert mds.output_keys == ["mean_delta_a", "mean_delta_b"]
+
+
+def test_mean_delta_scores_call():
+    """
+    GIVEN a MeanDeltaScores instance.
+    WHEN its __call__ method is called.
+    THEN the correct scores are computed.
+    """
+    mds = MeanDeltaScores(
+        key_mapping={
+            "original_a": (["perturbed_a_1", "perturbed_a_2"], "mean_delta_a"),
+            "original_b": (["perturbed_b_1", "perturbed_b_2"], "mean_delta_b"),
+        }
+    )
+    sample = {
+        "original_a": 162,
+        "original_b": 189,
+        "perturbed_a_1": 100,
+        "perturbed_a_2": 200,
+        "perturbed_b_1": 300,
+        "perturbed_b_2": 400,
+    }
+    result = mds(sample)
+    assert result["mean_delta_a"] == 50
+    assert result["mean_delta_b"] == 161

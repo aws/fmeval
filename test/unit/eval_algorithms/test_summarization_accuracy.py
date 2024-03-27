@@ -146,7 +146,7 @@ class TestSummarizationAccuracy:
         """
         # Mock the BertscoreHelperModel class so that the actual model doesn't get loaded into memory.
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
-        bertscore_model_instance.invoke_model = Mock(return_value=BERTSCORE_DUMMY_VALUE)
+        bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model_cls.return_value = bertscore_model_instance
 
         model_output = "Berlin: Art, Heritage, Exhibitions Hub."
