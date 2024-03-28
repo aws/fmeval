@@ -59,6 +59,7 @@ class TestFactualKnowledge:
             model=hf_model_runner,
             dataset_config=dataset_config,
             prompt_template="$model_input",
+            num_records=201,
             save=True,
         )
         eval_output = eval_outputs[0]

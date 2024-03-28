@@ -2,45 +2,96 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any
 
-
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
 )
-import fmeval.util as util
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms.util import save_dataset, generate_output_dataset_path
+from fmeval.eval_algorithms.util import get_dataset_configs, evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
     EvalScore,
-    EVAL_DATASETS,
-    DATASET_CONFIGS,
-    get_default_prompt_template,
 )
-from fmeval.eval_algorithms.util import (
-    generate_model_predict_response_for_dataset,
-    generate_prompt_column_for_dataset,
-    aggregate_evaluation_scores,
-    validate_dataset,
-)
+from fmeval.eval_algorithms.util import validate_dataset
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.perf_util import timed_block
+from fmeval.transforms.transform import Transform
+from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.transforms.util import validate_call
+from fmeval.util import get_eval_results_path
 
 logger = logging.getLogger(__name__)
+
+FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+
+
+class FactualKnowledgeScore(Transform):
+    """This transform augments its input record with the computed factual knowledge score.
+
+    See the docstring for `FactualKnowledge` for more details regarding the score itself.
+    """
+
+    def __init__(
+        self,
+        target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
+        model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
+        output_key: str = FACTUAL_KNOWLEDGE,
+        target_output_delimiter: Optional[str] = "<OR>",
+    ):
+        """FactualKnowledgeScore initializer.
+
+        :param target_output_key: The record key corresponding to the target output.
+        :param model_output_key: The record key corresponding to the model output.
+        :param output_key: The key corresponding to the factual knowledge score that
+            will be added to the input record.
+        :param target_output_delimiter: See the docstring in `FactualKnowledgeConfig`.
+        """
+        super().__init__(target_output_key, model_output_key, output_key, target_output_delimiter)
+        self.register_input_output_keys(
+            input_keys=[target_output_key, model_output_key],
+            output_keys=[output_key],
+        )
+        self.target_output_key = target_output_key
+        self.model_output_key = model_output_key
+        self.output_key = output_key
+        self.target_output_delimiter = target_output_delimiter
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the computed factual knowledge score.
+
+        :param record: The input record.
+        :returns: The input record, with the factual knowledge score added in.
+        """
+        target_output = record[self.target_output_key]
+        model_output = record[self.model_output_key]
+        record[self.output_key] = self._get_score(target_output, model_output)
+        return record
+
+    def _get_score(self, target_output: str, model_output: str) -> int:
+        """Compute the factual knowledge score for a target output and model output pair.
+
+        :param target_output: Target output.
+        :param model_output: Model output.
+        :returns: Either 0 or 1. See the docstring for `FactualKnowledge` for more details
+            on what these numerica values represent.
+        """
+        possible_targets = target_output.split(self.target_output_delimiter)
+        model_output_lower_case = model_output.lower()
+        return int(any([t.lower() in model_output_lower_case for t in possible_targets]))
 
 
 @dataclass(frozen=True)
 class FactualKnowledgeConfig(EvalAlgorithmConfig):
-    """
-    Configuration for the factual knowledge eval algorithm
+    """Configures the factual knowledge evaluation algorithm.
 
-    :param target_output_delimiter: Target Output can have multiple answers. We expect customer to combine all the
-        possible answers into a single string and use the delimiter to separate them. For instance,
-        if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
+    :param target_output_delimiter: There can be multiple valid target outputs for a given question.
+        This delimiter is used to combine all possible target outputs into a single string.
+        For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>", then the
+        target output text will be "UK<OR>England".
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
@@ -52,167 +103,90 @@ class FactualKnowledgeConfig(EvalAlgorithmConfig):
             )
 
 
-FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
-
-
 class FactualKnowledge(EvalAlgorithmInterface):
     """
-    This evaluation measures the ability of language models to reproduce facts about the real world. The evaluation queries the model with prompts like ''Berlin is the capital of'' and ''Tata Motors is a subsidiary of''
-    and compares the model generation with one of more target answers. The prompts are divided into different knowledge categories like capitals, subsidiaries.
-    This evaluation was proposed by [Petroni et al.](https://arxiv.org/pdf/1909.01066.pdf).
+    This evaluation measures the ability of language models to reproduce facts about the real world and was proposed
+    by [Petroni et al.](https://arxiv.org/pdf/1909.01066.pdf). The evaluation queries the model with prompts like
+    'Berlin is the capital of' and 'Tata Motors is a subsidiary of' and compares the model generation with one or more
+    target answers. The prompts are divided into different knowledge categories like capitals, subsidiaries, etc.
 
-    This evaluation outputs a single binary metric. The metric value is 1 if the lower-cased expected answer is contained anywhere within the lower-cased model response. For instance, consider the prompt ''Berlin is
-    the capital of'' with the expected answer ''Germany''. If the model generation is ''Germany, and is also its most populous city'', then the metric evaluates to 1.
+    This evaluation outputs a single binary metric. The metric value is 1 if the lower-cased expected answer is
+    contained anywhere within the lower-cased model response. For instance, consider the prompt
+    'Berlin is the capital of' with the expected answer 'Germany'.
+    If the model generation is 'Germany, and is also its most populous city', then the metric evaluates to 1.
 
-    If there is more than one correct target answer, answers are seperated by the `target_output_delimiter` which can be configure inside the `FactualKnowledgeConfig`. It defaults to `<OR>`,i.e, the
-    target answer in this example could be Germany<OR>Berlin (since Berlin is its own federal state).
+    If there is more than one correct target answer, answers are seperated by the `target_output_delimiter` which can be
+    configured inside the `FactualKnowledgeConfig`. It defaults to `<OR>`, i.e, the target answer in this example could
+    be Germany<OR>Berlin (since Berlin is its own federal state).
     """
 
-    def __init__(self, eval_algorithm_config: FactualKnowledgeConfig = FactualKnowledgeConfig()):
-        """Default constructor
+    eval_name = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
 
-        :param eval_algorithm_config: Factual knowledge eval algorithm config.
+    def __init__(self, eval_algorithm_config: FactualKnowledgeConfig = FactualKnowledgeConfig()):
+        """FactualKnowledge initializer.
+
+        :param eval_algorithm_config: Factual knowledge evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = FACTUAL_KNOWLEDGE
-        self._eval_algorithm_config = eval_algorithm_config
+        self.pipeline = TransformPipeline(
+            [FactualKnowledgeScore(target_output_delimiter=eval_algorithm_config.target_output_delimiter)]
+        )
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
+        """Compute the factual knowledge score on a single sample.
+
+        :param target_output: The expected responses from the model.
+        :param model_output: The output of the model being evaluated.
+        :return: A single-element list containing an EvalScore corresponding to the factual knowledge score.
         """
-        Factual knowledge evaluate sample.
-
-        Given an input prompt e.g., "London is the capital of" and expected answers(target_output) like
-        ["United Kingdom", "England"], if the model is able to arrive at the correct completion(model_output).
-        Generating any of the expected answers is considered a correct completion.
-        Since models might generate long outputs, this evaluation does not look for an exact match.
-        It considers the completion to be correct if the answer is contained within the model output generated.
-
-        :param target_output: The expected responses from the model
-        :param model_output: The output of a model that we want to evaluate.
-        :return: list of EvalScore object
-        """
-        if target_output is None:
-            raise EvalAlgorithmClientError(
-                "Missing required input: target_output, for FactualKnowledge evaluate_sample"
-            )
-        if model_output is None:
-            raise EvalAlgorithmClientError("Missing required input: model_output, for FactualKnowledge evaluate_sample")
-
-        return [
-            EvalScore(
-                name=self.eval_name,
-                value=self._get_score(target_output=target_output, model_output=model_output),
-            )
-        ]
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
+        result = self.pipeline.execute_record(sample)
+        return [EvalScore(name=FACTUAL_KNOWLEDGE, value=result[FACTUAL_KNOWLEDGE])]
 
     def evaluate(
         self,
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
+        num_records: int = 100,
         save: bool = False,
-        num_records=300,
     ) -> List[EvalOutput]:
+        """Compute the factual knowledge score on one or more datasets.
+
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
+        :param dataset_config: Configures the single dataset used for evaluation.
+            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param prompt_template: A template used to generate prompts that are fed to the model.
+            If not provided, defaults will be used. If provided, `model` must not be None.
+        :param num_records: The number of records to be sampled randomly from the input dataset(s)
+            used to perform the evaluation(s).
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
+
+        :return: A list of EvalOutput objects.
         """
-        Factual knowledge evaluate.
-
-        Given an input prompt e.g., "London is the capital of" and expected answers(target_output) like
-        ["United Kingdom", "England"], if the model is able to arrive at the correct completion(model_output).
-        Generating any of the expected answers is considered a correct completion.
-        Since models might generate long outputs, this evaluation does not look for an exact match.
-        It considers the completion to be correct if the answer is contained within the model output generated.
-
-        :param model: An instance of ModelRunner which is the model under evaluation
-        :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
-                               evaluated on all built-in datasets configured for this evaluation.
-        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
-            will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation
-        :return: List of EvalOutput objects. Current implementation returns only one score.
-        """
-        if dataset_config:
-            dataset_configs = [dataset_config]
-        else:
-            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
-
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
-            dataset_prompt_template = None
-            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
-                util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
-                dataset_prompt_template = (
-                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
-                )
-                dataset = generate_prompt_column_for_dataset(
-                    dataset_prompt_template,
-                    dataset,
-                    DatasetColumns.MODEL_INPUT.value.name,
-                    DatasetColumns.PROMPT.value.name,
-                )
-                assert model  # to satisfy mypy
-                dataset = generate_model_predict_response_for_dataset(
-                    model=model,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.PROMPT.value.name,
-                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
-                )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-
-                def _generate_eval_scores(row: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover
-                    """
-                    Map function generating the scores for every input record in input dataset
-                    """
-                    row[FACTUAL_KNOWLEDGE] = self._get_score(
-                        row[DatasetColumns.TARGET_OUTPUT.value.name],
-                        row[DatasetColumns.MODEL_OUTPUT.value.name],
-                    )
-                    return row
-
-                dataset = dataset.map(_generate_eval_scores)
-                dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, [FACTUAL_KNOWLEDGE], agg_method=MEAN
-                )
-                eval_outputs.append(
-                    EvalOutput(
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                        prompt_template=dataset_prompt_template,
-                        dataset_scores=dataset_scores,
-                        category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=util.get_eval_results_path(),
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
-                    )
-                )
-            if save:
-                save_dataset(
-                    dataset=dataset,
-                    score_names=[FACTUAL_KNOWLEDGE],
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=util.get_eval_results_path(),
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
-                )
-
+            validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name])
+            eval_output = evaluate_dataset(
+                dataset=dataset,
+                pipeline=self.pipeline,
+                dataset_name=dataset_config.dataset_name,
+                eval_name=self.eval_name,
+                metric_names=[FACTUAL_KNOWLEDGE],
+                eval_results_path=get_eval_results_path(),
+                model=model,
+                prompt_template=prompt_template,
+                agg_method=MEAN,
+                save=save,
+            )
+            eval_outputs.append(eval_output)
         return eval_outputs
-
-    def _get_score(self, target_output: str, model_output: str) -> int:
-        """
-        Method to generate accuracy score for a target_output and model_output
-
-        :param target_output: Target output
-        :param model_output: Model output
-        :returns: Accuracy score i.e. O or 1
-        """
-        possible_targets = target_output.split(self._eval_algorithm_config.target_output_delimiter)
-        model_output_lower_case = model_output.lower()
-
-        return int(any([t.lower() in model_output_lower_case for t in possible_targets]))
