@@ -93,6 +93,51 @@ class GetModelOutputs(Transform):
         return record
 
 
+class GetLogProbabilities(Transform):
+    """Invokes a ModelRunner's `predict` method and augments the input record with the returned log probability.
+
+    This transform can obtain multiple log probabilities, by invoking the provided model on multiple inputs.
+    See the __init__ docstring for more details.
+    """
+
+    def __init__(
+        self,
+        input_keys: List[str],
+        output_keys: List[str],
+        model_runner: ModelRunner,
+    ):
+        """GetModelOutputs initializer.
+
+        Note that the ith element of input_keys should correspond to the ith element of
+        output_keys. In other words, the log probability obtained from invoking the model
+        on the input with key input_keys[i] will be assigned the key output_keys[i].
+
+        :param input_keys: The keys within the input record corresponding to model inputs.
+        :param output_keys: The keys corresponding to the log probability data that will get
+            added to the record by this transform.
+        :param model_runner: The ModelRunner instance whose `predict` method wil be invoked
+            to obtain the log probability.
+        """
+        super().__init__(input_keys, output_keys, model_runner)
+        self.register_input_output_keys(
+            input_keys=input_keys,
+            output_keys=output_keys,
+        )
+        self.model_runner = model_runner
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the log probability that is returned by the model.
+
+        :param record: The input record.
+        :returns: The input record with log probability data added in.
+        """
+        for input_key, output_key in zip(self.input_keys, self.output_keys):
+            _, log_prob = self.model_runner.predict(record[input_key])
+            record[output_key] = log_prob
+        return record
+
+
 class Mean(Transform):
     """This transform computes the arithmetic mean of specified values in a record and augments said record."""
 
