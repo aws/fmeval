@@ -77,7 +77,7 @@ class FactualKnowledgeScore(Transform):
         :param target_output: Target output.
         :param model_output: Model output.
         :returns: Either 0 or 1. See the docstring for `FactualKnowledge` for more details
-            on what these numerica values represent.
+            on what these numerical values represent.
         """
         possible_targets = target_output.split(self.target_output_delimiter)
         model_output_lower_case = model_output.lower()
@@ -151,7 +151,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
-        num_records: int = 100,
+        num_records: int = 300,
         save: bool = False,
     ) -> List[EvalOutput]:
         """Compute the factual knowledge score on one or more datasets.
@@ -164,7 +164,10 @@ class FactualKnowledge(EvalAlgorithmInterface):
         :param prompt_template: A template used to generate prompts that are fed to the model.
             If not provided, defaults will be used. If provided, `model` must not be None.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
-            used to perform the evaluation(s).
+            used to perform the evaluation(s). Note that the default value is 300, rather than
+            100, as it is for the rest of the built-in algorithms. This is because there
+            are 15 categories for factual knowledge, and if only 100 samples are used, there
+            will be categories with very few samples.
         :param save: If set to true, prompt responses and scores will be saved to a file.
             The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
             environment variable.
