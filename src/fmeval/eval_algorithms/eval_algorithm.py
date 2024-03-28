@@ -26,9 +26,8 @@ class EvalAlgorithmInterface(ABC):
     def evaluate_sample(
         self,
         model_input: Optional[str] = None,
-        model_output: Optional[str] = None,
         target_output: Optional[str] = None,
-        model: Optional[ModelRunner] = None,
+        model_output: Optional[str] = None,
     ) -> List[EvalScore]:
         """Compute metrics for a single sample, where a sample is defined by the particular algorithm.
 
@@ -37,13 +36,8 @@ class EvalAlgorithmInterface(ABC):
 
         :param model_input: The input passed to `model`. If this parameter is not None,
             `model` should likewise not be None.
-        :param model_output: The output from invoking a model. If provided, `model` generally
-            will not be required, as the output is already available.
         :param target_output: The reference output that `model_output` will be compared against.
-            Note that if `model_output` is not provided but `model` and `model_input` are provided
-            instead, the output from invoking `model` will take the place of `model_output`.
-        :param model: A ModelRunner representing the model being evaluated.
-
+        :param model_output: The output from invoking a model.
         :returns: A list of EvalScore objects, where each EvalScore represents a single
             score/metric that is computed by the evaluation algorithm.
         """
