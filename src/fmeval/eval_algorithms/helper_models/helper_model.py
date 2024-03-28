@@ -1,4 +1,3 @@
-import numpy as np
 import evaluate as hf_evaluate
 import torch
 import transformers
@@ -7,7 +6,6 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 from transformers import pipeline, AutoConfig
-from fmeval.constants import DatasetColumns
 
 TOXIGEN_SCORE_NAME = "toxicity"
 
@@ -50,20 +48,18 @@ class ToxigenHelperModel(BaseHelperModel):
     """
 
     TOXIGEN_MODEL_NAME = "tomh/toxigen_roberta"
-    COLUMN_NAME = DatasetColumns.MODEL_OUTPUT.value.name
 
-    def __init__(self, column_name: str = COLUMN_NAME):
+    def __init__(self):
         """
         Constructor to locally load the helper model for inference.
 
         :param column_name: column name used to fetch input texts in __call__ method
         """
         self._model = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
-        self._column_name = column_name
 
     def __reduce__(self):
         """Serializer method so that instances of this class can be made into shared resources."""
-        return self.__class__, (self._column_name,)
+        return self.__class__, ()
 
     def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
         """
@@ -78,19 +74,6 @@ class ToxigenHelperModel(BaseHelperModel):
             TOXIGEN_SCORE_NAME: [x["score"] if x["label"] == "LABEL_1" else 1.0 - x["score"] for x in inference_output]
         }
         return result
-
-    def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        """
-        Call method to allow using this helper as a ray actor.
-
-        :param batch: batch of data to be scored.
-        :return: batch with scores added to it.
-        """
-        scores = self.get_helper_scores(batch[self._column_name].tolist())
-
-        for key, value in scores.items():
-            batch.update({key: np.array(value)})
-        return batch
 
     @staticmethod
     def get_score_names() -> List[str]:
@@ -116,13 +99,10 @@ class DetoxifyHelperModel(BaseHelperModel):
     UNBIASED_MODEL_URL = (
         "https://github.com/unitaryai/detoxify/releases/download/v0.3-alpha/toxic_debiased-c7548aa0.ckpt"
     )
-    COLUMN_NAME = DatasetColumns.MODEL_OUTPUT.value.name
 
-    def __init__(self, column_name: str = COLUMN_NAME):
+    def __init__(self):
         """
         Constructor to locally load the helper model for inference.
-
-        :param column_name: column name used to fetch input texts in __call__ method
         """
         state_dict = torch.hub.load_state_dict_from_url(self.UNBIASED_MODEL_URL, map_location="cpu")
         config = state_dict["config"]["arch"]["args"]
@@ -137,11 +117,10 @@ class DetoxifyHelperModel(BaseHelperModel):
             .to("cpu")
         )
         self._tokenizer = getattr(transformers, config["tokenizer_name"]).from_pretrained(config["model_type"])
-        self._column_name = column_name
 
     def __reduce__(self):
         """Serializer method so that instances of this class can be made into shared resources."""
-        return self.__class__, (self._column_name,)
+        return self.__class__, ()
 
     def get_helper_scores(self, text_input: List[str]) -> Dict[str, List[float]]:  # type: ignore[override]
         """
@@ -155,19 +134,6 @@ class DetoxifyHelperModel(BaseHelperModel):
             score_name: [score[i].tolist() for score in scores]
             for i, score_name in enumerate(DetoxifyHelperModel.get_score_names())
         }
-
-    def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        """
-        Call method to allow using this helper as a ray actor.
-
-        :param batch: batch of data to be scored.
-        :return: batch with scores added to it.
-        """
-        scores = self.get_helper_scores(batch[self._column_name].tolist())
-
-        for key, value in scores.items():
-            batch.update({key: np.array(value)})
-        return batch
 
     @staticmethod
     def get_score_names() -> List[str]:

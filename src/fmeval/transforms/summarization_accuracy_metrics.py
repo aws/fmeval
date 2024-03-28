@@ -4,7 +4,7 @@ import evaluate as hf_evaluate
 
 from abc import abstractmethod
 from typing import Any, Dict, Union, List
-from ray import ObjectRef
+from ray.actor import ActorHandle
 from nltk import word_tokenize
 from nltk.translate import meteor_score
 
@@ -251,7 +251,7 @@ class BertScore(SummarizationAccuracyMetric):
         model_output_keys: List[str],
         output_keys: List[str],
         allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
     ):
         """BertScore initializer.
 

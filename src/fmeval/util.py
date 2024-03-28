@@ -4,7 +4,7 @@ import re
 import ray
 import multiprocessing as mp
 
-from ray import ObjectRef
+from ray.actor import ActorHandle
 from fmeval.constants import EVAL_RESULTS_PATH, DEFAULT_EVAL_RESULTS_PATH, PARALLELIZATION_FACTOR
 from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 
@@ -85,7 +85,7 @@ def get_num_actors():
     return num_actors
 
 
-def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
+def create_shared_resource(resource: object, num_cpus: int = 1) -> ActorHandle:
     """Create a Ray actor out of `resource`.
 
     Typically, `resource` will be an object that consumes a significant amount of
@@ -111,10 +111,10 @@ def create_shared_resource(resource: object, num_cpus: int = 1) -> ObjectRef:
     """
     resource_cls, serialized_data = resource.__reduce__()  # type: ignore[misc]
     wrapped_resource_cls = ray.remote(num_cpus=num_cpus)(resource_cls)
-    return wrapped_resource_cls.remote(*serialized_data)
+    return wrapped_resource_cls.remote(*serialized_data)  # type: ignore
 
 
-def cleanup_shared_resource(resource: ObjectRef) -> None:
+def cleanup_shared_resource(resource: ActorHandle) -> None:
     """Removes the resource from shared memory.
 
     Concretely, this function kills the Ray actor corresponding
