@@ -1,6 +1,6 @@
 import re
-from typing import NamedTuple, List, Optional
-from unittest.mock import patch
+from typing import List, NamedTuple
+from unittest.mock import patch, Mock
 
 import pytest
 import ray
@@ -11,8 +11,7 @@ from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
 )
-from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, EvalAlgorithm, DEFAULT_PROMPT_TEMPLATE
+from fmeval.eval_algorithms import CategoryScore, EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -39,12 +38,6 @@ class TestFactualKnowledge:
         model_output: str
         target_output: str
         expected_response: List[EvalScore]
-
-    class TestCaseFactualKnowledgeEvaluateSampleInvalid(NamedTuple):
-        model_input: Optional[str]
-        model_output: str
-        target_output: Optional[str]
-        expected_error_message: str
 
     @pytest.mark.parametrize(
         "test_case",
@@ -85,38 +78,8 @@ class TestFactualKnowledge:
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
         assert test_case.expected_response == actual_response
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseFactualKnowledgeEvaluateSampleInvalid(
-                model_input="London is the capital of",
-                model_output="England",
-                target_output=None,
-                expected_error_message="Missing required input: target_output, for FactualKnowledge evaluate_sample",
-            ),
-            TestCaseFactualKnowledgeEvaluateSampleInvalid(
-                model_input="Pulp Fiction was directed by",
-                model_output=None,
-                target_output="QUENTIN TARANTINO",
-                expected_error_message="Missing required input: model_output, for FactualKnowledge evaluate_sample",
-            ),
-        ],
-    )
-    def test_factual_knowledge_evaluate_sample_invalid_input(self, test_case, config):
-        """
-        GIVEN invalid inputs
-        WHEN FactualKnowledge.evaluate_sample is called
-        THEN correct exception with proper message is raised
-        """
-        eval_algorithm = FactualKnowledge(config)
-        with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
-            eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
-
     class TestCaseFactualKnowledgeEvaluate(NamedTuple):
         input_dataset: Dataset
-        prompt_template: Optional[str]
-        dataset_config: Optional[DataConfig]
-        input_dataset_with_generated_model_output: Optional[Dataset]
         expected_response: List[EvalOutput]
 
     @pytest.mark.parametrize(
@@ -129,256 +92,6 @@ class TestFactualKnowledge:
                             DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
                             DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
                             DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.PROMPT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.PROMPT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.PROMPT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.PROMPT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="factual_knowledge",
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_name="trex",
-                        dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
-                        category_scores=[
-                            CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
-                            CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/factual_knowledge_trex.jsonl",
-                    )
-                ],
-            ),
-            TestCaseFactualKnowledgeEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$model_input",
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.PROMPT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.PROMPT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.PROMPT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.PROMPT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="factual_knowledge",
-                        dataset_name="my_custom_dataset",
-                        prompt_template="$model_input",
-                        dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
-                        category_scores=[
-                            CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
-                            CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            TestCaseFactualKnowledgeEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.PROMPT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "uk",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.PROMPT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "Quentin Tarantino",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.PROMPT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="factual_knowledge",
-                        dataset_name="my_custom_dataset",
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.factual_knowledge.get_dataset")
-    @patch("fmeval.eval_algorithms.factual_knowledge.save_dataset")
-    @patch("fmeval.eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
-    def test_factual_knowledge_evaluate(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, model, test_case, config
-    ):
-        """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN FactualKnowledge.evaluate is called
-        THEN correct EvalOutput is returned
-        """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = FactualKnowledge(config)
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
-        )
-        assert actual_response == test_case.expected_response
-        assert save_dataset.called
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseFactualKnowledgeEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
                             DatasetColumns.MODEL_OUTPUT.value.name: "uk",
                         },
                         {
@@ -401,17 +114,6 @@ class TestFactualKnowledge:
                         },
                     ]
                 ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=None,
                 expected_response=[
                     EvalOutput(
                         eval_name="factual_knowledge",
@@ -428,187 +130,25 @@ class TestFactualKnowledge:
             )
         ],
     )
+    @patch("fmeval.eval_algorithms.factual_knowledge.validate_dataset")
     @patch("fmeval.eval_algorithms.factual_knowledge.get_dataset")
-    @patch("fmeval.eval_algorithms.factual_knowledge.save_dataset")
-    @patch("fmeval.eval_algorithms.factual_knowledge.generate_model_predict_response_for_dataset")
+    @patch("fmeval.eval_algorithms.factual_knowledge.get_dataset_configs")
     def test_factual_knowledge_evaluate_without_model(
-        self, generate_model_predict_response_for_dataset, save_dataset, get_dataset, test_case, config
+        self, mock_get_dataset_configs, mock_get_dataset, mock_validate_dataset, test_case, config
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset with model_outputs,
-            and no request to save records with scores
-        WHEN FactualKnowledge.evaluate is called
-        THEN correct EvalOutput is returned
+        GIVEN a valid dataset and no model.
+        WHEN FactualKnowledge.evaluate is called.
+        THEN the correct output is returned.
         """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = FactualKnowledge(config)
-        actual_response = eval_algorithm.evaluate(model=None, dataset_config=test_case.dataset_config)
-        assert not generate_model_predict_response_for_dataset.called
-        assert not save_dataset.called
-        assert actual_response == test_case.expected_response
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
 
-    class TestCaseFactualKnowledgeEvaluateInvalid(NamedTuple):
-        input_dataset: Dataset
-        dataset_config: Optional[DataConfig]
-        prompt_template: Optional[str]
-        model_provided: bool
-        expected_error_message: str
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseFactualKnowledgeEvaluateInvalid(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                model_provided=False,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseFactualKnowledgeEvaluateInvalid(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=False,
-                prompt_template=None,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseFactualKnowledgeEvaluateInvalid(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "London is the capital of",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Paris is the capital of",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Pulp Fiction was directed by",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.MODEL_INPUT.value.name: "Dark knight was directed by",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: target_output, for evaluate() method",
-            ),
-            TestCaseFactualKnowledgeEvaluateInvalid(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.TARGET_OUTPUT.value.name: "England<OR>UK",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.TARGET_OUTPUT.value.name: "France",
-                            DatasetColumns.CATEGORY.value.name: "Capitals",
-                        },
-                        {
-                            DatasetColumns.TARGET_OUTPUT.value.name: "QUENTIN TARANTINO",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                        {
-                            DatasetColumns.TARGET_OUTPUT.value.name: "Christopher Nolan<OR>NOLAN",
-                            DatasetColumns.CATEGORY.value.name: "Movies",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.factual_knowledge.get_dataset")
-    def test_factual_knowledge_evaluate_invalid_input(self, get_dataset, model, test_case, config):
-        """
-        GIVEN invalid inputs
-        WHEN FactualKnowledge.evaluate is called
-        THEN correct exception with proper message is raised
-        """
+        mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = FactualKnowledge(config)
-        get_dataset.return_value = test_case.input_dataset
-        if not test_case.model_provided:
-            model = None
-        with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            eval_algorithm.evaluate(
-                model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
-            )
+        output = eval_algorithm.evaluate(model=None, dataset_config=dataset_config)
+        mock_validate_dataset.assert_called_once_with(
+            mock_get_dataset.return_value, [DatasetColumns.TARGET_OUTPUT.value.name]
+        )
+        assert output == test_case.expected_response
