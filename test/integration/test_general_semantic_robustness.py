@@ -47,7 +47,7 @@ class TestGeneralSemanticRobustness:
         ],
     )
     def test_evaluate_sample(self, gsr_test_case):
-        gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config, use_ray=False)
+        gen_semantic_robustness = GeneralSemanticRobustness(gsr_test_case.config)
         model_input = "London is the capital of "
         eval_scores = gen_semantic_robustness.evaluate_sample(
             model_input=model_input,

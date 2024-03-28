@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from typing import Any, List, NamedTuple, Dict
 
 from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.transforms.batched_transform import BatchedTransform
 from fmeval.transforms.common import GeneratePrompt
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline, NestedTransform
@@ -166,3 +167,25 @@ def test_execute_record():
     record = {"input": "asdf"}
     output_record = pipeline.execute_record(record)
     assert output_record == {"input": "asdf", "output_1": "asdf_1_a", "output_2": "asdf_2_b"}
+
+
+def test_execute_batched_transform():
+    """
+    GIVEN a TransformPipeline with a BatchedTransform.
+    WHEN its execute method is called.
+    THEN Ray's map_batches function is called.
+    """
+    dataset = Mock()
+    dataset.map_batches = Mock()
+    dataset.map_batches.materialize = Mock()
+    dataset.map = Mock()
+
+    batched_transform = Mock(spec=BatchedTransform)
+    batched_transform.args = ()
+    batched_transform.kwargs = {}
+    batched_transform.output_keys = ["output"]
+
+    pipeline = TransformPipeline([batched_transform])
+    pipeline.execute(dataset)
+    dataset.map_batches.assert_called()
+    dataset.map.assert_not_called()

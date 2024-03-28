@@ -38,7 +38,7 @@ from fmeval.transforms.semantic_robustness_metrics import BertScoreDissimilarity
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
-from fmeval.util import create_shared_resource, require, get_eval_results_path
+from fmeval.util import create_shared_resource, require, get_eval_results_path, cleanup_shared_resource
 
 logger = logging.getLogger(__name__)
 
@@ -111,25 +111,16 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
     def __init__(
         self,
         eval_algorithm_config: GeneralSemanticRobustnessConfig = GeneralSemanticRobustnessConfig(),
-        use_ray: bool = True,
     ):
         """GeneralSemanticRobustness initializer.
 
         :param eval_algorithm_config: General semantic robustness evaluation algorithm config.
-        :param use_ray: Whether to create a Ray actor for the BertscoreHelperModel used by this evaluation
-            algorithm instance. Currently, `evaluate` will only work if `use_ray` is set to True,
-            as the execution of the transform pipeline relies on the BertscoreHelperModel existing
-            in shared memory. This flag can be set to False if you only plan on invoking the
-            `evaluate_sample` method, which is a computationally cheap operation that does not
-            require utilizing Ray for parallel execution.
         """
         super().__init__(eval_algorithm_config)
         self.num_perturbations = eval_algorithm_config.num_perturbations
         self.num_baseline_samples = eval_algorithm_config.num_baseline_samples
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
-        if use_ray:
-            self.bertscore_model = create_shared_resource(self.bertscore_model)
 
     def _build_pipeline(
         self,
@@ -321,6 +312,8 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
 
         :return: A list of EvalOutput objects.
         """
+        # Create a shared resource to be used during the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -344,6 +337,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             )
             eval_outputs.append(eval_output)
 
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs
 
 

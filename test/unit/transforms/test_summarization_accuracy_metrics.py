@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, call, Mock
 from typing import NamedTuple, Optional
-from ray import ObjectRef
+from ray.actor import ActorHandle
 
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.transforms.summarization_accuracy_metrics import MeteorScore, RougeScore, BertScore, ROUGE_2
@@ -137,7 +137,7 @@ def test_bert_score_call_with_ray_actor_handle():
     Note: we don't validate the structure of the __call__ output since
     we already have @validate_call to handle that.
     """
-    mock_bertscore_model = Mock(spec=ObjectRef)
+    mock_bertscore_model = Mock(spec=ActorHandle)
     mock_bertscore_model.get_helper_scores = Mock()
     mock_bertscore_model.get_helper_scores.remote = Mock(return_value="remote invocation result")
 

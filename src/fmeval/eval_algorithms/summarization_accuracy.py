@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
-from ray import ObjectRef
+from ray.actor import ActorHandle
 
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
@@ -119,7 +119,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         bertscore_keys: List[str],
         rouge_type: str,
         use_stemmer_for_rouge: bool,
-        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
     ) -> Tuple[MeteorScore, RougeScore, BertScore]:
         """Create a TransformPipeline containing summarization accuracy score transforms.
 

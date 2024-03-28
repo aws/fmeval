@@ -1,7 +1,8 @@
 import re
 from typing import NamedTuple, List, Optional
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock, PropertyMock
 
+import numpy as np
 import pytest
 import ray
 from _pytest.fixtures import fixture
@@ -10,9 +11,10 @@ from ray.data import Dataset
 from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
+    MEAN,
 )
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms import EvalScore, EvalOutput, CategoryScore, DEFAULT_PROMPT_TEMPLATE
+from fmeval.eval_algorithms import EvalOutput, EvalScore
 from fmeval.eval_algorithms.helper_models.helper_model import (
     TOXIGEN_SCORE_NAME,
     DETOXIFY_SCORE_TOXICITY,
@@ -23,12 +25,15 @@ from fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_THREAT,
     DETOXIFY_SCORE_SEXUAL_EXPLICIT,
     DETOXIFY_SCORE_NAMES,
+    DetoxifyHelperModel,
+    ToxigenHelperModel,
 )
 from fmeval.eval_algorithms.toxicity import (
     ToxicityConfig,
     Toxicity,
     TOXIGEN_MODEL,
     DETOXIFY_MODEL,
+    ToxicityScores,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -165,18 +170,6 @@ class TestToxicity:
         eval_algorithm = Toxicity(config)
         assert eval_algorithm.evaluate_sample(test_case.model_output) == test_case.expected_response
 
-    @patch.dict("fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
-    def test_toxicity_evaluate_sample_invalid_input(self, config):
-        """
-        GIVEN invalid inputs
-        WHEN Toxicity.evaluate_sample is called
-        THEN expected error is raised
-        """
-        eval_algorithm = Toxicity(config)
-        expected_error_message = "Missing required input: model_output, for Toxicity evaluate_sample"
-        with pytest.raises(EvalAlgorithmClientError, match=expected_error_message):
-            eval_algorithm.evaluate_sample(None)
-
     def test_toxicity_invalid_config(self):
         """
         GIVEN invalid inputs
@@ -198,355 +191,150 @@ class TestToxicity:
         expected_response: List[EvalOutput]
         dataset_with_scores: Dataset
 
+    class TestCaseEvaluate(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        dataset_prompt_template: str
+
     @pytest.mark.parametrize(
         "test_case",
         [
-            # Built-in datasets evaluate for dataset without category
-            TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
-                ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="bold",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_bold.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="real_toxicity_prompts",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="real_toxicity_prompts_challenging",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts_challenging.jsonl",
-                    ),
-                ],
+            TestCaseEvaluate(
+                user_provided_prompt_template="Do something with $model_input.",
+                dataset_prompt_template="Do something with $model_input.",
             ),
-            # Built-in datasets evaluate for dataset with category
-            TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(cols=[TOXIGEN_SCORE_NAME]),
-                dataset_with_scores=DATASET_TOXIGEN,
-                expected_response=[
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="bold",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/toxicity_bold.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="real_toxicity_prompts",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts.jsonl",
-                    ),
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="real_toxicity_prompts_challenging",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=[
-                            CategoryScore(name="dummy_category_1", scores=[EvalScore(name="toxicity", value=1.0)]),
-                            CategoryScore(name="dummy_category_2", scores=[EvalScore(name="toxicity", value=1.0)]),
-                        ],
-                        output_path="/tmp/eval_results/toxicity_real_toxicity_prompts_challenging.jsonl",
-                    ),
-                ],
-            ),
-            # Custom dataset evaluate with prompt template
-            TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$model_input",
-                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
-                ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template="$model_input",
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            # Custom dataset evaluate without prompt template
-            TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=DATASET_TOXIGEN.drop_columns(
-                    cols=[DatasetColumns.CATEGORY.value.name, TOXIGEN_SCORE_NAME]
-                ),
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
-                    )
-                ],
+            TestCaseEvaluate(
+                user_provided_prompt_template=None,
+                dataset_prompt_template=None,
             ),
         ],
     )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
+    @patch("fmeval.eval_algorithms.toxicity.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.toxicity.cleanup_shared_resource")
+    @patch("fmeval.eval_algorithms.toxicity.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.toxicity.create_shared_resource")
+    @patch("fmeval.eval_algorithms.toxicity.TransformPipeline")
     @patch("fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch("fmeval.eval_algorithms.toxicity.save_dataset")
-    @patch("fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
-    @patch.object(Toxicity, "_Toxicity__add_scores")
-    @patch.dict("fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
-    def test_toxicity_evaluate(
+    @patch("fmeval.eval_algorithms.toxicity.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.toxicity.ToxicityScores")
+    @patch("fmeval.eval_algorithms.toxicity.DetoxifyHelperModel")
+    def test_evaluate(
         self,
-        add_score_to_dataset,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
-        get_dataset,
-        model,
+        mock_detoxify_cls,
+        mock_toxicity_scores_cls,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_transform_pipeline_cls,
+        mock_create_shared_resource,
+        mock_evaluate_dataset,
+        mock_cleanup_shared_resource,
+        mock_get_results_path,
         test_case,
-        config,
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN Toxicity evaluate() method is called
-        THEN correct EvalOutput is returned
+        GIVEN a SummarizationAccuracy instance.
+        WHEN its evaluate method is called with valid arguments.
+        THEN a new TransformPipeline that uses a BertscoreHelperModel shared resource
+            is created, and `evaluate_dataset` is called with the correct arguments.
         """
-        add_score_to_dataset.return_value = test_case.dataset_with_scores
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_predict_response_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = Toxicity(config)
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
+        mock_detoxify_cls.return_value = Mock()
+        mock_toxicity_scores_cls.return_value = Mock()
+
+        pipeline = Mock()
+        mock_transform_pipeline_cls.return_value = pipeline
+
+        mock_get_results_path.return_value = "/path/to/results"
+        model_runner = Mock()
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_INPUT.value.name])
+        mock_get_dataset.return_value = mock_dataset
+
+        eval_algo = Toxicity()
+        output = eval_algo.evaluate(
+            model=model_runner,
+            dataset_config=dataset_config,
+            prompt_template=test_case.user_provided_prompt_template,
+            num_records=162,
+            save=True,
         )
-        assert save_dataset.called
-        assert actual_response == test_case.expected_response
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseToxicityEvaluate(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template="$model_input",
-                input_dataset_with_generated_model_output=None,
-                dataset_with_scores=DATASET_TOXIGEN.drop_columns(cols=[DatasetColumns.CATEGORY.value.name]),
-                expected_response=[
-                    EvalOutput(
-                        eval_name="toxicity",
-                        dataset_name="my_custom_dataset",
-                        dataset_scores=[EvalScore(name="toxicity", value=1.0)],
-                        prompt_template=None,
-                        category_scores=None,
-                        output_path="/tmp/eval_results/toxicity_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-        ],
-    )
-    @patch("fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch("fmeval.eval_algorithms.toxicity.save_dataset")
-    @patch("fmeval.eval_algorithms.toxicity.generate_model_predict_response_for_dataset")
-    @patch.object(Toxicity, "_Toxicity__add_scores")
-    @patch.dict("fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
-    def test_toxicity_evaluate_no_model(
-        self,
-        add_score_to_dataset,
-        generate_model_predict_response_for_dataset,
-        save_dataset,
-        get_dataset,
-        test_case,
-        config,
-    ):
-        """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
-        WHEN Toxicity evaluate() method is called
-        THEN correct EvalOutput is returned
-        """
-        add_score_to_dataset.return_value = test_case.dataset_with_scores
-        get_dataset.return_value = test_case.input_dataset
-        eval_algorithm = Toxicity(config)
-        actual_response = eval_algorithm.evaluate(
-            model=None, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=False
+        mock_create_shared_resource.assert_called_once_with(eval_algo._helper_model)
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_dataset,
+            pipeline=pipeline,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=eval_algo.eval_name,
+            metric_names=DETOXIFY_SCORE_NAMES,
+            eval_results_path="/path/to/results",
+            model=model_runner,
+            prompt_template=test_case.dataset_prompt_template,
+            agg_method=MEAN,
+            save=True,
         )
-        assert not save_dataset.called
-        assert not generate_model_predict_response_for_dataset.called
-        assert actual_response == test_case.expected_response
+        mock_transform_pipeline_cls.assert_called_once_with([mock_toxicity_scores_cls.return_value])
+        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
+        assert output == [mock_evaluate_dataset.return_value]
 
-    class TestCaseToxicityEvaluateInvalid(NamedTuple):
-        input_dataset: Dataset
-        dataset_config: Optional[DataConfig]
-        prompt_template: Optional[str]
-        model_provided: bool
-        expected_error_message: str
+    def test_toxicity_scores_detoxify(self):
+        """
+        GIVEN valid inputs
+        WHEN __call__() method of ToxicityScores using DetoxifyHelperModel is called.
+        THEN correct output is returned
+        """
+        helper_model = DetoxifyHelperModel()
+        toxicity_scores = ToxicityScores(input_key="model_output", toxicity_helper_model=helper_model)
+        actual_response = toxicity_scores({"model_output": np.array(["My toxic text", "My good text"])})
+        expected_response = {
+            "model_output": np.array(["My toxic text", "My good text"]),
+            DETOXIFY_SCORE_TOXICITY: np.array([0.06483059376478195, 0.00045518550905399024]),
+            DETOXIFY_SCORE_SEVERE_TOXICITY: np.array([1.26147870105342e-05, 1.6480657905049156e-06]),
+            DETOXIFY_SCORE_OBSCENE: np.array([0.0009980567265301943, 3.1544899684377015e-05]),
+            DETOXIFY_SCORE_IDENTITY_ATTACK: np.array([0.0012085289927199483, 6.863904854981229e-05]),
+            DETOXIFY_SCORE_INSULT: np.array([0.00813359022140503, 8.761371282162145e-05]),
+            DETOXIFY_SCORE_THREAT: np.array([0.0004742506134789437, 2.826379204634577e-05]),
+            DETOXIFY_SCORE_SEXUAL_EXPLICIT: np.array([0.00044487009290605783, 1.9261064153397456e-05]),
+        }
+        assert actual_response.keys() == expected_response.keys()
+        np.testing.assert_array_equal(actual_response["model_output"], expected_response["model_output"])
+        np.testing.assert_almost_equal(
+            actual_response[DETOXIFY_SCORE_TOXICITY], expected_response[DETOXIFY_SCORE_TOXICITY]
+        )
+        np.testing.assert_almost_equal(
+            actual_response[DETOXIFY_SCORE_SEVERE_TOXICITY], expected_response[DETOXIFY_SCORE_SEVERE_TOXICITY]
+        )
+        np.testing.assert_almost_equal(
+            actual_response[DETOXIFY_SCORE_OBSCENE], expected_response[DETOXIFY_SCORE_OBSCENE]
+        )
+        np.testing.assert_almost_equal(
+            actual_response[DETOXIFY_SCORE_IDENTITY_ATTACK], expected_response[DETOXIFY_SCORE_IDENTITY_ATTACK]
+        )
+        np.testing.assert_almost_equal(actual_response[DETOXIFY_SCORE_INSULT], expected_response[DETOXIFY_SCORE_INSULT])
+        np.testing.assert_almost_equal(actual_response[DETOXIFY_SCORE_THREAT], expected_response[DETOXIFY_SCORE_THREAT])
+        np.testing.assert_almost_equal(
+            actual_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT], expected_response[DETOXIFY_SCORE_SEXUAL_EXPLICIT]
+        )
 
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                    ]
-                ),
-                dataset_config=None,
-                prompt_template=None,
-                model_provided=False,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        TOXIGEN_SCORE_NAME,
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                model_provided=False,
-                prompt_template=None,
-                expected_error_message="No ModelRunner provided. ModelRunner is required for inference on model_inputs",
-            ),
-            TestCaseToxicityEvaluateInvalid(
-                input_dataset=DATASET_TOXIGEN.drop_columns(
-                    cols=[
-                        DatasetColumns.PROMPT.value.name,
-                        DatasetColumns.CATEGORY.value.name,
-                        TOXIGEN_SCORE_NAME,
-                        DatasetColumns.MODEL_OUTPUT.value.name,
-                        DatasetColumns.MODEL_INPUT.value.name,
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                model_provided=True,
-                expected_error_message="Missing required column: model_input, for evaluate() method",
-            ),
-        ],
-    )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.toxicity.get_dataset")
-    @patch.dict("fmeval.eval_algorithms.toxicity.TOXICITY_HELPER_MODEL_MAPPING", {TOXIGEN_MODEL: get_toxigen_mock()})
-    def test_toxicity_evaluate_invalid_input(self, get_dataset, model, test_case, config):
+    @patch.object(ToxigenHelperModel, "TOXIGEN_MODEL_NAME", new_callable=PropertyMock)
+    def test_toxigen_helper_model_call(self, mock_model_name):
         """
-        GIVEN invalid inputs
-        WHEN Toxicity evaluate() method is called
-        THEN correct exception with proper message is raised
+        GIVEN valid inputs
+        WHEN __call__() method of ToxicityScores using ToxigenHelperModel is called
+        THEN correct output is returned
+        Using lightweight test model: https://huggingface.co/hf-internal-testing/tiny-random-roberta
         """
-        eval_algorithm = Toxicity(config)
-        get_dataset.return_value = test_case.input_dataset
-        if not test_case.model_provided:
-            model = None
-        with pytest.raises(EvalAlgorithmClientError, match=re.escape(test_case.expected_error_message)):
-            eval_algorithm.evaluate(
-                model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template
-            )
+        mock_model_name.return_value = "hf-internal-testing/tiny-random-roberta"
+        helper_model = ToxigenHelperModel()
+        toxicity_scores = ToxicityScores(input_key="prompt", toxicity_helper_model=helper_model)
+        actual_response = toxicity_scores({"prompt": np.array(["My toxic text", "My good text"])})
+        expected_response = {
+            "prompt": np.array(["My toxic text", "My good text"]),
+            TOXIGEN_SCORE_NAME: np.array([0.5005719, 0.5005644]),
+        }
+        assert actual_response.keys() == expected_response.keys()
+        np.testing.assert_array_equal(actual_response["prompt"], expected_response["prompt"])
+        np.testing.assert_almost_equal(actual_response[TOXIGEN_SCORE_NAME], expected_response["toxicity"])
