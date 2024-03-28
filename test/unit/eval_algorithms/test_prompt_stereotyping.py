@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import NamedTuple, Optional, List
-from unittest.mock import patch
+from typing import NamedTuple, Optional
+from unittest.mock import patch, Mock
 
 import pytest
 import ray
-from ray.data import Dataset
 import numpy as np
 
 from fmeval.constants import (
@@ -12,7 +11,6 @@ from fmeval.constants import (
     MIME_TYPE_JSON,
     DEFAULT_EVAL_RESULTS_PATH,
 )
-from fmeval.data_loaders.util import DataConfig
 from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
@@ -52,22 +50,22 @@ class TestPromptStereotyping:
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability=np.log(0.8),
                 sent_more_log_probability=None,
-                expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability",
+                expected_error_message="Prompt stereotyping evaluation requires sent_more_log_probability and sent_less_log_probability",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability=None,
                 sent_more_log_probability=np.log(0.7),
-                expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability",
+                expected_error_message="Prompt stereotyping evaluation requires sent_more_log_probability and sent_less_log_probability",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability=np.log(0.8),
                 sent_more_log_probability="prob",
-                expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
+                expected_error_message="Prompt stereotyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability="-0.8",
                 sent_more_log_probability=np.log(0.7),
-                expected_error_message="Stereoptyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
+                expected_error_message="Prompt stereotyping evaluation requires sent_more_log_probability and sent_less_log_probability to be float",
             ),
             TestCasePromptStereotypingEvaluateSampleInvalid(
                 sent_less_log_probability=-0.8,
@@ -86,416 +84,135 @@ class TestPromptStereotyping:
         with pytest.raises(EvalAlgorithmClientError, match=test_case.expected_error_message):
             eval_algorithm.evaluate_sample(test_case.sent_more_log_probability, test_case.sent_less_log_probability)
 
-    class TestCasePromptStereotypingEvaluate(NamedTuple):
-        input_dataset: Dataset
-        input_dataset_with_generated_model_output: Optional[Dataset]
-        expected_response: List[EvalOutput]
-        prompt_template: Optional[str] = None
-        dataset_config: Optional[DataConfig] = None
-        output_results_path: Optional[str] = None
+    class TestCasePromptStereotypingEvaluateWithModel(NamedTuple):
+        user_provided_prompt_template: Optional[str]
+        dataset_prompt_template: str
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            TestCasePromptStereotypingEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "gender",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "socioeconomic",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "nationality",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "sexual-orientation",
-                        },
-                    ]
-                ),
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "gender",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "socioeconomic",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "nationality",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "sexual-orientation",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name=CROWS_PAIRS,
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
-                        category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
-                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/prompt_stereotyping_crows_pairs.jsonl",
-                    )
-                ],
+            TestCasePromptStereotypingEvaluateWithModel(
+                user_provided_prompt_template=None,
+                dataset_prompt_template="$model_input",
             ),
-            TestCasePromptStereotypingEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "gender",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "socioeconomic",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "nationality",
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "sexual-orientation",
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    sent_more_input_location="sent_more",
-                    sent_less_input_location="sent_less",
-                ),
-                prompt_template="$model_input",
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "gender",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "socioeconomic",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "nationality",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "sexual-orientation",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
-                        },
-                    ]
-                ),
-                output_results_path="/output/results/path",
-                expected_response=[
-                    EvalOutput(
-                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="my_custom_dataset",
-                        prompt_template="$model_input",
-                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
-                        category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
-                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            TestCasePromptStereotypingEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                ),
-                prompt_template="$model_input",
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="my_custom_dataset",
-                        prompt_template="$model_input",
-                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
-                    )
-                ],
-            ),
-            TestCasePromptStereotypingEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
-                        },
-                    ]
-                ),
-                expected_response=[
-                    EvalOutput(
-                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="my_custom_dataset",
-                        prompt_template=DEFAULT_PROMPT_TEMPLATE,
-                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
-                        category_scores=None,
-                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
-                    )
-                ],
+            TestCasePromptStereotypingEvaluateWithModel(
+                user_provided_prompt_template="Do something with $model_input",
+                dataset_prompt_template="Do something with $model_input",
             ),
         ],
     )
-    @patch("fmeval.model_runners.model_runner.ModelRunner")
-    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
     @patch("fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
-    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
-    def test_prompt_stereotyping_evaluate(
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_output_dataset_path")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset_configs")
+    def test_prompt_stereotyping_evaluate_with_model(
         self,
-        generate_model_output_for_dataset,
-        save_dataset,
-        get_dataset,
-        model,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_generate_output_dataset_path,
+        mock_save_dataset,
         test_case,
     ):
         """
-        GIVEN valid inputs i.e. input data config for a dataset without model_outputs, an input ModelRunner
-            and request to save records with scores
+        GIVEN valid inputs i.e. input data config for a dataset without model_outputs,
+            an input ModelRunner, and request to save records with scores.
         WHEN PromptStereotyping.evaluate is called
         THEN correct EvalOutput is returned
         """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_output_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = PromptStereotyping()
-        actual_response = eval_algorithm.evaluate(
-            model=model, dataset_config=test_case.dataset_config, prompt_template=test_case.prompt_template, save=True
+        input_dataset = ray.data.from_items(
+            [
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "gender",
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "socioeconomic",
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "nationality",
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "sexual-orientation",
+                },
+            ]
         )
-        assert actual_response == test_case.expected_response
-        assert save_dataset.called
-        assert generate_model_output_for_dataset.called
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_get_dataset.return_value = input_dataset
+
+        model_runner = Mock()
+        model_runner.predict.side_effect = [
+            (None, np.log(0.9)),  # sent_more
+            (None, np.log(0.5)),  # sent_less
+            (None, np.log(0.2)),
+            (None, np.log(0.7)),
+            (None, np.log(0.8)),
+            (None, np.log(0.6)),
+            (None, np.log(0.1)),
+            (None, np.log(0.4)),
+        ]
+
+        mock_generate_output_dataset_path.return_value = "/path/to/output/dataset"
+
+        # Expected scores
+        dataset_scores = [EvalScore(name=PROMPT_STEREOTYPING, value=0.5)]
+        category_scores = [
+            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+            CategoryScore(name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+        ]
+        expected_output = EvalOutput(
+            eval_name=PROMPT_STEREOTYPING,
+            dataset_name=dataset_config.dataset_name,
+            prompt_template=test_case.dataset_prompt_template,
+            dataset_scores=dataset_scores,
+            category_scores=category_scores,
+            output_path="/path/to/output/dataset",
+        )
+
+        eval_algo = PromptStereotyping()
+        eval_output = eval_algo.evaluate(
+            model=model_runner, prompt_template=test_case.user_provided_prompt_template, save=True
+        )[0]
+
+        mock_save_dataset.assert_called_once()
+        assert eval_output == expected_output
 
     @pytest.mark.parametrize(
         "test_case",
         [
-            TestCasePromptStereotypingEvaluate(
-                input_dataset=ray.data.from_items(
-                    [
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "gender",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "socioeconomic",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "nationality",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
-                        },
-                        {
-                            DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
-                            DatasetColumns.CATEGORY.value.name: "sexual-orientation",
-                            DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
-                            DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
-                        },
-                    ]
-                ),
-                dataset_config=DataConfig(
-                    dataset_name="my_custom_dataset",
-                    dataset_uri="tba",
-                    dataset_mime_type=MIME_TYPE_JSON,
-                    model_input_location="tba",
-                    target_output_location="tba",
-                    model_output_location=None,
-                    category_location="tba",
-                ),
-                prompt_template=None,
-                input_dataset_with_generated_model_output=None,
-                expected_response=[
-                    EvalOutput(
-                        eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value,
-                        dataset_name="my_custom_dataset",
-                        prompt_template=None,
-                        dataset_scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0.5)],
-                        category_scores=[
-                            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
-                            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
-                            CategoryScore(
-                                name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]
-                            ),
-                        ],
-                        output_path="/tmp/eval_results/prompt_stereotyping_my_custom_dataset.jsonl",
-                    )
-                ],
-            )
+            TestCasePromptStereotypingEvaluateWithModel(
+                user_provided_prompt_template=None,
+                dataset_prompt_template=None,
+            ),
+            TestCasePromptStereotypingEvaluateWithModel(
+                user_provided_prompt_template="Do something with $model_input",
+                dataset_prompt_template=None,
+            ),
         ],
     )
-    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
     @patch("fmeval.eval_algorithms.prompt_stereotyping.save_dataset")
-    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_model_predict_response_for_dataset")
-    def test_prompt_stereotyping_evaluate_without_model(
-        self, generate_model_output_for_dataset, save_dataset, get_dataset, test_case
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.generate_output_dataset_path")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset")
+    @patch("fmeval.eval_algorithms.prompt_stereotyping.get_dataset_configs")
+    def test_evaluate_without_model(
+        self,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_generate_output_dataset_path,
+        mock_save_dataset,
+        test_case,
     ):
         """
         GIVEN valid inputs i.e. input data config for a dataset with model_outputs,
@@ -503,13 +220,73 @@ class TestPromptStereotyping:
         WHEN PromptStereotyping.evaluate is called
         THEN correct EvalOutput is returned
         """
-        get_dataset.return_value = test_case.input_dataset
-        generate_model_output_for_dataset.return_value = test_case.input_dataset_with_generated_model_output
-        eval_algorithm = PromptStereotyping()
-        actual_response = eval_algorithm.evaluate(model=None, dataset_config=test_case.dataset_config)
-        assert not generate_model_output_for_dataset.called
-        assert not save_dataset.called
-        assert actual_response == test_case.expected_response
+        input_dataset = ray.data.from_items(
+            [
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: GENDER_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: GENDER_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "gender",
+                    DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.9),
+                    DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.5),
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: SOCIO_ECONOMIC_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: SOCIO_ECONOMIC_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "socioeconomic",
+                    DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.2),
+                    DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.7),
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: NATIONALITY_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: NATIONALITY_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "nationality",
+                    DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.8),
+                    DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.6),
+                },
+                {
+                    DatasetColumns.SENT_MORE_INPUT.value.name: SEXUAL_ORIENTIATION_MORE_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.SENT_LESS_INPUT.value.name: SEXUAL_ORIENTIATION_LESS_STEREOTYPICAL_STATEMENT,
+                    DatasetColumns.CATEGORY.value.name: "sexual-orientation",
+                    DatasetColumns.SENT_MORE_LOG_PROB.value.name: np.log(0.1),
+                    DatasetColumns.SENT_LESS_LOG_PROB.value.name: np.log(0.4),
+                },
+            ]
+        )
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_get_dataset.return_value = input_dataset
+        mock_generate_output_dataset_path.return_value = "/path/to/output/dataset"
+
+        # Expected scores
+        dataset_scores = [EvalScore(name=PROMPT_STEREOTYPING, value=0.5)]
+        category_scores = [
+            CategoryScore(name="gender", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+            CategoryScore(name="socioeconomic", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+            CategoryScore(name="nationality", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=1)]),
+            CategoryScore(name="sexual-orientation", scores=[EvalScore(name=PROMPT_STEREOTYPING, value=0)]),
+        ]
+
+        expected_output = EvalOutput(
+            eval_name=PROMPT_STEREOTYPING,
+            dataset_name=dataset_config.dataset_name,
+            prompt_template=test_case.dataset_prompt_template,
+            dataset_scores=dataset_scores,
+            category_scores=category_scores,
+            output_path="/path/to/output/dataset",
+        )
+
+        eval_algo = PromptStereotyping()
+        eval_output = eval_algo.evaluate(
+            model=None,
+            prompt_template=test_case.user_provided_prompt_template,
+            save=False,
+        )[0]
+
+        mock_save_dataset.assert_not_called()
+        assert eval_output == expected_output
 
     def test_evaluate_sample(self):
         assert PromptStereotyping().evaluate_sample(-3.0, -5.0) == [
