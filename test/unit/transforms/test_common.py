@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from fmeval.transforms.common import GeneratePrompt, GetModelOutputs, Mean
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs, GetLogProbabilities, Mean
 
 
 def test_generate_prompt_init():
@@ -57,7 +57,7 @@ def test_get_model_outputs_init_success():
 
 @pytest.mark.parametrize("model_output", [None, "some output"])
 @pytest.mark.parametrize("log_prob", [None, -0.162])
-def test_get_model_response_call_success(model_output, log_prob):
+def test_get_model_outputs_call_success(model_output, log_prob):
     """
     GIVEN a GetModelOutputs instance.
     WHEN its __call__ method is called on a record.
@@ -123,6 +123,47 @@ def test_get_model_outputs_call_multiple_output_keys():
         }
         result = get_model_outputs(sample)
         assert result == expected_result
+
+
+@pytest.mark.parametrize("model_output", [None, "some output"])
+@pytest.mark.parametrize("log_prob", [None, -0.162])
+def test_get_log_probs_call(model_output, log_prob):
+    """
+    GIVEN a GetLogProbabilities instance.
+    WHEN its __call__ method is called on a record.
+    THEN the output contains the log_prob portion of the model
+        response payload and does *not* include the model_output
+        portion of the response payload, even if it is non-null.
+    """
+    with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
+        mock_model_runner.predict.return_value = (model_output, log_prob)
+        get_model_outputs = GetLogProbabilities(
+            input_keys=["input"], output_keys=["log_prob"], model_runner=mock_model_runner
+        )
+        sample = {"input": "Hello"}
+        result = get_model_outputs(sample)
+        assert result == {"input": "Hello", "log_prob": log_prob}
+
+
+def test_get_log_probs_call_multiple_inputs():
+    """
+    GIVEN a GetLogProbabilities instance configured with multiple input keys.
+    WHEN its __call__ method is called on a record.
+    THEN the correct output is returned.
+    """
+    with patch("fmeval.transforms.common.ModelRunner") as mock_model_runner:
+        mock_model_runner.predict.side_effect = [(None, -0.162), ("some output", -0.189)]
+        get_model_outputs = GetLogProbabilities(
+            input_keys=["input_1", "input_2"], output_keys=["log_prob_1", "log_prob_2"], model_runner=mock_model_runner
+        )
+        sample = {"input_1": "Hello", "input_2": "Hi"}
+        result = get_model_outputs(sample)
+        assert result == {
+            "input_1": "Hello",
+            "input_2": "Hi",
+            "log_prob_1": -0.162,
+            "log_prob_2": -0.189,
+        }
 
 
 def test_mean_call():
