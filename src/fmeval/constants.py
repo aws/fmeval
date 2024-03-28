@@ -16,6 +16,10 @@ PARTITION_MULTIPLIER = 5
 SAGEMAKER_SERVICE_ENDPOINT_URL = "SAGEMAKER_SERVICE_ENDPOINT_URL"
 SAGEMAKER_RUNTIME_ENDPOINT_URL = "SAGEMAKER_RUNTIME_ENDPOINT_URL"
 
+# We default the boto3 client region to us-west-2 as the dataset bucket cannot be accessed from opt-in regions.
+BUILT_IN_DATASET_PREFIX = "s3://fmeval/datasets"
+BUILT_IN_DATASET_DEFAULT_REGION = "us-west-2"
+
 
 @dataclass(frozen=True)
 class Column:
