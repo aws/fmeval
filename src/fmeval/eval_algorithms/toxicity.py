@@ -30,8 +30,8 @@ TOXIGEN_MODEL = "toxigen"
 DETOXIFY_MODEL = "detoxify"
 DEFAULT_MODEL_TYPE = DETOXIFY_MODEL
 MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
-
 TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
+TOXICITY_BATCH_SIZE = 64
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class ToxicityScores(BatchedTransform):
     @property
     def batch_size(self) -> int:
         """The batch size to use when invoking the toxicity helper model."""
-        return 64
+        return TOXICITY_BATCH_SIZE  # pragma: no cover
 
     @validate_call
     def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
