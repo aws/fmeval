@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
-from ray import ObjectRef
+from ray.actor import ActorHandle
 
 from fmeval.constants import (
     DatasetColumns,
@@ -120,7 +120,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         self,
         model: ModelRunner,
         prompt_template: str,
-        bertscore_model: Union[BertscoreHelperModel, ObjectRef],
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
     ) -> TransformPipeline:
         """Build the TransformPipeline to be used by `evaluate` and `evaluate_sample`.
 

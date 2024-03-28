@@ -1,45 +1,95 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Union, Dict
 
 import ray
-from ray.data import Dataset
-
-from fmeval import util
+from ray.actor import ActorHandle
+import numpy as np
 from fmeval.constants import DatasetColumns, MEAN
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
-    DATASET_CONFIGS,
-    EVAL_DATASETS,
-    get_default_prompt_template,
     EvalAlgorithm,
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, DetoxifyHelperModel
+from fmeval.eval_algorithms.helper_models.helper_model import ToxigenHelperModel, DetoxifyHelperModel, BaseHelperModel
 from fmeval.eval_algorithms.util import (
-    validate_dataset,
-    generate_prompt_column_for_dataset,
-    generate_model_predict_response_for_dataset,
-    aggregate_evaluation_scores,
-    save_dataset,
-    generate_output_dataset_path,
+    get_dataset_configs,
+    evaluate_dataset,
 )
-from fmeval.util import get_num_actors
+from fmeval.transforms.batched_transform import BatchedTransform
+from fmeval.transforms.transform_pipeline import TransformPipeline
+from fmeval.transforms.util import validate_call
+from fmeval.util import get_eval_results_path, create_shared_resource, cleanup_shared_resource
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.perf_util import timed_block
 
 TOXIGEN_MODEL = "toxigen"
 DETOXIFY_MODEL = "detoxify"
 DEFAULT_MODEL_TYPE = DETOXIFY_MODEL
 MODEL_TYPES_SUPPORTED = [TOXIGEN_MODEL, DETOXIFY_MODEL]
-
 TOXICITY_HELPER_MODEL_MAPPING = {TOXIGEN_MODEL: ToxigenHelperModel, DETOXIFY_MODEL: DetoxifyHelperModel}
+TOXICITY_BATCH_SIZE = 64
 
 logger = logging.getLogger(__name__)
+
+
+class ToxicityScores(BatchedTransform):
+    """This transform computes toxicity scores on a batch of records at a time using a helper model.
+
+    This transform augments the input batch with the computed scores.
+    """
+
+    def __init__(
+        self,
+        input_key: str,
+        toxicity_helper_model: Union[ToxigenHelperModel, DetoxifyHelperModel, ActorHandle],
+    ):
+        """ToxicityScores initializer.
+
+        :param input_key: The key corresponding to the batch data to be processed by this transform.
+        :param toxicity_helper_model: A toxicity helper model instance (see MODEL_TYPES_SUPPORTED
+            for the supported helper models) or a Ray actor handle for a helper model.
+        """
+        super().__init__(input_key, toxicity_helper_model)
+        score_names = (
+            toxicity_helper_model.get_score_names()
+            if (
+                isinstance(toxicity_helper_model, ToxigenHelperModel)
+                or isinstance(toxicity_helper_model, DetoxifyHelperModel)
+            )
+            else ray.get(toxicity_helper_model.get_score_names.remote())  # type: ignore
+        )
+        self.register_input_output_keys(
+            input_keys=[input_key],
+            output_keys=score_names,
+        )
+        self.input_key = input_key
+        self.toxicity_helper_model = toxicity_helper_model
+
+    @property
+    def batch_size(self) -> int:
+        """The batch size to use when invoking the toxicity helper model."""
+        return TOXICITY_BATCH_SIZE  # pragma: no cover
+
+    @validate_call
+    def __call__(self, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+        """Augment the input batch with toxicity scores computed by the helper model.
+
+        :param batch: The input batch.
+        :returns: The input batch with toxicity scores added in.
+        """
+        text_input: List[str] = batch[self.input_key].tolist()
+        scores = (
+            self.toxicity_helper_model.get_helper_scores(text_input)
+            if isinstance(self.toxicity_helper_model, BaseHelperModel)
+            else ray.get(self.toxicity_helper_model.get_helper_scores.remote(text_input))
+        )
+        for key, value in scores.items():
+            batch.update({key: np.array(value)})
+        return batch
 
 
 @dataclass(frozen=True)
@@ -53,7 +103,7 @@ class ToxicityConfig(EvalAlgorithmConfig):
     model_type: str = DEFAULT_MODEL_TYPE
 
     def __post_init__(self):
-        if not self.model_type in MODEL_TYPES_SUPPORTED:
+        if self.model_type not in MODEL_TYPES_SUPPORTED:
             raise EvalAlgorithmClientError(
                 f"Invalid model_type: {self.model_type} requested in ToxicityConfig, "
                 f"please choose from acceptable values: {MODEL_TYPES_SUPPORTED}"
@@ -70,24 +120,22 @@ class Toxicity(EvalAlgorithmInterface):
     Disclaimer: the concept of toxicity is cultural and context dependent. As this evaluation employs a model to score generated passages, the various scores represent the “view” of the toxicity detector used.
     """
 
-    def __init__(self, eval_algorithm_config: ToxicityConfig = ToxicityConfig()):
-        """Default constructor
+    eval_name = TOXICITY
 
-        :param eval_algorithm_config: Toxicity eval algorithm config
+    def __init__(self, eval_algorithm_config: ToxicityConfig = ToxicityConfig()):
+        """Toxicity initializer.
+
+        :param eval_algorithm_config: Toxicity evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self.eval_name = TOXICITY
-        self._eval_algorithm_config = eval_algorithm_config
-        self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type]()
+        self._helper_model = TOXICITY_HELPER_MODEL_MAPPING[eval_algorithm_config.model_type]()
 
     def evaluate_sample(self, model_output: str) -> List[EvalScore]:  # type: ignore[override]
-        """
-        Evaluate toxicity for a single datapoint.
+        """Evaluate toxicity on a single datapoint.
 
-        :param model_output: The output of the model that we want to evaluate.
-        :return: list of EvalScore objects
+        :param model_output: The output of the model under evaluation.
+        :returns: A list of EvalScore objects representing the computed toxicity scores.
         """
-        util.require(model_output, "Missing required input: model_output, for Toxicity evaluate_sample")
         scores = self._helper_model.get_helper_scores([model_output])
         return [EvalScore(name=key, value=value[0]) for key, value in scores.items()]
 
@@ -96,93 +144,51 @@ class Toxicity(EvalAlgorithmInterface):
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
-        save: bool = False,
         num_records: int = 100,
+        save: bool = False,
     ) -> List[EvalOutput]:
-        """
-        Evaluate toxicity on multiple datapoints, either the full dataset or `num_records` samples.
+        """Compute toxicity metrics on one or more datasets.
 
-        :param model: An instance of ModelRunner which is the model under evaluation.
-        :param dataset_config: The config to load the dataset to use for evaluation. If not provided, model will be
-                               evaluated on all built-in datasets configured for this evaluation.
-        :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
-            will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH.
-        :param num_records: The number of records to be sampled randomly from the input dataset to perform the
-                            evaluation.
-        :return: List of EvalOutput objects.
-        """
-        if dataset_config:
-            dataset_configs = [dataset_config]
-        else:
-            dataset_configs = [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[self.eval_name]]
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
+        :param dataset_config: Configures the single dataset used for evaluation.
+            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param prompt_template: A template used to generate prompts that are fed to the model.
+            If not provided, defaults will be used. If provided, `model` must not be None.
+        :param num_records: The number of records to be sampled randomly from the input dataset(s)
+            used to perform the evaluation(s).
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
+        :return: A list of EvalOutput objects.
+        """
+        toxicity_model_shared_resource = create_shared_resource(self._helper_model)
+        pipeline = TransformPipeline(
+            [
+                ToxicityScores(
+                    input_key=DatasetColumns.MODEL_OUTPUT.value.name,
+                    toxicity_helper_model=toxicity_model_shared_resource,
+                )
+            ]
+        )
+        dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
-            dataset_prompt_template = None
-            if DatasetColumns.MODEL_OUTPUT.value.name not in dataset.columns():
-                util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
-                dataset_prompt_template = (
-                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
-                )
-                dataset = generate_prompt_column_for_dataset(
-                    dataset_prompt_template,
-                    dataset,
-                    DatasetColumns.MODEL_INPUT.value.name,
-                    DatasetColumns.PROMPT.value.name,
-                )
-                assert model  # to satisfy mypy
-                dataset = generate_model_predict_response_for_dataset(
-                    model=model,
-                    data=dataset,
-                    model_input_column_name=DatasetColumns.PROMPT.value.name,
-                    model_output_column_name=DatasetColumns.MODEL_OUTPUT.value.name,
-                )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
-
-                dataset = self.__add_scores(dataset)
-                dataset_scores, category_scores = aggregate_evaluation_scores(
-                    dataset, self._helper_model.get_score_names(), agg_method=MEAN
-                )
-                eval_outputs.append(
-                    EvalOutput(
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                        prompt_template=dataset_prompt_template,
-                        dataset_scores=dataset_scores,
-                        category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=util.get_eval_results_path(),
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
-                    )
-                )
-            if save:
-                save_dataset(
-                    dataset=dataset,
-                    score_names=self._helper_model.get_score_names(),
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=util.get_eval_results_path(),
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
-                )
-
+            eval_output = evaluate_dataset(
+                dataset=dataset,
+                pipeline=pipeline,
+                dataset_name=dataset_config.dataset_name,
+                eval_name=self.eval_name,
+                metric_names=self._helper_model.get_score_names(),
+                eval_results_path=get_eval_results_path(),
+                model=model,
+                prompt_template=prompt_template,
+                agg_method=MEAN,
+                save=save,
+            )
+            eval_outputs.append(eval_output)
+        cleanup_shared_resource(toxicity_model_shared_resource)
         return eval_outputs
-
-    def __add_scores(self, dataset: Dataset) -> Dataset:  # pragma: no cover
-        """
-        Private method to encapsulate making map_batch call to helper model.
-
-        :param dataset: input dataset with prompts
-        :returns: Materialized ray dataset with score columns added
-        """
-        return dataset.map_batches(
-            fn=TOXICITY_HELPER_MODEL_MAPPING[self._eval_algorithm_config.model_type],
-            fn_constructor_args=(DatasetColumns.MODEL_OUTPUT.value.name,),
-            compute=ray.data.ActorPoolStrategy(size=get_num_actors()),
-        ).materialize()
