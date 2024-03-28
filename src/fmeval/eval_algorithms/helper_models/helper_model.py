@@ -52,8 +52,6 @@ class ToxigenHelperModel(BaseHelperModel):
     def __init__(self):
         """
         Constructor to locally load the helper model for inference.
-
-        :param column_name: column name used to fetch input texts in __call__ method
         """
         self._model = pipeline("text-classification", model=self.TOXIGEN_MODEL_NAME)
 
