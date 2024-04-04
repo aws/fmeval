@@ -180,8 +180,13 @@ def _is_valid_s3_uri(uri: str) -> bool:
     if parsed_url.scheme.lower() not in ["s3", "s3n", "s3a"]:
         return False
     try:
+        s3_client = (
+            boto3.client("s3", region_name=BUILT_IN_DATASET_DEFAULT_REGION)
+            if uri.startswith(BUILT_IN_DATASET_PREFIX)
+            else client
+        )
         s3_uri = S3Uri(uri)
-        client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
+        s3_client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
         return True
     except botocore.errorfactory.ClientError:
         return False
