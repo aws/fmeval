@@ -279,8 +279,10 @@ class TestDataLoaderUtil:
         WHEN _is_valid_s3_uri is called
         THEN False is returned
         """
-        with patch("fmeval.data_loaders.util.boto3") as mock_boto3:
-            mock_boto3.client.get_object.side_effect = botocore.errorfactory.ClientError({"error": "blah"}, "blah")
+        with patch(
+            "fmeval.data_loaders.util.client.get_object",
+            side_effect=botocore.errorfactory.ClientError({"error": "blah"}, "blah"),
+        ):
             assert not _is_valid_s3_uri("s3://non/existent/object")
 
     @pytest.mark.parametrize("file_path", ["path/to/file", "file://path/to/file"])

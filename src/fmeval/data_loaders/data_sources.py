@@ -1,11 +1,11 @@
+import boto3
 import botocore.response
 import botocore.errorfactory
 import urllib.parse
 from typing import IO
 from abc import ABC, abstractmethod
-from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.constants import BUILT_IN_DATASET_PREFIX, BUILT_IN_DATASET_DEFAULT_REGION
-import boto3
+from fmeval.exceptions import EvalAlgorithmClientError
 
 
 class DataSource(ABC):
