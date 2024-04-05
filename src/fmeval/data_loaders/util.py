@@ -13,10 +13,8 @@ from fmeval.constants import (
     PARTITION_MULTIPLIER,
     SEED,
     MAX_ROWS_TO_TAKE,
-    BUILT_IN_DATASET_PREFIX,
-    BUILT_IN_DATASET_DEFAULT_REGION,
 )
-from fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile, S3Uri
+from fmeval.data_loaders.data_sources import DataSource, LocalDataFile, S3DataFile, DataFile, S3Uri, get_s3_client
 from fmeval.data_loaders.json_data_loader import JsonDataLoaderConfig, JsonDataLoader
 from fmeval.data_loaders.json_parser import JsonParser
 from fmeval.data_loaders.data_config import DataConfig
@@ -155,11 +153,7 @@ def _get_s3_data_source(dataset_uri) -> S3DataFile:
     :param dataset_uri: s3 dataset uri
     :return: S3DataFile object with dataset uri
     """
-    s3_client = (
-        boto3.client("s3", region_name=BUILT_IN_DATASET_DEFAULT_REGION)
-        if dataset_uri.startswith(BUILT_IN_DATASET_PREFIX)
-        else client
-    )
+    s3_client = get_s3_client(dataset_uri)
     s3_uri = S3Uri(dataset_uri)
     s3_obj = s3_client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
     if "application/x-directory" in s3_obj["ContentType"]:
@@ -180,8 +174,9 @@ def _is_valid_s3_uri(uri: str) -> bool:
     if parsed_url.scheme.lower() not in ["s3", "s3n", "s3a"]:
         return False
     try:
+        s3_client = get_s3_client(uri)
         s3_uri = S3Uri(uri)
-        client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
+        s3_client.get_object(Bucket=s3_uri.bucket, Key=s3_uri.key)
         return True
     except botocore.errorfactory.ClientError:
         return False

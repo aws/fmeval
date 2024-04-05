@@ -4,6 +4,7 @@ import botocore.errorfactory
 import urllib.parse
 from typing import IO
 from abc import ABC, abstractmethod
+from fmeval.constants import BUILT_IN_DATASET_PREFIX, BUILT_IN_DATASET_DEFAULT_REGION
 from fmeval.exceptions import EvalAlgorithmClientError
 
 
@@ -85,7 +86,7 @@ class S3DataFile(DataFile):
     def __init__(self, file_path: str):
         # We cannot inject the client b/c
         # it is not serializable by Ray.
-        self._client = boto3.client("s3")
+        self._client = get_s3_client(file_path)
         super().__init__(file_path)
 
     def open(self, mode="r") -> botocore.response.StreamingBody:  # type: ignore
@@ -105,3 +106,18 @@ class S3DataFile(DataFile):
         """
         serialized_data = (self.uri,)
         return S3DataFile, serialized_data
+
+
+def get_s3_client(uri: str) -> boto3.client:
+    """
+    Util method to return boto3 s3 client. For built-in datasets, the boto3 client region is default to us-west-2 as
+        the bucket is not accessible in opt-in regions.
+    :param uri: s3 dataset uri
+    :return: boto3 s3 client
+    """
+    s3_client = (
+        boto3.client("s3", region_name=BUILT_IN_DATASET_DEFAULT_REGION)
+        if uri.startswith(BUILT_IN_DATASET_PREFIX)
+        else boto3.client("s3")
+    )
+    return s3_client

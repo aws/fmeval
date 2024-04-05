@@ -191,7 +191,7 @@ class TestDataLoaderUtil:
         WHEN get_data_source is called
         THEN an S3DataFile with the correct URI is returned
         """
-        with patch("fmeval.data_loaders.util.client") as mock_s3_client:
+        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
             mock_s3_client.get_object = Mock(return_value={"ContentType": "binary/octet-stream"})
             dataset_uri = S3_PREFIX + DATASET_URI
             data_source = get_data_source(dataset_uri)
@@ -221,8 +221,10 @@ class TestDataLoaderUtil:
         WHEN get_data_source is called
         THEN the correct exception is raised
         """
-        with patch("fmeval.data_loaders.util.client") as mock_s3_client:
-            mock_s3_client.get_object = Mock(return_value={"ContentType": "application/x-directory; charset=UTF-8"})
+        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+            mock_s3_client.return_value.get_object = Mock(
+                return_value={"ContentType": "application/x-directory; charset=UTF-8"}
+            )
             dataset_uri = S3_PREFIX + DIRECTORY_URI
             with pytest.raises(
                 EvalAlgorithmClientError, match="Please provide a s3 file path instead of a directory path."
@@ -257,7 +259,8 @@ class TestDataLoaderUtil:
         THEN True is returned
         """
         dataset_uri = S3_PREFIX + DATASET_URI
-        with patch("fmeval.data_loaders.util.client.get_object", return_value=Mock()):
+        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+            mock_s3_client.return_value.get_object.return_value = Mock()
             assert _is_valid_s3_uri(dataset_uri)
 
     def test_is_valid_s3_uri_invalid_scheme(self):
@@ -276,10 +279,10 @@ class TestDataLoaderUtil:
         WHEN _is_valid_s3_uri is called
         THEN False is returned
         """
-        with patch(
-            "fmeval.data_loaders.util.client.get_object",
-            side_effect=botocore.errorfactory.ClientError({"error": "blah"}, "blah"),
-        ):
+        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+            mock_s3_client.return_value.get_object = Mock(
+                side_effect=botocore.errorfactory.ClientError({"error": "blah"}, "blah")
+            )
             assert not _is_valid_s3_uri("s3://non/existent/object")
 
     @pytest.mark.parametrize("file_path", ["path/to/file", "file://path/to/file"])
