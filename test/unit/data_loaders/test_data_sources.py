@@ -5,12 +5,14 @@ import botocore.response
 import botocore.errorfactory
 
 from unittest.mock import patch, Mock, mock_open
-from fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, S3Uri
+from fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, S3Uri, get_s3_client
+from fmeval.eval_algorithms import DATASET_CONFIGS, TREX
 from fmeval.exceptions import EvalAlgorithmClientError
 
 S3_PREFIX = "s3://"
 LOCAL_PREFIX = "file://"
 
+DATASET_URI = "dataset.json"
 FILE_PATHS = ["file1.json", "file2.jsonl", "dir1/file1.json", "dir1/dir2/file1.jsonl"]
 INVALID_FILE_PATHS = ["invalid_file1.json", "dir1/invalid_file", "dir1/dir2/"]
 
@@ -77,3 +79,27 @@ class TestS3Uri:
     def test_key(self, uri, key):
         s3_uri = S3Uri(uri)
         assert s3_uri.key == key
+
+
+def test_get_s3_client_built_in_dataset():
+    """
+    GIVEN a built-in dataset s3 path
+    WHEN get_s3_client is called
+    THEN the boto3 s3 client is created with region name "us-west-2"
+    """
+    with patch("boto3.client") as mock_client:
+        dataset_uri = DATASET_CONFIGS[TREX].dataset_uri
+        s3_client = get_s3_client(dataset_uri)
+        mock_client.assert_called_once_with("s3", region_name="us-west-2")
+
+
+def test_get_s3_client_custom_dataset():
+    """
+    GIVEN a custom dataset s3 path
+    WHEN get_s3_client is called
+    THEN the boto3 s3 client is created without region name
+    """
+    with patch("boto3.client") as mock_client:
+        dataset_uri = S3_PREFIX + DATASET_URI
+        s3_client = get_s3_client(dataset_uri)
+        mock_client.assert_called_once_with("s3")
