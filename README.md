@@ -77,7 +77,7 @@ mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains
 
 3. If you run into out of memory (OOM) errors, especially while running evaluations that use LLMs as evaluators like toxicity and
 summarization accuracy, it is likely that your machine does not have enough memory to load the evaluator
-models. By default, `femval` loads multiple copies of the model into memory to maximize parallelization, where the exact number depends on the number of cores on the machine. To reduce the number of models that get loaded in parallel, you can
+models. By default, `fmeval` loads multiple copies of the model into memory to maximize parallelization, where the exact number depends on the number of cores on the machine. To reduce the number of models that get loaded in parallel, you can
 set the environment variable `PARALLELIZATION_FACTOR` to a value that suits your machine.
 
 ## Development
@@ -99,10 +99,93 @@ dependency, please update the [pyproject.toml](./pyproject.toml) file, and run t
 
 Other than this step to add dependencies, use devtool commands for installing dependencies, linting and testing. Execute the command `./devtool` without any arguments to see a list of available options.
 
-### Adding your own Eval Algorithm
+### Adding your own evaluation algorithm and/or metrics
 
-*Details TBA*
+The evaluation algorithms and metrics provided by `fmeval` are implemented using `Transform` and `TransformPipeline` objects. You can leverage these existing tools to similarly implement your own metrics and algorithms in a modular manner.
 
+Here, we provide a high-level overview of what these classes represent and how they are used. Specific implementation details can be found in their respective docstrings (see `src/fmeval/transforms/transform.py` and `src/fmeval/transforms/transform_pipeline.py`).
+
+#### Preface
+At a high level, an evaluation algorithm takes an initial tabular dataset consisting of a number of "records" (i.e. rows) and repeatedly transforms this dataset until the dataset either contains all the evaluation metrics, or at least all the intermediate data needed to compute said metrics. The transformations that get applied to the dataset inherently operate at a per-record level, and simply get applied to every record in the dataset to transform the dataset in full.
+
+#### The `Transform` class
+We represent the concept of a record-level transformation using the `Transform` class. `Transform` is a callable class where its `__call__` method takes a single argument, `record`, which represents the record to be transformed. A record is represented by a Python dictionary. To implement your own record-level transformation logic, create a concrete subclass of `Transform` and implement its `__call__` method.
+
+**Example:**
+
+Let's implement a `Transform` for a simple, toy metric.
+
+```
+class NumSpaces(Transform):
+    """
+    Augments the input record (which contains some text data)
+    with the number of spaces found in the text.
+    """
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        input_text = record["input_text"]
+        record["num_spaces"] = input_text.count(" ")
+        return record
+```
+
+One issue with this simple example is that the keys used for the input text data and the output data are both hard-coded. This generally isn't desirable, so let's improve on our running example.
+
+```
+class NumSpaces(Transform):
+    """
+    Augments the input record (which contains some text data)
+    with the number of spaces found in the text.
+    """
+
+    def __init__(self, text_key, output_key):
+        super().__init__(text_key, output_key)  # always need to pass all init args to superclass init
+        self.text_key = text_key  # the dict key corresponding to the input text data
+        self.output_key = output_key  # the dict key corresponding to the output data (i.e. number of spaces)
+
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        input_text = record[self.text_key]
+        record[self.output_key] = input_text.count(" ")
+        return record
+```
+
+Since `__call__` only takes a single argument, `record`, we pass the information regarding which keys to use for input and output data to `__init__` and save them as instance attributes. Note that all subclasses of `Transform` need to call `super().__init__` with all of their `__init__` arguments, due to low-level implementation details regarding how we apply the `Transform`s to the dataset.
+
+#### The `TransformPipeline` class
+While `Transform` encapsulates the logic for the record-level transformation, we still don't have a mechanism for applying the transform to a dataset. This is where `TransformPipeline` comes in. A `TransformPipeline` represents a sequence, or "pipeline", of `Transform` objects that you wish to apply to a dataset. After initializing a `TransformPipeline` with a list of `Transform`s, simply call its `execute` method on an input dataset.
+
+**Example:**
+Here, we implement a pipeline for a very simple evaluation. The steps are:
+1. Construct LLM prompts from raw text inputs
+2. Feed the prompts to a `ModelRunner` to get the model outputs
+3. Compute the "number of spaces" metric we defined above
+
+```
+# Use the built-in utility Transform for generating prompts
+gen_prompt = GeneratePrompt(
+    input_keys="model_input",
+    output_keys="prompt",
+    prompt_template="Answer the following question: $model_input",
+)
+
+# Use the built-in utility Transform for getting model outputs
+model = ... # some ModelRunner
+get_model_outputs = GetModelOutputs(
+    input_to_output_keys={"prompt": ["model_output"]},
+    model_runner=model,
+)
+
+# Our new metric!
+compute_num_spaces = NumSpaces(
+    text_key="model_output",
+    output_key="num_spaces",
+)
+
+my_pipeline = TransformPipeline([gen_prompt, get_model_outputs, compute_num_spaces])
+dataset = # load some dataset
+dataset = my_pipeline.execute(dataset)
+```
+
+#### Conclusion
+To implement new metrics, create a new `Transform` that encapsulates the logic for computing said metric. Since the logic for all evaluation algorithms can be represented as a sequence of different `Transform`s, implementing a new evaluation algorithm essentially amounts to defining a `TransformPipeline`. Please see the built-in evaluation algorithms for examples.
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
