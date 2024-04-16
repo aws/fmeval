@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fmeval"
-version = "1.1.0"
+version = "1.0.1"
 description = "Amazon Foundation Model Evaluations"
 license = "Apache License 2.0"
 authors = ["Amazon FMEval Team <amazon-fmeval-team@amazon.com>"]
