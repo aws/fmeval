@@ -835,7 +835,7 @@ class TestCaseEvaluateDataset(NamedTuple):
 @patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
 @patch("fmeval.eval_algorithms.util.TransformPipeline")
 @patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
-def test_evaluate_dataset_with_model(
+def test_evaluate_dataset_with_model_and_no_model_outputs_in_dataset(
     mock_create_invocation_pipeline,
     mock_transform_pipeline_cls,
     mock_aggregate,
@@ -844,7 +844,8 @@ def test_evaluate_dataset_with_model(
     test_case,
 ):
     """
-    GIVEN valid arguments and a `model` argument that is not None.
+    GIVEN valid arguments, a `model` argument that is not None, and
+        a dataset without a model output column.
     WHEN `evaluate_dataset` is called.
     THEN a model invocation pipeline (created using `model`) is prepended
         to the input pipeline and the correct EvalOutput is returned.
@@ -915,6 +916,89 @@ def test_evaluate_dataset_with_model(
             dataset_prompt_template=None,
             save=True,
         ),
+        TestCaseEvaluateDataset(
+            user_provided_prompt_template="Do something with $model_input",
+            dataset_prompt_template="Do something with $model_input",
+            save=False,
+        ),
+    ],
+)
+@patch("fmeval.eval_algorithms.util.generate_output_dataset_path")
+@patch("fmeval.eval_algorithms.util.save_dataset")
+@patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
+@patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
+def test_evaluate_dataset_with_model_and_model_outputs_in_dataset(
+    mock_create_invocation_pipeline,
+    mock_aggregate,
+    mock_save,
+    mock_generate_output_path,
+    test_case,
+):
+    """
+    GIVEN valid arguments, a `model` argument that is not None, and
+        a dataset with an existing model output column.
+    WHEN `evaluate_dataset` is called.
+    THEN a model invocation pipeline (created using `model`) is *NOT* prepended
+        to the input pipeline and the correct EvalOutput is returned.
+    """
+    mock_aggregate.return_value = DATASET_SCORES, CATEGORY_SCORES
+    mock_generate_output_path.return_value = "path/to/output/dataset"
+
+    input_dataset = Mock()
+    input_dataset.columns = Mock(return_value=[DatasetColumns.MODEL_OUTPUT.value.name])
+    input_pipeline = Mock()
+    model_runner = Mock()
+
+    eval_output = evaluate_dataset(
+        dataset=input_dataset,
+        pipeline=input_pipeline,
+        dataset_name="my_dataset",
+        eval_name="MyEvalAlgo",
+        metric_names=[SCORE_1, SCORE_2],
+        eval_results_path="/path/to/eval_results",
+        model=model_runner,
+        prompt_template=test_case.user_provided_prompt_template,
+        save=test_case.save,
+    )
+
+    mock_create_invocation_pipeline.assert_not_called()
+    input_pipeline.execute.assert_called_once_with(input_dataset)
+    mock_aggregate.assert_called_once_with(
+        input_pipeline.execute.return_value,
+        [SCORE_1, SCORE_2],
+        agg_method=test_case.agg_method,
+    )
+    mock_generate_output_path.assert_called_once_with(
+        path_to_parent_dir="/path/to/eval_results",
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
+    )
+    assert eval_output == EvalOutput(
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
+        prompt_template=test_case.dataset_prompt_template,
+        dataset_scores=DATASET_SCORES,
+        category_scores=CATEGORY_SCORES,
+        output_path="path/to/output/dataset",
+    )
+    if test_case.save:
+        mock_save.assert_called_once_with(
+            dataset=input_pipeline.execute.return_value,
+            score_names=[SCORE_1, SCORE_2],
+            path="path/to/output/dataset",
+        )
+    else:
+        mock_save.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseEvaluateDataset(
+            user_provided_prompt_template=None,
+            dataset_prompt_template=None,
+            save=True,
+        ),
     ],
 )
 @patch("fmeval.eval_algorithms.util.generate_output_dataset_path")
@@ -922,7 +1006,7 @@ def test_evaluate_dataset_with_model(
 @patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
 @patch("fmeval.eval_algorithms.util.TransformPipeline")
 @patch("fmeval.eval_algorithms.util.create_model_invocation_pipeline")
-def test_evaluate_dataset_no_model(
+def test_evaluate_dataset_no_model_and_model_output_in_dataset(
     mock_create_invocation_pipeline,
     mock_transform_pipeline_cls,
     mock_aggregate,
@@ -931,7 +1015,7 @@ def test_evaluate_dataset_no_model(
     test_case,
 ):
     """
-    GIVEN valid arguments and a `model` argument that is not None.
+    GIVEN valid arguments and a `model` argument that is None.
     WHEN `evaluate_dataset` is called.
     THEN the pipeline that gets executed is the input pipeline (i.e.
         no model invocation transforms are prepended)
@@ -987,9 +1071,9 @@ def test_evaluate_dataset_no_model(
         mock_save.assert_not_called()
 
 
-def test_evaluate_dataset_with_model_no_model_input_column():
+def test_evaluate_dataset_no_model_output_column_no_model_input_column():
     """
-    GIVEN a model and a dataset that does not contain a model input column.
+    GIVEN a model and a dataset that does not contain a model output or model input column.
     WHEN the `evaluate_dataset` function is called.
     THEN the correct exception is raised.
     """
@@ -1014,12 +1098,13 @@ def test_evaluate_dataset_with_model_no_model_input_column():
 
 @patch("fmeval.eval_algorithms.util.aggregate_evaluation_scores")
 @patch("fmeval.eval_algorithms.util.logging.Logger.warning")
-def test_evaluate_dataset_with_prompt_template_without_model(
+def test_evaluate_dataset_with_prompt_template_and_dataset_with_model_output_column(
     mock_logger,
     mock_aggregate,
 ):
     """
-    GIVEN invalid arguments: a non-Null prompt template, but no model.
+    GIVEN invalid arguments: a non-Null prompt template, but a dataset that already
+        has a model output column.
     WHEN the `evaluate_dataset` function is called.
     THEN a warning is logged.
     """
@@ -1040,8 +1125,8 @@ def test_evaluate_dataset_with_prompt_template_without_model(
     )
 
     warning_msg = (
-        "A prompt template, but no corresponding model, was provided."
-        "Model outputs from the dataset will be used, and this prompt template will be ignored."
+        "A prompt template was provided, but the dataset already includes a model output column. "
+        "The provided prompt template will be ignored."
     )
     mock_logger.assert_called_once_with(warning_msg)
 
@@ -1056,9 +1141,8 @@ def test_evaluate_dataset_no_model_no_model_output_column():
     mock_dataset = Mock()
     mock_dataset.columns = Mock(return_value=[])
     err_msg = (
-        "evaluate_dataset has been given a dataset with no model output column "
-        "and no ModelRunner to obtain outputs from. Please either provide a model "
-        "or use a dataset that contains model outputs already."
+        "A ModelRunner is required to obtain model outputs. The provided dataset does not already "
+        "contain a model output column."
     )
     with pytest.raises(EvalAlgorithmClientError, match=err_msg):
         evaluate_dataset(

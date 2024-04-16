@@ -451,7 +451,18 @@ def evaluate_dataset(
 
     :return: An EvalOutput object encapsulating the results of the evaluation.
     """
-    if model:
+    if DatasetColumns.MODEL_OUTPUT.value.name in dataset.columns():
+        if prompt_template:
+            logger.warning(
+                "A prompt template was provided, but the dataset already includes a model output column. "
+                "The provided prompt template will be ignored."
+            )
+    else:
+        util.require(
+            model is not None,
+            "A ModelRunner is required to obtain model outputs. The provided dataset does not already "
+            "contain a model output column.",
+        )
         try:
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
         except EvalAlgorithmClientError:
@@ -462,20 +473,6 @@ def evaluate_dataset(
         prompt_template = get_default_prompt_template(dataset_name) if not prompt_template else prompt_template
         model_invocation_pipeline = create_model_invocation_pipeline(model, prompt_template)
         pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
-    else:
-        if prompt_template:
-            logger.warning(
-                "A prompt template, but no corresponding model, was provided."
-                "Model outputs from the dataset will be used, and this prompt template will be ignored."
-            )
-        try:
-            validate_dataset(dataset, [DatasetColumns.MODEL_OUTPUT.value.name])
-        except EvalAlgorithmClientError:
-            raise EvalAlgorithmClientError(
-                "evaluate_dataset has been given a dataset with no model output column "
-                "and no ModelRunner to obtain outputs from. Please either provide a model "
-                "or use a dataset that contains model outputs already."
-            )
 
     with (timed_block(f"Computing score and aggregation on dataset {dataset_name}", logger)):
         dataset = pipeline.execute(dataset)
