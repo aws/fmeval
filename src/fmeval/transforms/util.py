@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Callable, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 from fmeval.util import assert_condition
 
 

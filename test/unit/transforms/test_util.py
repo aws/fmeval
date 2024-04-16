@@ -2,7 +2,7 @@ import re
 from unittest.mock import Mock
 
 import pytest
-from typing import NamedTuple, Set, Dict, Any, Optional, List, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from fmeval.transforms.util import (
     validate_existing_keys,
     validate_key_uniqueness,
