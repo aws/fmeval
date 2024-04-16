@@ -38,30 +38,6 @@ def validate_existing_keys(record: Dict[str, Any], keys: List[str]) -> None:
     )
 
 
-def validate_added_keys(current_keys: Set[str], original_keys: Set[str], keys_to_add: Set[str]) -> None:
-    """Validate that the set difference between `current_keys` and `original_keys` is `keys_to_add`.
-
-    Note: this function should only be used when by Transforms that mutate their input record.
-    It doesn't make sense to call this function if the Transform constructs a new record to
-    be used as output, since said output record need not contain all the keys in the input record.
-
-    :param current_keys: The keys that are currently present in a record.
-    :param original_keys: The keys that were originally present in a record
-        (prior to performing transform-specific logic, which adds new keys).
-    :param keys_to_add: The keys that a transform should have added to its input record.
-        When this function is called from within a Transform's __call__ method (which should
-        be the primary use case for this function), this parameter should be the transform's
-        `output_keys` attribute.
-    :raises: EvalAlgorithmInternalError if any validation fails.
-    """
-    assert_condition(
-        current_keys - original_keys == keys_to_add,
-        f"The set difference between the current keys: {current_keys} "
-        f"and the original keys: {original_keys} does not match "
-        f"the expected keys to be added: {keys_to_add}.",
-    )
-
-
 def validate_call(call_method: Callable) -> Callable:
     """Decorator for the __call__ method of Transforms used for validating input and output.
 
@@ -94,12 +70,8 @@ def validate_call(call_method: Callable) -> Callable:
             "the register_input_output_keys method.",
         )
         validate_existing_keys(record, self.input_keys)
-        original_keys = set(record.keys())
         call_output = call_method(self, record)
-        validate_key_uniqueness(self.output_keys)
-        validate_added_keys(
-            current_keys=set(record.keys()), original_keys=original_keys, keys_to_add=set(self.output_keys)
-        )
+        validate_existing_keys(call_output, self.output_keys)
         return call_output
 
     return wrapper

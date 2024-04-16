@@ -4,7 +4,6 @@ from unittest.mock import Mock
 import pytest
 from typing import NamedTuple, Set, Dict, Any, Optional, List, Tuple
 from fmeval.transforms.util import (
-    validate_added_keys,
     validate_existing_keys,
     validate_key_uniqueness,
     validate_call,
@@ -62,49 +61,6 @@ def test_validate_existing_keys_failure():
         ),
     ):
         validate_existing_keys(record, keys)
-
-
-def test_validate_added_keys_success():
-    """
-    GIVEN arguments that should not raise an exception.
-    WHEN validate_added_keys is called.
-    THEN no exception is raised.
-    """
-    current_keys = {"a", "b", "c", "d"}
-    original_keys = {"a", "c"}
-    keys_to_add = {"b", "d"}
-    validate_added_keys(current_keys, original_keys, keys_to_add)
-
-
-class TestCaseValidateAddedKeys(NamedTuple):
-    current_keys: Set[str]
-    original_keys: Set[str]
-    keys_to_add: Set[str]
-
-
-@pytest.mark.parametrize(
-    "current_keys, original_keys, keys_to_add",
-    [
-        TestCaseValidateAddedKeys(
-            current_keys={"a", "b", "c", "d"},
-            original_keys={"a", "c"},
-            keys_to_add={"b"},
-        ),
-        TestCaseValidateAddedKeys(
-            current_keys={"a", "b", "c"},
-            original_keys={"a", "c"},
-            keys_to_add={"b", "d"},
-        ),
-    ],
-)
-def test_validate_added_keys_failure(current_keys, original_keys, keys_to_add):
-    """
-    GIVEN arguments that should raise an exception.
-    WHEN validate_added_keys is called.
-    THEN an EvalAlgorithmInternalError is raised.
-    """
-    with pytest.raises(EvalAlgorithmInternalError, match="The set difference"):
-        validate_added_keys(current_keys, original_keys, keys_to_add)
 
 
 def test_validate_call_success():
