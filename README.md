@@ -60,6 +60,16 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 [examples](https://github.com/aws/fmeval/tree/main/examples) for more details around the usage of
 eval algorithms.*
 
+## Telemetry
+By default, `fmeval` has very basic telemetry enabled, purely for tracking usage of the package.
+The only data that is tracked is the number of SageMaker, JumpStart, or Bedrock `ModelRunner` objects that get created.
+*We do not collect any user-level data*.
+
+The `ModelRunner` data in question gets collected via the use of an fmeval-specific user agent header that is used by the botocore session that manages these model runners.
+See `fmeval.model_runners.util.get_user_agent_extra` and `fmeval.model_runners.util.get_boto_session` for implementation details.
+
+To opt out of telemetry, simply set the `DISABLE_FMEVAL_TELEMETRY` environment variable to any non-null value.
+
 ## Troubleshooting
 
 1. Users running `fmeval` on a Windows machine may encounter the error `OSError: [Errno 0] AssignProcessToJobObject() failed` when `fmeval` internally calls `ray.init()`. This OS error is a known Ray issue, and is detailed [here](https://github.com/ray-project/ray/issues/21994). Multiple users have reported that installing Python from the [official Python website](https://www.python.org/downloads/windows/) rather than the Microsoft store fixes this issue. You can view more details on limitations of running Ray on Windows on [Ray's webpage](https://docs.ray.io/en/latest/ray-overview/installation.html#windows-support).

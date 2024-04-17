@@ -21,10 +21,7 @@ def get_user_agent_extra() -> str:
     """
     :return: A string to be used as the user_agent_extra parameter in a botocore config.
     """
-    return (
-        "" if os.getenv(DISABLE_FMEVAL_TELEMETRY)
-        else f"fmeval/{get_fmeval_package_version()}"
-    )
+    return "" if os.getenv(DISABLE_FMEVAL_TELEMETRY) else f"fmeval/{get_fmeval_package_version()}"
 
 
 def get_boto_session(
@@ -41,7 +38,7 @@ def get_boto_session(
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
             retries={"mode": boto_retry_mode, "max_attempts": retry_attempts},
             # https://botocore.amazonaws.com/v1/documentation/api/latest/reference/config.html
-            user_agent_extra=get_user_agent_extra()
+            user_agent_extra=get_user_agent_extra(),
         )
     )
     return boto3.session.Session(botocore_session=botocore_session)
