@@ -20,6 +20,9 @@ SAGEMAKER_RUNTIME_ENDPOINT_URL = "SAGEMAKER_RUNTIME_ENDPOINT_URL"
 BUILT_IN_DATASET_PREFIX = "s3://fmeval/datasets"
 BUILT_IN_DATASET_DEFAULT_REGION = "us-west-2"
 
+# Environment variable for disabling telemetry
+DISABLE_FMEVAL_TELEMETRY = "DISABLE_FMEVAL_TELEMETRY"
+
 
 @dataclass(frozen=True)
 class Column:

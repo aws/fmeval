@@ -1,8 +1,8 @@
 import os
 import re
-
 import ray
 import multiprocessing as mp
+import importlib.metadata
 
 from ray.actor import ActorHandle
 from fmeval.constants import EVAL_RESULTS_PATH, DEFAULT_EVAL_RESULTS_PATH, PARALLELIZATION_FACTOR
@@ -115,7 +115,7 @@ def create_shared_resource(resource: object, num_cpus: int = 1) -> ActorHandle:
 
 
 def cleanup_shared_resource(resource: ActorHandle) -> None:
-    """Removes the resource from shared memory.
+    """Remove the resource from shared memory.
 
     Concretely, this function kills the Ray actor corresponding
     to `resource`, which in most cases will be an actor created
@@ -126,3 +126,10 @@ def cleanup_shared_resource(resource: ActorHandle) -> None:
     :returns: None
     """
     ray.kill(resource)
+
+
+def get_fmeval_package_version() -> str:
+    """
+    :returns: The current fmeval package version.
+    """
+    return importlib.metadata.version("fmeval")
