@@ -55,9 +55,10 @@ def test_get_model_outputs_init_success():
         assert get_model_outputs.model_runner == mock_model_runner
 
 
+@pytest.mark.parametrize("sample", [{"input": "Hello"}, {"input": "Hello", "model_output": "original output"}])
 @pytest.mark.parametrize("model_output", [None, "some output"])
 @pytest.mark.parametrize("log_prob", [None, -0.162])
-def test_get_model_outputs_call_success(model_output, log_prob):
+def test_get_model_outputs_call_success(model_output, log_prob, sample):
     """
     GIVEN a GetModelOutputs instance.
     WHEN its __call__ method is called on a record.
@@ -70,7 +71,6 @@ def test_get_model_outputs_call_success(model_output, log_prob):
         get_model_outputs = GetModelOutputs(
             input_to_output_keys={"input": ["model_output"]}, model_runner=mock_model_runner
         )
-        sample = {"input": "Hello"}
         result = get_model_outputs(sample)
         assert result == {"input": "Hello", "model_output": model_output}
 
