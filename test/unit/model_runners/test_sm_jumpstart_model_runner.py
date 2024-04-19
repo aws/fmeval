@@ -58,8 +58,7 @@ class TestJumpStartModelRunner:
                 log_probability=LOG_PROBABILITY_JMES_PATH,
             )
             sagemaker_predictor_class.assert_called_once_with(
-                endpoint_name=ENDPOINT_NAME,
-                sagemaker_session=sagemaker_session_class.return_value,
+                endpoint_name=ENDPOINT_NAME, sagemaker_session=sagemaker_session_class.return_value, component_name=None
             )
 
     class TestCasePredict(NamedTuple):

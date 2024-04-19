@@ -46,7 +46,7 @@ aiohttp = "^3.9.2"
 
 [tool.poetry.group.dev.dependencies]
 fire = "*"
-black = "23.7.0"
+black = "24.3.0"
 pre-commit = "3.3.3"
 pytest = "*"
 pytest-pspec = "*"
