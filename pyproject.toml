@@ -44,7 +44,7 @@ mypy-boto3-bedrock = "^1.33.2"
 grpcio = "^1.60.0"
 aiohttp = "^3.9.2"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 fire = "*"
 black = "23.7.0"
 pre-commit = "3.3.3"
@@ -56,6 +56,12 @@ lxml = "*"
 coverage = "*"
 commitizen = "*"
 conventional-pre-commit = "*"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+pdoc = "^14.4.0"
 
 [build-system]
 requires = ["poetry-core"]
