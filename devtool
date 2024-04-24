@@ -33,7 +33,7 @@ lint() {
     echo "===================="
     echo "Note: This only syncs poetry.lock with pyproject.toml.  If you wish to update all downstream dependencies, run 'poetry update'"
 
-    install_poetry_version 1.8.2
+    install_poetry
     poetry lock --check || (poetry lock --no-update && poetry lock --check)
     echo ""
 
