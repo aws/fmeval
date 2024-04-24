@@ -10,9 +10,10 @@ import botocore.config
 import sagemaker
 
 from fmeval.constants import SAGEMAKER_SERVICE_ENDPOINT_URL, SAGEMAKER_RUNTIME_ENDPOINT_URL, DISABLE_FMEVAL_TELEMETRY
+from fmeval.util import get_fmeval_package_version
+from sagemaker.user_agent import determine_prefix
 from mypy_boto3_bedrock.client import BedrockClient
 
-from fmeval.util import get_fmeval_package_version
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,17 @@ def get_user_agent_extra() -> str:
     """
     :return: A string to be used as the user_agent_extra parameter in a botocore config.
     """
-    return "" if os.getenv(DISABLE_FMEVAL_TELEMETRY) else f"fmeval/{get_fmeval_package_version()}"
+    # Obtain user-agent headers for information such as SageMaker notebook instance type and SageMaker Studio app type.
+    # We manually obtain these headers, so we can pass them in the user_agent_extra parameter of botocore.config.Config.
+    # This is because although these headers are already obtained in the sagemaker.session.Session initializer,
+    # there is currently a bug in the sagemaker.session.Session code where these headers get assigned to an instance
+    # attribute, but don't actually show up in the user-agent header when making API calls.
+    sagemaker_python_sdk_headers = determine_prefix()
+    return (
+        sagemaker_python_sdk_headers
+        if os.getenv(DISABLE_FMEVAL_TELEMETRY)
+        else f"{sagemaker_python_sdk_headers} fmeval/{get_fmeval_package_version()}"
+    )
 
 
 def get_boto_session(
