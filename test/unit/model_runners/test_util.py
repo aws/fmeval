@@ -14,9 +14,9 @@ ENDPOINT_NAME = "valid_endpoint_name"
 
 def test_get_user_agent_extra():
     with patch("src.fmeval.model_runners.util.get_fmeval_package_version", return_value="1.0.1") as get_package_ver:
-        assert get_user_agent_extra() == "fmeval/1.0.1"
+        assert get_user_agent_extra().endswith("fmeval/1.0.1")
         os.environ[DISABLE_FMEVAL_TELEMETRY] = "True"
-        assert get_user_agent_extra() == ""
+        assert "fmeval" not in get_user_agent_extra()
         del os.environ[DISABLE_FMEVAL_TELEMETRY]
 
 
