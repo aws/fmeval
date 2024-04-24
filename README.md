@@ -14,7 +14,7 @@ The library contains
 ## Installation
 `fmeval` is developed under python3.10. To install the package, simply run:
 
-```
+```sh
 pip install fmeval
 ```
 
@@ -27,7 +27,7 @@ The main steps for using `fmeval` are:
 2. Use any of the supported [eval_algorithms](https://github.com/aws/fmeval/tree/main/src/fmeval/eval_algorithms).
 
 For example,
-```
+```python
 from fmeval.eval_algorithms.toxicity import Toxicity, ToxicityConfig
 
 eval_algo = Toxicity(ToxicityConfig())
@@ -40,7 +40,7 @@ We have our built-in datasets configured, which are consumed for computing the s
 You can choose to use a custom dataset in the following manner.
 1. Create a [DataConfig](https://github.com/aws/fmeval/blob/main/src/fmeval/data_loaders/data_config.py)
    for your custom dataset
-```
+```python
 config = DataConfig(
     dataset_name="custom_dataset",
     dataset_uri="./custom_dataset.jsonl",
@@ -51,7 +51,7 @@ config = DataConfig(
 ```
 
 2. Use an eval algorithm with a custom dataset
-```
+```python
 eval_algo = Toxicity(ToxicityConfig())
 eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 ```
@@ -66,7 +66,7 @@ eval algorithms.*
 
 2. If you run into the error `error: can't find Rust compiler` while installing `fmeval` on a Mac, please try running the steps below.
 
-```
+```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup install 1.72.1
 rustup default 1.72.1-aarch64-apple-darwin
@@ -84,7 +84,7 @@ set the environment variable `PARALLELIZATION_FACTOR` to a value that suits your
 
 ### Setup and the use of `devtool`
 Once you have created a virtual environment with python3.10, run the following command to set up the development environment:
-```
+```sh
 ./devtool install_deps_dev
 ./devtool install_deps
 ./devtool all
@@ -115,7 +115,7 @@ We represent the concept of a record-level transformation using the `Transform` 
 
 Let's implement a `Transform` for a simple, toy metric.
 
-```
+```python
 class NumSpaces(Transform):
     """
     Augments the input record (which contains some text data)
@@ -129,7 +129,7 @@ class NumSpaces(Transform):
 
 One issue with this simple example is that the keys used for the input text data and the output data are both hard-coded. This generally isn't desirable, so let's improve on our running example.
 
-```
+```python
 class NumSpaces(Transform):
     """
     Augments the input record (which contains some text data)
@@ -158,7 +158,7 @@ Here, we implement a pipeline for a very simple evaluation. The steps are:
 2. Feed the prompts to a `ModelRunner` to get the model outputs
 3. Compute the "number of spaces" metric we defined above
 
-```
+```python
 # Use the built-in utility Transform for generating prompts
 gen_prompt = GeneratePrompt(
     input_keys="model_input",
