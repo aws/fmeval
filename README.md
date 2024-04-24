@@ -116,7 +116,7 @@ then you will need to tweak the poetry installation script and re-run it.
 Steps:
 1. `curl -sSL https://install.python-poetry.org > poetry_script.py`
 2. Change the `symlinks` argument in `builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)` to `True`. See mionker's comment [here](https://github.com/python-poetry/install.python-poetry.org/issues/56) for an explanation.
-3. `python poetry_script.py --version 1.2.0` (where `1.2.0` is the version listed in `devtool`; this may change after the time of this writing).
+3. `python poetry_script.py --version 1.8.2` (where `1.8.2` is the version listed in `devtool`; this may change after the time of this writing).
 4. Confirm installation via `poetry --version`
 
 Additionally, if you already have an existing version of Poetry installed and want to install a new version, before you re-run the above command, you will need to uninstall Poetry:
