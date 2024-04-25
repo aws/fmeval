@@ -1,8 +1,23 @@
+import os
 from unittest.mock import MagicMock, patch
 
-from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service, get_bedrock_runtime_client
+from fmeval.model_runners.util import (
+    get_sagemaker_session,
+    is_endpoint_in_service,
+    get_bedrock_runtime_client,
+    get_user_agent_extra,
+)
+from fmeval.constants import DISABLE_FMEVAL_TELEMETRY
 
 ENDPOINT_NAME = "valid_endpoint_name"
+
+
+def test_get_user_agent_extra():
+    with patch("src.fmeval.model_runners.util.get_fmeval_package_version", return_value="1.0.1") as get_package_ver:
+        assert get_user_agent_extra().endswith("fmeval/1.0.1")
+        os.environ[DISABLE_FMEVAL_TELEMETRY] = "True"
+        assert "fmeval" not in get_user_agent_extra()
+        del os.environ[DISABLE_FMEVAL_TELEMETRY]
 
 
 def test_get_sagemaker_session():
