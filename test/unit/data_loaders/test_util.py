@@ -191,7 +191,7 @@ class TestDataLoaderUtil:
         WHEN get_data_source is called
         THEN an S3DataFile with the correct URI is returned
         """
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
             mock_s3_client.get_object = Mock(return_value={"ContentType": "binary/octet-stream"})
             dataset_uri = S3_PREFIX + DATASET_URI
             data_source = get_data_source(dataset_uri)
@@ -221,7 +221,7 @@ class TestDataLoaderUtil:
         WHEN get_data_source is called
         THEN the correct exception is raised
         """
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
             mock_s3_client.return_value.get_object = Mock(
                 return_value={"ContentType": "application/x-directory; charset=UTF-8"}
             )
@@ -246,8 +246,8 @@ class TestDataLoaderUtil:
 
     def test_get_data_source_invalid_dataset_path(self):
         with (
-            patch("src.fmeval.data_loaders.util._is_valid_local_path", return_value=False),
-            patch("src.fmeval.data_loaders.util._is_valid_s3_uri", return_value=False),
+            patch("fmeval.data_loaders.util._is_valid_local_path", return_value=False),
+            patch("fmeval.data_loaders.util._is_valid_s3_uri", return_value=False),
         ):
             with pytest.raises(EvalAlgorithmClientError, match="Invalid dataset path"):
                 get_data_source("unused")
@@ -259,7 +259,7 @@ class TestDataLoaderUtil:
         THEN True is returned
         """
         dataset_uri = S3_PREFIX + DATASET_URI
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
             mock_s3_client.return_value.get_object.return_value = Mock()
             assert _is_valid_s3_uri(dataset_uri)
 
@@ -279,7 +279,7 @@ class TestDataLoaderUtil:
         WHEN _is_valid_s3_uri is called
         THEN False is returned
         """
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_s3_client:
             mock_s3_client.return_value.get_object = Mock(
                 side_effect=botocore.errorfactory.ClientError({"error": "blah"}, "blah")
             )

@@ -35,7 +35,7 @@ class TestLocalDatafile:
 class TestS3DataFile:
     @pytest.mark.parametrize("file_path", FILE_PATHS)
     def test_open_s3_data_file(self, file_path):
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_boto3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_boto3_client:
             mock_s3_client = Mock()
             mock_boto3_client.return_value = mock_s3_client
             with io.StringIO() as buf:
@@ -49,7 +49,7 @@ class TestS3DataFile:
 
     @pytest.mark.parametrize("invalid_file_path", INVALID_FILE_PATHS)
     def test_open_invalid_s3_data_file(self, invalid_file_path):
-        with patch("src.fmeval.data_loaders.data_sources.boto3.client") as mock_boto3_client:
+        with patch("fmeval.data_loaders.data_sources.boto3.client") as mock_boto3_client:
             mock_s3_client = Mock()
             mock_s3_client.get_object.side_effect = botocore.errorfactory.ClientError({"error": "blah"}, "blah")
             mock_boto3_client.return_value = mock_s3_client
