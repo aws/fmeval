@@ -61,14 +61,10 @@ eval_output = eval_algo.evaluate(model=model_runner, dataset_config=config)
 eval algorithms.*
 
 ## Telemetry
-By default, `fmeval` has very basic telemetry enabled, purely for tracking usage of the package.
-The only data that is tracked is the number of SageMaker, JumpStart, or Bedrock `ModelRunner` objects that get created.
-*We do not collect any user-level data*.
+`fmeval` has telemetry enabled for tracking the usage of AWS-provided/hosted LLMs.
+This data is tracked using the number of SageMaker or JumpStart `ModelRunner` objects that get created.
+Telemetry can be disabled by setting the `DISABLE_FMEVAL_TELEMETRY` environment variable to `true`.
 
-The `ModelRunner` data in question gets collected via the use of an fmeval-specific user agent header that is used by the botocore session that manages these model runners.
-See `fmeval.model_runners.util.get_user_agent_extra` and `fmeval.model_runners.util.get_boto_session` for implementation details.
-
-To opt out of telemetry, simply set the `DISABLE_FMEVAL_TELEMETRY` environment variable to any non-null value.
 
 ## Troubleshooting
 
