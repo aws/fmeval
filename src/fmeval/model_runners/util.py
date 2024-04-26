@@ -19,7 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_user_agent_extra() -> str:
-    """
+    """Return a string containing various user-agent headers to be passed to a botocore config.
+
+    This string will always contain SageMaker Python SDK headers obtained using the determine_prefix
+    utility function from sagemaker.user_agent. If fmeval telemetry is enabled, this string will
+    additionally contain an fmeval-specific header.
+
     :return: A string to be used as the user_agent_extra parameter in a botocore config.
     """
     # Obtain user-agent headers for information such as SageMaker notebook instance type and SageMaker Studio app type.
