@@ -153,12 +153,14 @@ class JsonParser:
         return result
 
     @staticmethod
-    def _validate_jmespath_result(result: Union[Any, List[Any]], args: ColumnParseArguments) -> None:
+    def _validate_jmespath_result(result: Union[Any, List[Any], List[List[Any]]], args: ColumnParseArguments) -> None:
         """Validates that the JMESPath result is as expected.
 
-        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected
-        to be a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected
-        to be a single scalar value.
+        For dataset column TARGET_CONTEXT, if `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is
+        expected to be a 2D array. If MIME_TYPE_JSON_LINES, then `result` is expected to be a 1D array (list).
+
+        For all other dataset columns, if `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected to be
+        a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected to be a single scalar value.
 
         :param result: JMESPath query result to be validated.
         :param args: See ColumnParseArguments docstring.
@@ -175,24 +177,38 @@ class JsonParser:
                 f"the {args.column.value.name} column of dataset `{args.dataset_name}`, but found at least "
                 "one value that is None.",
             )
-            require(
-                all(not isinstance(x, list) for x in result),
-                f"Expected a 1D array using JMESPath '{args.jmespath_parser.expression}' on dataset "
-                f"`{args.dataset_name}`, where each element of the array is a sample's {args.column.value.name}, "
-                f"but found at least one nested array.",
-            )
+            if args.column.value.name == DatasetColumns.TARGET_CONTEXT.value.name:
+                require(
+                    all(isinstance(x, list) for x in result),
+                    f"Expected a 2D array using JMESPath '{args.jmespath_parser.expression}' on dataset "
+                    f"`{args.dataset_name}` but found at least one non-list object.",
+                )
+            else:
+                require(
+                    all(not isinstance(x, list) for x in result),
+                    f"Expected a 1D array using JMESPath '{args.jmespath_parser.expression}' on dataset "
+                    f"`{args.dataset_name}`, where each element of the array is a sample's {args.column.value.name}, "
+                    f"but found at least one nested array.",
+                )
         elif args.dataset_mime_type == MIME_TYPE_JSONLINES:
             require(
                 result is not None,
                 f"Found no values using {args.column.value.name} JMESPath '{args.jmespath_parser.expression}' "
                 f"on dataset `{args.dataset_name}`.",
             )
-            require(
-                not isinstance(result, list),
-                f"Expected to find a single value using {args.column.value.name} JMESPath "
-                f"'{args.jmespath_parser.expression}' on a dataset line in "
-                f"dataset `{args.dataset_name}`, but found a list instead.",
-            )
+            if args.column.value.name == DatasetColumns.TARGET_CONTEXT.value.name:
+                require(
+                    isinstance(result, list),
+                    f"Expected to find a List using JMESPath '{args.jmespath_parser.expression}' on a dataset line in "
+                    f"`{args.dataset_name}`, but found a non-list object instead.",
+                )
+            else:
+                require(
+                    not isinstance(result, list),
+                    f"Expected to find a single value using {args.column.value.name} JMESPath "
+                    f"'{args.jmespath_parser.expression}' on a dataset line in "
+                    f"dataset `{args.dataset_name}`, but found a list instead.",
+                )
         else:  # pragma: no cover
             raise EvalAlgorithmInternalError(
                 f"args.dataset_mime_type is {args.dataset_mime_type}, but only JSON " "and JSON Lines are supported."
@@ -217,16 +233,20 @@ class JsonParser:
         )
 
     @staticmethod
-    def _cast_to_string(result: Union[Any, List[Any]], args: ColumnParseArguments) -> Union[str, List[str]]:
+    def _cast_to_string(
+        result: Union[Any, List[Any], List[List[Any]]], args: ColumnParseArguments
+    ) -> Union[str, List[str], List[List[str]]]:
         """
         Casts the contents of `result` to string(s), raising an error if casting fails.
         It is extremely unlikely that the str() operation should fail; this basically
         only happens if the object has explicitly overwritten the __str__ method to raise
         an exception.
 
-        If `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected
-        to be a 1D array (list) of objects. If MIME_TYPE_JSON_LINES, then `result`
-        is expected to be a single object.
+        For dataset column TARGET_CONTEXT, if `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is
+        expected to be a 2D array. If MIME_TYPE_JSON_LINES, then `result` is expected to be a 1D array (list).
+
+        For all other dataset columns, if `args.dataset_mime_type` is MIME_TYPE_JSON, then `result` is expected to be
+        a 1D array (list). If MIME_TYPE_JSON_LINES, then `result` is expected to be a single scalar value.
 
         :param result: JMESPath query result to be casted.
         :param args: See ColumnParseArguments docstring.
@@ -234,9 +254,16 @@ class JsonParser:
         """
         try:
             if args.dataset_mime_type == MIME_TYPE_JSON:
-                return [str(x) for x in result]
+                if args.column.value.name == DatasetColumns.TARGET_CONTEXT.value.name:
+                    return [[str(x) for x in sample] for sample in result]
+                else:
+                    return [str(x) for x in result]
             elif args.dataset_mime_type == MIME_TYPE_JSONLINES:
-                return str(result)
+                return (
+                    [str(x) for x in result]
+                    if args.column.value.name == DatasetColumns.TARGET_CONTEXT.value.name
+                    else str(result)
+                )
             else:
                 raise EvalAlgorithmInternalError(  # pragma: no cover
                     f"args.dataset_mime_type is {args.dataset_mime_type}, but only JSON and JSON Lines are supported."

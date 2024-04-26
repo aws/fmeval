@@ -11,7 +11,7 @@ from fmeval.data_loaders.json_data_loader import (
     CustomJSONDatasource,
 )
 from fmeval.data_loaders.util import DataConfig
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
@@ -45,13 +45,14 @@ def create_temp_jsonlines_data_file_from_input_dataset(path: pathlib.Path, input
 
 class TestJsonDataLoader:
     class TestCaseReadDataset(NamedTuple):
-        input_dataset: Dict[str, Any]
+        input_dataset: Union[Dict[str, Any], List[Dict[str, Any]]]
         expected_dataset: List[Dict[str, Any]]
         dataset_mime_type: str
         model_input_jmespath: Optional[str] = None
         model_output_jmespath: Optional[str] = None
         target_output_jmespath: Optional[str] = None
         category_jmespath: Optional[str] = None
+        target_context_jmespath: Optional[str] = None
 
     @pytest.mark.parametrize(
         "test_case",
@@ -102,6 +103,20 @@ class TestJsonDataLoader:
                 category_jmespath="[row_1[3], row_2[3], row_3[3]]",
             ),
             TestCaseReadDataset(
+                input_dataset={
+                    "model_input_col": ["a", "b", "c"],
+                    "target_context": [["a", "b"], ["c", "d"], ["e", "f"]],
+                },
+                expected_dataset=[
+                    {DatasetColumns.MODEL_INPUT.value.name: "a", DatasetColumns.TARGET_CONTEXT.value.name: ["a", "b"]},
+                    {DatasetColumns.MODEL_INPUT.value.name: "b", DatasetColumns.TARGET_CONTEXT.value.name: ["c", "d"]},
+                    {DatasetColumns.MODEL_INPUT.value.name: "c", DatasetColumns.TARGET_CONTEXT.value.name: ["e", "f"]},
+                ],
+                dataset_mime_type=MIME_TYPE_JSON,
+                model_input_jmespath="model_input_col",
+                target_context_jmespath="target_context",
+            ),
+            TestCaseReadDataset(
                 input_dataset=[
                     {"input": "a", "output": 3.14},
                     {"input": "c", "output": 2.718},
@@ -115,6 +130,30 @@ class TestJsonDataLoader:
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 model_input_jmespath="input",
                 model_output_jmespath="output",
+            ),
+            TestCaseReadDataset(
+                input_dataset=[
+                    {"input": "a", "target_context": ["context 1", "context 2"]},
+                    {"input": "c", "target_context": ["context 3"]},
+                    {"input": "e", "target_context": ["context 4"]},
+                ],
+                expected_dataset=[
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "a",
+                        DatasetColumns.TARGET_CONTEXT.value.name: ["context 1", "context 2"],
+                    },
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "c",
+                        DatasetColumns.TARGET_CONTEXT.value.name: ["context 3"],
+                    },
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "e",
+                        DatasetColumns.TARGET_CONTEXT.value.name: ["context 4"],
+                    },
+                ],
+                dataset_mime_type=MIME_TYPE_JSONLINES,
+                model_input_jmespath="input",
+                target_context_jmespath="target_context",
             ),
         ],
     )
@@ -139,6 +178,7 @@ class TestJsonDataLoader:
                 model_output_location=test_case.model_output_jmespath,
                 target_output_location=test_case.target_output_jmespath,
                 category_location=test_case.category_jmespath,
+                target_context_location=test_case.target_context_jmespath,
             )
         )
         config = JsonDataLoaderConfig(
