@@ -84,8 +84,6 @@ class TestJumpStartExtractor:
     def test_extract_output_failure(self, extractor):
         response = {"response": "Hey! I am good. How are you?"}
 
-        exception_mock = mock.Mock()
-        exception_mock.side_effect = ValueError
         with pytest.raises(EvalAlgorithmClientError, match="Unable to extract output from Jumpstart model:"):
             extractor.extract_output(response)
 
@@ -107,6 +105,27 @@ class TestJumpStartExtractor:
             EvalAlgorithmInternalError,
             match="Output jmespath expression found for Jumpstart model huggingface-llm-falcon-7b-bf16 is not valid "
             "jmespath. Please provide output jmespath to the JumpStartModelRunner",
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                sagemaker_session=sagemaker_session,
+            )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_with_bad_input_log_probability(self, sagemaker_session):
+        sagemaker_session.boto_region_name = "us-west-2"
+        bad_output_expression = {
+            "default_payloads": {"test": {"output_keys": {"generated_text": "generated_text", "input_logprobs": "{"}}}
+        }
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=bad_output_expression,
+        ), pytest.raises(
+            EvalAlgorithmInternalError,
+            match="Input log probability jmespath expression found for Jumpstart model huggingface-llm-falcon-7b-bf16 "
+            "is not valid jmespath. Please provide correct input log probability jmespath to the "
+            "JumpStartModelRunner",
         ):
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
