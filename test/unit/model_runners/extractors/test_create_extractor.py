@@ -16,6 +16,13 @@ def test_create_extractor_jumpstart():
     )
 
 
+def test_create_extractor_jumpstart_proprietary():
+    assert isinstance(
+        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="cohere-gpt-medium"),
+        JumpStartExtractor,
+    )
+
+
 def test_create_extractor_exception():
     with pytest.raises(
         EvalAlgorithmClientError,

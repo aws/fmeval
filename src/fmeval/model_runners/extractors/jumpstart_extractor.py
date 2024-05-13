@@ -14,6 +14,7 @@ from fmeval.constants import (
     SPEC_KEY,
     GENERATED_TEXT_JMESPATH_EXPRESSION,
     SDK_MANIFEST_FILE,
+    PROPRIETARY_SDK_MANIFEST_FILE,
     DEFAULT_PAYLOADS,
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
@@ -146,10 +147,15 @@ class JumpStartExtractor(Extractor):
         jumpstart_bucket_base_url = os.environ.get(
             JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
         ).format(region, region)
-        url = "{}/{}".format(jumpstart_bucket_base_url, SDK_MANIFEST_FILE)
-        with request.urlopen(url) as f:
-            models_manifest = f.read().decode("utf-8")
-        return json.loads(models_manifest)
+        open_source_url = "{}/{}".format(jumpstart_bucket_base_url, SDK_MANIFEST_FILE)
+        proprietary_url = "{}/{}".format(jumpstart_bucket_base_url, PROPRIETARY_SDK_MANIFEST_FILE)
+
+        with request.urlopen(open_source_url) as f:
+            oss_models_manifest = f.read().decode("utf-8")
+        with request.urlopen(proprietary_url) as f:
+            proprietary_models_manifest = f.read().decode("utf-8")
+
+        return json.loads(oss_models_manifest) + json.loads(proprietary_models_manifest)
 
     @staticmethod
     def get_jumpstart_sdk_spec(key: str, region: str) -> Dict:
