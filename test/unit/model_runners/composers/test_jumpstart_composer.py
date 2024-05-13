@@ -43,7 +43,7 @@ class TestJumpStartComposer:
                         "accept": "application/json",
                     }
                 ),
-            )
+            ),
         ],
     )
     @patch(
