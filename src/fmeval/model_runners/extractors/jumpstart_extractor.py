@@ -143,7 +143,7 @@ class JumpStartExtractor(Extractor):
             raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
 
     @staticmethod
-    def get_jumpstart_sdk_manifest(region: str) -> Dict:
+    def get_jumpstart_sdk_manifest(region: str) -> List[Dict]:
         jumpstart_bucket_base_url = os.environ.get(
             JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
         ).format(region, region)

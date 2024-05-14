@@ -137,7 +137,6 @@ def is_proprietary_js_model(region: str, jumpstart_model_id: str) -> bool:
     :param jumpstart_model_id: JumpStart model id.
     :return: Whether the provided model id is proprietary model or not.
     """
-    is_proprietary = False
     jumpstart_bucket_base_url = os.environ.get(
         JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
     ).format(region, region)
@@ -147,7 +146,5 @@ def is_proprietary_js_model(region: str, jumpstart_model_id: str) -> bool:
         proprietary_models_manifest = f.read().decode("utf-8")
 
     model = seq(json.loads(proprietary_models_manifest)).find(lambda x: x.get(MODEL_ID, None) == jumpstart_model_id)
-    if model:
-        is_proprietary = True
 
-    return is_proprietary
+    return model is not None
