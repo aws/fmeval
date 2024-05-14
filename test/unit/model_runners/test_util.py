@@ -6,6 +6,7 @@ from fmeval.model_runners.util import (
     is_endpoint_in_service,
     get_bedrock_runtime_client,
     get_user_agent_extra,
+    is_proprietary_js_model,
 )
 from fmeval.constants import DISABLE_FMEVAL_TELEMETRY
 
@@ -70,3 +71,11 @@ def test_is_endpoint_in_service_false():
     mock_sagemaker_session = MagicMock()
     mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "Updating"}
     assert is_endpoint_in_service(mock_sagemaker_session, ENDPOINT_NAME) == False
+
+
+def test_is_proprietary_js_model_false():
+    assert is_proprietary_js_model("us-west-2", "huggingface-llm-falcon-7b-bf16") == False
+
+
+def test_is_proprietary_js_model_true():
+    assert is_proprietary_js_model("us-west-2", "cohere-gpt-medium") == True

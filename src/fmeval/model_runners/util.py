@@ -3,13 +3,24 @@ Utilities for model runners.
 """
 import logging
 import os
+import json
+from urllib import request
 from typing import Literal
 import boto3
 import botocore.session
 import botocore.config
 import sagemaker
+from functional import seq
 
-from fmeval.constants import SAGEMAKER_SERVICE_ENDPOINT_URL, SAGEMAKER_RUNTIME_ENDPOINT_URL, DISABLE_FMEVAL_TELEMETRY
+from fmeval.constants import (
+    SAGEMAKER_SERVICE_ENDPOINT_URL,
+    SAGEMAKER_RUNTIME_ENDPOINT_URL,
+    DISABLE_FMEVAL_TELEMETRY,
+    MODEL_ID,
+    PROPRIETARY_SDK_MANIFEST_FILE,
+    JUMPSTART_BUCKET_BASE_URL_FORMAT,
+    JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
+)
 from fmeval.util import get_fmeval_package_version
 from mypy_boto3_bedrock.client import BedrockClient
 from sagemaker.user_agent import get_user_agent_extra_suffix
@@ -118,3 +129,22 @@ def is_endpoint_in_service(
     if not desc or "EndpointStatus" not in desc or desc["EndpointStatus"] != "InService":
         in_service = False
     return in_service
+
+
+def is_proprietary_js_model(region: str, jumpstart_model_id: str) -> bool:
+    """
+    :param region: Region of the JumpStart bucket.
+    :param jumpstart_model_id: JumpStart model id.
+    :return: Whether the provided model id is proprietary model or not.
+    """
+    jumpstart_bucket_base_url = os.environ.get(
+        JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
+    ).format(region, region)
+    proprietary_url = "{}/{}".format(jumpstart_bucket_base_url, PROPRIETARY_SDK_MANIFEST_FILE)
+
+    with request.urlopen(proprietary_url) as f:
+        proprietary_models_manifest = f.read().decode("utf-8")
+
+    model = seq(json.loads(proprietary_models_manifest)).find(lambda x: x.get(MODEL_ID, None) == jumpstart_model_id)
+
+    return model is not None
