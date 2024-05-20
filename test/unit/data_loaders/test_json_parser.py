@@ -90,30 +90,25 @@ class TestJsonParser:
     class TestCaseParseColumnFailure(NamedTuple):
         result: List[Any]
         error_message: str
-        column: DatasetColumns
 
     @pytest.mark.parametrize(
-        "result, error_message, column",
+        "result, error_message",
         [
             TestCaseParseColumnFailure(
                 result="not a list",
                 error_message="Expected to find a non-empty list of samples",
-                column=DatasetColumns.MODEL_INPUT,
             ),
             TestCaseParseColumnFailure(
                 result=[1, 2, None],
                 error_message="Expected an array of non-null values",
-                column=DatasetColumns.MODEL_INPUT,
             ),
             TestCaseParseColumnFailure(
-                result=[1, 2, [3], 4], error_message="Expected a 1D array", column=DatasetColumns.MODEL_INPUT
-            ),
-            TestCaseParseColumnFailure(
-                result=[[1], 2], error_message="Expected a 2D array", column=DatasetColumns.TARGET_CONTEXT
+                result=[1, 2, [3], 4],
+                error_message="Expected a 1D array",
             ),
         ],
     )
-    def test_validation_failure_json(self, result, error_message, column):
+    def test_validation_failure_json(self, result, error_message):
         """
         GIVEN a malformed `result` argument (obtained from a JSON dataset)
         WHEN _validate_jmespath_result is called
@@ -123,7 +118,7 @@ class TestJsonParser:
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             args = ColumnParseArguments(
                 jmespath_parser=Mock(),
-                column=column,
+                column=Mock(),
                 dataset={},
                 dataset_mime_type=MIME_TYPE_JSON,
                 dataset_name="dataset",
@@ -131,20 +126,19 @@ class TestJsonParser:
             JsonParser._validate_jmespath_result(result, args)
 
     @pytest.mark.parametrize(
-        "result, error_message, column",
+        "result, error_message",
         [
             TestCaseParseColumnFailure(
-                result=None, error_message="Found no values using", column=DatasetColumns.MODEL_INPUT
+                result=None,
+                error_message="Found no values using",
             ),
             TestCaseParseColumnFailure(
-                result=[1, 2, 3], error_message="Expected to find a single value", column=DatasetColumns.MODEL_INPUT
-            ),
-            TestCaseParseColumnFailure(
-                result="Not a list", error_message="Expected to find a List", column=DatasetColumns.TARGET_CONTEXT
+                result=[1, 2, 3],
+                error_message="Expected to find a single value",
             ),
         ],
     )
-    def test_validation_failure_jsonlines(self, result, error_message, column):
+    def test_validation_failure_jsonlines(self, result, error_message):
         """
         GIVEN a malformed `result` argument (obtained from a JSON Lines dataset line)
         WHEN _validate_jmespath_result is called
@@ -154,7 +148,7 @@ class TestJsonParser:
         with pytest.raises(EvalAlgorithmClientError, match=error_message):
             args = ColumnParseArguments(
                 jmespath_parser=Mock(),
-                column=column,
+                column=Mock(),
                 dataset={},
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 dataset_name="dataset",
@@ -191,7 +185,7 @@ class TestJsonParser:
                         ],
                     },
                     "model_output": {"sample_1": "positive", "sample_2": "negative"},
-                    "target_context": [["a", "b"], ["c", "d"]],
+                    "target_context": ["a", "b"],
                     "category": ["category_0", "category_1"],
                 },
             ),
@@ -215,14 +209,14 @@ class TestJsonParser:
                         "model_output_col": "positive",
                         "target_output_col": "negative",
                         "category_col": "category_0",
-                        "target_context": ["a", "b"],
+                        "target_context": "a",
                     },
                     {
                         "model_input_col": "B",
                         "model_output_col": "negative",
                         "target_output_col": "positive",
                         "category_col": "category_1",
-                        "target_context": ["c", "d"],
+                        "target_context": "b",
                     },
                 ],
             ),
@@ -232,7 +226,7 @@ class TestJsonParser:
     def test_json_parse_dataset_columns_success_json(self, mock_logger, config, dataset):
         """
         GIVEN valid JMESPath queries that extract model inputs, model outputs,
-            target outputs, and categories, and a JSON dataset that is represented
+            target outputs, categories, and target context, and a JSON dataset that is represented
             by either a dict or list
         WHEN parse_dataset_columns is called
         THEN parse_dataset_columns returns correct results
@@ -241,7 +235,7 @@ class TestJsonParser:
         expected_model_outputs = ["positive", "negative"]
         expected_target_outputs = ["negative", "positive"]
         expected_categories = ["category_0", "category_1"]
-        expected_target_context = [["a", "b"], ["c", "d"]]
+        expected_target_context = ["a", "b"]
 
         parser = JsonParser(config)
         cols = parser.parse_dataset_columns(dataset=dataset, dataset_mime_type=MIME_TYPE_JSON, dataset_name="dataset")
@@ -294,14 +288,14 @@ class TestJsonParser:
         expected_model_output = "positive"
         expected_target_output = "negative"
         expected_category = "Red"
-        expected_target_context = ["context 1", "context 2"]
+        expected_target_context = "context"
 
         dataset_line = {
             "input": "A",
             "output": "positive",
             "target": "negative",
             "category": "Red",
-            "target_context": ["context 1", "context 2"],
+            "target_context": "context",
         }
         cols = parser.parse_dataset_columns(
             dataset=dataset_line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name="dataset_line"
