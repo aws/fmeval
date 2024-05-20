@@ -14,18 +14,17 @@ from fmeval.constants import (
     SPEC_KEY,
     GENERATED_TEXT_JMESPATH_EXPRESSION,
     SDK_MANIFEST_FILE,
+    PROPRIETARY_SDK_MANIFEST_FILE,
     DEFAULT_PAYLOADS,
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
+    INPUT_LOG_PROBS_JMESPATH_EXPRESSION,
 )
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
-from fmeval.data_loaders.jmespath_util import compile_jmespath
 from fmeval.model_runners.extractors.extractor import Extractor
 
 # The expected model response location for Jumpstart that do produce the log probabilities
 from fmeval.model_runners.util import get_sagemaker_session
-
-JS_LOG_PROB_JMESPATH = "[0].details.prefill[*].logprob"
 
 
 class JumpStartExtractor(Extractor):
@@ -47,7 +46,6 @@ class JumpStartExtractor(Extractor):
         self._model_id = jumpstart_model_id
         self._model_version = jumpstart_model_version
         self._sagemaker_session = sagemaker_session if sagemaker_session else get_sagemaker_session()
-        self._log_prob_compiler = compile_jmespath(JS_LOG_PROB_JMESPATH)
 
         model_manifest = seq(self.get_jumpstart_sdk_manifest(self._sagemaker_session.boto_region_name)).find(
             lambda x: x.get(MODEL_ID, None) == jumpstart_model_id
@@ -61,8 +59,13 @@ class JumpStartExtractor(Extractor):
             DEFAULT_PAYLOADS in model_spec_key, f"JumpStart Model: {jumpstart_model_id} is not supported at this time"
         )
 
+        output_jmespath_expressions = None
+        input_log_probs_jmespath_expressions = None
         try:
             output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
+                model_spec_key[DEFAULT_PAYLOADS]
+            )
+            input_log_probs_jmespath_expressions = jmespath.compile(INPUT_LOG_PROBS_JMESPATH_EXPRESSION).search(
                 model_spec_key[DEFAULT_PAYLOADS]
             )
         except (TypeError, JMESPathError) as e:
@@ -75,13 +78,23 @@ class JumpStartExtractor(Extractor):
             f"Output jmespath expression for Jumpstart model {jumpstart_model_id} is empty. "
             f"Please provide output jmespath to the JumpStartModelRunner",
         )
+        self._output_jmespath_compiler = None
+        self._log_prob_compiler = None
         try:
             self._output_jmespath_compiler = jmespath.compile(output_jmespath_expressions[0])
+            if input_log_probs_jmespath_expressions:  # pragma: no branch
+                self._log_prob_compiler = jmespath.compile(input_log_probs_jmespath_expressions[0])
         except (TypeError, JMESPathError) as e:
-            raise EvalAlgorithmInternalError(
-                f"Output jmespath expression found for Jumpstart model {jumpstart_model_id} is not valid jmespath. "
-                f"Please provide output jmespath to the JumpStartModelRunner"
-            ) from e
+            if not self._output_jmespath_compiler:
+                raise EvalAlgorithmInternalError(
+                    f"Output jmespath expression found for Jumpstart model {jumpstart_model_id} is not valid jmespath. "
+                    f"Please provide output jmespath to the JumpStartModelRunner"
+                ) from e
+            else:
+                raise EvalAlgorithmInternalError(
+                    f"Input log probability jmespath expression found for Jumpstart model {jumpstart_model_id} is not valid jmespath. "
+                    f"Please provide correct input log probability jmespath to the JumpStartModelRunner"
+                ) from e
 
     def extract_log_probability(self, data: Union[List, Dict], num_records: int = 1) -> float:
         """
@@ -91,7 +104,13 @@ class JumpStartExtractor(Extractor):
         :param num_records: The number of records in the model response. Must be 1.
         """
         assert num_records == 1, "Jumpstart extractor does not support batch requests"
+        util.require(
+            self._log_prob_compiler, f"Model {self._model_id} does not include input log probabilities in it's response"
+        )
         try:
+            assert (
+                self._log_prob_compiler
+            ), f"Model {self._model_id} does not include input log probabilities in it's response"
             log_probs = self._log_prob_compiler.search(data)
             if log_probs is None and not isinstance(log_probs, list):
                 raise EvalAlgorithmClientError(
@@ -113,6 +132,9 @@ class JumpStartExtractor(Extractor):
         """
         assert num_records == 1, "Jumpstart extractor does not support batch requests"
         try:
+            assert (
+                self._output_jmespath_compiler
+            ), f"Unable to extract generated text from Jumpstart model: {self._model_id}"
             output = self._output_jmespath_compiler.search(data)
             if output is None and not isinstance(output, str):
                 raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}")
@@ -121,14 +143,19 @@ class JumpStartExtractor(Extractor):
             raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
 
     @staticmethod
-    def get_jumpstart_sdk_manifest(region: str) -> Dict:
+    def get_jumpstart_sdk_manifest(region: str) -> List[Dict]:
         jumpstart_bucket_base_url = os.environ.get(
             JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR, JUMPSTART_BUCKET_BASE_URL_FORMAT
         ).format(region, region)
-        url = "{}/{}".format(jumpstart_bucket_base_url, SDK_MANIFEST_FILE)
-        with request.urlopen(url) as f:
-            models_manifest = f.read().decode("utf-8")
-        return json.loads(models_manifest)
+        open_source_url = "{}/{}".format(jumpstart_bucket_base_url, SDK_MANIFEST_FILE)
+        proprietary_url = "{}/{}".format(jumpstart_bucket_base_url, PROPRIETARY_SDK_MANIFEST_FILE)
+
+        with request.urlopen(open_source_url) as f:
+            oss_models_manifest = f.read().decode("utf-8")
+        with request.urlopen(proprietary_url) as f:
+            proprietary_models_manifest = f.read().decode("utf-8")
+
+        return json.loads(oss_models_manifest) + json.loads(proprietary_models_manifest)
 
     @staticmethod
     def get_jumpstart_sdk_spec(key: str, region: str) -> Dict:

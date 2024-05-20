@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fmeval"
-version = "1.0.2"
+version = "1.0.3"
 description = "Amazon Foundation Model Evaluations"
 license = "Apache License 2.0"
 authors = ["Amazon FMEval Team <amazon-fmeval-team@amazon.com>"]
@@ -37,7 +37,7 @@ bert-score = "^0.3.13"
 scikit-learn = "^1.3.1"
 jiwer = "^3.0.3"
 transformers = "^4.36.0"
-sagemaker = "^2.199.0"
+sagemaker = "^2.219.0"
 testbook = "^0.4.2"
 ipykernel = "^6.26.0"
 mypy-boto3-bedrock = "^1.33.2"

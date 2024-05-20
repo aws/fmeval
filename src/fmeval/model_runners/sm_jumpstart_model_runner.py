@@ -6,11 +6,12 @@ import logging
 import sagemaker
 from typing import Optional, Tuple
 
+from sagemaker.jumpstart.enums import JumpStartModelType
 import fmeval.util as util
 from fmeval.constants import MIME_TYPE_JSON
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
+from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service, is_proprietary_js_model
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +68,16 @@ class JumpStartModelRunner(ModelRunner):
             is_endpoint_in_service(sagemaker_session, self._endpoint_name),
             f"Endpoint {self._endpoint_name} is not in service",
         )
+
+        # Default model type is always OPEN_WEIGHTS. See https://tinyurl.com/yc58s6wj
+        jumpstart_model_type = JumpStartModelType.OPEN_WEIGHTS
+        if is_proprietary_js_model(sagemaker_session.boto_region_name, self._model_id):
+            jumpstart_model_type = JumpStartModelType.PROPRIETARY
+
         predictor = sagemaker.predictor.retrieve_default(
             endpoint_name=self._endpoint_name,
             model_id=self._model_id,
+            model_type=jumpstart_model_type,
             model_version=self._model_version,
             sagemaker_session=sagemaker_session,
         )

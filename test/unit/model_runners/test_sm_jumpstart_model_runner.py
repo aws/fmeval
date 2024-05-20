@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 import sagemaker
 
+from sagemaker.jumpstart.enums import JumpStartModelType
 from fmeval.constants import MIME_TYPE_JSON
 from fmeval.model_runners.sm_jumpstart_model_runner import JumpStartModelRunner
 
@@ -12,6 +13,7 @@ ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
 INFERENCE_COMPONENT_NAME = "valid_inference_component_name"
 MODEL_ID = "AwesomeModel"
+PROPRIETARY_MODEL_ID = "cohere-gpt-medium"
 MODEL_VERSION = "v1.2.3"
 
 CONTENT_TEMPLATE = '{"data":$prompt}'
@@ -31,9 +33,21 @@ MODEL_OUTPUT = {"predictions": {"output": OUTPUT, "log_prob": LOG_PROBABILITY}}
 
 
 class TestJumpStartModelRunner:
+    class TestCaseInit(NamedTuple):
+        model_id: str
+
+    @pytest.mark.parametrize(
+        "test_case_init",
+        [
+            TestCaseInit(model_id=MODEL_ID),
+            TestCaseInit(
+                model_id=PROPRIETARY_MODEL_ID,
+            ),
+        ],
+    )
     @patch("sagemaker.session.Session")
     @patch("sagemaker.predictor.Predictor")
-    def test_jumpstart_model_runner_init(self, sagemaker_predictor_class, sagemaker_session_class):
+    def test_jumpstart_model_runner_init(self, sagemaker_predictor_class, sagemaker_session_class, test_case_init):
         """
         GIVEN valid Jumpstart model runner parameters
         WHEN try to create JumpStartModelRunner
@@ -41,6 +55,7 @@ class TestJumpStartModelRunner:
         """
         mock_sagemaker_session = sagemaker_session_class()
         mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+        mock_sagemaker_session.boto_region_name = "us-west-2"
 
         with patch("sagemaker.predictor.get_default_predictor") as default_predictor_fn:
             default_predictor = Mock()
@@ -50,13 +65,37 @@ class TestJumpStartModelRunner:
 
             js_model_runner = JumpStartModelRunner(
                 endpoint_name=ENDPOINT_NAME,
-                model_id=MODEL_ID,
+                model_id=test_case_init.model_id,
                 model_version=MODEL_VERSION,
                 content_template=CONTENT_TEMPLATE,
                 custom_attributes=CUSTOM_ATTRIBUTES,
                 output=OUTPUT_JMES_PATH,
                 log_probability=LOG_PROBABILITY_JMES_PATH,
             )
+
+            if test_case_init.model_id == PROPRIETARY_MODEL_ID:
+                default_predictor_fn.assert_called_with(
+                    predictor=sagemaker_predictor_class.return_value,
+                    model_id=test_case_init.model_id,
+                    model_version=MODEL_VERSION,
+                    model_type=JumpStartModelType.PROPRIETARY,
+                    sagemaker_session=sagemaker_session_class.return_value,
+                    region=None,
+                    tolerate_deprecated_model=False,
+                    tolerate_vulnerable_model=False,
+                )
+            else:
+                default_predictor_fn.assert_called_with(
+                    predictor=sagemaker_predictor_class.return_value,
+                    model_id=test_case_init.model_id,
+                    model_version=MODEL_VERSION,
+                    model_type=JumpStartModelType.OPEN_WEIGHTS,
+                    sagemaker_session=sagemaker_session_class.return_value,
+                    region=None,
+                    tolerate_deprecated_model=False,
+                    tolerate_vulnerable_model=False,
+                )
+
             sagemaker_predictor_class.assert_called_once_with(
                 endpoint_name=ENDPOINT_NAME, sagemaker_session=sagemaker_session_class.return_value, component_name=None
             )
@@ -91,6 +130,7 @@ class TestJumpStartModelRunner:
         """
         mock_sagemaker_session = sagemaker_session_class()
         mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+        mock_sagemaker_session.boto_region_name = "us-west-2"
 
         with patch.object(
             sagemaker.serializers, "retrieve_default", return_value=sagemaker.serializers.JSONSerializer()
@@ -137,6 +177,7 @@ class TestJumpStartModelRunner:
         """
         mock_sagemaker_session = sagemaker_session_class()
         mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+        mock_sagemaker_session.boto_region_name = "us-west-2"
 
         with patch.object(
             sagemaker.serializers, "retrieve_default", return_value=sagemaker.serializers.JSONSerializer()
@@ -181,6 +222,7 @@ class TestJumpStartModelRunner:
         """
         mock_sagemaker_session = sagemaker_session_class()
         mock_sagemaker_session.sagemaker_client.describe_endpoint.return_value = {"EndpointStatus": "InService"}
+        mock_sagemaker_session.boto_region_name = "us-west-2"
 
         with patch.object(
             sagemaker.serializers, "retrieve_default", return_value=sagemaker.serializers.JSONSerializer()

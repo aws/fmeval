@@ -126,9 +126,11 @@ MODEL_ID = "model_id"
 SPEC_KEY = "spec_key"
 DEFAULT_PAYLOADS = "default_payloads"
 SDK_MANIFEST_FILE = "models_manifest.json"
+PROPRIETARY_SDK_MANIFEST_FILE = "proprietary-sdk-manifest.json"
 JUMPSTART_BUCKET_BASE_URL_FORMAT = "https://jumpstart-cache-prod-{}.s3.{}.amazonaws.com"
 JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR = "JUMPSTART_BUCKET_BASE_URL_FORMAT"
 GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
+INPUT_LOG_PROBS_JMESPATH_EXPRESSION = "*.output_keys.input_logprobs"
 
 # BERTScore
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"
