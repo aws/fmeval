@@ -52,6 +52,7 @@ class TestJsonDataLoader:
         model_output_jmespath: Optional[str] = None
         target_output_jmespath: Optional[str] = None
         category_jmespath: Optional[str] = None
+        target_context_jmespath: Optional[str] = None
 
     @pytest.mark.parametrize(
         "test_case",
@@ -71,9 +72,9 @@ class TestJsonDataLoader:
             # containing heterogeneous lists.
             TestCaseReadDataset(
                 input_dataset={
-                    "row_1": ["a", True, False, 0],
-                    "row_2": ["b", False, False, 1],
-                    "row_3": ["c", False, True, 2],
+                    "row_1": ["a", True, False, 0, "context_a"],
+                    "row_2": ["b", False, False, 1, "context_b"],
+                    "row_3": ["c", False, True, 2, "context_c"],
                 },
                 expected_dataset=[
                     {
@@ -81,18 +82,21 @@ class TestJsonDataLoader:
                         DatasetColumns.MODEL_OUTPUT.value.name: "True",
                         DatasetColumns.TARGET_OUTPUT.value.name: "False",
                         DatasetColumns.CATEGORY.value.name: "0",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "context_a",
                     },
                     {
                         DatasetColumns.MODEL_INPUT.value.name: "b",
                         DatasetColumns.MODEL_OUTPUT.value.name: "False",
                         DatasetColumns.TARGET_OUTPUT.value.name: "False",
                         DatasetColumns.CATEGORY.value.name: "1",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "context_b",
                     },
                     {
                         DatasetColumns.MODEL_INPUT.value.name: "c",
                         DatasetColumns.MODEL_OUTPUT.value.name: "False",
                         DatasetColumns.TARGET_OUTPUT.value.name: "True",
                         DatasetColumns.CATEGORY.value.name: "2",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "context_c",
                     },
                 ],
                 dataset_mime_type=MIME_TYPE_JSON,
@@ -100,21 +104,35 @@ class TestJsonDataLoader:
                 model_output_jmespath="[row_1[1], row_2[1], row_3[1]]",
                 target_output_jmespath="[row_1[2], row_2[2], row_3[2]]",
                 category_jmespath="[row_1[3], row_2[3], row_3[3]]",
+                target_context_jmespath="[row_1[4], row_2[4], row_3[4]]",
             ),
             TestCaseReadDataset(
                 input_dataset=[
-                    {"input": "a", "output": 3.14},
-                    {"input": "c", "output": 2.718},
-                    {"input": "e", "output": 1.00},
+                    {"input": "a", "output": 3.14, "context": "1"},
+                    {"input": "c", "output": 2.718, "context": "2"},
+                    {"input": "e", "output": 1.00, "context": "3"},
                 ],
                 expected_dataset=[
-                    {DatasetColumns.MODEL_INPUT.value.name: "a", DatasetColumns.MODEL_OUTPUT.value.name: "3.14"},
-                    {DatasetColumns.MODEL_INPUT.value.name: "c", DatasetColumns.MODEL_OUTPUT.value.name: "2.718"},
-                    {DatasetColumns.MODEL_INPUT.value.name: "e", DatasetColumns.MODEL_OUTPUT.value.name: "1.0"},
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "a",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "3.14",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "1",
+                    },
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "c",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "2.718",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "2",
+                    },
+                    {
+                        DatasetColumns.MODEL_INPUT.value.name: "e",
+                        DatasetColumns.MODEL_OUTPUT.value.name: "1.0",
+                        DatasetColumns.TARGET_CONTEXT.value.name: "3",
+                    },
                 ],
                 dataset_mime_type=MIME_TYPE_JSONLINES,
                 model_input_jmespath="input",
                 model_output_jmespath="output",
+                target_context_jmespath="context",
             ),
         ],
     )
@@ -139,6 +157,7 @@ class TestJsonDataLoader:
                 model_output_location=test_case.model_output_jmespath,
                 target_output_location=test_case.target_output_jmespath,
                 category_location=test_case.category_jmespath,
+                target_context_location=test_case.target_context_jmespath,
             )
         )
         config = JsonDataLoaderConfig(

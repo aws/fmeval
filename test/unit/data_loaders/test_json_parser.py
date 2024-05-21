@@ -172,6 +172,7 @@ class TestJsonParser:
                     model_output_location="model_output.*",
                     target_output_location="targets_outer.targets_inner[*].sentiment",
                     category_location="category",
+                    target_context_location="target_context",
                     # this JMESPath query will fail to find any results, and should effectively get ignored
                     sent_more_input_location="invalid_jmespath_query",
                 ),
@@ -184,6 +185,7 @@ class TestJsonParser:
                         ],
                     },
                     "model_output": {"sample_1": "positive", "sample_2": "negative"},
+                    "target_context": ["a", "b"],
                     "category": ["category_0", "category_1"],
                 },
             ),
@@ -199,6 +201,7 @@ class TestJsonParser:
                     category_location="[*].category_col",
                     # this JMESPath query will fail to find any results, and should effectively get ignored
                     sent_more_input_location="invalid_jmespath_query",
+                    target_context_location="[*].target_context",
                 ),
                 dataset=[
                     {
@@ -206,12 +209,14 @@ class TestJsonParser:
                         "model_output_col": "positive",
                         "target_output_col": "negative",
                         "category_col": "category_0",
+                        "target_context": "a",
                     },
                     {
                         "model_input_col": "B",
                         "model_output_col": "negative",
                         "target_output_col": "positive",
                         "category_col": "category_1",
+                        "target_context": "b",
                     },
                 ],
             ),
@@ -221,7 +226,7 @@ class TestJsonParser:
     def test_json_parse_dataset_columns_success_json(self, mock_logger, config, dataset):
         """
         GIVEN valid JMESPath queries that extract model inputs, model outputs,
-            target outputs, and categories, and a JSON dataset that is represented
+            target outputs, categories, and target context, and a JSON dataset that is represented
             by either a dict or list
         WHEN parse_dataset_columns is called
         THEN parse_dataset_columns returns correct results
@@ -230,6 +235,7 @@ class TestJsonParser:
         expected_model_outputs = ["positive", "negative"]
         expected_target_outputs = ["negative", "positive"]
         expected_categories = ["category_0", "category_1"]
+        expected_target_context = ["a", "b"]
 
         parser = JsonParser(config)
         cols = parser.parse_dataset_columns(dataset=dataset, dataset_mime_type=MIME_TYPE_JSON, dataset_name="dataset")
@@ -238,6 +244,7 @@ class TestJsonParser:
         assert cols[DatasetColumns.MODEL_OUTPUT.value.name] == expected_model_outputs
         assert cols[DatasetColumns.TARGET_OUTPUT.value.name] == expected_target_outputs
         assert cols[DatasetColumns.CATEGORY.value.name] == expected_categories
+        assert cols[DatasetColumns.TARGET_CONTEXT.value.name] == expected_target_context
 
         # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN.value.name does not show up in `cols`
         assert set(cols.keys()) == {
@@ -245,6 +252,7 @@ class TestJsonParser:
             DatasetColumns.MODEL_OUTPUT.value.name,
             DatasetColumns.TARGET_OUTPUT.value.name,
             DatasetColumns.CATEGORY.value.name,
+            DatasetColumns.TARGET_CONTEXT.value.name,
         }
 
         # ensure that logger generated a warning when search_jmespath
@@ -271,6 +279,7 @@ class TestJsonParser:
             model_output_location="output",
             target_output_location="target",
             category_location="category",
+            target_context_location="target_context",
             # this JMESPath query will fail to find any results, and should effectively get ignored
             sent_more_input_location="invalid_jmespath_query",
         )
@@ -279,8 +288,15 @@ class TestJsonParser:
         expected_model_output = "positive"
         expected_target_output = "negative"
         expected_category = "Red"
+        expected_target_context = "context"
 
-        dataset_line = {"input": "A", "output": "positive", "target": "negative", "category": "Red"}
+        dataset_line = {
+            "input": "A",
+            "output": "positive",
+            "target": "negative",
+            "category": "Red",
+            "target_context": "context",
+        }
         cols = parser.parse_dataset_columns(
             dataset=dataset_line, dataset_mime_type=MIME_TYPE_JSONLINES, dataset_name="dataset_line"
         )
@@ -288,6 +304,7 @@ class TestJsonParser:
         assert cols[DatasetColumns.MODEL_OUTPUT.value.name] == expected_model_output
         assert cols[DatasetColumns.TARGET_OUTPUT.value.name] == expected_target_output
         assert cols[DatasetColumns.CATEGORY.value.name] == expected_category
+        assert cols[DatasetColumns.TARGET_CONTEXT.value.name] == expected_target_context
 
         # ensure that ColumnNames.SENT_MORE_INPUT_COLUMN.value.name does not show up in `cols`
         assert set(cols.keys()) == {
@@ -295,6 +312,7 @@ class TestJsonParser:
             DatasetColumns.MODEL_OUTPUT.value.name,
             DatasetColumns.TARGET_OUTPUT.value.name,
             DatasetColumns.CATEGORY.value.name,
+            DatasetColumns.TARGET_CONTEXT.value.name,
         }
 
         # ensure that logger generated a warning when search_jmespath
