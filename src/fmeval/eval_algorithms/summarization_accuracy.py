@@ -5,8 +5,10 @@ from ray.actor import ActorHandle
 
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
+from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
-from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset, evaluate_dataset
+from fmeval.eval_algorithms.save_strategy import SaveStrategy
+from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset
 from fmeval.util import (
     assert_condition,
     require,
@@ -183,6 +185,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
+        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute summarization accuracy metrics on one or more datasets.
 
@@ -196,8 +199,9 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
-            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
-            environment variable.
+        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
+            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
+            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
 
         :return: A list of EvalOutput objects.
         """
@@ -232,6 +236,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
                 prompt_template=prompt_template,
                 agg_method=MEAN,
                 save=save,
+                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
 
