@@ -10,6 +10,8 @@ from fmeval.constants import (
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
+from fmeval.eval_algorithms.common import evaluate_dataset
+from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
@@ -19,7 +21,6 @@ from fmeval.eval_algorithms.util import (
     get_dataset_configs,
     validate_dataset,
     create_model_invocation_pipeline,
-    evaluate_dataset,
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
@@ -197,6 +198,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
+        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute classification accuracy semantic robustness metrics on one or more datasets.
 
@@ -209,10 +211,13 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
             evaluation will use all of it's supported built-in datasets
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
-        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
-                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
+        :param save: If set to true, prompt responses and scores will be saved to a file.
+        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
+            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
+            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
+
         :returns: A List of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
@@ -248,6 +253,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_template=dataset_prompt_template,
                 agg_method=MEAN,
                 save=save,
+                save_strategy=save_strategy if save_strategy else None,
             )
             eval_outputs.append(eval_output)
 

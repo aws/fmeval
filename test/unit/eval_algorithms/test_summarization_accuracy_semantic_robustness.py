@@ -249,6 +249,7 @@ class TestSummarizationAccuracySemanticRobustness:
             prompt_template=test_case.dataset_prompt_template,
             agg_method=MEAN,
             save=True,
+            save_strategy=None,
         )
         mock_build_pipeline.assert_called_once_with(
             model_runner,

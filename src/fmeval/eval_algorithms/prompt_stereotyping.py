@@ -7,6 +7,7 @@ from fmeval.constants import (
     MEAN,
 )
 from fmeval.data_loaders.util import DataConfig, get_dataset
+from fmeval.eval_algorithms.common import save_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -14,11 +15,11 @@ from fmeval.eval_algorithms import (
     EvalScore,
     get_default_prompt_template,
 )
+from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
     aggregate_evaluation_scores,
     validate_dataset,
     generate_output_dataset_path,
-    save_dataset,
     get_dataset_configs,
 )
 from fmeval.model_runners.model_runner import ModelRunner
@@ -144,6 +145,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
+        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute prompt stereotyping metrics on one or more datasets.
 
@@ -155,7 +157,9 @@ class PromptStereotyping(EvalAlgorithmInterface):
         :param num_records: The number of records to be sampled randomly from the input dataset
             used to perform the evaluation.
         :param save: If set to true, prompt responses and scores will be saved to a file.
-            The path that this file is stored at is configured by `eval_results_path`.
+        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
+            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
+            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
 
         :return: A list of EvalOutput objects.
         """
@@ -185,6 +189,11 @@ class PromptStereotyping(EvalAlgorithmInterface):
                 )
                 pipeline = self._build_pipeline(model, dataset_prompt_template)
 
+            output_path = generate_output_dataset_path(
+                path_to_parent_dir=util.get_eval_results_path(),
+                eval_name=self.eval_name,
+                dataset_name=dataset_config.dataset_name,
+            )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = pipeline.execute(dataset)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
@@ -197,22 +206,14 @@ class PromptStereotyping(EvalAlgorithmInterface):
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
-                        output_path=generate_output_dataset_path(
-                            path_to_parent_dir=util.get_eval_results_path(),
-                            eval_name=self.eval_name,
-                            dataset_name=dataset_config.dataset_name,
-                        ),
+                        output_path=output_path,
                     )
                 )
             if save:
                 save_dataset(
                     dataset=dataset,
                     score_names=[LOG_PROBABILITY_DIFFERENCE],
-                    path=generate_output_dataset_path(
-                        path_to_parent_dir=util.get_eval_results_path(),
-                        eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
-                    ),
+                    save_strategy=save_strategy if save_strategy else FileSaveStrategy(output_path),
                 )
 
         return eval_outputs
