@@ -1,7 +1,7 @@
 import logging
 import warnings
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 from dataclasses import dataclass
 
 from fmeval.constants import (
@@ -194,7 +194,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
     def evaluate(
         self,
         model: ModelRunner,
-        dataset_config: Optional[DataConfig] = None,
+        dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
@@ -207,8 +207,9 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
             semantic robustness algorithms rely on invoking a model on perturbed inputs
             to see how the model outputs from the perturbed inputs differ from the original
             model outputs.
-        :param dataset_config: Configures the single dataset used for evaluation. If not provided,
-            evaluation will use all of it's supported built-in datasets
+        :param dataset_config: Configures a single dataset or list of datasets used for the
+            evaluation. If not provided, this method will run evaluations using all of its
+            supported built-in datasets.
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import EvalScore, EvalOutput
@@ -47,7 +47,7 @@ class EvalAlgorithmInterface(ABC):
     def evaluate(
         self,
         model: Optional[ModelRunner] = None,
-        dataset_config: Optional[DataConfig] = None,
+        dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
@@ -56,9 +56,9 @@ class EvalAlgorithmInterface(ABC):
         """Compute metrics on all samples in one or more datasets.
 
         :param model: An instance of ModelRunner representing the model being evaluated.
-        :param dataset_config: Configures the single dataset used for the evaluation.
-            If not provided, this method will run evaluations using all of its supported
-            built-in datasets.
+        :param dataset_config: Configures a single dataset or list of datasets used for the
+            evaluation. If not provided, this method will run evaluations using all of its
+            supported built-in datasets.
         :param prompt_template: A template used to generate prompts from raw text inputs.
             This parameter is not required if you with to run evaluations using the built-in
             datasets, as they have their own default prompt templates pre-configured.
