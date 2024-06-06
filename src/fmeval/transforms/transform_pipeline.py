@@ -1,8 +1,9 @@
 import ray.data
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 from collections import defaultdict
 
 from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.batched_transform import BatchedTransform
 from fmeval.transforms.transform import Transform
 from fmeval.util import require, get_num_actors
@@ -62,7 +63,7 @@ class TransformPipeline:
             f"{str(dict(transform_to_duplicate_keys))}",
         )
 
-    def execute(self, dataset: ray.data.Dataset) -> ray.data.Dataset:
+    def execute(self, dataset: ray.data.Dataset, judge_model: Optional[ModelRunner] = None) -> ray.data.Dataset:
         """Apply the Transforms in self.transforms to the input dataset.
 
         :param dataset: A Ray Dataset.
@@ -82,16 +83,17 @@ class TransformPipeline:
                     transform.__class__,
                     fn_constructor_args=transform.args,
                     fn_constructor_kwargs=transform.kwargs,
+                    fn_kwargs={"judge_model": judge_model},
                     concurrency=(1, get_num_actors()),
                 ).materialize()
         return dataset
 
-    def execute_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_record(self, record: Dict[str, Any], judge_model: Optional[ModelRunner] = None) -> Dict[str, Any]:
         """Apply the Transforms in self.transforms to a single record.
 
         :param record: An input record.
         :returns: The record with augmentations from all the applied Transforms.
         """
         for transform in self.transforms:
-            record = transform(record)
+            record = transform(record, judge_model)
         return record

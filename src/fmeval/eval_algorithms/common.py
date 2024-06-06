@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from ray.data import Dataset
 
-from fmeval.constants import EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, DatasetColumns
+from fmeval.constants import BEDROCK_MODEL_ID_DEFAULT, DatasetColumns, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
 from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template
 from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
@@ -14,6 +14,7 @@ from fmeval.eval_algorithms.util import (
     create_model_invocation_pipeline,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
+from fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 from fmeval.transforms.transform_pipeline import TransformPipeline
@@ -64,6 +65,15 @@ def save_dataset(dataset: Dataset, score_names: List[str], save_strategy: SaveSt
                 save_strategy.save(batch["record"])
 
 
+def get_default_judge_model() -> BedrockModelRunner:
+    # model_kwargs={"temperature": 0.1, "max_tokens_to_sample": 10000}
+    return BedrockModelRunner(
+        model_id=BEDROCK_MODEL_ID_DEFAULT,
+        output="completion",
+        content_template='{"prompt": $prompt, "max_tokens_to_sample": 10000, "temperature": 0.1}',
+    )
+
+
 def evaluate_dataset(
     dataset: Dataset,
     pipeline: TransformPipeline,
@@ -72,6 +82,7 @@ def evaluate_dataset(
     metric_names: List[str],
     eval_results_path: str,
     model: Optional[ModelRunner] = None,
+    judge_model: Optional[ModelRunner] = None,
     prompt_template: Optional[str] = None,
     agg_method: str = MEAN,
     save: bool = False,
@@ -127,8 +138,11 @@ def evaluate_dataset(
                 "or use a dataset that contains model outputs already."
             )
 
+    if not judge_model:
+        judge_model = get_default_judge_model()
+
     with (timed_block(f"Computing score and aggregation on dataset {dataset_name}", logger)):
-        dataset = pipeline.execute(dataset)
+        dataset = pipeline.execute(dataset, judge_model)
         dataset_scores, category_scores = aggregate_evaluation_scores(dataset, metric_names, agg_method=agg_method)
 
         output_path = generate_output_dataset_path(

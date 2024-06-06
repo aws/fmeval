@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.util import validate_key_uniqueness
 from fmeval.util import assert_condition
 
@@ -45,7 +46,7 @@ class Transform(ABC):
         self.output_keys = None
 
     @abstractmethod
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def __call__(self, record: Dict[str, Any], judge_model: Optional[ModelRunner] = None) -> Dict[str, Any]:
         """Return a record containing data that gets computed in this method.
 
         :param record: The input record to be transformed.

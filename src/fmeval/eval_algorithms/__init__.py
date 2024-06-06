@@ -49,6 +49,7 @@ class EvalAlgorithm(Enum):
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
     CLASSIFICATION_ACCURACY = "classification_accuracy"
     CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
+    FAITHFULNESS = "faithfulness"
 
     def __str__(self):
         """
@@ -182,8 +183,10 @@ MODEL_TASK_EVALUATION_MAP = {
 # Constants for Built-in dataset names
 TREX = "trex"
 BOOLQ = "boolq"
+BOOLQ_WITH_CONTEXT = "boolq_with_context"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
+NATURAL_QUESTIONS_WITH_CONTEXT = "natural_questions_with_context"
 CROWS_PAIRS = "crows-pairs"
 GIGAWORD = "gigaword"
 GOV_REPORT = "gov_report"
@@ -209,6 +212,7 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [GIGAWORD, GOV_REPORT],
+    EvalAlgorithm.FAITHFULNESS.value: [BOOLQ_WITH_CONTEXT, NATURAL_QUESTIONS_WITH_CONTEXT],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -253,6 +257,14 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         model_input_location="question",
         target_output_location="answer",
     ),
+    BOOLQ_WITH_CONTEXT: DataConfig(
+        dataset_name=BOOLQ_WITH_CONTEXT,
+        dataset_uri="s3://fmeval-rag-integration/datasets-with-context/boolq_with_context.jsonl",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="question",
+        target_output_location="answer",
+        target_context_location="passage",
+    ),
     TRIVIA_QA: DataConfig(
         dataset_name=TRIVIA_QA,
         dataset_uri="s3://fmeval/datasets/triviaQA/triviaQA.jsonl",
@@ -266,6 +278,14 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
+    ),
+    NATURAL_QUESTIONS_WITH_CONTEXT: DataConfig(
+        dataset_name=NATURAL_QUESTIONS_WITH_CONTEXT,
+        dataset_uri="s3://fmeval-rag-integration/datasets-with-context/natural_questions_with_context.jsonl",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="question",
+        target_output_location="answer",
+        target_context_location="long_answer",
     ),
     CROWS_PAIRS: DataConfig(
         dataset_name=CROWS_PAIRS,

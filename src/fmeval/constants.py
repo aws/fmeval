@@ -141,3 +141,7 @@ UPLOAD_ID = "UploadId"
 PARTS = "Parts"
 E_TAG = "ETag"
 PART_NUMBER = "PartNumber"
+
+# Default judge model/embeddings ids
+BEDROCK_MODEL_ID_DEFAULT = "anthropic.claude-v2"
+BEDROCK_MODEL_ID_EMBEDDINGS = "amazon.titan-embed-text-v1"
