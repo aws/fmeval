@@ -24,7 +24,7 @@ class TestGeneratePrompt(NamedTuple):
     input_keys: List[str]
     output_keys: List[str]
     prompt_template: str
-    placeholder_keys_dict: Dict[str, str]
+    placeholder_to_record_key: Dict[str, str]
     expected_record: Dict[str, str]
 
 
@@ -36,7 +36,7 @@ class TestGeneratePrompt(NamedTuple):
             input_keys=["input_1", "input_2"],
             output_keys=["prompt_1", "prompt_2"],
             prompt_template="Summarize the following: $model_input",
-            placeholder_keys_dict=None,
+            placeholder_to_record_key=None,
             expected_record={
                 "input_1": "Hello",
                 "input_2": "world",
@@ -49,7 +49,7 @@ class TestGeneratePrompt(NamedTuple):
             input_keys=[],
             output_keys=["prompt"],
             prompt_template="Question: $question\n Answer: $answer",
-            placeholder_keys_dict={"question": "input_1", "answer": "input_2"},
+            placeholder_to_record_key={"question": "input_1", "answer": "input_2"},
             expected_record={
                 "input_1": "sample question",
                 "input_2": "sample answer",
@@ -68,7 +68,7 @@ def test_generate_prompt_call(test_case):
         input_keys=test_case.input_keys,
         output_keys=test_case.output_keys,
         prompt_template=test_case.prompt_template,
-        placeholder_keys_dict=test_case.placeholder_keys_dict,
+        placeholder_to_record_key=test_case.placeholder_to_record_key,
     )
     result = gen_prompt(test_case.record)
     assert result == test_case.expected_record
