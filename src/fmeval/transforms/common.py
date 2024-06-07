@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -14,7 +14,13 @@ class GeneratePrompt(Transform):
     applying the same prompt template to each input.
     """
 
-    def __init__(self, input_keys: List[str], output_keys: List[str], prompt_template: str):
+    def __init__(
+        self,
+        input_keys: List[str],
+        output_keys: List[str],
+        prompt_template: str,
+        placeholder_keys_dict: Optional[Dict[str, str]] = None,
+    ):
         """GeneratePrompt initializer.
 
         :param input_keys: The keys corresponding to the text that will be used to create prompts.
@@ -23,9 +29,12 @@ class GeneratePrompt(Transform):
         :param output_keys: The keys corresponding to the prompts that get added by this Transform.
         :param prompt_template: The template used to construct the prompt.
             Example: "Summarize the following text: $model_input".
+        :param placeholder_keys_dict: The placeholders and the corresponding input keys dict.
+            Example: {"question": "model_input"} with prompt_template "Question: $question"
         """
-        super().__init__(input_keys, output_keys, prompt_template)
+        super().__init__(input_keys, output_keys, prompt_template, placeholder_keys_dict)
         self.register_input_output_keys(input_keys, output_keys)
+        self.placeholder_keys_dict = placeholder_keys_dict
         self.prompt_template = prompt_template
         self.prompt_composer = PromptComposer(prompt_template)
 
@@ -36,8 +45,15 @@ class GeneratePrompt(Transform):
         :param record: The input record.
         :returns: The input record with prompts added in.
         """
-        for input_key, prompt_key in zip(self.input_keys, self.output_keys):
-            record[prompt_key] = self.prompt_composer.compose(record[input_key])
+        if self.placeholder_keys_dict is not None:
+            placeholder_data_dict = {}
+            for placeholder_key in self.placeholder_keys_dict.keys():
+                placeholder_data_dict[placeholder_key] = record[self.placeholder_keys_dict[placeholder_key]]
+            for prompt_key in self.output_keys:
+                record[prompt_key] = self.prompt_composer.compose(placeholder_data_dict=placeholder_data_dict)
+        else:
+            for input_key, prompt_key in zip(self.input_keys, self.output_keys):
+                record[prompt_key] = self.prompt_composer.compose(record[input_key])
         return record
 
 
