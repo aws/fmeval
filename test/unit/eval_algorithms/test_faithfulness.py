@@ -126,10 +126,13 @@ class TestFaithfulness:
         """
         # GIVEN
         mock_model_runner = Mock()
-        mock_model_runner.predict.side_effect = [
-            (test_case.statements_output, None),
-            (test_case.verdicts_output, None),
-        ]
+
+        def predict_side_effect(prompt):
+            if "create one or more statements" in prompt:
+                return test_case.statements_output, None
+            if "Provide a final verdict" in prompt:
+                return test_case.verdicts_output, None
+        mock_model_runner.predict.side_effect = predict_side_effect
         mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = Faithfulness()
         # WHEN
