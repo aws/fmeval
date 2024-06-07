@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 from typing import Optional, List, Dict, Any
 
 from fmeval.constants import (
@@ -18,9 +17,8 @@ from fmeval.eval_algorithms import (
     EvalScore,
 )
 from fmeval.eval_algorithms.util import validate_dataset
-from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.common import GetModelOutputs, GeneratePrompt
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
@@ -70,129 +68,154 @@ class FaithfulnessScore(Transform):
 
     def __init__(
         self,
-        model_input_key: str = DatasetColumns.MODEL_INPUT.value.name,
-        model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
-        target_context_key: str = DatasetColumns.TARGET_CONTEXT.value.name,
         output_key: str = FAITHFULNESS,
     ):
         """FaithfulnessScore initializer.
 
-        :param model_input_key: The record key corresponding to the model input.
-        :param model_output_key: The record key corresponding to the model output.
-        :param target_context_key: The record key corresponding to the contexts.
-        :param output_key: The key corresponding to the factual knowledge score that
+        :param output_key: The key corresponding to the faithfulness score that
             will be added to the input record.
         """
-        super().__init__(model_input_key, model_output_key, target_context_key, output_key)
+        super().__init__(output_key)
         self.register_input_output_keys(
-            input_keys=[model_input_key, model_output_key, target_context_key],
+            input_keys=[],
             output_keys=[output_key],
         )
-        self.model_input_key = model_input_key
-        self.model_output_key = model_output_key
-        self.target_context_key = target_context_key
         self.output_key = output_key
 
     @validate_call
-    def __call__(self, record: Dict[str, Any], judge_model: ModelRunner) -> Dict[str, Any]:
-        """Augment the input record with the computed factual knowledge score.
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the computed faithfulness score.
 
         :param record: The input record.
-        :returns: The input record, with the factual knowledge score added in.
+        :returns: The input record, with the faithfulness score added in.
         """
-        model_input = record[self.model_input_key]
-        model_output = record[self.model_output_key]
-        target_context = record[self.target_context_key]
-        record[self.output_key] = self._get_score(model_input, model_output, target_context, judge_model)
+        verdict_output = record["raw_verdicts"]
+        statements = record["statements"]
+        record[self.output_key] = self._get_score(verdict_output, statements)
         return record
 
-    def _get_score(self, model_input: str, model_output: str, target_context: List[str], judge_model: ModelRunner) -> int:
-        """Compute the factual knowledge score for a target output and model output pair.
+    @staticmethod
+    def _get_score(verdict_output: str, statements: str) -> int:
+        """Given generated statements and if it can be inferred from the given contexts, computer Faithfulness score.
 
-        :param model_input: Model input.
-        :param model_output: Model output.
-        :param target_context: target context
+        :param verdict_output:
+        :param statements:
         :returns: 0 to 1. See the docstring for `Faithfulness` for more details
             on what these numerical values represent.
         """
-        human_prompt_composer = PromptComposer(LONG_FORM_ANSWER_PROMPT)
-        human_prompt = human_prompt_composer.compose(placeholder_data_dict={"question": model_input, "answer": model_output})
-        # step 1: get statement (untested)
-        statements_output = judge_model.predict(human_prompt)[0]
-        print(statements_output)
-        raw_statements = statements_output.split("\n")
-        list_statements = [statement for statement in raw_statements if statement.startswith("Statement:")]
-        # step 2: generate statement prompt (untested)
-        nli_statements_composer = PromptComposer(NLI_STATEMENTS_MESSAGE)
-        # statements = "Einstein was born in Germany.\nEinstein was born on 20th March 1879."
-        statements_str: str = "\n".join(
-            [f"{i + 1}.{st}" for i, st in enumerate(list_statements)]
-        )
-        print("statement_str:")
-        print(statements_str)
-        nli_statements_message = nli_statements_composer.compose(placeholder_data_dict={"context": target_context, "statements": statements_str})
+        output = verdict_output.lower().strip()
+        num_statements = len(statements.split("\n"))
 
-        # step 3: get result
-        output = judge_model.predict(nli_statements_message)[0]
-        output = output.lower().strip()
-        print(output)
-
-        # step 4: calculate score
+        # calculate score TODO edge case num_statements is 0; edge case if no verdicts found
         final_answer = "Final verdicts in order:"
         final_answer = final_answer.lower()
         if output.find(final_answer) != -1:
-            print("here")
             output = output[output.find(final_answer) + len(final_answer) :]
-            print(output)
-            score = sum(
-                0 if "yes" in answer else 1
-                for answer in output.strip().split(".")
-                if answer != ""
-            )
-            print(score)
-            score = score / len(list_statements)
+            score = sum(0 if "yes" in answer else 1 for answer in output.strip().split(".") if answer != "")
+            score = score / num_statements
         else:
-            score = max(0, output.count("verdict: no")) / len(
-                list_statements
-            )
+            score = max(0, output.count("verdict: yes")) / num_statements
 
         return score
 
 
+class GetStatements(Transform):
+    """This transform gets statements string from raw statements."""
+
+    def __init__(self, input_key: str, output_key: str, judge_model: ModelRunner):
+        """Initializer.
+        :param input_key: The key corresponding to prompt to get statements.
+        :param output_key: The key corresponding to the statements, which gets added to the record.
+        """
+        super().__init__(input_key, output_key, judge_model)
+        self.register_input_output_keys(
+            input_keys=[input_key],
+            output_keys=[output_key],
+        )
+        self.input_key = input_key
+        self.output_key = output_key
+        self.judge_model = judge_model
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the computed mean.
+        :param record: The input record.
+        :returns: The input record with the mean added in.
+        """
+        get_raw_statements = GetModelOutputs(
+            input_to_output_keys={self.input_key: ["raw_statements"]},
+            model_runner=self.judge_model,
+        )
+        record_with_raw_statements = get_raw_statements(record)
+        raw_statements = record_with_raw_statements["raw_statements"].split("\n")
+        list_statements = [statement for statement in raw_statements if statement.startswith("Statement:")]
+        statements_str: str = "\n".join([f"{i + 1}.{st}" for i, st in enumerate(list_statements)])
+        record[self.output_key] = statements_str
+        return record
+
+
 class Faithfulness(EvalAlgorithmInterface):
-    """
-    """
+    """ """
 
     eval_name = EvalAlgorithm.FAITHFULNESS.value
 
     def __init__(self):
-        """Faithfulness initializer.
-        """
+        """Faithfulness initializer."""
         super().__init__(EvalAlgorithmConfig())
-        self.pipeline = TransformPipeline(
-            [FaithfulnessScore()]
+
+    @staticmethod
+    def _build_pipeline(
+        judge_model: ModelRunner,
+        long_form_prompt_template: str,
+        nli_statements_prompt_template: str,
+    ) -> TransformPipeline:
+        gen_long_form_prompt = GeneratePrompt(
+            input_keys=[],
+            output_keys=["long_form_prompt"],
+            prompt_template=long_form_prompt_template,
+            placeholder_keys_dict={
+                "question": DatasetColumns.MODEL_INPUT.value.name,
+                "answer": DatasetColumns.MODEL_OUTPUT.value.name,
+            },
         )
+        get_statements = GetStatements(
+            input_key="long_form_prompt",
+            output_key="statements",
+            judge_model=judge_model,
+        )
+        gen_nli_statements_prompt = GeneratePrompt(
+            input_keys=[],
+            output_keys=["nli_statements_prompt"],
+            prompt_template=nli_statements_prompt_template,
+            placeholder_keys_dict={"context": DatasetColumns.TARGET_CONTEXT.value.name, "statements": "statements"},
+        )
+        get_raw_verdicts = GetModelOutputs(
+            input_to_output_keys={"nli_statements_prompt": ["raw_verdicts"]},
+            model_runner=judge_model,
+        )
+        compute_score = FaithfulnessScore()
+        transforms = [gen_long_form_prompt, get_statements, gen_nli_statements_prompt, get_raw_verdicts, compute_score]
+        pipeline = TransformPipeline(transforms)
+        return pipeline
 
-    # def _build_pipeline(
-    #         self,
-    #         judge_model: ModelRunner,
-    #         prompt_template: str,
-    # ) -> TransformPipeline:
-    #     transforms = [
-    #         get_statements(getmodeloutputtransform), // predict
-    #         get_results(getmodeloutputtransform), // use statements, predict
-    #         get_score
-    #     ]
-    #     pipeline = TransformPipeline(transforms)
-    #     return pipeline
-
-    def evaluate_sample(self, model_input: str, model_output: str, target_context: str, judge_model: Optional[ModelRunner]=None) -> List[EvalScore]:  # type: ignore[override]
-        """Compute the factual knowledge score on a single sample.
+    def evaluate_sample(
+        self,
+        model_input: str,
+        model_output: str,
+        target_context: str,
+        judge_model: Optional[ModelRunner] = None,
+        long_form_prompt_template: str = LONG_FORM_ANSWER_PROMPT,
+        nli_statements_prompt_template: str = NLI_STATEMENTS_MESSAGE,
+    ) -> List[EvalScore]:  # type: ignore[override]
+        """Compute the faithfulness score on a single sample.
 
         :param model_input: The expected responses from the model.
         :param model_output: The output of the model being evaluated.
         :param target_context: The relevant context retrieved from RAG system.
-        :param judge_model: The judge model to be used.
+        :param judge_model: An instance of ModelRunner representing the judge model to be used.
+            If this argument is None, default judge model will be provided.
+        :param long_form_prompt_template:
+        :param nli_statements_prompt_template:
         :return: A single-element list containing an EvalScore corresponding to the faithfulness score.
         """
         if not judge_model:
@@ -203,55 +226,68 @@ class Faithfulness(EvalAlgorithmInterface):
             DatasetColumns.MODEL_OUTPUT.value.name: model_output,
             DatasetColumns.TARGET_CONTEXT.value.name: target_context,
         }
-        result = self.pipeline.execute_record(sample, judge_model)
+        pipeline = self._build_pipeline(
+            judge_model=judge_model,
+            long_form_prompt_template=long_form_prompt_template,
+            nli_statements_prompt_template=nli_statements_prompt_template,
+        )
+        result = pipeline.execute_record(sample)
         return [EvalScore(name=FAITHFULNESS, value=result[FAITHFULNESS])]
 
     def evaluate(
         self,
         judge_model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
-        prompt_template: Optional[str] = None,
         num_records: int = 300,
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,
+        long_form_prompt_template: str = LONG_FORM_ANSWER_PROMPT,
+        nli_statements_prompt_template: str = NLI_STATEMENTS_MESSAGE,
     ) -> List[EvalOutput]:
         """Compute the faithfulness score on one or more datasets.
 
-        :param model: An instance of ModelRunner representing the model under evaluation.
-            If this argument is None, the `dataset_config` argument must not be None,
-            and must correspond to a dataset that already contains a column with model outputs.
+        :param judge_model: An instance of ModelRunner representing the judge model to be used.
+            If this argument is None, default judge model will be provided.
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluations will be run on all of this algorithm's built-in datasets.
-        :param prompt_template: A template used to generate prompts that are fed to the model.
-            If not provided, defaults will be used. If provided, `model` must not be None.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s). Note that the default value is 300, rather than
             100, as it is for the rest of the built-in algorithms. This is because there
-            are 15 categories for factual knowledge, and if only 100 samples are used, there
+            are 15 categories for faithfulness, and if only 100 samples are used, there
             will be categories with very few samples.
         :param save: If set to true, prompt responses and scores will be saved to a file.
         :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
             specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
             If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
+        :param long_form_prompt_template:
+        :param nli_statements_prompt_template:
 
         :return: A list of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
+        if not judge_model:
+            judge_model = get_default_judge_model()
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
-            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.MODEL_OUTPUT.value.name, DatasetColumns.TARGET_CONTEXT.value.name])
+            validate_dataset(
+                dataset,
+                [
+                    DatasetColumns.MODEL_INPUT.value.name,
+                    DatasetColumns.MODEL_OUTPUT.value.name,
+                    DatasetColumns.TARGET_CONTEXT.value.name,
+                ],
+            )
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self.pipeline,
+                pipeline=self._build_pipeline(judge_model, long_form_prompt_template, nli_statements_prompt_template),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=[FAITHFULNESS],
                 eval_results_path=get_eval_results_path(),
-                judge_model=judge_model,
-                prompt_template=prompt_template,
                 agg_method=MEAN,
                 save=save,
+                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
         return eval_outputs

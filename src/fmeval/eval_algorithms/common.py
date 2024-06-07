@@ -82,7 +82,6 @@ def evaluate_dataset(
     metric_names: List[str],
     eval_results_path: str,
     model: Optional[ModelRunner] = None,
-    judge_model: Optional[ModelRunner] = None,
     prompt_template: Optional[str] = None,
     agg_method: str = MEAN,
     save: bool = False,
@@ -138,11 +137,8 @@ def evaluate_dataset(
                 "or use a dataset that contains model outputs already."
             )
 
-    if not judge_model:
-        judge_model = get_default_judge_model()
-
     with (timed_block(f"Computing score and aggregation on dataset {dataset_name}", logger)):
-        dataset = pipeline.execute(dataset, judge_model)
+        dataset = pipeline.execute(dataset)
         dataset_scores, category_scores = aggregate_evaluation_scores(dataset, metric_names, agg_method=agg_method)
 
         output_path = generate_output_dataset_path(

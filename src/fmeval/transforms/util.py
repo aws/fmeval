@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Tuple
 from fmeval.util import assert_condition
 
 
@@ -58,9 +58,7 @@ def validate_call(call_method: Callable) -> Callable:
     :returns: A wrapper function that performs pre- and post-validation on top of `__call__`.
     """
 
-    from fmeval.model_runners.model_runner import ModelRunner
-
-    def wrapper(self, record: Dict[str, Any], judge_model: Optional[ModelRunner] = None) -> Dict[str, Any]:
+    def wrapper(self, record: Dict[str, Any]) -> Dict[str, Any]:
         assert_condition(
             self.input_keys is not None,
             "self.input_keys has not been set. You should set this attribute using "
@@ -72,7 +70,7 @@ def validate_call(call_method: Callable) -> Callable:
             "the register_input_output_keys method.",
         )
         validate_existing_keys(record, self.input_keys)
-        call_output = call_method(self, record, judge_model)
+        call_output = call_method(self, record)
         validate_existing_keys(call_output, self.output_keys)
         return call_output
 

@@ -1,10 +1,8 @@
-import re
 from typing import List, NamedTuple, Optional
 from unittest.mock import patch, Mock
 
 import pytest
 import ray
-from _pytest.fixtures import fixture
 from ray.data import Dataset
 
 from fmeval.constants import (
@@ -12,9 +10,8 @@ from fmeval.constants import (
     MIME_TYPE_JSON,
 )
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms import CategoryScore, EvalAlgorithm, EvalOutput, EvalScore
+from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.faithfulness import Faithfulness
-from fmeval.exceptions import EvalAlgorithmClientError
 
 DATASET_WITH_CONTEXT = ray.data.from_items(
     [
@@ -30,8 +27,8 @@ DATASET_SCORES = [
     EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2),
 ]
 
-class TestFaithfulness:
 
+class TestFaithfulness:
     class TestCaseFaithfulnessEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
@@ -47,9 +44,13 @@ class TestFaithfulness:
                 model_input="Where and when was Einstein born?",
                 model_output="Einstein was born in Germany on 20th March 1879.",
                 target_context="Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time",
-                statements_output=["Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."],
-                verdicts_output=["here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was \"a german-born theoretical physicist\". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was \"born 14 march 1879\". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no."],
-                expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1/2)],
+                statements_output=
+                    "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."
+                ,
+                verdicts_output=
+                    'here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.'
+                ,
+                expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2)],
             ),
         ],
     )
@@ -62,8 +63,8 @@ class TestFaithfulness:
         # GIVEN
         mock_model_runner = Mock()
         mock_model_runner.predict.side_effect = [
-            test_case.statements_output,
-            test_case.verdicts_output,
+            (test_case.statements_output, None),
+            (test_case.verdicts_output, None),
         ]
         # WHEN
         eval_algorithm = Faithfulness()
@@ -71,7 +72,8 @@ class TestFaithfulness:
             model_input=test_case.model_input,
             model_output=test_case.model_output,
             target_context=test_case.target_context,
-            judge_model=mock_model_runner)
+            judge_model=mock_model_runner,
+        )
         # THEN
         assert test_case.expected_score == actual_score
 
@@ -97,10 +99,8 @@ class TestFaithfulness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                statements_output=[
-                    "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."],
-                verdicts_output=[
-                    "here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was \"a german-born theoretical physicist\". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was \"born 14 march 1879\". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no."],
+                statements_output="Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879.",
+                verdicts_output='here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.',
                 expected_response=[
                     EvalOutput(
                         eval_name="faithfulness",
@@ -127,8 +127,8 @@ class TestFaithfulness:
         # GIVEN
         mock_model_runner = Mock()
         mock_model_runner.predict.side_effect = [
-            test_case.statements_output,
-            test_case.verdicts_output,
+            (test_case.statements_output, None),
+            (test_case.verdicts_output, None),
         ]
         mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = Faithfulness()
@@ -140,6 +140,3 @@ class TestFaithfulness:
         )
         # THEN
         assert actual_response == test_case.expected_response
-
-
-
