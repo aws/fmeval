@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Dict
 from unittest.mock import patch, Mock
 
 import pytest
@@ -8,10 +8,17 @@ from ray.data import Dataset
 from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
+    MEAN,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms import EvalAlgorithm, EvalOutput, EvalScore
-from fmeval.eval_algorithms.faithfulness import Faithfulness
+from fmeval.eval_algorithms.faithfulness import (
+    Faithfulness,
+    FaithfulnessScore,
+    GetStatements,
+    LONG_FORM_ANSWER_PROMPT,
+    NLI_STATEMENTS_MESSAGE,
+)
 
 DATASET_WITH_CONTEXT = ray.data.from_items(
     [
@@ -44,12 +51,8 @@ class TestFaithfulness:
                 model_input="Where and when was Einstein born?",
                 model_output="Einstein was born in Germany on 20th March 1879.",
                 target_context="Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time",
-                statements_output=
-                    "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."
-                ,
-                verdicts_output=
-                    'here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.'
-                ,
+                statements_output="Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879.",
+                verdicts_output='here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.',
                 expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2)],
             ),
         ],
@@ -76,6 +79,174 @@ class TestFaithfulness:
         )
         # THEN
         assert test_case.expected_score == actual_score
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseFaithfulnessEvaluateSample(
+                model_input="Where and when was Einstein born?",
+                model_output="Einstein was born in Germany on 20th March 1879.",
+                target_context="Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time",
+                statements_output="Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879.",
+                verdicts_output='here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.',
+                expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2)],
+            ),
+        ],
+    )
+    @patch("fmeval.eval_algorithms.faithfulness.get_default_judge_model")
+    def test_faithfulness_evaluate_sample_with_default_judge_model(self, mock_get_default_judge_model, test_case):
+        """
+        GIVEN valid inputs
+        WHEN Faithfulness.evaluate_sample is called
+        THEN correct EvalScore is returned
+        """
+        # GIVEN
+        mock_default_judge_model = Mock()
+        mock_default_judge_model.predict.side_effect = [
+            (test_case.statements_output, None),
+            (test_case.verdicts_output, None),
+        ]
+        mock_get_default_judge_model.return_value = mock_default_judge_model
+        # WHEN
+        eval_algorithm = Faithfulness()
+        actual_score = eval_algorithm.evaluate_sample(
+            model_input=test_case.model_input,
+            model_output=test_case.model_output,
+            target_context=test_case.target_context,
+        )
+        # THEN
+        assert test_case.expected_score == actual_score
+
+    @patch("fmeval.eval_algorithms.faithfulness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.faithfulness.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.faithfulness.Faithfulness._build_pipeline")
+    @patch("fmeval.eval_algorithms.faithfulness.get_dataset")
+    @patch("fmeval.eval_algorithms.faithfulness.get_dataset_configs")
+    def test_evaluate(
+        self,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+    ):
+        """
+        GIVEN a Faithfulness instance.
+        WHEN its evaluate method is called with valid arguments.
+        THEN `evaluate_dataset` is called with the correct arguments.
+        """
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.MODEL_OUTPUT.value.name,
+                DatasetColumns.TARGET_CONTEXT.value.name,
+            ]
+        )
+        mock_get_dataset.return_value = mock_dataset
+
+        mock_get_results_path.return_value = "/path/to/results"
+        model_runner = Mock()
+
+        mock_build_pipeline.return_value = Mock()
+        # WHEN
+        faithfulness_algo = Faithfulness()
+        output = faithfulness_algo.evaluate(
+            judge_model=model_runner,
+            dataset_config=dataset_config,
+            num_records=162,
+            save=True,
+        )
+        # THEN
+        mock_build_pipeline.assert_called_with(
+            model_runner,
+            LONG_FORM_ANSWER_PROMPT,
+            NLI_STATEMENTS_MESSAGE,
+        )
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_dataset,
+            pipeline=mock_build_pipeline.return_value,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=faithfulness_algo.eval_name,
+            metric_names=["faithfulness"],
+            eval_results_path="/path/to/results",
+            agg_method=MEAN,
+            save=True,
+            save_strategy=None,
+        )
+        assert output == [mock_evaluate_dataset.return_value]
+
+    @patch("fmeval.eval_algorithms.faithfulness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.faithfulness.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.faithfulness.Faithfulness._build_pipeline")
+    @patch("fmeval.eval_algorithms.faithfulness.get_dataset")
+    @patch("fmeval.eval_algorithms.faithfulness.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.faithfulness.get_default_judge_model")
+    def test_evaluate_with_default_judge_model(
+        self,
+        mock_get_default_judge_model,
+        mock_get_dataset_configs,
+        mock_get_dataset,
+        mock_build_pipeline,
+        mock_evaluate_dataset,
+        mock_get_results_path,
+    ):
+        """
+        GIVEN a Faithfulness instance.
+        WHEN its evaluate method is called with valid arguments.
+        THEN `evaluate_dataset` is called with the correct arguments.
+        """
+        mock_default_judge_model = Mock()
+        mock_get_default_judge_model.return_value = mock_default_judge_model
+
+        dataset_config = Mock()
+        dataset_config.dataset_name = "my_custom_dataset"
+        mock_get_dataset_configs.return_value = [dataset_config]
+
+        mock_dataset = Mock()
+        # So that validate_dataset does not error
+        mock_dataset.columns = Mock(
+            return_value=[
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.MODEL_OUTPUT.value.name,
+                DatasetColumns.TARGET_CONTEXT.value.name,
+            ]
+        )
+        mock_get_dataset.return_value = mock_dataset
+
+        mock_get_results_path.return_value = "/path/to/results"
+
+        mock_build_pipeline.return_value = Mock()
+        # WHEN
+        faithfulness_algo = Faithfulness()
+        output = faithfulness_algo.evaluate(
+            dataset_config=dataset_config,
+            num_records=162,
+            save=True,
+        )
+        # THEN
+        mock_build_pipeline.assert_called_with(
+            mock_default_judge_model,
+            LONG_FORM_ANSWER_PROMPT,
+            NLI_STATEMENTS_MESSAGE,
+        )
+        mock_evaluate_dataset.assert_called_once_with(
+            dataset=mock_dataset,
+            pipeline=mock_build_pipeline.return_value,
+            dataset_name=dataset_config.dataset_name,
+            eval_name=faithfulness_algo.eval_name,
+            metric_names=["faithfulness"],
+            eval_results_path="/path/to/results",
+            agg_method=MEAN,
+            save=True,
+            save_strategy=None,
+        )
+        assert output == [mock_evaluate_dataset.return_value]
 
     class TestCaseFaithfulnessEvaluate(NamedTuple):
         input_dataset: Dataset
@@ -116,7 +287,7 @@ class TestFaithfulness:
     @patch("fmeval.eval_algorithms.faithfulness.get_dataset")
     def test_faithfulness_evaluate(self, mock_get_dataset, test_case):
         """
-        GIVEN dataset(s) with model outputs already present.
+        GIVEN datasets.
         WHEN the Faithfulness evaluate method is called.
         THEN the correct EvalOutput is returned.
 
@@ -132,6 +303,7 @@ class TestFaithfulness:
                 return test_case.statements_output, None
             if "Provide a final verdict" in prompt:
                 return test_case.verdicts_output, None
+
         mock_model_runner.predict.side_effect = predict_side_effect
         mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = Faithfulness()
@@ -143,3 +315,99 @@ class TestFaithfulness:
         )
         # THEN
         assert actual_response == test_case.expected_response
+
+    class TestCaseFaithfulnessScore(NamedTuple):
+        raw_verdicts: str
+        statements: str
+        expected_score: float
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            # calculate score based on final answer string from raw verdicts string
+            TestCaseFaithfulnessScore(
+                raw_verdicts="Final verdicts in order:\nYes. No.",
+                statements="Statement: statement1\nStatement: statement2",
+                expected_score=0.5,
+            ),
+            # calculate score based on count of verdicts from raw verdicts string
+            TestCaseFaithfulnessScore(
+                raw_verdicts="verdict: yes\nverdict: no",
+                statements="Statement: statement1\nStatement: statement2",
+                expected_score=0.5,
+            ),
+            # unknown raw verdicts string
+            TestCaseFaithfulnessScore(
+                raw_verdicts="judge model didn't output as expected",
+                statements="Statement: statement1\nStatement: statement2",
+                expected_score=0.0,
+            ),
+            # TODO add test case for 0 statements
+        ],
+    )
+    def test_faithfulness_transform(self, test_case):
+        """
+        GIVEN a FaithfulnessScores instance.
+        WHEN its __call__ method is invoked.
+        THEN the correct output is returned.
+        """
+        get_scores = FaithfulnessScore()
+        sample = {
+            "raw_verdicts": test_case.raw_verdicts,
+            "statements": test_case.statements,
+        }
+        result = get_scores(sample)
+        assert result[EvalAlgorithm.FAITHFULNESS.value] == test_case.expected_score
+
+    class TestCaseGetStatements(NamedTuple):
+        record: Dict[str, str]
+        input_key: str
+        output_key: str
+        raw_statements: str
+        expected_record: Dict[str, str]
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            # find 0 statements from raw statements
+            TestCaseGetStatements(
+                record={"prompt": "prompt1", "other_input": "other"},
+                input_key="prompt",
+                output_key="statements",
+                raw_statements="raw_statement",
+                expected_record={
+                    "prompt": "prompt1",
+                    "other_input": "other",
+                    "statements": "",
+                    "raw_statements": "raw_statement",
+                },
+            ),
+            # find statements with prefix string
+            TestCaseGetStatements(
+                record={"prompt": "prompt1"},
+                input_key="prompt",
+                output_key="statements",
+                raw_statements="Statement: statement1\nStatement: statement2",
+                expected_record={
+                    "prompt": "prompt1",
+                    "statements": "1.Statement: statement1\n2.Statement: statement2",
+                    "raw_statements": "Statement: statement1\nStatement: statement2",
+                },
+            ),
+        ],
+    )
+    def test_get_statements_call(self, test_case):
+        """
+        GIVEN a GenerateStatement instance.
+        WHEN its __call__ method is called on a record.
+        THEN the correct output is returned.
+        """
+        mock_model_runner = Mock()
+        mock_model_runner.predict.side_effect = [
+            (test_case.raw_statements, None),
+        ]
+        gen_statements = GetStatements(
+            input_key=test_case.input_key, output_key=test_case.output_key, judge_model=mock_model_runner
+        )
+        result = gen_statements(test_case.record)
+        assert result == test_case.expected_record

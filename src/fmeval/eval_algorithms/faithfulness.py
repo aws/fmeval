@@ -38,7 +38,7 @@ statements:\n Assistant:"""  # noqa: E501
 
 NLI_STATEMENTS_MESSAGE = """
 Human: Prompt: Natural language inference
-Consider the given context and following statements, then determine whether they are supported by the information present in the context.Provide a brief explanation for each statement before arriving at the verdict (Yes/No). Provide a final verdict for each statement in order at the end in the given format. Do not deviate from the specified format.
+Consider the given context and following statements, then determine whether they are supported by the information present in the context. Provide a brief explanation for each statement before arriving at the verdict (Yes/No). Provide a final verdict for each statement in order at the end in the given format. Do not deviate from the specified format.
 
 Context:\nJohn is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.
 statements:\n1. John is majoring in Biology.\n2. John is taking a course on Artificial Intelligence.\n3. John is a dedicated student.\n4. John has a part-time job.\n5. John is interested in computer programming.\n
@@ -95,37 +95,40 @@ class FaithfulnessScore(Transform):
         return record
 
     @staticmethod
-    def _get_score(verdict_output: str, statements: str) -> int:
-        """Given generated statements and if it can be inferred from the given contexts, computer Faithfulness score.
+    def _get_score(verdict_output: str, statements: str) -> float:
+        """Given generated statements and verdicts, compute Faithfulness score.
 
-        :param verdict_output:
-        :param statements:
+        :param verdict_output: Verdicts(Yes/No) and explanations string get from Judge model.
+        :param statements: Statements string get from `GetStatements` Transform.
         :returns: 0 to 1. See the docstring for `Faithfulness` for more details
             on what these numerical values represent.
         """
         output = verdict_output.lower().strip()
         num_statements = len(statements.split("\n"))
+        # TODO: handle edge case that num_statements is 0?
 
-        # calculate score TODO edge case num_statements is 0; edge case if no verdicts found
+        # calculate score
         final_answer = "Final verdicts in order:"
         final_answer = final_answer.lower()
         if output.find(final_answer) != -1:
             output = output[output.find(final_answer) + len(final_answer) :]
-            score = sum(0 if "yes" in answer else 1 for answer in output.strip().split(".") if answer != "")
+            score = float(sum(1 if "yes" in answer else 0 for answer in output.strip().split(".") if answer != ""))
             score = score / num_statements
         else:
-            score = max(0, output.count("verdict: yes")) / num_statements
+            score = float(max(0, output.count("verdict: yes")) / num_statements)
 
         return score
 
 
 class GetStatements(Transform):
-    """This transform gets statements string from raw statements."""
+    """This transform invokes the judge model string from raw statements."""
 
     def __init__(self, input_key: str, output_key: str, judge_model: ModelRunner):
-        """Initializer.
+        """GetStatements Initializer.
         :param input_key: The key corresponding to prompt to get statements.
         :param output_key: The key corresponding to the statements, which gets added to the record.
+        :param judge_model: An instance of ModelRunner representing the judge model to be used.
+            If this argument is None, default judge model will be provided.
         """
         super().__init__(input_key, output_key, judge_model)
         self.register_input_output_keys(
@@ -138,7 +141,7 @@ class GetStatements(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed mean.
+        """Invokes the judge model to generate statements and arguments the input record with the statements.
         :param record: The input record.
         :returns: The input record with the mean added in.
         """
@@ -173,7 +176,7 @@ class Faithfulness(EvalAlgorithmInterface):
             input_keys=[],
             output_keys=["long_form_prompt"],
             prompt_template=long_form_prompt_template,
-            placeholder_keys_dict={
+            placeholder_to_record_key={
                 "question": DatasetColumns.MODEL_INPUT.value.name,
                 "answer": DatasetColumns.MODEL_OUTPUT.value.name,
             },
@@ -187,7 +190,7 @@ class Faithfulness(EvalAlgorithmInterface):
             input_keys=[],
             output_keys=["nli_statements_prompt"],
             prompt_template=nli_statements_prompt_template,
-            placeholder_keys_dict={"context": DatasetColumns.TARGET_CONTEXT.value.name, "statements": "statements"},
+            placeholder_to_record_key={"context": DatasetColumns.TARGET_CONTEXT.value.name, "statements": "statements"},
         )
         get_raw_verdicts = GetModelOutputs(
             input_to_output_keys={"nli_statements_prompt": ["raw_verdicts"]},
@@ -214,8 +217,10 @@ class Faithfulness(EvalAlgorithmInterface):
         :param target_context: The relevant context retrieved from RAG system.
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
             If this argument is None, default judge model will be provided.
-        :param long_form_prompt_template:
-        :param nli_statements_prompt_template:
+        :param long_form_prompt_template: The template used to construct the prompt to inference judge model to generate
+            statements.
+        :param nli_statements_prompt_template: The template used to construct the prompt to inference judge model to get
+            verdicts on whether statements relates to given contexts or not.
         :return: A single-element list containing an EvalScore corresponding to the faithfulness score.
         """
         if not judge_model:
@@ -238,7 +243,7 @@ class Faithfulness(EvalAlgorithmInterface):
         self,
         judge_model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
-        num_records: int = 300,
+        num_records: int = 100,
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,
         long_form_prompt_template: str = LONG_FORM_ANSWER_PROMPT,
@@ -251,16 +256,15 @@ class Faithfulness(EvalAlgorithmInterface):
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluations will be run on all of this algorithm's built-in datasets.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
-            used to perform the evaluation(s). Note that the default value is 300, rather than
-            100, as it is for the rest of the built-in algorithms. This is because there
-            are 15 categories for faithfulness, and if only 100 samples are used, there
-            will be categories with very few samples.
+            used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
         :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
             specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
             If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
-        :param long_form_prompt_template:
-        :param nli_statements_prompt_template:
+        :param long_form_prompt_template: The template used to construct the prompt to inference judge model to generate
+            statements.
+        :param nli_statements_prompt_template: The template used to construct the prompt to inference judge model to get
+            verdicts on if statements relates to given contexts.
 
         :return: A list of EvalOutput objects.
         """
