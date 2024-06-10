@@ -1,3 +1,5 @@
+from typing import List, Dict, NamedTuple
+
 import pytest
 from unittest.mock import patch
 
@@ -17,23 +19,59 @@ def test_generate_prompt_init():
         mock_prompt_composer.assert_called_once_with("Summarize the following: $model_input")
 
 
-def test_generate_prompt_call():
+class TestGeneratePrompt(NamedTuple):
+    record: Dict[str, str]
+    input_keys: List[str]
+    output_keys: List[str]
+    prompt_template: str
+    placeholder_to_record_key: Dict[str, str]
+    expected_record: Dict[str, str]
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestGeneratePrompt(
+            record={"input_1": "Hello", "input_2": "world"},
+            input_keys=["input_1", "input_2"],
+            output_keys=["prompt_1", "prompt_2"],
+            prompt_template="Summarize the following: $model_input",
+            placeholder_to_record_key=None,
+            expected_record={
+                "input_1": "Hello",
+                "input_2": "world",
+                "prompt_1": "Summarize the following: Hello",
+                "prompt_2": "Summarize the following: world",
+            },
+        ),
+        TestGeneratePrompt(
+            record={"input_1": "sample question", "input_2": "sample answer"},
+            input_keys=[],
+            output_keys=["prompt"],
+            prompt_template="Question: $question\n Answer: $answer",
+            placeholder_to_record_key={"question": "input_1", "answer": "input_2"},
+            expected_record={
+                "input_1": "sample question",
+                "input_2": "sample answer",
+                "prompt": "Question: sample question\n Answer: sample answer",
+            },
+        ),
+    ],
+)
+def test_generate_prompt_call(test_case):
     """
     GIVEN a GeneratePrompt instance.
     WHEN its __call__ method is called on a record.
     THEN the correct output is returned.
     """
     gen_prompt = GeneratePrompt(
-        ["input_1", "input_2"], ["prompt_1", "prompt_2"], "Summarize the following: $model_input"
+        input_keys=test_case.input_keys,
+        output_keys=test_case.output_keys,
+        prompt_template=test_case.prompt_template,
+        placeholder_to_record_key=test_case.placeholder_to_record_key,
     )
-    sample = {"input_1": "Hello", "input_2": "world"}
-    result = gen_prompt(sample)
-    assert result == {
-        "input_1": "Hello",
-        "input_2": "world",
-        "prompt_1": "Summarize the following: Hello",
-        "prompt_2": "Summarize the following: world",
-    }
+    result = gen_prompt(test_case.record)
+    assert result == test_case.expected_record
 
 
 def test_get_model_outputs_init_success():
