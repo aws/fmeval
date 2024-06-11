@@ -322,7 +322,6 @@ class TestQAAccuracy:
             prompt_template="Answer $model_input, please.",
             agg_method=MEAN,
             save=True,
-            save_strategy=None,
         )
 
         assert output == [mock_evaluate_dataset.return_value]

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -14,40 +14,18 @@ class GeneratePrompt(Transform):
     applying the same prompt template to each input.
     """
 
-    def __init__(
-        self,
-        input_keys: List[str],
-        output_keys: List[str],
-        prompt_template: str,
-        placeholder_to_record_key: Optional[Dict[str, str]] = None,
-    ):
+    def __init__(self, input_keys: List[str], output_keys: List[str], prompt_template: str):
         """GeneratePrompt initializer.
 
-                :param input_keys: The keys corresponding to the text that will be used to create prompts.
-                    If multiple input keys are provided, a prompt will be constructed from each input, but
-                    the created prompts will all utilize the same prompt template.
-                :param output_keys: The keys corresponding to the prompts that get added by this Transform.
-                :param prompt_template: The template used to construct the prompt.
-                    Example: "Summarize the following text: $model_input".
-                :param placeholder_to_record_key: The placeholders and the corresponding record keys dict.
-                    Note that when using `placeholder_to_record_key`, having input keys or more than one output key
-                    doesn't make much sense, as all composed prompts will be identical.
-                    Example:
-                        Inputs:
-                            prompt_template = "Summarize $x and $y"
-                            input_keys = []
-                            output_keys = ["my_prompt"]
-                            placeholder_to_record_key = {"x": "statement_1", "y": "statement_2"}
-                            record = {"statement_1": "some long text", "statement_2": "some other long text"}
-                        Output record (only new keys and values are shown):
-                            {"my_prompt": "Summarize some long text and some other long text"}
-
-        Output record (only new keys and values are shown):
-        {"my_prompt": "Summarize some long text and some other long text"}
+        :param input_keys: The keys corresponding to the text that will be used to create prompts.
+            If multiple input keys are provided, a prompt will be constructed from each input, but
+            the created prompts will all utilize the same prompt template.
+        :param output_keys: The keys corresponding to the prompts that get added by this Transform.
+        :param prompt_template: The template used to construct the prompt.
+            Example: "Summarize the following text: $model_input".
         """
-        super().__init__(input_keys, output_keys, prompt_template, placeholder_to_record_key)
+        super().__init__(input_keys, output_keys, prompt_template)
         self.register_input_output_keys(input_keys, output_keys)
-        self.placeholder_to_record_key = placeholder_to_record_key
         self.prompt_template = prompt_template
         self.prompt_composer = PromptComposer(prompt_template)
 
@@ -58,16 +36,8 @@ class GeneratePrompt(Transform):
         :param record: The input record.
         :returns: The input record with prompts added in.
         """
-        if self.placeholder_to_record_key is not None:
-            placeholder_data_dict = {
-                placeholder_key: record[self.placeholder_to_record_key[placeholder_key]]
-                for placeholder_key in self.placeholder_to_record_key
-            }
-            for prompt_key in self.output_keys:
-                record[prompt_key] = self.prompt_composer.compose(placeholder_data_dict=placeholder_data_dict)
-        else:
-            for input_key, prompt_key in zip(self.input_keys, self.output_keys):
-                record[prompt_key] = self.prompt_composer.compose(record[input_key])
+        for input_key, prompt_key in zip(self.input_keys, self.output_keys):
+            record[prompt_key] = self.prompt_composer.compose(record[input_key])
         return record
 
 

@@ -8,9 +8,7 @@ from fmeval.constants import (
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms.common import evaluate_dataset
-from fmeval.eval_algorithms.save_strategy import SaveStrategy
-from fmeval.eval_algorithms.util import get_dataset_configs
+from fmeval.eval_algorithms.util import get_dataset_configs, evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -155,7 +153,6 @@ class FactualKnowledge(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 300,
         save: bool = False,
-        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute the factual knowledge score on one or more datasets.
 
@@ -172,9 +169,8 @@ class FactualKnowledge(EvalAlgorithmInterface):
             are 15 categories for factual knowledge, and if only 100 samples are used, there
             will be categories with very few samples.
         :param save: If set to true, prompt responses and scores will be saved to a file.
-        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
-            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
-            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
         :return: A list of EvalOutput objects.
         """
@@ -194,7 +190,6 @@ class FactualKnowledge(EvalAlgorithmInterface):
                 prompt_template=prompt_template,
                 agg_method=MEAN,
                 save=save,
-                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
         return eval_outputs

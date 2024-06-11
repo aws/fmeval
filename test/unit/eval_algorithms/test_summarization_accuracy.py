@@ -259,7 +259,6 @@ class TestSummarizationAccuracy:
             prompt_template=test_case.dataset_prompt_template,
             agg_method=MEAN,
             save=True,
-            save_strategy=None,
         )
         mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]

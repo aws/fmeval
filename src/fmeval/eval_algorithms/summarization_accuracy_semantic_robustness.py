@@ -20,9 +20,7 @@ from fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     get_default_prompt_template,
 )
-from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
-from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
@@ -40,6 +38,7 @@ from fmeval.eval_algorithms.summarization_accuracy import (
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel, BertscoreHelperModelTypes
 from fmeval.eval_algorithms.util import (
     get_dataset_configs,
+    evaluate_dataset,
     create_model_invocation_pipeline,
     validate_dataset,
 )
@@ -240,7 +239,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
-        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """
         Semantic Robustness evaluate.
@@ -254,12 +252,10 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
             evaluation will use all of it's supported built-in datasets
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
+        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
-        :param save: If set to true, prompt responses and scores will be saved to a file.
-        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
-            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
-            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
         :return: List of EvalOutput objects.
         """
         # Create a shared resource to be used during the evaluation.
@@ -284,7 +280,6 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_template=dataset_prompt_template,
                 agg_method=MEAN,
                 save=save,
-                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
 

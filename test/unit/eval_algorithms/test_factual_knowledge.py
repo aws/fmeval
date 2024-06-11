@@ -9,6 +9,7 @@ from ray.data import Dataset
 
 from fmeval.constants import (
     DatasetColumns,
+    MIME_TYPE_JSON,
 )
 from fmeval.eval_algorithms import CategoryScore, EvalAlgorithm, EvalOutput, EvalScore
 from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig

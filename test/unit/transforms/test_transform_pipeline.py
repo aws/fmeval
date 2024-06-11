@@ -68,7 +68,7 @@ class TestCaseInitFailure(NamedTuple):
                 "TransformPipeline contains Transforms with the same output keys as other Transforms. "
                 "Here are the problematic Transforms, paired with their offending keys: "
                 "{GeneratePrompt(input_keys=['input_1'], output_keys=['output_1'], "
-                "args=[['input_1'], ['output_1'], '1', None], kwargs={}): ['output_1']}"
+                "args=[['input_1'], ['output_1'], '1'], kwargs={}): ['output_1']}"
             ),
         ),
     ],

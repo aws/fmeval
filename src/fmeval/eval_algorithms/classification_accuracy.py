@@ -13,7 +13,6 @@ from fmeval.constants import (
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms.common import save_dataset
 from fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
@@ -25,10 +24,10 @@ from fmeval.eval_algorithms import (
     CategoryScore,
     get_default_prompt_template,
 )
-from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     category_wise_aggregation,
+    save_dataset,
     generate_output_dataset_path,
     get_dataset_configs,
     create_model_invocation_pipeline,
@@ -224,7 +223,6 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
-        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute classification accuracy metrics on one or more datasets.
 
@@ -238,9 +236,8 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
-        :param save_strategy: Specifies the strategy to use to save the localized outputs of the evaluations. If not
-            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
-            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
+            The path that this file is stored at can be configured by the EVAL_RESULTS_PATH
+            environment variable.
 
         :return: A list of EvalOutput objects.
         """
@@ -273,11 +270,6 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                 model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
                 pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
 
-            output_path = generate_output_dataset_path(
-                path_to_parent_dir=util.get_eval_results_path(),
-                eval_name=self.eval_name,
-                dataset_name=dataset_config.dataset_name,
-            )
             with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = pipeline.execute(dataset)
                 dataset_scores, category_scores = self._generate_dataset_and_category_level_scores(dataset)
@@ -288,7 +280,11 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,
-                        output_path=output_path,
+                        output_path=generate_output_dataset_path(
+                            path_to_parent_dir=util.get_eval_results_path(),
+                            eval_name=self.eval_name,
+                            dataset_name=dataset_config.dataset_name,
+                        ),
                     )
                 )
 
@@ -296,7 +292,11 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                 save_dataset(
                     dataset=dataset,
                     score_names=[CLASSIFICATION_ACCURACY_SCORE],
-                    save_strategy=save_strategy if save_strategy else FileSaveStrategy(output_path),
+                    path=generate_output_dataset_path(
+                        path_to_parent_dir=util.get_eval_results_path(),
+                        eval_name=self.eval_name,
+                        dataset_name=dataset_config.dataset_name,
+                    ),
                 )
 
         return eval_outputs

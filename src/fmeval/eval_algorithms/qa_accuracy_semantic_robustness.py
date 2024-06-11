@@ -10,19 +10,29 @@ from fmeval.constants import (
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
-from fmeval.eval_algorithms.common import evaluate_dataset
-from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
     get_model_outputs_from_perturbed_inputs,
 )
-from fmeval.eval_algorithms.util import validate_dataset, create_model_invocation_pipeline, get_dataset_configs
+from fmeval.eval_algorithms.util import (
+    generate_prompt_column_for_dataset,
+    aggregate_evaluation_scores,
+    validate_dataset,
+    save_dataset,
+    generate_output_dataset_path,
+    generate_model_predict_response_for_dataset,
+    create_model_invocation_pipeline,
+    get_dataset_configs,
+    evaluate_dataset,
+)
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     EvalOutput,
     EvalScore,
+    EVAL_DATASETS,
+    DATASET_CONFIGS,
     get_default_prompt_template,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -33,7 +43,10 @@ from fmeval.eval_algorithms.qa_accuracy import (
     QUASI_EXACT_MATCH_SCORE,
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
+    QAAccuracy,
+    QAAccuracyConfig,
     QAAccuracyScores,
+    QA_ACCURACY_SCORES_TO_FUNCS,
     SCORE_NAMES,
 )
 from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores
@@ -206,7 +219,6 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
-        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute QA accuracy semantic robustness metrics on one or more datasets.
 
@@ -219,12 +231,10 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             evaluation will use all of it's supported built-in datasets
         :param prompt_template: A template which can be used to generate prompts, optional, if not provided defaults
             will be used.
+        :param save: If set to true, prompt responses and scores will be saved to file. The output is written to
+                     EvalAlgorithmInterface.EVAL_RESULTS_PATH
         :param num_records: The number of records to be sampled randomly from the input dataset to perform the
                             evaluation
-        :param save: If set to true, prompt responses and scores will be saved to a file.
-        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
-            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
-            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
         :returns: A List of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
@@ -246,7 +256,6 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 prompt_template=dataset_prompt_template,
                 agg_method=MEAN,
                 save=save,
-                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
 

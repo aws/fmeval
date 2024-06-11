@@ -275,7 +275,6 @@ class TestToxicity:
             prompt_template=test_case.dataset_prompt_template,
             agg_method=MEAN,
             save=True,
-            save_strategy=None,
         )
         mock_transform_pipeline_cls.assert_called_once_with([mock_toxicity_scores_cls.return_value])
         mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)

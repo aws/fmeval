@@ -134,10 +134,3 @@ INPUT_LOG_PROBS_JMESPATH_EXPRESSION = "*.output_keys.input_logprobs"
 
 # BERTScore
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"
-
-
-# S3 multi-part upload constants
-UPLOAD_ID = "UploadId"
-PARTS = "Parts"
-E_TAG = "ETag"
-PART_NUMBER = "PartNumber"

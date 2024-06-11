@@ -16,9 +16,7 @@ from fmeval.eval_algorithms import (
     DEFAULT_PROMPT_TEMPLATE,
     get_default_prompt_template,
 )
-from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface
-from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
     get_perturbation_transform,
@@ -30,6 +28,7 @@ from fmeval.eval_algorithms.util import (
     validate_dataset,
     verify_model_determinism,
     get_dataset_configs,
+    evaluate_dataset,
 )
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
@@ -294,7 +293,6 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
-        save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
         """Compute general semantic robustness metrics on one or more datasets.
 
@@ -310,9 +308,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         :param num_records: The number of records to be sampled randomly from the input dataset
             used to perform the evaluation.
         :param save: If set to true, prompt responses and scores will be saved to a file.
-        :param save_strategy: Specifies the strategy to use the save the localized outputs of the evaluations. If not
-            specified, it will save it to the path that can be configured by the EVAL_RESULTS_PATH environment variable.
-            If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
+            The path that this file is stored at is configured by `eval_results_path`.
 
         :return: A list of EvalOutput objects.
         """
@@ -338,7 +334,6 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
                 prompt_template=dataset_prompt_template,
                 agg_method=MEAN,
                 save=save,
-                save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
 
