@@ -449,6 +449,7 @@ class TestGeneralSemanticRobustness:
             prompt_template=test_case.dataset_prompt_template,
             agg_method=MEAN,
             save=test_case.save,
+            save_strategy=None,
         )
 
         mock_create_shared_resource.assert_called_once_with(eval_algo.bertscore_model)

@@ -276,6 +276,7 @@ class TestQAAccuracySemanticRobustness:
             prompt_template=test_case.dataset_prompt_template,
             agg_method=MEAN,
             save=True,
+            save_strategy=None,
         )
         mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template)
         assert output == [mock_evaluate_dataset.return_value]
