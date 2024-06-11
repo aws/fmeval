@@ -49,6 +49,7 @@ class EvalAlgorithm(Enum):
     SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS = "summarization_accuracy_semantic_robustness"
     CLASSIFICATION_ACCURACY = "classification_accuracy"
     CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
+    CONTEXT_QUALITY = "context_quality"
 
     def __str__(self):
         """

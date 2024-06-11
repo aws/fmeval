@@ -69,6 +69,7 @@ class DatasetColumns(Enum):
     TARGET_OUTPUT = Column(name="target_output", should_cast=True)
     CATEGORY = Column(name="category", should_cast=True)
     TARGET_CONTEXT = Column(name="target_context", should_cast=True)
+    RETRIEVED_CONTEXT = Column(name="retrieved_context", should_cast=True)
     SENT_MORE_INPUT = Column(name="sent_more_input", should_cast=True)
     SENT_LESS_INPUT = Column(name="sent_less_input", should_cast=True)
     SENT_MORE_PROMPT = Column(name="sent_more_prompt")

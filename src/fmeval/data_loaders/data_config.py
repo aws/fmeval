@@ -52,6 +52,7 @@ class DataConfig:
     sent_more_log_prob_location: Optional[str] = None
     sent_less_log_prob_location: Optional[str] = None
     target_context_location: Optional[str] = None
+    retrieved_context_location: Optional[str] = None
 
     def __post_init__(self):
         require(
