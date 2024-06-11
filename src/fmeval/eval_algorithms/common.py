@@ -4,7 +4,7 @@ from typing import List, Optional
 from ray.data import Dataset
 
 from fmeval.constants import EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, DatasetColumns
-from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template, EvalAlgorithm
+from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template
 from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
     EvalOutputRecord,
@@ -76,6 +76,7 @@ def evaluate_dataset(
     agg_method: str = MEAN,
     save: bool = False,
     save_strategy: Optional[SaveStrategy] = None,
+    validate_columns: Optional[bool] = True,
 ) -> EvalOutput:
     """Execute an evaluation algorithm's pipeline on a dataset.
 
@@ -98,10 +99,12 @@ def evaluate_dataset(
         Currently, only MEAN is supported.
     :param save: If set to true, prompt responses and scores will be saved to a file.
         The path that this file is stored at is configured by `eval_results_path`.
-
+    :param validate_columns: A boolean indicating if validation should be done on the dataset columns.
+        The model_input column is validated if a model is provided, and the model_output column is
+        validated if no model is provided.
     :return: An EvalOutput object encapsulating the results of the evaluation.
     """
-    if eval_name != EvalAlgorithm.CONTEXT_QUALITY.value:
+    if validate_columns:
         if model:
             try:
                 validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
@@ -127,7 +130,6 @@ def evaluate_dataset(
                     "and no ModelRunner to obtain outputs from. Please either provide a model "
                     "or use a dataset that contains model outputs already."
                 )
-
     with (timed_block(f"Computing score and aggregation on dataset {dataset_name}", logger)):
         dataset = pipeline.execute(dataset)
         dataset_scores, category_scores = aggregate_evaluation_scores(dataset, metric_names, agg_method=agg_method)

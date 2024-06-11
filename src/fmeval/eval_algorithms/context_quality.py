@@ -29,10 +29,9 @@ logger = logging.getLogger(__name__)
 CONTEXT_PRECISION_SCORE = "context_precision_score"
 
 DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE = (
-    "Given question, answer and context verify if the context was useful in "
-    "arriving at the given answer. Give verdict as 1 if useful and 0 if "
-    "not. question: $model_input, answer: $target_output, "
-    "context: $retrieved_context."
+    "Given a question, answer, and context, verify if the context was useful in "
+    "arriving at the given answer. Give verdict as 1 if useful and 0 if not. "
+    "question: $model_input, answer: $target_output, context: $retrieved_context."
     "The verdict should only contain an integer, either 1 or 0, do not give an explanation."
 )
 
@@ -79,7 +78,7 @@ class ContextQuality(EvalAlgorithmInterface):
         num_records: int = 100,
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,
-        context_precision_prompt_template: Optional[str] = DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE,
+        context_precision_prompt_template: str = DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE,
     ) -> List[EvalOutput]:
         """Compute context quality metrics on one or more datasets.
 
@@ -99,7 +98,11 @@ class ContextQuality(EvalAlgorithmInterface):
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         if not judge_model:  # pragma: no cover
             judge_model = get_default_judge_model()
-        pipeline = ContextQuality._build_pipeline(judge_model, self.eval_algorithm_config)
+        pipeline = ContextQuality._build_pipeline(
+            judge_model=judge_model,
+            context_quality_config=self.eval_algorithm_config,
+            context_precision_prompt_template=context_precision_prompt_template,
+        )
 
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -122,6 +125,7 @@ class ContextQuality(EvalAlgorithmInterface):
                 agg_method=MEAN,
                 save=save,
                 save_strategy=save_strategy,
+                validate_columns=False,
             )
             eval_outputs.append(eval_output)
         return eval_outputs
@@ -150,21 +154,29 @@ class ContextQuality(EvalAlgorithmInterface):
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
             DatasetColumns.RETRIEVED_CONTEXT.value.name: retrieved_context,
         }
-        pipeline = ContextQuality._build_pipeline(judge_model, self.eval_algorithm_config)
+        pipeline = ContextQuality._build_pipeline(
+            judge_model=judge_model,
+            context_quality_config=self.eval_algorithm_config,
+            context_precision_prompt_template=context_precision_prompt_template,
+        )
         result = pipeline.execute_record(sample)
         context_precision_score = EvalScore(name=CONTEXT_PRECISION_SCORE, value=result[CONTEXT_PRECISION_SCORE])
         return [context_precision_score]
 
     @staticmethod
-    def _build_pipeline(judge_model, context_quality_config) -> TransformPipeline:
+    def _build_pipeline(
+        judge_model: ModelRunner, context_quality_config: ContextQualityConfig, context_precision_prompt_template: str
+    ) -> TransformPipeline:
         """Builds a transform pipeline to compute context quality scores.
 
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
         :param context_quality_config: An instance of ContextQualityConfig.
+        :param context_precision_prompt_template: The string prompt template for context precision prompts.
         :return: A TransformPipeline containing Transforms to compute context quality scores.
         """
         precision_score = ContextPrecisionScore(
             judge_model=judge_model,
+            context_precision_prompt_template=context_precision_prompt_template,
             target_output_delimiter=context_quality_config.target_output_delimiter,
             retrieved_context_delimiter=context_quality_config.retrieved_context_delimiter,
         )
@@ -176,34 +188,34 @@ class ContextPrecisionScore(Transform):
     def __init__(
         self,
         judge_model: ModelRunner,
+        context_precision_prompt_template: str,
         model_input_key: str = DatasetColumns.MODEL_INPUT.value.name,
         target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
         retrieved_context_key: str = DatasetColumns.RETRIEVED_CONTEXT.value.name,
         context_precision_score_key: str = CONTEXT_PRECISION_SCORE,
         target_output_delimiter: Optional[str] = "<OR>",
         retrieved_context_delimiter: Optional[str] = "<AND>",
-        judge_model_context_precision_prompt_template: str = DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE,
     ):
         """Context Precision score initializer.
 
         :param judge_model: A ModelRunner instance for the context judge model.
+        :param context_precision_prompt_template: The prompt template for context precision.
         :param model_input_key: The key corresponding to the model input.
         :param target_output_key: The key corresponding to the target output.
         :param retrieved_context_key: The key corresponding to the retrieved context.
         :param context_precision_score_key: The key corresponding to the context precision score.
         :param target_output_delimiter: The delimiter used to concatenate multiple target outputs.
         :param retrieved_context_delimiter: The delimiter used to concatenate multiple retrieved contexts.
-        :param judge_model_context_precision_prompt_template: The prompt template for context precision.
         """
         super().__init__(
             judge_model,
+            context_precision_prompt_template,
             model_input_key,
             target_output_key,
             retrieved_context_key,
             context_precision_score_key,
             target_output_delimiter,
             retrieved_context_delimiter,
-            judge_model_context_precision_prompt_template,
         )
         self.register_input_output_keys(
             input_keys=[model_input_key, target_output_key, retrieved_context_key],
@@ -213,11 +225,11 @@ class ContextPrecisionScore(Transform):
         self.target_output_key = target_output_key
         self.retrieved_context_key = retrieved_context_key
         self.judge_model = judge_model
-        self.judge_model_context_precision_prompt_template = judge_model_context_precision_prompt_template
+        self.context_precision_prompt_template = context_precision_prompt_template
         self.context_precision_score_key = context_precision_score_key
         self.target_output_delimiter = target_output_delimiter
         self.retrieved_context_delimiter = retrieved_context_delimiter
-        self.context_precision_prompt_composer = PromptComposer(self.judge_model_context_precision_prompt_template)
+        self.context_precision_prompt_composer = PromptComposer(self.context_precision_prompt_template)
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -278,14 +290,15 @@ class ContextPrecisionScore(Transform):
         return int(string_label)
 
     @staticmethod
-    def _compute_metric(judge_model_verdicts: List[int]) -> float:
+    def _compute_metric(model_verdicts: List[int]) -> float:
         """Computes the context precision score for one record given judge model verdicts
 
-        :param judge_model_verdicts: A list of judge model verdicts of 0 or 1.
+        :param model_verdicts: A list of judge model verdicts of 0 or 1.
         :return: the context precision score for the record.
         """
-        response_list = [1 if ver else 0 for ver in judge_model_verdicts]
-        denominator = sum(response_list) + 1e-10
-        numerator = sum([(sum(response_list[: i + 1]) / (i + 1)) * response_list[i] for i in range(len(response_list))])
+        denominator = sum(model_verdicts) + 1e-10
+        numerator = sum(
+            [(sum(model_verdicts[: i + 1]) / (i + 1)) * model_verdicts[i] for i in range(len(model_verdicts))]
+        )
         score = numerator / denominator
         return score

@@ -61,7 +61,28 @@ class TestContextQuality:
                 retrieved_context="The Andes is the longest continental mountain range in the world<AND> located in South America. <AND>It stretches across seven countries and features many of the highest peaks in the Western Hemisphere. <AND>The range is known for its diverse ecosystems, including the high-altitude Andean Plateau and the Amazon rainforest.",
                 mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None), ("unknown", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.3333333333)],
-            )
+            ),
+            TestCaseContextQualityEvaluateSample(
+                model_input="What is the tallest mountain in the world?",
+                target_output="Mount Everest.",
+                retrieved_context="The Andes is the longest continental mountain range in the world",
+                mocked_judge_model_responses=[("0", None)],
+                expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0)],
+            ),
+            TestCaseContextQualityEvaluateSample(
+                model_input="Who won the most super bowls?",
+                target_output="Pittsburgh Steelers<OR>New England Patriots",
+                retrieved_context="The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                mocked_judge_model_responses=[("1", None)],
+                expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.9999999999)],
+            ),
+            TestCaseContextQualityEvaluateSample(
+                model_input="Who won the most super bowls?",
+                target_output="Pittsburgh Steelers<OR>New England Patriots",
+                retrieved_context="The Patriots have the most Super Bowl appearances at 11. <AND>The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None)],
+                expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.5)],
+            ),
         ],
     )
     def test_context_quality_evaluate_sample(self, test_case):
@@ -101,7 +122,6 @@ class TestContextQuality:
                     ("The score is 1", None),
                     ("1", None),
                     ("It's hard to say", None),
-                    ("1", None),
                 ],
                 expected_response=[
                     EvalOutput(
