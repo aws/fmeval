@@ -29,11 +29,6 @@ class EvalAlgorithmInterface(ABC):
         model_input: Optional[str] = None,
         target_output: Optional[str] = None,
         model_output: Optional[str] = None,
-        target_context: Optional[str] = None,
-        judge_model: Optional[ModelRunner] = None,
-        judge_model_prompt_template: Optional[str] = None,
-        embeddings_model: Optional[ModelRunner] = None,
-        embeddings_model_prompt_template: Optional[str] = None,
     ) -> List[EvalScore]:
         """Compute metrics for a single sample, where a sample is defined by the particular algorithm.
 
@@ -54,10 +49,6 @@ class EvalAlgorithmInterface(ABC):
         model: Optional[ModelRunner] = None,
         dataset_config: Optional[DataConfig] = None,
         prompt_template: Optional[str] = None,
-        judge_model: Optional[ModelRunner] = None,
-        judge_model_prompt_template: Optional[str] = None,
-        embeddings_model: Optional[ModelRunner] = None,
-        embeddings_model_prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,

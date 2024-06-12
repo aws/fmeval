@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from ray.data import Dataset
 
-from fmeval.constants import BEDROCK_MODEL_ID_DEFAULT, DatasetColumns, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
+from fmeval.constants import BEDROCK_MODEL_ID_DEFAULT, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, DatasetColumns
 from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template
 from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
@@ -66,7 +66,10 @@ def save_dataset(dataset: Dataset, score_names: List[str], save_strategy: SaveSt
 
 
 def get_default_judge_model() -> BedrockModelRunner:
-    # model_kwargs={"temperature": 0.1, "max_tokens_to_sample": 10000}
+    """Get default judge model
+
+    :return: A Bedrock Model Runner with default model id.
+    """
     return BedrockModelRunner(
         model_id=BEDROCK_MODEL_ID_DEFAULT,
         output="completion",
