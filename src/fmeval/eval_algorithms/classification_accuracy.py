@@ -1,7 +1,7 @@
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Any, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ray.data import Dataset
 from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score
@@ -220,7 +220,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
     def evaluate(
         self,
         model: Optional[ModelRunner] = None,
-        dataset_config: Optional[DataConfig] = None,
+        dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         prompt_template: Optional[str] = None,
         num_records: int = 100,
         save: bool = False,
@@ -231,8 +231,9 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
         :param model: An instance of ModelRunner representing the model under evaluation.
             If this argument is None, the `dataset_config` argument must not be None,
             and must correspond to a dataset that already contains a column with model outputs.
-        :param dataset_config: Configures the single dataset used for evaluation.
-            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param dataset_config: Configures a single dataset or list of datasets used for the
+            evaluation. If not provided, this method will run evaluations using all of its
+            supported built-in datasets.
         :param prompt_template: A template used to generate prompts that are fed to the model.
             If not provided, defaults will be used. If provided, `model` must not be None.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
