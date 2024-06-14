@@ -131,6 +131,8 @@ JUMPSTART_BUCKET_BASE_URL_FORMAT = "https://jumpstart-cache-prod-{}.s3.{}.amazon
 JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR = "JUMPSTART_BUCKET_BASE_URL_FORMAT"
 GENERATED_TEXT_JMESPATH_EXPRESSION = "*.output_keys.generated_text"
 INPUT_LOG_PROBS_JMESPATH_EXPRESSION = "*.output_keys.input_logprobs"
+EMBEDDING_JMESPATH_EXPRESSION = "embedding"
+IS_EMBEDDING_MODEL = "is_embedding_model"
 
 # BERTScore
 BERTSCORE_DEFAULT_MODEL = "microsoft/deberta-xlarge-mnli"

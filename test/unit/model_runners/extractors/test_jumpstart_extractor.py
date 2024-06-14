@@ -57,6 +57,8 @@ EXAMPLE_JUMPSTART_RESPONSE = [
         },
     }
 ]
+EMBEDDING_MODEL_ID = "tcembedding-model-id"
+EXAMPLE_JUMPSTART_EMBEDDING_RESPONSE = {"embedding": [0.1, 0.2, 0.1]}
 
 
 class TestJumpStartExtractor:
@@ -70,6 +72,14 @@ class TestJumpStartExtractor:
             sagemaker_session=sagemaker_session,
         )
 
+    @fixture(scope="module")
+    def embedding_model_extractor(self):
+        return JumpStartExtractor(
+            jumpstart_model_id=EMBEDDING_MODEL_ID,
+            jumpstart_model_version="*",
+            is_embedding_model=True,
+        )
+
     def test_log_probability_fails_for_batch_request(self, extractor):
         with pytest.raises(AssertionError, match="Jumpstart extractor does not support batch requests"):
             extractor.extract_log_probability({"log_pob": 0.8}, 2)
@@ -77,6 +87,10 @@ class TestJumpStartExtractor:
     def test_output_fails_for_batch_request(self, extractor):
         with pytest.raises(AssertionError, match="Jumpstart extractor does not support batch requests"):
             extractor.extract_output({"log_pob": 0.8}, 2)
+
+    def test_embedding_fails_for_batch_request(self, embedding_model_extractor):
+        with pytest.raises(AssertionError, match="Jumpstart extractor does not support batch requests"):
+            embedding_model_extractor.extract_embedding({"embedding": [0.1, 0.2, 0.1]}, 2)
 
     def test_extract_output(self, extractor):
         assert extractor.extract_output(EXAMPLE_JUMPSTART_RESPONSE) == "\n\nI am trying"
@@ -93,6 +107,14 @@ class TestJumpStartExtractor:
     def test_log_probability_missing_log_prob(self, extractor):
         with pytest.raises(EvalAlgorithmClientError, match="Unable to extract log probability from Jumpstart model:"):
             extractor.extract_log_probability({})
+
+    def test_extract_embedding(self, embedding_model_extractor):
+        assert embedding_model_extractor.extract_embedding(EXAMPLE_JUMPSTART_EMBEDDING_RESPONSE) == [0.1, 0.2, 0.1]
+
+    def test_extract_embedding_failure(self, embedding_model_extractor):
+        response = {"response": "sample response"}
+        with pytest.raises(EvalAlgorithmClientError, match="Unable to extract embedding from Jumpstart model:"):
+            embedding_model_extractor.extract_embedding(response)
 
     @patch("sagemaker.session.Session")
     def test_extractor_with_bad_output_expression(self, sagemaker_session):

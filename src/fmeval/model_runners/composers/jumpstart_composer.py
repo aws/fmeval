@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sagemaker.jumpstart.payload_utils import _construct_payload
 from sagemaker.jumpstart.types import JumpStartSerializablePayload
 from sagemaker.jumpstart.enums import JumpStartModelType
@@ -12,17 +14,23 @@ class JumpStartComposer(Composer):
     Jumpstart model request composer
     """
 
-    def __init__(self, jumpstart_model_id: str, jumpstart_model_version: str):
+    def __init__(
+        self, jumpstart_model_id: str, jumpstart_model_version: str, is_embedding_model: Optional[bool] = False
+    ):
         """
         Initialize the JumpStartComposer for the given JumpStart model_id and model_version.
         """
         self._model_id = jumpstart_model_id
         self._model_version = jumpstart_model_version
+        self._is_embedding_model = is_embedding_model
 
     def compose(self, prompt: str) -> JumpStartSerializablePayload:
         """
         Composes the payload for the given JumpStartModel from the provided prompt.
         """
+        # embedding models take raw text as input payload
+        if self._is_embedding_model:
+            return prompt
         sagemaker_session = get_sagemaker_session()
         # Default model type is always OPEN_WEIGHTS. See https://tinyurl.com/yc58s6wj
         jumpstart_model_type = JumpStartModelType.OPEN_WEIGHTS

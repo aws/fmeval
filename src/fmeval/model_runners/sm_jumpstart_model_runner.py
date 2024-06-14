@@ -4,14 +4,20 @@ Module to manage model runners for SageMaker Endpoints with JumpStart LLMs.
 import logging
 
 import sagemaker
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Union
 
 from sagemaker.jumpstart.enums import JumpStartModelType
+
 import fmeval.util as util
 from fmeval.constants import MIME_TYPE_JSON
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service, is_proprietary_js_model
+from fmeval.model_runners.util import (
+    get_sagemaker_session,
+    is_endpoint_in_service,
+    is_proprietary_js_model,
+    is_text_embedding_js_model,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +38,7 @@ class JumpStartModelRunner(ModelRunner):
         custom_attributes: Optional[str] = None,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
+        embedding: Optional[str] = None,
         component_name: Optional[str] = None,
     ):
         """
@@ -43,17 +50,21 @@ class JumpStartModelRunner(ModelRunner):
                                   SageMaker endpoint invocation
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
+        :param embedding: JMESPath expression of embedding in the model output
         :param component_name: Name of the Amazon SageMaker inference component corresponding
                             the predictor
         """
+        is_text_embedding_model = is_text_embedding_js_model(model_id)
         super().__init__(
             content_template=content_template,
             output=output,
             log_probability=log_probability,
+            embedding=embedding,
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
             jumpstart_model_id=model_id,
             jumpstart_model_version=model_version,
+            is_embedding_model=is_text_embedding_model,
         )
         self._endpoint_name = endpoint_name
         self._model_id = model_id
@@ -62,7 +73,10 @@ class JumpStartModelRunner(ModelRunner):
         self._custom_attributes = custom_attributes
         self._output = output
         self._log_probability = log_probability
+        self._embedding = embedding
         self._component_name = component_name
+        self._is_embedding_model = is_text_embedding_model
+
         sagemaker_session = get_sagemaker_session()
         util.require(
             is_endpoint_in_service(sagemaker_session, self._endpoint_name),
@@ -84,7 +98,7 @@ class JumpStartModelRunner(ModelRunner):
         util.require(predictor.accept == MIME_TYPE_JSON, f"Model accept type `{predictor.accept}` is not supported.")
         self._predictor = predictor
 
-    def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
+    def predict(self, prompt: str) -> Union[Tuple[Optional[str], Optional[float]], List[float]]:
         """
         Invoke the SageMaker endpoint and parse the model response.
         :param prompt: Input data for which you want the model to provide inference.
@@ -95,6 +109,10 @@ class JumpStartModelRunner(ModelRunner):
             custom_attributes=self._custom_attributes,
             component_name=self._component_name,
         )
+        # expect embedding from all text embedding models, return directly
+        if self._is_embedding_model:
+            embedding = self._extractor.extract_embedding(data=model_output, num_records=1)
+            return embedding
         # expect output from all model responses in JS
         output = self._extractor.extract_output(data=model_output, num_records=1)
         log_probability = None
@@ -118,6 +136,7 @@ class JumpStartModelRunner(ModelRunner):
             self._custom_attributes,
             self._output,
             self._log_probability,
+            self._embedding,
             self._component_name,
         )
         return self.__class__, serialized_data
