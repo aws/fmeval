@@ -8,9 +8,9 @@ from unittest.mock import Mock, patch
 import pytest
 import ray
 
-from fmeval.constants import DatasetColumns, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, BEDROCK_MODEL_ID_DEFAULT
+from fmeval.constants import DatasetColumns, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN
 from fmeval.eval_algorithms import EvalScore, CategoryScore, EvalOutput
-from fmeval.eval_algorithms.common import save_dataset, evaluate_dataset, get_default_judge_model
+from fmeval.eval_algorithms.common import save_dataset, evaluate_dataset
 from fmeval.eval_algorithms.save_strategy import FileSaveStrategy
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -131,21 +131,6 @@ def test_save_dataset_many_rows(tmp_path):
             ]
             assert json_obj[DatasetColumns.MODEL_INPUT.value.name] == f"input_{i}"
             assert json_obj[DatasetColumns.CATEGORY.value.name] == f"category_{i}"
-
-
-def test_get_default_judge_model():
-    """
-    GIVEN valid arguments
-    WHEN `get_default_judge_model` is called.
-    THEN a model runner initialized with valid arguments.
-    """
-    with patch("fmeval.eval_algorithms.common.BedrockModelRunner") as mock_model_runner:
-        default_judge_model = get_default_judge_model()
-        mock_model_runner.assert_called_once_with(
-            model_id=BEDROCK_MODEL_ID_DEFAULT,
-            output="completion",
-            content_template='{"prompt": $prompt, "max_tokens_to_sample": 10000, "temperature": 0.1}',
-        )
 
 
 class TestCaseEvaluateDataset(NamedTuple):

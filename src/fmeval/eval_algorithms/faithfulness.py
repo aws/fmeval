@@ -9,7 +9,7 @@ from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.util import get_dataset_configs
-from fmeval.eval_algorithms.common import evaluate_dataset, get_default_judge_model
+from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -128,7 +128,6 @@ class GetStatements(Transform):
         :param input_key: The key corresponding to prompt to get statements.
         :param output_key: The key corresponding to the statements, which gets added to the record.
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
-            If this argument is None, default judge model will be provided.
         """
         super().__init__(input_key, output_key, judge_model)
         self.register_input_output_keys(
@@ -206,7 +205,7 @@ class Faithfulness(EvalAlgorithmInterface):
         model_input: str,
         model_output: str,
         target_context: str,
-        judge_model: Optional[ModelRunner] = None,
+        judge_model: ModelRunner,
         long_form_prompt_template: str = LONG_FORM_ANSWER_PROMPT,
         nli_statements_prompt_template: str = NLI_STATEMENTS_MESSAGE,
     ) -> List[EvalScore]:  # type: ignore[override]
@@ -216,16 +215,12 @@ class Faithfulness(EvalAlgorithmInterface):
         :param model_output: The output of the model being evaluated.
         :param target_context: The relevant context retrieved from RAG system.
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
-            If this argument is None, default judge model will be provided.
         :param long_form_prompt_template: The template used to construct the prompt to inference judge model to generate
             statements.
         :param nli_statements_prompt_template: The template used to construct the prompt to inference judge model to get
             verdicts on whether statements relates to given contexts or not.
         :return: A single-element list containing an EvalScore corresponding to the faithfulness score.
         """
-        if not judge_model:
-            judge_model = get_default_judge_model()
-
         sample = {
             DatasetColumns.MODEL_INPUT.value.name: model_input,
             DatasetColumns.MODEL_OUTPUT.value.name: model_output,
@@ -241,7 +236,7 @@ class Faithfulness(EvalAlgorithmInterface):
 
     def evaluate(
         self,
-        judge_model: Optional[ModelRunner] = None,
+        judge_model,
         dataset_config: Optional[DataConfig] = None,
         num_records: int = 100,
         save: bool = False,
@@ -252,7 +247,6 @@ class Faithfulness(EvalAlgorithmInterface):
         """Compute the faithfulness score on one or more datasets.
 
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
-            If this argument is None, default judge model will be provided.
         :param dataset_config: Configures the single dataset used for evaluation.
             If not provided, evaluations will be run on all of this algorithm's built-in datasets.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
@@ -270,8 +264,6 @@ class Faithfulness(EvalAlgorithmInterface):
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
-        if not judge_model:
-            judge_model = get_default_judge_model()
         for dataset_config in dataset_configs:
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(

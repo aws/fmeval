@@ -84,7 +84,6 @@ class TransformPipeline:
                     fn_constructor_kwargs=transform.kwargs,
                     concurrency=(1, get_num_actors()),
                 ).materialize()
-                dataset.show()
         return dataset
 
     def execute_record(self, record: Dict[str, Any]) -> Dict[str, Any]:

@@ -3,7 +3,11 @@ from typing import List, Optional
 
 from ray.data import Dataset
 
-from fmeval.constants import BEDROCK_MODEL_ID_DEFAULT, EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, DatasetColumns
+from fmeval.constants import (
+    EVAL_OUTPUT_RECORDS_BATCH_SIZE,
+    MEAN,
+    DatasetColumns,
+)
 from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template
 from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
@@ -14,7 +18,6 @@ from fmeval.eval_algorithms.util import (
     create_model_invocation_pipeline,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
-from fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.perf_util import timed_block
 from fmeval.transforms.transform_pipeline import TransformPipeline
@@ -63,18 +66,6 @@ def save_dataset(dataset: Dataset, score_names: List[str], save_strategy: SaveSt
         with save_strategy:
             for batch in dataset.iter_batches(batch_size=EVAL_OUTPUT_RECORDS_BATCH_SIZE):
                 save_strategy.save(batch["record"])
-
-
-def get_default_judge_model() -> BedrockModelRunner:
-    """Get default judge model
-
-    :return: A Bedrock Model Runner with default model id.
-    """
-    return BedrockModelRunner(
-        model_id=BEDROCK_MODEL_ID_DEFAULT,
-        output="completion",
-        content_template='{"prompt": $prompt, "max_tokens_to_sample": 10000, "temperature": 0.1}',
-    )
 
 
 def evaluate_dataset(
