@@ -280,7 +280,7 @@ class TestFaithfulness:
                 raw_statements="Statement: statement1\nStatement: statement2",
                 expected_record={
                     "prompt": "prompt1",
-                    "statements": "1.Statement: statement1\n2.Statement: statement2",
+                    "statements": "1. Statement: statement1\n2. Statement: statement2",
                     "raw_statements": "Statement: statement1\nStatement: statement2",
                 },
             ),
