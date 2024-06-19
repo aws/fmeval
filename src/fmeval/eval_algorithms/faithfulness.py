@@ -28,19 +28,37 @@ logger = logging.getLogger(__name__)
 
 FAITHFULNESS = EvalAlgorithm.FAITHFULNESS.value
 
+RAW_VERDICTS = "raw_verdicts"
+STATEMENTS = "statements"
+RAW_STATEMENTS = "raw_statements"
+LONG_FORM_PROMPT = "long_form_prompt"
+NLI_STATEMENTS_PROMT = "nli_statements_prompt"
+QUESTION = "question"
+ANSWER = "answer"
 
 LONG_FORM_ANSWER_PROMPT = """\
-Human: Given a question and answer, create one or more statements from each sentence in the given answer. For each statement, please start with "Statement:".
-question:$question
+Human: You are given a question and its answer. Your task is to rewrite the answer into one or more simple and coherent statements. Make sure that each statement is faithful to the answer and begins with "Statement:".
+Please refer to the following example for the intended output format.
+<example>
+question: Who was Albert Einstein and what is he best known for?
+answer: He was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time. He was best known for developing the theory of relativity, he also made important contributions to the development of the theory of quantum mechanics.
+statements:
+Statement: Albert Einstein was a German-born theoretical physicist.
+Statement: Albert Einstein is recognized as one of the greatest and most influential physicists of all time.
+Statement: Albert Einstein was best known for developing the theory of relativity.
+Statement: Albert Einstein also made important contributions to the development of the theory of quantum mechanics.
+</example>
+
+Now solve the following task.
+question: $question
 answer: $answer
 statements:\n Assistant:"""  # noqa: E501
 
 
 NLI_STATEMENTS_MESSAGE = """
-Human: Prompt: Natural language inference
-Consider the given context and following statements, then determine whether they are supported by the information present in the context. Provide a brief explanation for each statement before arriving at the verdict (Yes/No). Provide a final verdict for each statement in order at the end in the given format. Do not deviate from the specified format.
-
-Context:\nJohn is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.
+Human: Your task is to judge the faithfulness of a series of statements based on a given context. For each statement you must return verdict as "Yes" if the statement can be directly inferred based on the context or "No" if the statement can not be directly inferred based on the context. In the end, always provide your final verdict for each statement in order. You are given an example below to demonstrate the intended output format.
+<example>
+context:\nJohn is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.
 statements:\n1. John is majoring in Biology.\n2. John is taking a course on Artificial Intelligence.\n3. John is a dedicated student.\n4. John has a part-time job.\n5. John is interested in computer programming.\n
 Answer:
 1. John is majoring in Biology.
@@ -53,11 +71,13 @@ Explanation: The prompt states that he spends a significant amount of time study
 Explanation: There is no information given in the context about John having a part-time job. Therefore, it cannot be deduced that John has a part-time job.  Verdict: No.
 5. John is interested in computer programming.
 Explanation: The context states that John is pursuing a degree in Computer Science, which implies an interest in computer programming. Verdict: Yes.
-Final verdict for each statement in order: No. No. Yes. No. Yes.
+Final verdicts in order: No. No. Yes. No. Yes.
+</example>
+
+Now solve the following task. Remember, you should to judge the faithfulness of the given statements and do not generate your own statements.
 context:\n$context
 statements:\n$statements
-Answer: Assistant:
-"""  # noqa: E501
+Answer:\n Assistant:"""  # noqa: E501
 
 
 class FaithfulnessScore(Transform):
@@ -89,8 +109,8 @@ class FaithfulnessScore(Transform):
         :param record: The input record.
         :returns: The input record, with the faithfulness score added in.
         """
-        verdict_output = record["raw_verdicts"]
-        statements = record["statements"]
+        verdict_output = record[RAW_VERDICTS]
+        statements = record[STATEMENTS]
         record[self.output_key] = self._get_score(verdict_output, statements)
         return record
 
@@ -105,18 +125,9 @@ class FaithfulnessScore(Transform):
         """
         output = verdict_output.lower().strip()
         num_statements = len(statements.split("\n"))
-        # TODO: handle edge case that num_statements is 0?
+        # TODO: handle edge case that num_statements is 0
 
-        # calculate score
-        final_answer = "Final verdicts in order:"
-        final_answer = final_answer.lower()
-        if output.find(final_answer) != -1:
-            output = output[output.find(final_answer) + len(final_answer) :]
-            score = float(sum(1 if "yes" in answer else 0 for answer in output.strip().split(".") if answer != ""))
-            score = score / num_statements
-        else:
-            score = float(max(0, output.count("verdict: yes")) / num_statements)
-
+        score = float(max(0, output.count("verdict: yes")) / num_statements)
         return score
 
 
@@ -145,11 +156,11 @@ class GetStatements(Transform):
         :returns: The input record with the mean added in.
         """
         get_raw_statements = GetModelOutputs(
-            input_to_output_keys={self.input_key: ["raw_statements"]},
+            input_to_output_keys={self.input_key: [RAW_STATEMENTS]},
             model_runner=self.judge_model,
         )
         record_with_raw_statements = get_raw_statements(record)
-        raw_statements = record_with_raw_statements["raw_statements"].split("\n")
+        raw_statements = record_with_raw_statements[RAW_STATEMENTS].split("\n")
         list_statements = [statement for statement in raw_statements if statement.startswith("Statement:")]
         statements_str: str = "\n".join([f"{i + 1}.{st}" for i, st in enumerate(list_statements)])
         record[self.output_key] = statements_str
@@ -173,26 +184,26 @@ class Faithfulness(EvalAlgorithmInterface):
     ) -> TransformPipeline:
         gen_long_form_prompt = GeneratePrompt(
             input_keys=[],
-            output_keys=["long_form_prompt"],
+            output_keys=[LONG_FORM_PROMPT],
             prompt_template=long_form_prompt_template,
             placeholder_to_record_key={
-                "question": DatasetColumns.MODEL_INPUT.value.name,
-                "answer": DatasetColumns.MODEL_OUTPUT.value.name,
+                QUESTION: DatasetColumns.MODEL_INPUT.value.name,
+                ANSWER: DatasetColumns.MODEL_OUTPUT.value.name,
             },
         )
         get_statements = GetStatements(
-            input_key="long_form_prompt",
-            output_key="statements",
+            input_key=LONG_FORM_PROMPT,
+            output_key=STATEMENTS,
             judge_model=judge_model,
         )
         gen_nli_statements_prompt = GeneratePrompt(
             input_keys=[],
-            output_keys=["nli_statements_prompt"],
+            output_keys=[NLI_STATEMENTS_PROMT],
             prompt_template=nli_statements_prompt_template,
-            placeholder_to_record_key={"context": DatasetColumns.TARGET_CONTEXT.value.name, "statements": "statements"},
+            placeholder_to_record_key={"context": DatasetColumns.TARGET_CONTEXT.value.name, STATEMENTS: STATEMENTS},
         )
         get_raw_verdicts = GetModelOutputs(
-            input_to_output_keys={"nli_statements_prompt": ["raw_verdicts"]},
+            input_to_output_keys={NLI_STATEMENTS_PROMT: [RAW_VERDICTS]},
             model_runner=judge_model,
         )
         compute_score = FaithfulnessScore()

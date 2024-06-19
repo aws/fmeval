@@ -195,9 +195,9 @@ class TestFaithfulness:
         mock_model_runner = Mock()
 
         def predict_side_effect(prompt):
-            if "create one or more statements" in prompt:
+            if "Your task is to rewrite the answer into one or more simple and coherent statements" in prompt:
                 return test_case.statements_output, None
-            if "Provide a final verdict" in prompt:
+            if "provide your final verdict" in prompt:
                 return test_case.verdicts_output, None
 
         mock_model_runner.predict.side_effect = predict_side_effect
@@ -220,12 +220,6 @@ class TestFaithfulness:
     @pytest.mark.parametrize(
         "test_case",
         [
-            # calculate score based on final answer string from raw verdicts string
-            TestCaseFaithfulnessScore(
-                raw_verdicts="Final verdicts in order:\nYes. No.",
-                statements="Statement: statement1\nStatement: statement2",
-                expected_score=0.5,
-            ),
             # calculate score based on count of verdicts from raw verdicts string
             TestCaseFaithfulnessScore(
                 raw_verdicts="verdict: yes\nverdict: no",
