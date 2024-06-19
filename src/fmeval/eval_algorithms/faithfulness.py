@@ -162,13 +162,21 @@ class GetStatements(Transform):
         record_with_raw_statements = get_raw_statements(record)
         raw_statements = record_with_raw_statements[RAW_STATEMENTS].split("\n")
         list_statements = [statement for statement in raw_statements if statement.startswith("Statement:")]
-        statements_str: str = "\n".join([f"{i + 1}.{st}" for i, st in enumerate(list_statements)])
+        statements_str: str = "\n".join([f"{i + 1}. {st}" for i, st in enumerate(list_statements)])
         record[self.output_key] = statements_str
         return record
 
 
 class Faithfulness(EvalAlgorithmInterface):
-    """ """
+    """
+    This evaluation measures the factual consistency of the generated answer against the given context.
+    It is calculated from answer and retrieved context. The answer is scaled to (0,1) range. Higher the better.
+
+    The generated answer is regarded as faithful if all the claims that are made in the answer can be inferred from
+    the given context. To calculate this a set of claims from the generated answer is first identified.
+    Then each one of these claims are cross checked with given context to determine if it can be inferred from given
+    context or not.
+    """
 
     eval_name = EvalAlgorithm.FAITHFULNESS.value
 
