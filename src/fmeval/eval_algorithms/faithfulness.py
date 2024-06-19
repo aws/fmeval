@@ -132,7 +132,7 @@ class FaithfulnessScore(Transform):
 
 
 class GetStatements(Transform):
-    """This transform invokes the judge model string from raw statements."""
+    """This transform invokes a judge model to obtain statements."""
 
     def __init__(self, input_key: str, output_key: str, judge_model: ModelRunner):
         """GetStatements Initializer.
@@ -151,9 +151,9 @@ class GetStatements(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Invokes the judge model to generate statements and arguments the input record with the statements.
+        """Invokes the judge model to generate statements and augments the input record with the statements.
         :param record: The input record.
-        :returns: The input record with the mean added in.
+        :returns: The input record with the statements added in.
         """
         get_raw_statements = GetModelOutputs(
             input_to_output_keys={self.input_key: [RAW_STATEMENTS]},
