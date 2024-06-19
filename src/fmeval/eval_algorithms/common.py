@@ -76,6 +76,7 @@ def evaluate_dataset(
     agg_method: str = MEAN,
     save: bool = False,
     save_strategy: Optional[SaveStrategy] = None,
+    col_to_validate: Optional[str] = DatasetColumns.MODEL_OUTPUT.value.name,
 ) -> EvalOutput:
     """Execute an evaluation algorithm's pipeline on a dataset.
 
@@ -98,12 +99,16 @@ def evaluate_dataset(
         Currently, only MEAN is supported.
     :param save: If set to true, prompt responses and scores will be saved to a file.
         The path that this file is stored at is configured by `eval_results_path`.
+    :param col_to_validate: The column to validate for model inference. This can be the model input if
+        the model is provided, the model output if the model is not provided, or None if the model output is not
+        required by the evaluation algorithm.
 
     :return: An EvalOutput object encapsulating the results of the evaluation.
     """
     if model:
         try:
-            validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
+            col_to_validate = DatasetColumns.MODEL_INPUT.value.name
+            validate_dataset(dataset, [col_to_validate])
         except EvalAlgorithmClientError:
             raise EvalAlgorithmClientError(
                 "evaluate_dataset has been given a ModelRunner to obtain outputs from "
@@ -119,7 +124,8 @@ def evaluate_dataset(
                 "Model outputs from the dataset will be used, and this prompt template will be ignored."
             )
         try:
-            validate_dataset(dataset, [DatasetColumns.MODEL_OUTPUT.value.name])
+            if col_to_validate:
+                validate_dataset(dataset, [col_to_validate])
         except EvalAlgorithmClientError:
             raise EvalAlgorithmClientError(
                 "evaluate_dataset has been given a dataset with no model output column "

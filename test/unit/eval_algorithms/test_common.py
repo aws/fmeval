@@ -404,3 +404,37 @@ def test_evaluate_dataset_no_model_no_model_output_column():
             model=None,
             prompt_template=None,
         )
+
+
+@patch("fmeval.eval_algorithms.common.aggregate_evaluation_scores")
+@patch("fmeval.eval_algorithms.common.logging.Logger.warning")
+def test_evaluate_dataset_col_to_validate_is_none(mock_logger, mock_aggregate):
+    """
+    GIVEN col_to_validate is None
+    WHEN the `evaluate_dataset` function is called.
+    THEN no errors or warnings are raised and the correct eval output is returned.
+    """
+    mock_aggregate.return_value = [EvalScore(name="a", value=1.0)], None
+    dataset = Mock()
+    dataset.columns = Mock(return_value=[])
+
+    eval_output = evaluate_dataset(
+        dataset=dataset,
+        pipeline=Mock(),
+        dataset_name="my_dataset",
+        eval_name="MyEvalAlgo",
+        metric_names=["a"],
+        eval_results_path="/path/to/eval/results",
+        model=None,
+        prompt_template=None,
+        col_to_validate=None,
+    )
+
+    mock_logger.assert_not_called()
+    assert eval_output == EvalOutput(
+        eval_name="MyEvalAlgo",
+        dataset_name="my_dataset",
+        prompt_template=None,
+        dataset_scores=[EvalScore(name="a", value=1.0)],
+        output_path="path/to/output/dataset",
+    )
