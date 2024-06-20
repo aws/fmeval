@@ -1,5 +1,5 @@
 import ray.data
-from typing import List, Union, Dict, Any
+from typing import Any, Dict, List, Union
 from collections import defaultdict
 
 from fmeval.exceptions import EvalAlgorithmClientError

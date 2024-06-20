@@ -3,7 +3,11 @@ from typing import List, Optional
 
 from ray.data import Dataset
 
-from fmeval.constants import EVAL_OUTPUT_RECORDS_BATCH_SIZE, MEAN, DatasetColumns
+from fmeval.constants import (
+    EVAL_OUTPUT_RECORDS_BATCH_SIZE,
+    MEAN,
+    DatasetColumns,
+)
 from fmeval.eval_algorithms import EvalOutput, get_default_prompt_template
 from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
 from fmeval.eval_algorithms.util import (
