@@ -97,7 +97,7 @@ class FaithfulnessScore(Transform):
         """
         super().__init__(output_key)
         self.register_input_output_keys(
-            input_keys=[],
+            input_keys=[RAW_VERDICTS, STATEMENTS],
             output_keys=[output_key],
         )
         self.output_key = output_key
