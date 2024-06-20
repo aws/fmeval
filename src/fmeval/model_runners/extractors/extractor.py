@@ -28,3 +28,12 @@ class Extractor(ABC):
         :param data: Model response.
         :return: model output
         """
+
+    @abstractmethod
+    def extract_embedding(self, data: Union[List, Dict], num_records: int) -> Union[List[List[float]], List[float]]:
+        """
+        Extract embedding from model response.
+
+        :param data: Model response.
+        :return: model output
+        """

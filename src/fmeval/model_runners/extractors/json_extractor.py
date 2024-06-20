@@ -18,6 +18,7 @@ class JsonExtractor(Extractor):
         self,
         output_jmespath_expression: Optional[str] = None,
         log_probability_jmespath_expression: Optional[str] = None,
+        embedding_jmespath_expression: Optional[str] = None,
     ):
         """
         Creates an instance of Json extractor that can extract the output and log probability from the JSON model
@@ -31,6 +32,10 @@ class JsonExtractor(Extractor):
         )
         self.output_jmespath_expression = output_jmespath_expression
         self.output_jmespath = compile_jmespath(output_jmespath_expression) if output_jmespath_expression else None
+        self.embedding_jmespath_expression = embedding_jmespath_expression
+        self.embedding_jmespath = (
+            compile_jmespath(embedding_jmespath_expression) if embedding_jmespath_expression else None
+        )
 
     def extract_log_probability(self, data: Union[List, Dict], num_records: int) -> Union[List[float], float]:
         """
@@ -80,3 +85,24 @@ class JsonExtractor(Extractor):
         util.require(outputs is not None, f"JMESpath {self.output_jmespath_expression} could not find any data")
         util.require(isinstance(outputs, str), f"Extractor found: {outputs} which does not match expected type {str}")
         return outputs
+
+    def extract_embedding(self, data: Union[List, Dict], num_records: int) -> Union[List[float]]:
+        """
+        Extract embedding from JSON model output
+
+        :param data: Model response. The embedding_jmespath_expression is used to extract the predicted output. The
+                     predicted output must be a string
+        :param num_records: number of inference records in the model output
+        :return: model output
+        """
+        assert num_records == 1, "JSON extractor does not support batch requests"
+        util.require(
+            self.embedding_jmespath_expression,
+            "Extractor cannot extract embedding as embedding_jmespath_expression is not provided",
+        )
+        embedding = self.embedding_jmespath.search(data)
+        util.require(embedding is not None, f"JMESpath {self.embedding_jmespath_expression} could not find any data")
+        util.require(
+            isinstance(embedding, List), f"Extractor found: {embedding} which does not match expected type {List}"
+        )
+        return embedding

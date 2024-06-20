@@ -36,10 +36,15 @@ from fmeval.util import get_num_actors
 logger = logging.getLogger(__name__)
 
 
-def get_dataset_configs(data_config: Optional[DataConfig], eval_name: str) -> List[DataConfig]:
-    return (
-        [data_config] if data_config else [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[eval_name]]
-    )
+def get_dataset_configs(data_config: Optional[Union[DataConfig, List[DataConfig]]], eval_name: str) -> List[DataConfig]:
+    if not data_config:
+        return [DATASET_CONFIGS[dataset_name] for dataset_name in EVAL_DATASETS[eval_name]]
+    elif isinstance(data_config, list):
+        return data_config
+    elif isinstance(data_config, tuple):
+        return [cfg for cfg in data_config]
+    else:
+        return [data_config]
 
 
 def generate_model_predict_response_for_dataset(

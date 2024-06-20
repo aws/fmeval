@@ -19,6 +19,7 @@ from fmeval.constants import (
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
     INPUT_LOG_PROBS_JMESPATH_EXPRESSION,
+    EMBEDDING_JMESPATH_EXPRESSION,
 )
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.model_runners.extractors.extractor import Extractor
@@ -33,7 +34,11 @@ class JumpStartExtractor(Extractor):
     """
 
     def __init__(
-        self, jumpstart_model_id: str, jumpstart_model_version: str, sagemaker_session: Optional[Session] = None
+        self,
+        jumpstart_model_id: str,
+        jumpstart_model_version: str,
+        is_embedding_model: Optional[bool] = False,
+        sagemaker_session: Optional[Session] = None,
     ):
         """
         Initializes  JumpStartExtractor for the given model and version.
@@ -41,11 +46,17 @@ class JumpStartExtractor(Extractor):
 
         :param jumpstart_model_id: The model id of the JumpStart Model
         :param jumpstart_model_id: The model version of the JumpStart Model
+        :param is_embedding_model: Whether this model is an embedding model or not
         :param sagemaker_session: Optional. An object of SageMaker session
         """
         self._model_id = jumpstart_model_id
         self._model_version = jumpstart_model_version
         self._sagemaker_session = sagemaker_session if sagemaker_session else get_sagemaker_session()
+        self._is_embedding_model = is_embedding_model
+
+        if self._is_embedding_model:
+            self._embedding_compiler = jmespath.compile(EMBEDDING_JMESPATH_EXPRESSION)
+            return
 
         model_manifest = seq(self.get_jumpstart_sdk_manifest(self._sagemaker_session.boto_region_name)).find(
             lambda x: x.get(MODEL_ID, None) == jumpstart_model_id
@@ -141,6 +152,23 @@ class JumpStartExtractor(Extractor):
             return output
         except ValueError as e:
             raise EvalAlgorithmClientError(f"Unable to extract output from Jumpstart model: {self._model_id}", e)
+
+    def extract_embedding(self, data: Union[List, Dict], num_records: int = 1) -> List[float]:
+        """
+        Extracts the embedding from the JumpStartModel response. This only supported for text embedding models.
+
+        :param data: The model response from the JumpStart Model
+        :param num_records: The number of records in the model response. Must be 1.
+        """
+        assert num_records == 1, "Jumpstart extractor does not support batch requests"
+        try:
+            assert self._embedding_compiler, f"Unable to extract embedding from Jumpstart model: {self._model_id}"
+            output = self._embedding_compiler.search(data)
+            if output is None and not isinstance(output, str):
+                raise EvalAlgorithmClientError(f"Unable to extract embedding from Jumpstart model: {self._model_id}")
+            return output
+        except ValueError as e:
+            raise EvalAlgorithmClientError(f"Unable to extract embedding from Jumpstart model: {self._model_id}", e)
 
     @staticmethod
     def get_jumpstart_sdk_manifest(region: str) -> List[Dict]:

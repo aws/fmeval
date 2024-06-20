@@ -21,6 +21,7 @@ from fmeval.constants import (
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     DATASET_CONFIGS,
+    EVAL_DATASETS,
     BOOLQ,
     TRIVIA_QA,
     NATURAL_QUESTIONS,
@@ -38,6 +39,7 @@ from fmeval.eval_algorithms import (
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalScore
 from fmeval.eval_algorithms.util import (
+    get_dataset_configs,
     generate_model_predict_response_for_dataset,
     generate_prompt_column_for_dataset,
     category_wise_aggregation,
@@ -578,81 +580,101 @@ def test_verify_model_determinism(test_case):
         model.predict.assert_has_calls(expected_calls)
 
 
-def test_get_dataset_configs_custom_dataset():
-    """
-    GIVEN a custom dataset config.
-    WHEN get_dataset_configs is called.
-    THEN a single-element list with said dataset config is returned.
-    """
-    custom_config = Mock()
-    configs = get_dataset_configs(custom_config, "blah")
-    assert configs == [custom_config]
+class TestGetDatasetConfigs:
+    class TestCaseBuiltinDatasetConfigs(NamedTuple):
+        eval_name: str
+        dataset_names: List[str]
 
+    @pytest.mark.parametrize(
+        "eval_name, dataset_names",
+        [
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value,
+                dataset_names=[TREX],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.QA_ACCURACY.value,
+                dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+                dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_names=[CROWS_PAIRS]
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY.value,
+                dataset_names=[GIGAWORD, GOV_REPORT],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value,
+                dataset_names=[BOLD, TREX, WIKITEXT2],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY.value,
+                dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+                dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
+                dataset_names=[GIGAWORD, GOV_REPORT],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.TOXICITY.value,
+                dataset_names=[BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.QA_TOXICITY.value,
+                dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
+            ),
+            TestCaseBuiltinDatasetConfigs(
+                eval_name=EvalAlgorithm.SUMMARIZATION_TOXICITY.value,
+                dataset_names=[GIGAWORD, GOV_REPORT],
+            ),
+        ],
+    )
+    def test_default_datasets(self, eval_name, dataset_names):
+        """
+        GIVEN an input argument of None and an evaluation algorithm name
+        WHEN get_dataset_configs is called to normalize configuration
+        THEN a list with all builtin dataset configs corresponding to the evaluation algorithm is
+            returned.
+        """
+        configs = get_dataset_configs(None, eval_name)
+        assert configs == [DATASET_CONFIGS[dataset_name] for dataset_name in dataset_names]
 
-class TestCaseBuiltinDatasetConfigs(NamedTuple):
-    eval_name: str
-    dataset_names: List[str]
+    def test_one_dataset(self):
+        """
+        GIVEN one input data config
+        WHEN get_dataset_configs is called to normalize configuration
+        THEN a list is returned containing the one provided config
+        """
+        custom_config = Mock()
+        assert get_dataset_configs(custom_config, "blah") == [custom_config]
 
+    def test_list_multiple_datasets(self):
+        """
+        GIVEN a list of multiple custom data configurations
+        WHEN get_dataset_configs is called to normalize configuration
+        THEN the returned list matches the input list
+        """
+        custom_configs = [Mock(), Mock(), Mock()]
+        assert get_dataset_configs(custom_configs, "blah") == custom_configs
 
-@pytest.mark.parametrize(
-    "eval_name, dataset_names",
-    [
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value,
-            dataset_names=[TREX],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.QA_ACCURACY.value,
-            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.QA_ACCURACY_SEMANTIC_ROBUSTNESS.value,
-            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-        ),
-        TestCaseBuiltinDatasetConfigs(eval_name=EvalAlgorithm.PROMPT_STEREOTYPING.value, dataset_names=[CROWS_PAIRS]),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY.value,
-            dataset_names=[GIGAWORD, GOV_REPORT],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.GENERAL_SEMANTIC_ROBUSTNESS.value,
-            dataset_names=[BOLD, TREX, WIKITEXT2],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY.value,
-            dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
-            dataset_names=[WOMENS_CLOTHING_ECOMMERCE_REVIEWS],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.SUMMARIZATION_ACCURACY_SEMANTIC_ROBUSTNESS.value,
-            dataset_names=[GIGAWORD, GOV_REPORT],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.TOXICITY.value,
-            dataset_names=[BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.QA_TOXICITY.value,
-            dataset_names=[BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
-        ),
-        TestCaseBuiltinDatasetConfigs(
-            eval_name=EvalAlgorithm.SUMMARIZATION_TOXICITY.value,
-            dataset_names=[GIGAWORD, GOV_REPORT],
-        ),
-    ],
-)
-def test_get_dataset_configs_builtin_dataset(eval_name, dataset_names):
-    """
-    GIVEN an input argument of None and an evaluation algorithm name.
-    WHEN get_dataset_configs is called.
-    THEN a list with all builtin dataset configs corresponding to the
-        evaluation algorithm is returned.
-    """
-    configs = get_dataset_configs(None, eval_name)
-    assert configs == [DATASET_CONFIGS[dataset_name] for dataset_name in dataset_names]
+    def test_tuple_multiple_datasets(self):
+        """
+        GIVEN a tuple of multiple custom data configurations
+        WHEN get_dataset_configs is called to normalize configuration
+        THEN the returned list matches the input tuple
+        """
+        custom_configs = (Mock(), Mock(), Mock())
+        normalized = get_dataset_configs(custom_configs, "blah")
+        assert isinstance(normalized, list)
+        assert normalized == list(custom_configs)
 
 
 class TestCaseAggregate(NamedTuple):

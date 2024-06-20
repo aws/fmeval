@@ -65,3 +65,31 @@ class TestFactualKnowledge:
         assert eval_output.dataset_scores[0].value == approx(test_case.dataset_score, abs=ABS_TOL)
         for category_score in eval_output.category_scores:  # pragma: no branch
             assert category_score.scores[0].value == approx(test_case.category_scores[category_score.name], abs=ABS_TOL)
+
+    def test_evaluate_multi_datasets(self, integration_tests_dir):
+        dataset_config = [
+            DataConfig(
+                dataset_name="TREXbig",
+                dataset_uri=os.path.join(integration_tests_dir, "datasets", "trex_sample.jsonl"),
+                dataset_mime_type=MIME_TYPE_JSONLINES,
+                model_input_location="question",
+                target_output_location="answers",
+                category_location="knowledge_category",
+            ),
+            DataConfig(
+                dataset_name="TREXsmall",
+                dataset_uri=os.path.join(integration_tests_dir, "datasets", "trex_sample_small.jsonl"),
+                dataset_mime_type=MIME_TYPE_JSONLINES,
+                model_input_location="question",
+                target_output_location="answers",
+                category_location="knowledge_category",
+            ),
+        ]
+        eval_outputs = eval_algo.evaluate(
+            model=hf_model_runner,
+            dataset_config=dataset_config,
+            prompt_template="$model_input",
+            save=True,
+        )
+        assert len(eval_outputs) == len(dataset_config)
+        assert [eo.dataset_name for eo in eval_outputs] == [dc.dataset_name for dc in dataset_config]

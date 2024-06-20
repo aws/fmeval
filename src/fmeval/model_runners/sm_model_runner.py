@@ -4,7 +4,7 @@ Module to manage model runners for SageMaker endpoints.
 import logging
 import sagemaker
 import fmeval.util as util
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
 from fmeval.constants import MIME_TYPE_JSON
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.model_runners.util import get_sagemaker_session, is_endpoint_in_service
@@ -25,6 +25,7 @@ class SageMakerModelRunner(ModelRunner):
         custom_attributes: Optional[str] = None,
         output: Optional[str] = None,
         log_probability: Optional[str] = None,
+        embedding: Optional[str] = None,
         content_type: str = MIME_TYPE_JSON,
         accept_type: str = MIME_TYPE_JSON,
         component_name: Optional[str] = None,
@@ -36,17 +37,19 @@ class SageMakerModelRunner(ModelRunner):
                                   SageMaker endpoint invocation
         :param output: JMESPath expression of output in the model output
         :param log_probability: JMESPath expression of log probability in the model output
+        :param embedding: JMESPath expression of embedding in the model output
         :param content_type: The content type of the request sent to the model for inference
         :param accept_type: The accept type of the request sent to the model for inference
         :param component_name: Name of the Amazon SageMaker inference component corresponding
                             the predictor
         """
-        super().__init__(content_template, output, log_probability, content_type, accept_type)
+        super().__init__(content_template, output, log_probability, embedding, content_type, accept_type)
         self._endpoint_name = endpoint_name
         self._content_template = content_template
         self._custom_attributes = custom_attributes
         self._output = output
         self._log_probability = log_probability
+        self._embedding = embedding
         self._content_type = content_type
         self._accept_type = accept_type
         self._component_name = component_name
@@ -64,7 +67,7 @@ class SageMakerModelRunner(ModelRunner):
             deserializer=sagemaker.deserializers.JSONDeserializer(),
         )
 
-    def predict(self, prompt: str) -> Tuple[Optional[str], Optional[float]]:
+    def predict(self, prompt: str) -> Union[Tuple[Optional[str], Optional[float]], List[float]]:
         """
         Invoke the SageMaker endpoint and parse the model response.
         :param prompt: Input data for which you want the model to provide inference.
@@ -75,6 +78,15 @@ class SageMakerModelRunner(ModelRunner):
             custom_attributes=self._custom_attributes,
             component_name=self._component_name,
         )
+
+        embedding = (
+            self._extractor.extract_embedding(data=model_output, num_records=1)
+            if self._extractor.embedding_jmespath_expression
+            else None
+        )
+        if embedding:
+            return embedding
+
         output = (
             self._extractor.extract_output(data=model_output, num_records=1)
             if self._extractor.output_jmespath_expression
@@ -98,6 +110,7 @@ class SageMakerModelRunner(ModelRunner):
             self._custom_attributes,
             self._output,
             self._log_probability,
+            self._embedding,
             self._content_type,
             self._accept_type,
             self._component_name,
