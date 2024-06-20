@@ -88,7 +88,7 @@ class TestJumpStartComposer:
         js_composer = JumpStartComposer(
             jumpstart_model_id=EMBEDDING_MODEL_ID, jumpstart_model_version="*", is_embedding_model=True
         )
-        assert js_composer.compose(PROMPT) == PROMPT
+        assert js_composer.compose(PROMPT) == b'"Hello, how are you?"'
         construct_payload.assert_not_called()
 
     @patch(

@@ -1,4 +1,5 @@
-from typing import Optional
+import json
+from typing import Optional, Union
 
 from sagemaker.jumpstart.payload_utils import _construct_payload
 from sagemaker.jumpstart.types import JumpStartSerializablePayload
@@ -24,13 +25,13 @@ class JumpStartComposer(Composer):
         self._model_version = jumpstart_model_version
         self._is_embedding_model = is_embedding_model
 
-    def compose(self, prompt: str) -> JumpStartSerializablePayload:
+    def compose(self, prompt: str) -> Union[JumpStartSerializablePayload, bytes]:
         """
         Composes the payload for the given JumpStartModel from the provided prompt.
         """
-        # embedding models take raw text as input payload
+        # embedding models input to the endpoint is any string of text dumped in json and encoded in `utf-8` format
         if self._is_embedding_model:
-            return prompt
+            return json.dumps(prompt).encode("utf-8")
         sagemaker_session = get_sagemaker_session()
         # Default model type is always OPEN_WEIGHTS. See https://tinyurl.com/yc58s6wj
         jumpstart_model_type = JumpStartModelType.OPEN_WEIGHTS
