@@ -137,7 +137,7 @@ class TestContextQuality:
             )
         ],
     )
-    @patch("fmeval.eval_algorithms.common.save_dataset")
+    @patch("fmeval.eval_algorithms.context_quality.save_dataset")
     @patch("fmeval.eval_algorithms.context_quality.get_dataset")
     def test_context_quality_evaluate(self, get_dataset, save_dataset, test_case):
         """

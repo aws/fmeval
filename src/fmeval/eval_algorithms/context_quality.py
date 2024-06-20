@@ -9,15 +9,20 @@ from fmeval.constants import (
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.data_loaders.util import get_dataset
 from fmeval.eval_algorithms import EvalAlgorithm, EvalScore, EvalOutput
-from fmeval.eval_algorithms.common import evaluate_dataset
+from fmeval.eval_algorithms.common import save_dataset
 from fmeval.eval_algorithms.eval_algorithm import (
     EvalAlgorithmInterface,
     EvalAlgorithmConfig,
 )
-from fmeval.eval_algorithms.save_strategy import SaveStrategy
-from fmeval.eval_algorithms.util import get_dataset_configs, validate_dataset
-from fmeval.model_runners.bedrock_model_runner import BedrockModelRunner
+from fmeval.eval_algorithms.save_strategy import SaveStrategy, FileSaveStrategy
+from fmeval.eval_algorithms.util import (
+    get_dataset_configs,
+    validate_dataset,
+    aggregate_evaluation_scores,
+    generate_output_dataset_path,
+)
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.perf_util import timed_block
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 from fmeval.model_runners.composers.composers import PromptComposer
@@ -36,14 +41,6 @@ DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE = (
 )
 
 BINARY_SCORE_VALUES = ["0", "1"]
-
-# TODO: Pending judge model selection
-def get_default_judge_model() -> BedrockModelRunner:  # pragma: no cover
-    return BedrockModelRunner(
-        model_id="anthropic.claude-v2",
-        output="completion",
-        content_template='{"prompt": $prompt, "max_tokens_to_sample": 10000, "temperature": 0.1}',
-    )
 
 
 @dataclass(frozen=True)
@@ -73,7 +70,7 @@ class ContextQuality(EvalAlgorithmInterface):
 
     def evaluate(
         self,
-        judge_model: Optional[ModelRunner] = None,
+        judge_model: ModelRunner,
         dataset_config: Optional[DataConfig] = None,
         num_records: int = 100,
         save: bool = False,
@@ -96,8 +93,6 @@ class ContextQuality(EvalAlgorithmInterface):
         :return: A list of EvalOutput objects.
         """
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
-        if not judge_model:  # pragma: no cover
-            judge_model = get_default_judge_model()
         pipeline = ContextQuality._build_pipeline(
             judge_model=judge_model,
             context_quality_config=self.eval_algorithm_config,
@@ -115,18 +110,29 @@ class ContextQuality(EvalAlgorithmInterface):
                     DatasetColumns.RETRIEVED_CONTEXT.value.name,
                 ],
             )
-            eval_output = evaluate_dataset(
-                dataset=dataset,
-                pipeline=pipeline,
-                dataset_name=dataset_config.dataset_name,
-                eval_name=self.eval_name,
-                metric_names=[CONTEXT_PRECISION_SCORE],
-                eval_results_path=get_eval_results_path(),
-                agg_method=MEAN,
-                save=save,
-                save_strategy=save_strategy,
-                validate_columns=False,
-            )
+            with (timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger)):
+                dataset = pipeline.execute(dataset)
+                dataset_scores, category_scores = aggregate_evaluation_scores(
+                    dataset, [CONTEXT_PRECISION_SCORE], agg_method=MEAN
+                )
+                output_path = generate_output_dataset_path(
+                    path_to_parent_dir=get_eval_results_path(),
+                    eval_name=self.eval_name,
+                    dataset_name=dataset_config.dataset_name,
+                )
+                eval_output = EvalOutput(
+                    eval_name=self.eval_name,
+                    dataset_name=dataset_config.dataset_name,
+                    dataset_scores=dataset_scores,
+                    category_scores=category_scores,
+                    output_path=output_path,
+                )
+                if save:  # pragma: no branch
+                    save_dataset(
+                        dataset=dataset,
+                        score_names=[CONTEXT_PRECISION_SCORE],
+                        save_strategy=save_strategy if save_strategy else FileSaveStrategy(output_path),
+                    )
             eval_outputs.append(eval_output)
         return eval_outputs
 
@@ -135,7 +141,7 @@ class ContextQuality(EvalAlgorithmInterface):
         model_input: str,
         target_output: str,
         retrieved_context: str,
-        judge_model: Optional[ModelRunner] = None,
+        judge_model: ModelRunner,
         context_precision_prompt_template: str = DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE,
     ) -> List[EvalScore]:
         """
@@ -147,8 +153,6 @@ class ContextQuality(EvalAlgorithmInterface):
         :param context_precision_prompt_template: The string prompt template for context precision prompts.
         :return: A list of EvalScores corresponding to the context quality metrics.
         """
-        if not judge_model:  # pragma: no cover
-            judge_model = get_default_judge_model()
         sample = {
             DatasetColumns.MODEL_INPUT.value.name: model_input,
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
