@@ -7,6 +7,7 @@ from fmeval.model_runners.util import (
     get_bedrock_runtime_client,
     get_user_agent_extra,
     is_proprietary_js_model,
+    is_text_embedding_js_model,
 )
 from fmeval.constants import DISABLE_FMEVAL_TELEMETRY
 
@@ -79,3 +80,9 @@ def test_is_proprietary_js_model_false():
 
 def test_is_proprietary_js_model_true():
     assert is_proprietary_js_model("us-west-2", "cohere-gpt-medium") == True
+
+
+@patch("fmeval.model_runners.util.list_jumpstart_models", return_value=["tcembedding-model-id"])
+def test_is_text_embedding_js_model_false(mock_list_jumpstart_models):
+    assert is_text_embedding_js_model("huggingface-llm-falcon-7b-bf16") == False
+    assert is_text_embedding_js_model("tcembedding-model-id") == True

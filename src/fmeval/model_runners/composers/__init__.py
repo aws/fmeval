@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import fmeval.util as util
-from fmeval.constants import MIME_TYPE_JSON, JUMPSTART_MODEL_ID, JUMPSTART_MODEL_VERSION
+from fmeval.constants import MIME_TYPE_JSON, JUMPSTART_MODEL_ID, JUMPSTART_MODEL_VERSION, IS_EMBEDDING_MODEL
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.composers import Composer, JsonContentComposer
 from fmeval.model_runners.composers.jumpstart_composer import JumpStartComposer
@@ -28,6 +28,7 @@ def create_content_composer(template: Optional[str] = None, content_type: str = 
         composer = JumpStartComposer(
             jumpstart_model_id=kwargs[JUMPSTART_MODEL_ID],
             jumpstart_model_version=kwargs[JUMPSTART_MODEL_VERSION] if JUMPSTART_MODEL_VERSION in kwargs else "*",
+            is_embedding_model=kwargs[IS_EMBEDDING_MODEL] if IS_EMBEDDING_MODEL in kwargs else False,
         )
     else:  # pragma: no cover
         raise EvalAlgorithmClientError(f"Invalid accept type: {content_type} ")

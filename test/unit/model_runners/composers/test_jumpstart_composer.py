@@ -10,6 +10,8 @@ from fmeval.model_runners.composers.jumpstart_composer import JumpStartComposer
 
 OSS_MODEL_ID = "huggingface-eqa-roberta-large"
 PROPRIETARY_MODEL_ID = "cohere-gpt-medium"
+EMBEDDING_MODEL_ID = "tcembedding-model-id"
+PROMPT = "Hello, how are you?"
 
 
 class TestJumpStartComposer:
@@ -80,6 +82,14 @@ class TestJumpStartComposer:
                 tolerate_deprecated_model=True,
                 tolerate_vulnerable_model=True,
             )
+
+    @patch("fmeval.model_runners.composers.jumpstart_composer._construct_payload")
+    def test_compose_embedding_model(self, construct_payload):
+        js_composer = JumpStartComposer(
+            jumpstart_model_id=EMBEDDING_MODEL_ID, jumpstart_model_version="*", is_embedding_model=True
+        )
+        assert js_composer.compose(PROMPT) == b'"Hello, how are you?"'
+        construct_payload.assert_not_called()
 
     @patch(
         "fmeval.model_runners.composers.jumpstart_composer._construct_payload",

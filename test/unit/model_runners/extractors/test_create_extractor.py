@@ -26,6 +26,6 @@ def test_create_extractor_jumpstart_proprietary():
 def test_create_extractor_exception():
     with pytest.raises(
         EvalAlgorithmClientError,
-        match="One of output jmespath expression or log probability jmespath expression must be provided",
+        match="One of output jmespath expression, log probability or embedding jmespath expression must be provided",
     ):
         assert isinstance(create_extractor(model_accept_type=MIME_TYPE_JSON), JsonExtractor)

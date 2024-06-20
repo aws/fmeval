@@ -24,6 +24,7 @@ from fmeval.constants import (
 from fmeval.util import get_fmeval_package_version
 from mypy_boto3_bedrock.client import BedrockClient
 from sagemaker.user_agent import get_user_agent_extra_suffix
+from sagemaker.jumpstart.notebook_utils import list_jumpstart_models
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,15 @@ def is_endpoint_in_service(
     if not desc or "EndpointStatus" not in desc or desc["EndpointStatus"] != "InService":
         in_service = False
     return in_service
+
+
+def is_text_embedding_js_model(jumpstart_model_id: str) -> bool:
+    """
+    :param jumpstart_model_id: JumpStart model id.
+    :return: Whether the provided model id is text embedding model or not.
+    """
+    text_embedding_models = list_jumpstart_models("search_keywords includes Text Embedding")
+    return jumpstart_model_id in text_embedding_models
 
 
 def is_proprietary_js_model(region: str, jumpstart_model_id: str) -> bool:

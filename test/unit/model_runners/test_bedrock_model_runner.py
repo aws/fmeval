@@ -20,7 +20,10 @@ OUTPUT = "This is the model output"
 LOG_PROBABILITY = 0.9
 OUTPUT_JMES_PATH = "predictions.output"
 LOG_PROBABILITY_JMES_PATH = "predictions.log_prob"
+EMBEDDING_JMES_PATH = "embedding"
 MODEL_OUTPUT = {"predictions": {"output": OUTPUT, "log_prob": LOG_PROBABILITY}}
+VECTOR = [-0.64453125, -0.20996094, 0.4296875, 0.29296875, 0.484375, 0.29296875]
+EMBEDDING_MODEL_OUTPUT = {"embedding": VECTOR, "inputTextTokenCount": 10}
 
 
 class TestBedrockModelRunner:
@@ -70,6 +73,35 @@ class TestBedrockModelRunner:
         result = bedrock_model_runner.predict(PROMPT)
         assert result == (OUTPUT, LOG_PROBABILITY)
 
+    def mock_boto3_session_client_invoking_embedding_model(*_, **kwargs):
+        client = MagicMock()
+        client.service_name = kwargs.get("service_name")
+        model_output_json = json.dumps(EMBEDDING_MODEL_OUTPUT)
+        model_output_stream = io.StringIO(model_output_json)
+        response = {"body": StreamingBody(model_output_stream, len(model_output_json))}
+        client.invoke_model.return_value = response
+        return client
+
+    @patch(
+        "boto3.session.Session.client", side_effect=mock_boto3_session_client_invoking_embedding_model, autospec=True
+    )
+    def test_bedrock_model_runner_predict_embedding_model(self, boto3_client):
+        """
+        GIVEN valid BedrockModelRunner
+        WHEN predict() called
+        THEN Bedrock invoke method is called once with expected parameters, and extract embedding as expected
+        """
+        bedrock_model_runner = BedrockModelRunner(
+            model_id=MODEL_ID,
+            content_template=CONTENT_TEMPLATE,
+            embedding=EMBEDDING_JMES_PATH,
+            content_type=MIME_TYPE_JSON,
+            accept_type=MIME_TYPE_JSON,
+        )
+        # Mocking Bedrock invoke model serializing byte into JSON
+        result = bedrock_model_runner.predict(PROMPT)
+        assert result == VECTOR
+
     @patch("boto3.session.Session.client", side_effect=mock_boto3_session_client, autospec=True)
     def test_bedrock_model_runner_predict_without_log_probability(self, boto3_client):
         """
@@ -118,7 +150,7 @@ class TestBedrockModelRunner:
         """
         with pytest.raises(
             EvalAlgorithmClientError,
-            match="One of output jmespath expression or log probability jmespath expression must be provided",
+            match="One of output jmespath expression, log probability or embedding jmespath expression must be provided",
         ):
             bedrock_model_runner = BedrockModelRunner(
                 model_id=MODEL_ID,
@@ -140,6 +172,7 @@ class TestBedrockModelRunner:
             content_template=CONTENT_TEMPLATE,
             output=OUTPUT_JMES_PATH,
             log_probability=LOG_PROBABILITY_JMES_PATH,
+            embedding="embedding",
             content_type=MIME_TYPE_JSON,
             accept_type=MIME_TYPE_JSON,
         )
@@ -151,3 +184,4 @@ class TestBedrockModelRunner:
         assert deserialized._content_type == bedrock_model_runner._content_type
         assert deserialized._accept_type == bedrock_model_runner._accept_type
         assert deserialized._bedrock_runtime_client.service_name == "bedrock-runtime"
+        assert deserialized._embedding == bedrock_model_runner._embedding
