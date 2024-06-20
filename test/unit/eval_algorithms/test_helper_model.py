@@ -14,6 +14,7 @@ from fmeval.eval_algorithms.helper_models.helper_model import (
     DETOXIFY_SCORE_THREAT,
     DETOXIFY_SCORE_SEXUAL_EXPLICIT,
     BertscoreHelperModel,
+    BertscoreHelperModelTypes,
 )
 
 
@@ -128,3 +129,55 @@ class TestHelperModel:
         """
         bertscore_model = BertscoreHelperModel("distilbert-base-uncased")
         assert bertscore_model.__reduce__() == (BertscoreHelperModel, ("distilbert-base-uncased",))
+
+
+class TestBertscoreHelperModelTypes:
+    def test_equality(self):
+        """
+        GIVEN an instance of the BertscoreHelperModelTypes enumeration
+        WHEN compared to the same value as a plain string
+        THEN equality returns true
+        """
+        assert BertscoreHelperModelTypes.MICROSOFT_DEBERTA_MODEL == "microsoft/deberta-xlarge-mnli"
+        assert BertscoreHelperModelTypes.ROBERTA_MODEL == "roberta-large-mnli"
+
+    def test_inequality(self):
+        """
+        GIVEN an instance of the BertscoreHelperModelTypes enumeration
+        WHEN compared to a different value as a plain string
+        THEN equality returns false
+        """
+        assert BertscoreHelperModelTypes.MICROSOFT_DEBERTA_MODEL != "roberta-large-mnli"
+        assert BertscoreHelperModelTypes.ROBERTA_MODEL != "microsoft/deberta-xlarge-mnli"
+
+    def test_model_is_allowed(self):
+        """
+        GIVEN a valid BertscoreHelperModelType
+        WHEN BertscoreHelperModelType.model_is_allowed() helper function is called
+        THEN the function returns true (model allowed)
+        """
+        assert BertscoreHelperModelTypes.model_is_allowed(BertscoreHelperModelTypes.ROBERTA_MODEL)
+        assert BertscoreHelperModelTypes.model_is_allowed(BertscoreHelperModelTypes.MICROSOFT_DEBERTA_MODEL)
+        assert BertscoreHelperModelTypes.model_is_allowed("roberta-large-mnli")
+        assert BertscoreHelperModelTypes.model_is_allowed("microsoft/deberta-xlarge-mnli")
+
+    def test_model_is_not_allowed(self):
+        """
+        GIVEN an invalid BertscoreHelperModelType
+        WHEN BertscoreHelperModelType.model_is_allowed() helper function is called
+        THEN the function returns false (not allowed)
+        """
+        assert not BertscoreHelperModelTypes.model_is_allowed("doesnotexist")
+        assert not BertscoreHelperModelTypes.model_is_allowed("")
+
+    def test_model_list(self):
+        """
+        GIVEN the static BertscoreHelperModelTypes enumeration
+        WHEN BertscoreHelperModelType.model_list() helper function is called
+        THEN the function returns a list of strings including expected model names
+        """
+        model_list = BertscoreHelperModelTypes.model_list()
+        assert isinstance(model_list, list)
+        assert "microsoft/deberta-xlarge-mnli" in model_list
+        assert "" not in model_list
+        assert "doesnotexist" not in model_list

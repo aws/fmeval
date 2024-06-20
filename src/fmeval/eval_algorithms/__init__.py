@@ -29,7 +29,7 @@ class EvalScore:
             return False
 
 
-class EvalAlgorithm(Enum):
+class EvalAlgorithm(str, Enum):
     """The evaluation types supported by Amazon Foundation Model Evaluations.
 
     The evaluation types are used to determine the evaluation metrics for the
@@ -141,7 +141,7 @@ class EvalOutput:
             return False
 
 
-class ModelTask(Enum):
+class ModelTask(str, Enum):
     """The different types of tasks that are supported by the evaluations.
 
     The model tasks are used to determine the evaluation metrics for the

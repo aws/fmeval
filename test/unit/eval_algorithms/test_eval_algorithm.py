@@ -1,7 +1,34 @@
 import pytest
 from typing import List, NamedTuple, Optional
 from contextlib import nullcontext as does_not_raise
-from fmeval.eval_algorithms import EvalOutput, CategoryScore, EvalScore, get_default_prompt_template
+from fmeval.eval_algorithms import (
+    EvalAlgorithm,
+    EvalOutput,
+    CategoryScore,
+    EvalScore,
+    get_default_prompt_template,
+    ModelTask,
+)
+
+
+class TestEvalAlgorithm:
+    def test_equality(self):
+        """
+        GIVEN an instance of the EvalAlgorithm enumeration
+        WHEN compared to the same value as a plain string
+        THEN equality returns true
+        """
+        assert EvalAlgorithm.FACTUAL_KNOWLEDGE == "factual_knowledge"
+        assert EvalAlgorithm.QA_ACCURACY == "qa_accuracy"
+
+    def test_inequality(self):
+        """
+        GIVEN an instance of the EvalAlgorithm enumeration
+        WHEN compared to a different value as a plain string
+        THEN equality returns false
+        """
+        assert EvalAlgorithm.QA_ACCURACY != "factual_knowledge"
+        assert EvalAlgorithm.SUMMARIZATION_ACCURACY != "qa_accuracy"
 
 
 class TestEvalOutput:
@@ -187,6 +214,26 @@ class TestEvalScore:
     def test_inequality(self):
         assert EvalScore(name="name1", value=0.7) != EvalScore(name="name2", value=0.7)
         assert EvalScore(name="name1", value=0.7) != EvalScore(name="name1", value=0.69)
+
+
+class TestModelTask:
+    def test_equality(self):
+        """
+        GIVEN an instance of the ModelTask enumeration
+        WHEN compared to the same value as a plain string
+        THEN equality returns true
+        """
+        assert ModelTask.CLASSIFICATION == "classification"
+        assert ModelTask.QUESTION_ANSWERING == "question_answering"
+
+    def test_inequality(self):
+        """
+        GIVEN an instance of the ModelTask enumeration
+        WHEN compared to a different value as a plain string
+        THEN equality returns false
+        """
+        assert ModelTask.CLASSIFICATION != "question_answering"
+        assert ModelTask.NO_TASK != "classification"
 
 
 def test_get_default_prompt_template():

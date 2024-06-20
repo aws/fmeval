@@ -4,7 +4,7 @@ import transformers
 
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, cast, Dict, List
 from transformers import pipeline, AutoConfig
 
 TOXIGEN_SCORE_NAME = "toxicity"
@@ -183,7 +183,7 @@ class BertscoreHelperModel(BaseHelperModel):
         )["f1"][0]
 
 
-class BertscoreHelperModelTypes(Enum):
+class BertscoreHelperModelTypes(str, Enum):
     """This class holds the names of all the allowed models for computing the BERTScore."""
 
     MICROSOFT_DEBERTA_MODEL = "microsoft/deberta-xlarge-mnli"
@@ -195,7 +195,8 @@ class BertscoreHelperModelTypes(Enum):
         Given a model name like 'roberta-large-mnli', check if this is an allowed model for computing BERTScore.
         """
         for elem in iter(cls):
-            if elem.value == model_name:
+            # Because this is a (str, Enum), need cast to keep mypy happy:
+            if cast(BertscoreHelperModelTypes, elem).value == model_name:
                 return True
         return False
 
@@ -204,4 +205,5 @@ class BertscoreHelperModelTypes(Enum):
         """
         Return a list of all the allowed models for computing BERTScore.
         """
-        return [elem.value for elem in iter(cls)]
+        # Because this is a (str, Enum), need cast to keep mypy happy:
+        return [cast(BertscoreHelperModelTypes, elem).value for elem in iter(cls)]
