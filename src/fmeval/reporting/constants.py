@@ -65,7 +65,7 @@ LEFT = "left"
 RIGHT = "right"
 
 
-class ListType(Enum):
+class ListType(str, Enum):
     BULLETED = "bulleted"
     NUMBERED = "numbered"
 
