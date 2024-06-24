@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 import logging
 from dataclasses import dataclass
 
@@ -71,7 +71,7 @@ class ContextQuality(EvalAlgorithmInterface):
     def evaluate(
         self,
         judge_model: ModelRunner,
-        dataset_config: Optional[DataConfig] = None,
+        dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         num_records: int = 100,
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,
@@ -81,8 +81,9 @@ class ContextQuality(EvalAlgorithmInterface):
 
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
             If this argument is None, default judge model will be provided.
-        :param dataset_config: Configures the single dataset used for evaluation.
-            If not provided, evaluations will be run on all of this algorithm's built-in datasets.
+        :param dataset_config: Configures a single dataset or list of datasets used for the
+            evaluation. If not provided, this method will run evaluations using all of its
+            supported built-in datasets.
         :param num_records: The number of records to be sampled randomly from the input dataset(s)
             used to perform the evaluation(s).
         :param save: If set to true, prompt responses and scores will be saved to a file.
