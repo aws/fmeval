@@ -62,6 +62,7 @@ class EvalAlgorithm(str, Enum):
     CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
     CONTEXT_QUALITY = "context_quality"
     FAITHFULNESS = "faithfulness"
+    ANSWER_RELEVANCE = "answer_relevance"
 
     def __str__(self):
         """

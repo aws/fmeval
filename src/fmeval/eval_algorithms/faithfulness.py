@@ -32,7 +32,7 @@ RAW_VERDICTS = "raw_verdicts"
 STATEMENTS = "statements"
 RAW_STATEMENTS = "raw_statements"
 LONG_FORM_PROMPT = "long_form_prompt"
-NLI_STATEMENTS_PROMT = "nli_statements_prompt"
+NLI_STATEMENTS_PROMPT = "nli_statements_prompt"
 QUESTION = "question"
 ANSWER = "answer"
 
@@ -210,7 +210,7 @@ class Faithfulness(EvalAlgorithmInterface):
         )
         gen_nli_statements_prompt = GeneratePrompt(
             input_keys=[],
-            output_keys=[NLI_STATEMENTS_PROMT],
+            output_keys=[NLI_STATEMENTS_PROMPT],
             prompt_template=nli_statements_prompt_template,
             placeholder_to_record_key={
                 "context": DatasetColumns.TARGET_CONTEXT.value.name,
@@ -220,7 +220,7 @@ class Faithfulness(EvalAlgorithmInterface):
             },
         )
         get_raw_verdicts = GetModelOutputs(
-            input_to_output_keys={NLI_STATEMENTS_PROMT: [RAW_VERDICTS]},
+            input_to_output_keys={NLI_STATEMENTS_PROMPT: [RAW_VERDICTS]},
             model_runner=judge_model,
         )
         compute_score = FaithfulnessScore()
