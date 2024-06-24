@@ -19,7 +19,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.10"
-urllib3 = "1.26.18"
+urllib3 = "1.26.19"
 ray = "2.23.0"
 semantic-version = "2.10.0"
 pyarrow = "*"
