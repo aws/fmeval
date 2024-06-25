@@ -20,12 +20,18 @@ from fmeval.eval_algorithms.faithfulness import (
     NLI_STATEMENTS_MESSAGE,
 )
 
+SAMPLE_MODEL_INPUT = "Where and when was Einstein born?"
+SAMPLE_MODEL_OUTPUT = "Einstein was born in Germany on 20th March 1879."
+SAMPLE_TARGET_CONTEXT = "Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time"
+SAMPLE_STATEMENTS_OUTPUT = "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."
+SAMPLE_VERDICTS_OUTPUT = 'here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.'
+
 DATASET_WITH_CONTEXT = ray.data.from_items(
     [
         {
-            DatasetColumns.MODEL_INPUT.value.name: "Where and when was Einstein born?",
-            DatasetColumns.MODEL_OUTPUT.value.name: "Einstein was born in Germany on 20th March 1879.",
-            DatasetColumns.TARGET_CONTEXT.value.name: "Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time",
+            DatasetColumns.MODEL_INPUT.value.name: SAMPLE_MODEL_INPUT,
+            DatasetColumns.MODEL_OUTPUT.value.name: SAMPLE_MODEL_OUTPUT,
+            DatasetColumns.TARGET_CONTEXT.value.name: SAMPLE_TARGET_CONTEXT,
         },
     ]
 )
@@ -47,13 +53,29 @@ class TestFaithfulness:
     @pytest.mark.parametrize(
         "test_case",
         [
+            # successful case
             TestCaseFaithfulnessEvaluateSample(
-                model_input="Where and when was Einstein born?",
-                model_output="Einstein was born in Germany on 20th March 1879.",
-                target_context="Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time",
-                statements_output="Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879.",
-                verdicts_output='here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.',
+                model_input=SAMPLE_MODEL_INPUT,
+                model_output=SAMPLE_MODEL_OUTPUT,
+                target_context=SAMPLE_TARGET_CONTEXT,
+                statements_output=SAMPLE_STATEMENTS_OUTPUT,
+                verdicts_output=SAMPLE_VERDICTS_OUTPUT,
                 expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2)],
+            ),
+            # No statements get from judge model
+            TestCaseFaithfulnessEvaluateSample(
+                model_input=SAMPLE_MODEL_INPUT,
+                model_output=SAMPLE_MODEL_OUTPUT,
+                target_context=SAMPLE_TARGET_CONTEXT,
+                statements_output="Can't find statements. Here are the statements created from the given answer",
+                verdicts_output="No verdicts as no statements can be found.",
+                expected_score=[
+                    EvalScore(
+                        name=EvalAlgorithm.FAITHFULNESS.value,
+                        value=None,
+                        error="No statements were generated from the answer.",
+                    )
+                ],
             ),
         ],
     )
@@ -166,8 +188,8 @@ class TestFaithfulness:
                     model_output_location=None,
                     category_location="tba",
                 ),
-                statements_output="Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879.",
-                verdicts_output='here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.',
+                statements_output=SAMPLE_STATEMENTS_OUTPUT,
+                verdicts_output=SAMPLE_VERDICTS_OUTPUT,
                 expected_response=[
                     EvalOutput(
                         eval_name="faithfulness",
@@ -232,7 +254,12 @@ class TestFaithfulness:
                 statements="Statement: statement1\nStatement: statement2",
                 expected_score=0.0,
             ),
-            # TODO add test case for 0 statements
+            # no statements, score is None
+            TestCaseFaithfulnessScore(
+                raw_verdicts="judge model didn't output as expected",
+                statements="",
+                expected_score=None,
+            ),
         ],
     )
     def test_faithfulness_transform(self, test_case):
@@ -248,6 +275,8 @@ class TestFaithfulness:
         }
         result = get_scores(sample)
         assert result[EvalAlgorithm.FAITHFULNESS.value] == test_case.expected_score
+        if test_case.expected_score is None:
+            assert result["error"] != None
 
     class TestCaseGetStatements(NamedTuple):
         record: Dict[str, str]
