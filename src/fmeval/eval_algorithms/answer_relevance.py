@@ -61,7 +61,7 @@ class AnswerRelevanceScore(Transform):
         :param model_output_key: The key corresponding to the model output.
         :param output_key: The key corresponding to the answer relevance score that will be added to the input record.
         """
-        super().__init__(output_key=output_key, embeddings_model=embeddings_model)
+        super().__init__(embeddings_model, model_output_key, output_key)
         self.register_input_output_keys(
             input_keys=[RAW_GEN_QUESTION, model_output_key],
             output_keys=[output_key],
