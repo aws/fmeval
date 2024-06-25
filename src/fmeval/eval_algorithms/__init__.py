@@ -15,15 +15,26 @@ class EvalScore:
 
     :param name: The name of the eval score offering
     :param value: The aggregated score computed for the given eval offering
+    :param error: A string error message for a failed evaluation.
     """
 
     name: str
-    value: float
+    value: Optional[float] = None
+    error: Optional[str] = None
+
+    def __post_init__(self):  # pragma: no cover
+        """Post initialisation validations for EvalScore"""
+        assert self.value is not None or self.error is not None
 
     def __eq__(self, other: Type["EvalScore"]):  # type: ignore[override]
         try:
             assert self.name == other.name
-            assert math.isclose(self.value, other.value, abs_tol=ABS_TOL)
+            if self.value is not None and other.value is not None:
+                assert math.isclose(self.value, other.value, abs_tol=ABS_TOL)
+                assert self.error is None
+            else:
+                assert self.value == other.value
+                assert self.error == other.error
             return True
         except AssertionError:
             return False
@@ -105,7 +116,7 @@ class EvalOutput:
 
     def __post_init__(self):  # pragma: no cover
         """Post initialisation validations for EvalOutput"""
-        assert self.dataset_scores or self.error
+        assert self.dataset_scores is not None or self.error is not None
 
         if not self.category_scores:
             return

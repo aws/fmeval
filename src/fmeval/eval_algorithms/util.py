@@ -174,7 +174,7 @@ def aggregate_evaluation_scores(
 
 def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> float:
     if agg_method == MEAN:
-        aggregate = dataset.mean(score_column_name)
+        aggregate = dataset.mean(on=score_column_name, ignore_nulls=True)
         assert isinstance(aggregate, float)
         return aggregate
     else:
@@ -184,7 +184,7 @@ def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: st
 def category_wise_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> Dataset:
     category_aggregate: Dataset = dataset.groupby(DatasetColumns.CATEGORY.value.name)  # type: ignore
     if agg_method == MEAN:
-        category_aggregate = category_aggregate.mean(score_column_name)
+        category_aggregate = category_aggregate.mean(on=score_column_name, ignore_nulls=True)
     else:
         raise EvalAlgorithmInternalError(f"Aggregation method {agg_method} is not supported")
     return category_aggregate

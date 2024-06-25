@@ -90,11 +90,17 @@ def test_save_dataset(tmp_path, file_name):
 
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "hello":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Age"
-                assert json_obj["scores"] == [{"name": "rouge", "value": 0.5}, {"name": "bert_score", "value": 0.42}]
+                assert json_obj["scores"] == [
+                    {"name": "rouge", "value": 0.5, "error": None},
+                    {"name": "bert_score", "value": 0.42, "error": None},
+                ]
 
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "world":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Gender"
-                assert json_obj["scores"] == [{"name": "rouge", "value": 0.314}, {"name": "bert_score", "value": 0.271}]
+                assert json_obj["scores"] == [
+                    {"name": "rouge", "value": 0.314, "error": None},
+                    {"name": "bert_score", "value": 0.271, "error": None},
+                ]
 
 
 def test_save_dataset_many_rows(tmp_path):

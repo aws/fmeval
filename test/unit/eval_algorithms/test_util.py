@@ -385,7 +385,7 @@ def test_eval_output_record_str():
         [
             (DatasetColumns.MODEL_INPUT.value.name, "input"),
             (DatasetColumns.MODEL_OUTPUT.value.name, "output"),
-            ("scores", [{"name": "rouge", "value": 0.5}, {"name": "bert", "value": 0.4}]),
+            ("scores", [{"name": "rouge", "value": 0.5, "error": None}, {"name": "bert", "value": 0.4, "error": None}]),
         ]
     )
     assert json.loads(str(record), object_pairs_hook=OrderedDict) == expected_record
