@@ -91,15 +91,80 @@ def test_save_dataset(tmp_path, file_name):
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "hello":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Age"
                 assert json_obj["scores"] == [
-                    {"name": "rouge", "value": 0.5, "error": None},
-                    {"name": "bert_score", "value": 0.42, "error": None},
+                    {"name": "rouge", "value": 0.5},
+                    {"name": "bert_score", "value": 0.42},
                 ]
 
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "world":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Gender"
                 assert json_obj["scores"] == [
-                    {"name": "rouge", "value": 0.314, "error": None},
-                    {"name": "bert_score", "value": 0.271, "error": None},
+                    {"name": "rouge", "value": 0.314},
+                    {"name": "bert_score", "value": 0.271},
+                ]
+
+
+@pytest.mark.parametrize("file_name", ["my_dataset.jsonl", "my_dataset"])
+def test_save_dataset_with_error_eval_score(tmp_path, file_name):
+    """
+    Given a Ray Dataset, a list of score names, and a local path
+    WHEN save_dataset is called
+    THEN a JSON Lines file that adheres to the correct schema gets
+        written to the local path
+    """
+    unused_column_name = "unused"
+    # GIVEN
+    ds_items = [
+        {
+            DatasetColumns.MODEL_INPUT.value.name: "hello",
+            DatasetColumns.CATEGORY.value.name: "Age",
+            DatasetColumns.ERROR.value.name: "error generating rouge score",
+            unused_column_name: "Arch",
+            "rouge": None,
+            "bert_score": 0.42,
+        },
+        {
+            DatasetColumns.MODEL_INPUT.value.name: "world",
+            DatasetColumns.CATEGORY.value.name: "Gender",
+            DatasetColumns.ERROR.value.name: None,
+            unused_column_name: "btw",
+            "rouge": 0.314,
+            "bert_score": 0.271,
+        },
+    ]
+    dataset = ray.data.from_items(ds_items)
+    score_names = ["rouge", "bert_score"]
+
+    # WHEN
+    full_path_to_file = str(tmp_path / file_name)
+    save_dataset(dataset, score_names, FileSaveStrategy(full_path_to_file))
+
+    # THEN
+    assert os.path.isfile(full_path_to_file)
+    with open(full_path_to_file) as file_handle:
+        json_objects = [json.loads(line, object_pairs_hook=OrderedDict) for line in file_handle.readlines()]
+        assert json_objects  # if nothing gets written to the file, this test would trivially pass
+        for json_obj in json_objects:
+            # want to ensure ordering of keys is correct, so we use list instead of set
+            assert list(json_obj.keys()) == [
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.CATEGORY.value.name,
+                DatasetColumns.ERROR.value.name,
+                "scores",
+            ]
+            assert json_obj[DatasetColumns.MODEL_INPUT.value.name] in {"hello", "world"}
+
+            if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "hello":
+                assert json_obj[DatasetColumns.CATEGORY.value.name] == "Age"
+                assert json_obj["scores"] == [
+                    {"name": "rouge", "error": "error generating rouge score"},
+                    {"name": "bert_score", "value": 0.42},
+                ]
+
+            if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "world":
+                assert json_obj[DatasetColumns.CATEGORY.value.name] == "Gender"
+                assert json_obj["scores"] == [
+                    {"name": "rouge", "value": 0.314},
+                    {"name": "bert_score", "value": 0.271},
                 ]
 
 
