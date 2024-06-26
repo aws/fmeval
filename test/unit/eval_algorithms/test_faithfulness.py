@@ -26,12 +26,20 @@ SAMPLE_TARGET_CONTEXT = "Albert Einstein (born 14 March 1879) was a German-born 
 SAMPLE_STATEMENTS_OUTPUT = "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."
 SAMPLE_VERDICTS_OUTPUT = 'here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.'
 
+NO_STATEMENTS_OUTPUT = "Can't find statements. Here are the statements created from the given answer"
+NO_VERDICTS_OUTPUT = "No verdicts as no statements can be found."
+
 DATASET_WITH_CONTEXT = ray.data.from_items(
     [
         {
             DatasetColumns.MODEL_INPUT.value.name: SAMPLE_MODEL_INPUT,
             DatasetColumns.MODEL_OUTPUT.value.name: SAMPLE_MODEL_OUTPUT,
             DatasetColumns.TARGET_CONTEXT.value.name: SAMPLE_TARGET_CONTEXT,
+        },
+        {
+            DatasetColumns.MODEL_INPUT.value.name: "random question",
+            DatasetColumns.MODEL_OUTPUT.value.name: "random answer",
+            DatasetColumns.TARGET_CONTEXT.value.name: "random context",
         },
     ]
 )
@@ -67,8 +75,8 @@ class TestFaithfulness:
                 model_input=SAMPLE_MODEL_INPUT,
                 model_output=SAMPLE_MODEL_OUTPUT,
                 target_context=SAMPLE_TARGET_CONTEXT,
-                statements_output="Can't find statements. Here are the statements created from the given answer",
-                verdicts_output="No verdicts as no statements can be found.",
+                statements_output=NO_STATEMENTS_OUTPUT,
+                verdicts_output=NO_VERDICTS_OUTPUT,
                 expected_score=[
                     EvalScore(
                         name=EvalAlgorithm.FAITHFULNESS.value,
@@ -217,6 +225,13 @@ class TestFaithfulness:
         mock_model_runner = Mock()
 
         def predict_side_effect(prompt):
+            if (
+                "Your task is to rewrite the answer into one or more simple and coherent statements"
+                and "random question" in prompt
+            ):
+                return NO_STATEMENTS_OUTPUT, None
+            if "provide your final verdict" and "random context" in prompt:
+                return NO_VERDICTS_OUTPUT, None
             if "Your task is to rewrite the answer into one or more simple and coherent statements" in prompt:
                 return test_case.statements_output, None
             if "provide your final verdict" in prompt:
@@ -276,7 +291,7 @@ class TestFaithfulness:
         result = get_scores(sample)
         assert result[EvalAlgorithm.FAITHFULNESS.value] == test_case.expected_score
         if test_case.expected_score is None:
-            assert result["error"] != None
+            assert result[DatasetColumns.ERROR.value.name] == "No statements were generated from the answer."
 
     class TestCaseGetStatements(NamedTuple):
         record: Dict[str, str]
