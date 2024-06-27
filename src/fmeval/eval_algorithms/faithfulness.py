@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
 from fmeval.constants import (
     DatasetColumns,
@@ -35,6 +35,7 @@ LONG_FORM_PROMPT = "long_form_prompt"
 NLI_STATEMENTS_PROMT = "nli_statements_prompt"
 QUESTION = "question"
 ANSWER = "answer"
+
 
 LONG_FORM_ANSWER_PROMPT = """\
 Human: You are given a question and its answer. Your task is to rewrite the answer into one or more simple and coherent statements. Make sure that each statement is faithful to the answer and begins with "Statement:".
@@ -111,24 +112,27 @@ class FaithfulnessScore(Transform):
         """
         verdict_output = record[RAW_VERDICTS]
         statements = record[STATEMENTS]
-        record[self.output_key] = self._get_score(verdict_output, statements)
+        record[self.output_key], error = self._get_score(verdict_output, statements)
+        if error:
+            record[DatasetColumns.ERROR.value.name] = error
         return record
 
     @staticmethod
-    def _get_score(verdict_output: str, statements: str) -> float:
+    def _get_score(verdict_output: str, statements: str) -> Tuple[Optional[float], Optional[str]]:
         """Given generated statements and verdicts, compute Faithfulness score.
 
         :param verdict_output: Verdicts(Yes/No) and explanations string get from Judge model.
         :param statements: Statements string get from `GetStatements` Transform.
-        :returns: 0 to 1. See the docstring for `Faithfulness` for more details
-            on what these numerical values represent.
+        :returns: a tuple of (score, error). Score can range from 0 to 1. See the docstring for `Faithfulness`
+            for more details on what these numerical values represent.
         """
         output = verdict_output.lower().strip()
-        num_statements = len(statements.split("\n"))
-        # TODO: handle edge case that num_statements is 0
-
-        score = float(max(0, output.count("verdict: yes")) / num_statements)
-        return score
+        if statements != "":
+            num_statements = len(statements.split("\n"))
+            score = float(max(0, output.count("verdict: yes")) / num_statements)
+            return score, None
+        else:
+            return None, "No statements were generated from the answer."
 
 
 class GetStatements(Transform):
@@ -256,6 +260,10 @@ class Faithfulness(EvalAlgorithmInterface):
             nli_statements_prompt_template=nli_statements_prompt_template,
         )
         result = pipeline.execute_record(sample)
+        if DatasetColumns.ERROR.value.name in result:
+            return [
+                EvalScore(name=FAITHFULNESS, value=result[FAITHFULNESS], error=result[DatasetColumns.ERROR.value.name])
+            ]
         return [EvalScore(name=FAITHFULNESS, value=result[FAITHFULNESS])]
 
     def evaluate(
