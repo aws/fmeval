@@ -375,7 +375,7 @@ def test_eval_output_record_str():
         list, and "scores" comes at the end.
     """
     record = EvalOutputRecord(
-        scores=[EvalScore(name="rouge", value=0.5), EvalScore(name="bert", value=0.4)],
+        scores=[EvalScore(name="rouge", value=0.5), EvalScore(name="bert", error="error generating bert score")],
         dataset_columns={
             DatasetColumns.MODEL_OUTPUT.value.name: "output",
             DatasetColumns.MODEL_INPUT.value.name: "input",
@@ -385,7 +385,7 @@ def test_eval_output_record_str():
         [
             (DatasetColumns.MODEL_INPUT.value.name, "input"),
             (DatasetColumns.MODEL_OUTPUT.value.name, "output"),
-            ("scores", [{"name": "rouge", "value": 0.5}, {"name": "bert", "value": 0.4}]),
+            ("scores", [{"name": "rouge", "value": 0.5}, {"name": "bert", "error": "error generating bert score"}]),
         ]
     )
     assert json.loads(str(record), object_pairs_hook=OrderedDict) == expected_record
@@ -401,16 +401,18 @@ def test_eval_output_record_from_row():
     row = {
         "rouge": 0.42,
         DatasetColumns.MODEL_OUTPUT.value.name: "output",
-        "bert": 0.162,
+        "bert": None,
         "invalid_col_1": "hello",
         DatasetColumns.MODEL_INPUT.value.name: "input",
         "invalid_col_2": "world",
+        DatasetColumns.ERROR.value.name: "error generating bert score",
     }
     expected_record = EvalOutputRecord(
-        scores=[EvalScore(name="rouge", value=0.42), EvalScore(name="bert", value=0.162)],
+        scores=[EvalScore(name="rouge", value=0.42), EvalScore(name="bert", error="error generating bert score")],
         dataset_columns={
             DatasetColumns.MODEL_INPUT.value.name: "input",
             DatasetColumns.MODEL_OUTPUT.value.name: "output",
+            DatasetColumns.ERROR.value.name: "error generating bert score",
         },
     )
 

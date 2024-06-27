@@ -2,7 +2,7 @@ import json
 import os
 import tempfile
 from collections import OrderedDict
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, List, Dict
 from unittest.mock import Mock, patch
 
 import pytest
@@ -41,32 +41,96 @@ CATEGORY_SCORES = [
 ]
 
 
+class TestCaseSaveDataset(NamedTuple):
+    dataset_items: List[Dict]
+    expected_json_keys: List[str]
+    expected_model_input_1_scores: List[Dict]
+    expected_model_input_2_scores: List[Dict]
+
+
+UNUSED_COLUMN_NAME = "unused"
+
+
 @pytest.mark.parametrize("file_name", ["my_dataset.jsonl", "my_dataset"])
-def test_save_dataset(tmp_path, file_name):
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCaseSaveDataset(
+            dataset_items=[
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "hello",
+                    DatasetColumns.CATEGORY.value.name: "Age",
+                    UNUSED_COLUMN_NAME: "Arch",
+                    "rouge": 0.5,
+                    "bert_score": 0.42,
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "world",
+                    DatasetColumns.CATEGORY.value.name: "Gender",
+                    UNUSED_COLUMN_NAME: "btw",
+                    "rouge": 0.314,
+                    "bert_score": 0.271,
+                },
+            ],
+            expected_json_keys=[
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.CATEGORY.value.name,
+                "scores",
+            ],
+            expected_model_input_1_scores=[
+                {"name": "rouge", "value": 0.5},
+                {"name": "bert_score", "value": 0.42},
+            ],
+            expected_model_input_2_scores=[
+                {"name": "rouge", "value": 0.314},
+                {"name": "bert_score", "value": 0.271},
+            ],
+        ),
+        TestCaseSaveDataset(
+            dataset_items=[
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "hello",
+                    DatasetColumns.CATEGORY.value.name: "Age",
+                    DatasetColumns.ERROR.value.name: "error generating rouge score",
+                    UNUSED_COLUMN_NAME: "Arch",
+                    "rouge": None,
+                    "bert_score": 0.42,
+                },
+                {
+                    DatasetColumns.MODEL_INPUT.value.name: "world",
+                    DatasetColumns.CATEGORY.value.name: "Gender",
+                    DatasetColumns.ERROR.value.name: None,
+                    UNUSED_COLUMN_NAME: "btw",
+                    "rouge": 0.314,
+                    "bert_score": 0.271,
+                },
+            ],
+            expected_json_keys=[
+                DatasetColumns.MODEL_INPUT.value.name,
+                DatasetColumns.CATEGORY.value.name,
+                DatasetColumns.ERROR.value.name,
+                "scores",
+            ],
+            expected_model_input_1_scores=[
+                {"name": "rouge", "error": "error generating rouge score"},
+                {"name": "bert_score", "value": 0.42},
+            ],
+            expected_model_input_2_scores=[
+                {"name": "rouge", "value": 0.314},
+                {"name": "bert_score", "value": 0.271},
+            ],
+        ),
+    ],
+)
+def test_save_dataset(tmp_path, file_name, test_case):
     """
     Given a Ray Dataset, a list of score names, and a local path
     WHEN save_dataset is called
     THEN a JSON Lines file that adheres to the correct schema gets
         written to the local path
     """
-    unused_column_name = "unused"
     # GIVEN
-    ds_items = [
-        {
-            DatasetColumns.MODEL_INPUT.value.name: "hello",
-            DatasetColumns.CATEGORY.value.name: "Age",
-            unused_column_name: "Arch",
-            "rouge": 0.5,
-            "bert_score": 0.42,
-        },
-        {
-            DatasetColumns.MODEL_INPUT.value.name: "world",
-            DatasetColumns.CATEGORY.value.name: "Gender",
-            unused_column_name: "btw",
-            "rouge": 0.314,
-            "bert_score": 0.271,
-        },
-    ]
+    ds_items = test_case.dataset_items
     dataset = ray.data.from_items(ds_items)
     score_names = ["rouge", "bert_score"]
 
@@ -81,20 +145,16 @@ def test_save_dataset(tmp_path, file_name):
         assert json_objects  # if nothing gets written to the file, this test would trivially pass
         for json_obj in json_objects:
             # want to ensure ordering of keys is correct, so we use list instead of set
-            assert list(json_obj.keys()) == [
-                DatasetColumns.MODEL_INPUT.value.name,
-                DatasetColumns.CATEGORY.value.name,
-                "scores",
-            ]
+            assert list(json_obj.keys()) == test_case.expected_json_keys
             assert json_obj[DatasetColumns.MODEL_INPUT.value.name] in {"hello", "world"}
 
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "hello":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Age"
-                assert json_obj["scores"] == [{"name": "rouge", "value": 0.5}, {"name": "bert_score", "value": 0.42}]
+                assert json_obj["scores"] == test_case.expected_model_input_1_scores
 
             if json_obj[DatasetColumns.MODEL_INPUT.value.name] == "world":
                 assert json_obj[DatasetColumns.CATEGORY.value.name] == "Gender"
-                assert json_obj["scores"] == [{"name": "rouge", "value": 0.314}, {"name": "bert_score", "value": 0.271}]
+                assert json_obj["scores"] == test_case.expected_model_input_2_scores
 
 
 def test_save_dataset_many_rows(tmp_path):

@@ -210,10 +210,14 @@ class TestEvalScore:
     def test_equality(self):
         assert EvalScore(name="name1", value=0.7) == EvalScore(name="name1", value=0.7)
         assert EvalScore(name="name1", value=0.7) == EvalScore(name="name1", value=0.6999999999999)
+        assert EvalScore(name="name1", value=None, error="error1") == EvalScore(
+            name="name1", value=None, error="error1"
+        )
 
     def test_inequality(self):
         assert EvalScore(name="name1", value=0.7) != EvalScore(name="name2", value=0.7)
         assert EvalScore(name="name1", value=0.7) != EvalScore(name="name1", value=0.69)
+        assert EvalScore(name="name1", value=None, error="error1") != EvalScore(name="name1", value=0.7)
 
 
 class TestModelTask:
