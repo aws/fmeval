@@ -174,7 +174,7 @@ def aggregate_evaluation_scores(
 
 def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> float:
     if agg_method == MEAN:
-        aggregate = dataset.mean(score_column_name)
+        aggregate = dataset.mean(on=score_column_name, ignore_nulls=True)
         assert isinstance(aggregate, float)
         return aggregate
     else:
@@ -184,7 +184,7 @@ def dataset_aggregation(dataset: Dataset, score_column_name: str, agg_method: st
 def category_wise_aggregation(dataset: Dataset, score_column_name: str, agg_method: str) -> Dataset:
     category_aggregate: Dataset = dataset.groupby(DatasetColumns.CATEGORY.value.name)  # type: ignore
     if agg_method == MEAN:
-        category_aggregate = category_aggregate.mean(score_column_name)
+        category_aggregate = category_aggregate.mean(on=score_column_name, ignore_nulls=True)
     else:
         raise EvalAlgorithmInternalError(f"Aggregation method {agg_method} is not supported")
     return category_aggregate
@@ -234,7 +234,11 @@ class EvalOutputRecord:
             for col_name in DATASET_COLUMNS
             if col_name in self.dataset_columns
         )
-        json_obj["scores"] = [eval_score.__dict__ for eval_score in self.scores]
+        json_obj["scores"] = [
+            # filter out None "value" and None "error"
+            {k: v for k, v in eval_score.__dict__.items() if v is not None}
+            for eval_score in self.scores
+        ]
         return json_obj
 
     @staticmethod
@@ -283,8 +287,12 @@ class EvalOutputRecord:
                 if column_name in DATASET_COLUMNS:  # pragma: no branch
                     dataset_columns[column_name] = value
             else:
-                assert isinstance(value, float) or isinstance(value, int)  # to satisfy Mypy
-                scores.append(EvalScore(name=column_name, value=value))
+                assert isinstance(value, float) or isinstance(value, int) or value is None  # to satisfy Mypy
+                if value is None:
+                    assert row.get(DatasetColumns.ERROR.value.name, None)
+                    scores.append(EvalScore(name=column_name, error=row.get(DatasetColumns.ERROR.value.name)))
+                else:
+                    scores.append(EvalScore(name=column_name, value=value))
 
         return EvalOutputRecord(
             scores=scores,
