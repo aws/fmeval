@@ -113,7 +113,7 @@ class FaithfulnessScore(Transform):
         verdict_output = record[RAW_VERDICTS]
         statements = record[STATEMENTS]
         record[self.output_key], error = self._get_score(verdict_output, statements)
-        if error is not None:
+        if error:
             record[DatasetColumns.ERROR.value.name] = error
         return record
 
