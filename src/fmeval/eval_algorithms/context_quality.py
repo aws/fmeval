@@ -303,7 +303,7 @@ class ContextPrecisionScore(Transform):
         denominator = sum(model_verdicts)
         # If none of model verdicts are 1, return 0
         if not denominator:
-            return 0.
+            return 0.0
         numerator = sum(
             [(sum(model_verdicts[: i + 1]) / (i + 1)) * model_verdicts[i] for i in range(len(model_verdicts))]
         )
