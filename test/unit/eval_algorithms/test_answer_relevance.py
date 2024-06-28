@@ -18,7 +18,6 @@ DATASET_WITH_CONTEXT = ray.data.from_items(
         {
             DatasetColumns.MODEL_INPUT.value.name: "When was the first super bowl?",
             DatasetColumns.MODEL_OUTPUT.value.name: "The first superbowl was held on Jan 15, 1967.",
-            DatasetColumns.TARGET_CONTEXT.value.name: "The First AFL–NFL World Championship Game was an American football game played on January 15, 1967, at the Los Angeles Memorial Coliseum in Los Angeles,",
         },
     ]
 )
@@ -35,8 +34,7 @@ class TestAnswerRelevance:
     class TestCaseAnswerRelevanceEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
-        target_context: str
-        generated_question: str
+        generated_questions: str
         question_vector: List[float]
         gen_question_vector: List[float]
         expected_score: List[EvalScore]
@@ -47,8 +45,7 @@ class TestAnswerRelevance:
             TestCaseAnswerRelevanceEvaluateSample(
                 model_input="When was the first super bowl?",
                 model_output="The first superbowl was held on Jan 15, 1967.",
-                target_context="The First AFL–NFL World Championship Game was an American football game played on January 15, 1967, at the Los Angeles Memorial Coliseum in Los Angeles,",
-                generated_question="What was the date of the first Super Bowl?",
+                generated_questions="What was the date of the first Super Bowl?\nWhat was the date of the first Super Bowl?\nWhat was the date of the first Super Bowl?",
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
                 expected_score=[EvalScore(name=EvalAlgorithm.ANSWER_RELEVANCE.value, value=0.87)],
@@ -65,7 +62,7 @@ class TestAnswerRelevance:
         # GIVEN
         mock_judge_model_runner = Mock()
         mock_judge_model_runner.predict.side_effect = [
-            (test_case.generated_question, None),
+            (test_case.generated_questions, None),
         ]
         mock_embedding_model_runner = Mock()
         mock_embedding_model_runner.predict.side_effect = [test_case.question_vector, test_case.gen_question_vector]
@@ -74,7 +71,6 @@ class TestAnswerRelevance:
         actual_score = eval_algorithm.evaluate_sample(
             model_input=test_case.model_input,
             model_output=test_case.model_output,
-            target_context=test_case.target_context,
             judge_model=mock_judge_model_runner,
             embeddings_model=mock_embedding_model_runner,
         )
@@ -87,7 +83,7 @@ class TestAnswerRelevance:
         question_vector: List[float]
         gen_question_vector: List[float]
         expected_response: List[EvalOutput]
-        generated_question: str
+        generated_questions: str
 
     @pytest.mark.parametrize(
         "test_case",
@@ -106,7 +102,7 @@ class TestAnswerRelevance:
                 ),
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
-                generated_question="What was the date of the first Super Bowl?",
+                generated_questions="What was the date of the first Super Bowl?",
                 expected_response=[
                     EvalOutput(
                         eval_name="answer_relevance",
@@ -133,7 +129,7 @@ class TestAnswerRelevance:
         # GIVEN
         mock_judge_model_runner = Mock()
         mock_judge_model_runner.predict.side_effect = [
-            (test_case.generated_question, None),
+            (test_case.generated_questions, None),
         ]
         mock_embedding_model_runner = Mock()
         mock_embedding_model_runner.predict.side_effect = [test_case.question_vector, test_case.gen_question_vector]
@@ -151,7 +147,7 @@ class TestAnswerRelevance:
 
     class TestCaseAnswerRelevanceScore(NamedTuple):
         question: str
-        raw_gen_question: str
+        gen_questions_str: str
         question_vector: List[float]
         gen_question_vector: List[float]
         expected_score: float
@@ -162,7 +158,7 @@ class TestAnswerRelevance:
             # calculate score based embedding
             TestCaseAnswerRelevanceScore(
                 question="When was the first super bowl?",
-                raw_gen_question="What was the date of the first Super Bowl?",
+                gen_questions_str="What was the date of the first Super Bowl?",
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
                 expected_score=0.87,
@@ -180,7 +176,7 @@ class TestAnswerRelevance:
         get_scores = AnswerRelevanceScore(embeddings_model=mock_embedding_model_runner)
         sample = {
             "model_output": test_case.question,
-            "raw_gen_question": test_case.raw_gen_question,
+            "gen_questions": test_case.gen_questions_str,
         }
         result = get_scores(sample)
         assert result[EvalAlgorithm.ANSWER_RELEVANCE.value] == pytest.approx(test_case.expected_score, rel=1e-2)

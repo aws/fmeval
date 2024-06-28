@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Tuple
 
 from fmeval.constants import (
     DatasetColumns,
