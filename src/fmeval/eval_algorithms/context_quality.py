@@ -300,7 +300,10 @@ class ContextPrecisionScore(Transform):
         :param model_verdicts: A list of judge model verdicts of 0 or 1.
         :return: the context precision score for the record.
         """
-        denominator = sum(model_verdicts) + 1e-10
+        denominator = sum(model_verdicts)
+        # If none of model verdicts are 1, return 0
+        if not denominator:
+            return 0.0
         numerator = sum(
             [(sum(model_verdicts[: i + 1]) / (i + 1)) * model_verdicts[i] for i in range(len(model_verdicts))]
         )
