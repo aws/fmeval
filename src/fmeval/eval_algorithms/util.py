@@ -140,6 +140,23 @@ def validate_dataset(dataset: Dataset, column_names: List[str]):
         )
 
 
+def validate_prompt_template(prompt_template: str, placeholders: List[str]):
+    """
+    Util function to validate that prompt_template contains the keywords.
+
+    :param prompt_template: A template used to compose prompts. Ex: '{"Question":$question, "Answer": $answer}'
+    :param placeholders: Placeholder keyword list. This keyword appears
+            in `prompt_template` with a $ sign prepended. In the above example,
+            the placeholders are ["question", "answer"].
+    :raises: EvalAlgorithmClientError for an invalid prompt_template
+    """
+    for placeholder in placeholders:
+        util.require(
+            f"${placeholder}" in prompt_template,
+            f"Unable to find placeholder ${placeholder} in prompt_template.",
+        )
+
+
 def aggregate_evaluation_scores(
     dataset: Dataset, score_column_names: List[str], agg_method: str
 ) -> Tuple[List[EvalScore], Optional[List[CategoryScore]]]:
