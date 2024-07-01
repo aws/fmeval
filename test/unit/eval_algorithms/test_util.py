@@ -1,6 +1,7 @@
 import json
 import multiprocessing as mp
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -51,8 +52,9 @@ from fmeval.eval_algorithms.util import (
     get_dataset_configs,
     aggregate_evaluation_scores,
     create_model_invocation_pipeline,
+    validate_prompt_template,
 )
-from fmeval.exceptions import EvalAlgorithmInternalError
+from fmeval.exceptions import EvalAlgorithmInternalError, EvalAlgorithmClientError
 from fmeval.transforms.common import GeneratePrompt, GetModelOutputs
 from fmeval.util import camel_to_snake, get_num_actors
 
@@ -285,6 +287,29 @@ def test_generate_prompt_column_for_dataset(test_case):
     )
     assert returned_dataset.count() == test_case.num_rows
     assert sorted(returned_dataset.take(test_case.num_rows), key=lambda x: x["id"]) == test_case.expected_dataset
+
+
+def test_validate_prompt_template_success():
+    """
+    GIVEN a prompt_template and required placeholder keywords
+    WHEN validate_prompt_template is called
+    THEN no exception is raised
+    """
+    validate_prompt_template(
+        prompt_template='{"Question":$question, "Answer": $answer}', placeholders=["question", "answer"]
+    )
+
+
+def test_validate_prompt_template_raise_error():
+    """
+    GIVEN placeholder keywords and a prompt_template doesn't contain required placeholder
+    WHEN validate_prompt_template is called
+    THEN raise EvalAlgorithmClientError with correct error message
+    """
+    with pytest.raises(EvalAlgorithmClientError, match=re.escape("Unable to find placeholder")):
+        validate_prompt_template(
+            prompt_template='{"Question":$question, "Answer": $answer}', placeholders=["model_input"]
+        )
 
 
 @patch("ray.data.ActorPoolStrategy")
