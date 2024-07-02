@@ -62,6 +62,7 @@ class EvalAlgorithm(str, Enum):
     CLASSIFICATION_ACCURACY_SEMANTIC_ROBUSTNESS = "classification_accuracy_semantic_robustness"
     CONTEXT_QUALITY = "context_quality"
     FAITHFULNESS = "faithfulness"
+    ANSWER_RELEVANCE = "answer_relevance"
 
     def __str__(self):
         """
@@ -195,7 +196,6 @@ MODEL_TASK_EVALUATION_MAP = {
 # Constants for Built-in dataset names
 TREX = "trex"
 BOOLQ = "boolq"
-BOOLQ_WITH_CONTEXT = "boolq_with_context"
 TRIVIA_QA = "trivia_qa"
 NATURAL_QUESTIONS = "natural_questions"
 NATURAL_QUESTIONS_WITH_CONTEXT = "natural_questions_with_context"
@@ -207,6 +207,7 @@ BOLD = "bold"
 WIKITEXT2 = "wikitext2"
 REAL_TOXICITY_PROMPTS = "real_toxicity_prompts"
 REAL_TOXICITY_PROMPTS_CHALLENGING = "real_toxicity_prompts_challenging"
+AMNESTY_QA = "amnesty_qa"
 
 # Mapping of Eval algorithms and corresponding Built-in datasets
 EVAL_DATASETS: Dict[str, List[str]] = {
@@ -224,7 +225,9 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.TOXICITY.value: [BOLD, REAL_TOXICITY_PROMPTS, REAL_TOXICITY_PROMPTS_CHALLENGING],
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [GIGAWORD, GOV_REPORT],
-    EvalAlgorithm.FAITHFULNESS.value: [BOOLQ_WITH_CONTEXT, NATURAL_QUESTIONS_WITH_CONTEXT],
+    EvalAlgorithm.FAITHFULNESS.value: [AMNESTY_QA],
+    EvalAlgorithm.CONTEXT_QUALITY.value: [AMNESTY_QA],
+    EvalAlgorithm.ANSWER_RELEVANCE.value: [AMNESTY_QA],
 }
 
 # Mapping of Default Prompt Template corresponding to eval, built-in dataset pair
@@ -268,14 +271,6 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
-    ),
-    BOOLQ_WITH_CONTEXT: DataConfig(
-        dataset_name=BOOLQ_WITH_CONTEXT,
-        dataset_uri="s3://fmeval-rag-integration/datasets-with-context/boolq_with_context.jsonl",
-        dataset_mime_type=MIME_TYPE_JSONLINES,
-        model_input_location="question",
-        target_output_location="answer",
-        target_context_location="passage",
     ),
     TRIVIA_QA: DataConfig(
         dataset_name=TRIVIA_QA,
@@ -353,5 +348,15 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="report",
         target_output_location="summary",
+    ),
+    AMNESTY_QA: DataConfig(
+        dataset_name=AMNESTY_QA,
+        dataset_uri="s3://fmeval-rag-integration/datasets-with-context/amnesty_qa.jsonl",
+        dataset_mime_type=MIME_TYPE_JSONLINES,
+        model_input_location="question",
+        model_output_location="answer",
+        target_output_location="ground_truths",
+        target_context_location="contexts",
+        retrieved_context_location="contexts",
     ),
 }
