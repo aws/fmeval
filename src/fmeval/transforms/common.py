@@ -46,7 +46,8 @@ class GeneratePrompt(Transform):
         {"my_prompt": "Summarize some long text and some other long text"}
         """
         super().__init__(input_keys, output_keys, prompt_template, placeholder_to_record_key)
-        self.register_input_output_keys(input_keys, output_keys)
+        input_keys_to_register = list(placeholder_to_record_key.values()) if placeholder_to_record_key else input_keys
+        self.register_input_output_keys(input_keys_to_register, output_keys)
         self.placeholder_to_record_key = placeholder_to_record_key
         self.prompt_template = prompt_template
         self.prompt_composer = PromptComposer(prompt_template)
