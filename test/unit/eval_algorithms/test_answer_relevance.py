@@ -45,7 +45,7 @@ class TestAnswerRelevance:
             TestCaseAnswerRelevanceEvaluateSample(
                 model_input="When was the first super bowl?",
                 model_output="The first superbowl was held on Jan 15, 1967.",
-                generated_questions="What was the date of the first Super Bowl?\nWhat was the date of the first Super Bowl?\nWhat was the date of the first Super Bowl?",
+                generated_questions="Question: What was the date of the first Super Bowl?",
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
                 expected_score=[EvalScore(name=EvalAlgorithm.ANSWER_RELEVANCE.value, value=0.87)],
@@ -102,7 +102,7 @@ class TestAnswerRelevance:
                 ),
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
-                generated_questions="What was the date of the first Super Bowl?",
+                generated_questions="Question: What was the date of the first Super Bowl?",
                 expected_response=[
                     EvalOutput(
                         eval_name="answer_relevance",
@@ -162,6 +162,14 @@ class TestAnswerRelevance:
                 question_vector=QUESTION_EMBEDDINGS,
                 gen_question_vector=GEN_QUESTION_EMBEDDINGS,
                 expected_score=0.87,
+            ),
+            # no questions being generated
+            TestCaseAnswerRelevanceScore(
+                question="When was the first super bowl?",
+                gen_questions_str="",
+                question_vector=QUESTION_EMBEDDINGS,
+                gen_question_vector=GEN_QUESTION_EMBEDDINGS,
+                expected_score=0,
             ),
         ],
     )
