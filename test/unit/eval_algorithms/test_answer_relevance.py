@@ -149,7 +149,7 @@ class TestAnswerRelevance:
         question: str
         gen_questions_str: str
         question_vector: List[float]
-        gen_question_vector: List[float]
+        gen_question_vectors: List[List[float]]
         expected_score: float
 
     @pytest.mark.parametrize(
@@ -158,17 +158,26 @@ class TestAnswerRelevance:
             # calculate score based embedding
             TestCaseAnswerRelevanceScore(
                 question="When was the first super bowl?",
-                gen_questions_str="What was the date of the first Super Bowl?",
+                gen_questions_str="Question: What was the date of the first Super Bowl?",
                 question_vector=QUESTION_EMBEDDINGS,
-                gen_question_vector=GEN_QUESTION_EMBEDDINGS,
+                gen_question_vectors=[GEN_QUESTION_EMBEDDINGS],
                 expected_score=0.87,
+            ),
+            # calculate score when multiple questions being generated
+            TestCaseAnswerRelevanceScore(
+                question="When was the first super bowl?",
+                gen_questions_str="Question: What was the date of the first Super Bowl?\nQuestion: When was the first super bowl?",
+                question_vector=QUESTION_EMBEDDINGS,
+                gen_question_vectors=[GEN_QUESTION_EMBEDDINGS, QUESTION_EMBEDDINGS],
+                # mean value of 0.87 and 1.0
+                expected_score=0.935,
             ),
             # no questions being generated
             TestCaseAnswerRelevanceScore(
                 question="When was the first super bowl?",
                 gen_questions_str="",
                 question_vector=QUESTION_EMBEDDINGS,
-                gen_question_vector=GEN_QUESTION_EMBEDDINGS,
+                gen_question_vectors=[GEN_QUESTION_EMBEDDINGS],
                 expected_score=0,
             ),
         ],
@@ -180,7 +189,7 @@ class TestAnswerRelevance:
         THEN the correct output is returned.
         """
         mock_embedding_model_runner = Mock()
-        mock_embedding_model_runner.predict.side_effect = [test_case.question_vector, test_case.gen_question_vector]
+        mock_embedding_model_runner.predict.side_effect = [test_case.question_vector] + test_case.gen_question_vectors
         get_scores = AnswerRelevanceScore(embeddings_model=mock_embedding_model_runner)
         sample = {
             "model_output": test_case.question,

@@ -114,7 +114,7 @@ class AnswerRelevanceScore(Transform):
             for generated_question in generated_questions:
                 gen_question_vector = np.asarray(self.embeddings_model.predict(generated_question))
                 norm = np.linalg.norm(gen_question_vector) * question_norm
-                total += np.dot(gen_question_vector, question_vector.T) / norm
+                total += np.dot(gen_question_vector, question_vector) / norm
             return total / len(generated_questions)
         # no questions being generated
         return 0
