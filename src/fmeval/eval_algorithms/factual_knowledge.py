@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Callable
 
 from fmeval.constants import (
     DatasetColumns,
@@ -10,7 +10,7 @@ from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.save_strategy import SaveStrategy
-from fmeval.eval_algorithms.util import get_dataset_configs
+from fmeval.eval_algorithms.util import get_dataset_configs, normalize_text_quac_protocol
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmInterface, EvalAlgorithmConfig
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -25,13 +25,55 @@ from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
 from fmeval.util import get_eval_results_path
 
+FACTUAL_KNOWLEDGE = "factual_knowledge"
+FACTUAL_KNOWLEDGE_FUZZY = "factual_knowledge_fuzzy"
+SCORE_NAMES = [FACTUAL_KNOWLEDGE, FACTUAL_KNOWLEDGE_FUZZY]
+
 logger = logging.getLogger(__name__)
 
-FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+
+def _exact_inclusion_score(model_output: str, target_output: str) -> float:
+    """
+    Given the model output and the target output, _exact_inclusion_score checks whether the target output
+    is contained in the model output after converting both strings to lowercase. If so, the function returns
+    1.0. Otherwise, returns 0.
+
+    :param model_output: The output of a model that we want to evaluate.
+    :param target_output: The reference or the "ground truth" output.
+    :returns: The exact_inclusion score.
+    """
+    model_output_lower_case = model_output.lower()
+    return float(target_output.lower() in model_output_lower_case)
+
+
+def _quasi_exact_inclusion_score(model_output: str, target_output: str) -> float:
+    """
+    Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L144
+    Computes if the target_output is contained in the model_output after normalizing both strings.
+
+    Normalization: Given a text, normalize it using the SQUAD/QUAC protocol (remove punctuations, excess spaces,
+    and articles) and return the lowercased tokens.
+    SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
+    QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before
+    evaluating it. Can learn more at fmeval/src/fmeval/eval_algorithms/util.py
+
+    :param model_output: The output of a model that we want to evaluate.
+    :param target_output: The reference or the "ground truth" output.
+    :returns: 1 if the target_output is contained in model_output after normalization, else 0.
+    """
+    return float(
+        normalize_text_quac_protocol(target_output.strip()) in normalize_text_quac_protocol(model_output.strip())
+    )
+
+
+FACTUAL_KNOWLEDGE_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
+    FACTUAL_KNOWLEDGE: _exact_inclusion_score,
+    FACTUAL_KNOWLEDGE_FUZZY: _quasi_exact_inclusion_score,
+}
 
 
 class FactualKnowledgeScore(Transform):
-    """This transform augments its input record with the computed factual knowledge score.
+    """This transform augments its input record with the computed factual knowledge scores.
 
     See the docstring for `FactualKnowledge` for more details regarding the score itself.
     """
@@ -40,7 +82,7 @@ class FactualKnowledgeScore(Transform):
         self,
         target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
         model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
-        output_key: str = FACTUAL_KNOWLEDGE,
+        output_keys: List[str] = SCORE_NAMES,
         target_output_delimiter: Optional[str] = "<OR>",
     ):
         """FactualKnowledgeScore initializer.
@@ -51,29 +93,40 @@ class FactualKnowledgeScore(Transform):
             will be added to the input record.
         :param target_output_delimiter: See the docstring in `FactualKnowledgeConfig`.
         """
-        super().__init__(target_output_key, model_output_key, output_key, target_output_delimiter)
+        super().__init__(target_output_key, model_output_key, output_keys, target_output_delimiter)
         self.register_input_output_keys(
             input_keys=[target_output_key, model_output_key],
-            output_keys=[output_key],
+            output_keys=output_keys,
         )
         self.target_output_key = target_output_key
         self.model_output_key = model_output_key
-        self.output_key = output_key
+        self.output_keys = output_keys
         self.target_output_delimiter = target_output_delimiter
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed factual knowledge score.
+        """Augment the input record with the computed factual knowledge scores.
 
         :param record: The input record.
-        :returns: The input record, with the factual knowledge score added in.
+        :returns: The input record, with the factual knowledge scores added in.
         """
         target_output = record[self.target_output_key]
         model_output = record[self.model_output_key]
-        record[self.output_key] = self._get_score(target_output, model_output)
+        for output_key, score_name in zip(self.output_keys, SCORE_NAMES):
+            record[output_key] = self._get_score(
+                target_output=target_output,
+                model_output=model_output,
+                score_fn=FACTUAL_KNOWLEDGE_SCORES_TO_FUNCS[score_name],
+            )
         return record
 
-    def _get_score(self, target_output: str, model_output: str) -> int:
+    def _get_score(
+        self,
+        target_output: str,
+        model_output: str,
+        score_fn: Callable[..., float],
+        **fn_kwargs,
+    ) -> float:
         """Compute the factual knowledge score for a target output and model output pair.
 
         :param target_output: Target output.
@@ -82,8 +135,7 @@ class FactualKnowledgeScore(Transform):
             on what these numerical values represent.
         """
         possible_targets = target_output.split(self.target_output_delimiter)
-        model_output_lower_case = model_output.lower()
-        return int(any([t.lower() in model_output_lower_case for t in possible_targets]))
+        return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
 
 
 @dataclass(frozen=True)
@@ -112,10 +164,15 @@ class FactualKnowledge(EvalAlgorithmInterface):
     'Berlin is the capital of' and 'Tata Motors is a subsidiary of' and compares the model generation with one or more
     target answers. The prompts are divided into different knowledge categories like capitals, subsidiaries, etc.
 
-    This evaluation outputs a single binary metric. The metric value is 1 if the lower-cased expected answer is
+    This evaluation outputs two binary metrics.
+    The first is the "factual knowledge" score: the metric value is 1 if the lower-cased expected answer is
     contained anywhere within the lower-cased model response. For instance, consider the prompt
     'Berlin is the capital of' with the expected answer 'Germany'.
     If the model generation is 'Germany, and is also its most populous city', then the metric evaluates to 1.
+
+    The second metric is the "factual knowledge fuzzy" score: the metric value is 1 if the target output is contained
+    in the model output after both strings are normalized.
+    Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L144
 
     If there is more than one correct target answer, answers are seperated by the `target_output_delimiter` which can be
     configured inside the `FactualKnowledgeConfig`. It defaults to `<OR>`, i.e, the target answer in this example could
@@ -139,14 +196,15 @@ class FactualKnowledge(EvalAlgorithmInterface):
 
         :param target_output: The expected responses from the model.
         :param model_output: The output of the model being evaluated.
-        :return: A single-element list containing an EvalScore corresponding to the factual knowledge score.
+        :return: A single-element list containing an EvalScore with both factual knowledge metrics
+        ("factual knowledge" and "factual knowledge fuzzy")
         """
         sample = {
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
             DatasetColumns.MODEL_OUTPUT.value.name: model_output,
         }
         result = self.pipeline.execute_record(sample)
-        return [EvalScore(name=FACTUAL_KNOWLEDGE, value=result[FACTUAL_KNOWLEDGE])]
+        return [EvalScore(name=score_name, value=result[score_name]) for score_name in SCORE_NAMES]
 
     def evaluate(
         self,
@@ -157,7 +215,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
         save: bool = False,
         save_strategy: Optional[SaveStrategy] = None,
     ) -> List[EvalOutput]:
-        """Compute the factual knowledge score on one or more datasets.
+        """Compute the factual knowledge scores on one or more datasets.
 
         :param model: An instance of ModelRunner representing the model under evaluation.
             If this argument is None, the `dataset_config` argument must not be None,
@@ -189,7 +247,7 @@ class FactualKnowledge(EvalAlgorithmInterface):
                 pipeline=self.pipeline,
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
-                metric_names=[FACTUAL_KNOWLEDGE],
+                metric_names=SCORE_NAMES,
                 eval_results_path=get_eval_results_path(),
                 model=model,
                 prompt_template=prompt_template,

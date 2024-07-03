@@ -10,8 +10,16 @@ from ray.data import Dataset
 from fmeval.constants import (
     DatasetColumns,
 )
-from fmeval.eval_algorithms import CategoryScore, EvalAlgorithm, EvalOutput, EvalScore
-from fmeval.eval_algorithms.factual_knowledge import FactualKnowledge, FactualKnowledgeConfig
+from fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
+
+from fmeval.eval_algorithms.factual_knowledge import (
+    FactualKnowledge,
+    FactualKnowledgeConfig,
+    FACTUAL_KNOWLEDGE,
+    FACTUAL_KNOWLEDGE_FUZZY,
+    _exact_inclusion_score,
+    _quasi_exact_inclusion_score,
+)
 from fmeval.exceptions import EvalAlgorithmClientError
 
 
@@ -45,25 +53,74 @@ class TestFactualKnowledge:
                 model_input="London is the capital of",
                 model_output="England",
                 target_output="England<OR>UK",
-                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="London is the capital of",
                 model_output="England or wait Scotland",
                 target_output="England<OR>UK",
-                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="London is the capital of",
-                model_output="India or maybe Pakistan",
-                target_output="England<OR>UK",
-                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=0)],
+                model_output="England",
+                target_output="India or maybe Pakistan",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=0.0),
+                ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
                 model_input="Pulp Fiction was directed by",
                 model_output="Quentin Tarantino",
                 target_output="QUENTIN TARANTINO",
-                expected_response=[EvalScore(name=EvalAlgorithm.FACTUAL_KNOWLEDGE.value, value=1)],
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
+            ),
+            # Adding tests for quasi-exact inclusion
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Who is Andrew R. Jassy?",
+                model_output="Chief Executive Officer of Amazon.com Inc.",
+                target_output="Chief Executive Officer of Amazon.com, Inc.",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Pulp Fiction was directed by",
+                model_output=" Quentin   Tarantino ",
+                target_output="QUENTIN TARANTINO",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Who is Andrew R. Jassy?",
+                model_output="Chief Executive Officer of Amazon.com, Inc.",
+                target_output="Chief Executive Officer of Amazon.com Inc.",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Who was the first president of the United States",
+                model_output="George Washington - an American Founding Father",
+                target_output="George Washington: an American Founding Father",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                ],
             ),
         ],
     )
@@ -111,6 +168,18 @@ class TestFactualKnowledge:
                             DatasetColumns.CATEGORY.value.name: "Movies",
                             DatasetColumns.MODEL_OUTPUT.value.name: "nolan",
                         },
+                        {
+                            DatasetColumns.MODEL_INPUT.value.name: "What year did the RMS Titanic Sink?",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "1912",
+                            DatasetColumns.CATEGORY.value.name: "History",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "It was the year of 1912.",
+                        },
+                        {
+                            DatasetColumns.MODEL_INPUT.value.name: "When was the declaration of independence signed?",
+                            DatasetColumns.TARGET_OUTPUT.value.name: "July 4, 1776",
+                            DatasetColumns.CATEGORY.value.name: "History",
+                            DatasetColumns.MODEL_OUTPUT.value.name: "July 4 - 1776",
+                        },
                     ]
                 ),
                 expected_response=[
@@ -118,10 +187,32 @@ class TestFactualKnowledge:
                         eval_name="factual_knowledge",
                         dataset_name="my_custom_dataset",
                         prompt_template=None,
-                        dataset_scores=[EvalScore(name="factual_knowledge", value=0.75)],
+                        dataset_scores=[
+                            EvalScore(name=FACTUAL_KNOWLEDGE, value=2 / 3),
+                            EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=5 / 6),
+                        ],
                         category_scores=[
-                            CategoryScore(name="Capitals", scores=[EvalScore(name="factual_knowledge", value=0.5)]),
-                            CategoryScore(name="Movies", scores=[EvalScore(name="factual_knowledge", value=1.0)]),
+                            CategoryScore(
+                                name="Capitals",
+                                scores=[
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=0.5),
+                                ],
+                            ),
+                            CategoryScore(
+                                name="Movies",
+                                scores=[
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                                ],
+                            ),
+                            CategoryScore(
+                                name="History",
+                                scores=[
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                                ],
+                            ),
                         ],
                         output_path="/tmp/eval_results/factual_knowledge_my_custom_dataset.jsonl",
                     )
@@ -151,3 +242,110 @@ class TestFactualKnowledge:
             mock_get_dataset.return_value, [DatasetColumns.TARGET_OUTPUT.value.name]
         )
         assert output == test_case.expected_response
+
+    class TestCaseFactualKnowledgeEvalScore(NamedTuple):
+        model_output: str
+        target_output: str
+        expected_score: float
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="THis Is A BAD mOvie",
+                target_output="This is a bad movie",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="inclusion but not exact",
+                target_output="inclusion",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="Testing words in the middle",
+                target_output="Testing in the middle",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="random; punctuation",
+                target_output="random punctuation",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="completely different phrase",
+                target_output="the correct answer",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="Exact answer",
+                target_output="Exact answer",
+                expected_score=1,
+            ),
+        ],
+    )
+    def test_exact_inclusion_score(self, test_case):
+        assert (
+            _exact_inclusion_score(model_output=test_case.model_output, target_output=test_case.target_output)
+            == test_case.expected_score
+        )
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="THis Is A BAD mOvie",
+                target_output="This is a bad movie",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output=" stripped text ",
+                target_output="stripped text",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="testing a missing article",
+                target_output="testing missing article",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="checking for inclusion",
+                target_output="inclusion",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="Testing words in the middle",
+                target_output="Testing in the middle",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="random; punctuation",
+                target_output="random punctuation",
+                expected_score=1,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="completely different phrase",
+                target_output="the correct answer",
+                expected_score=0,
+            ),
+            TestCaseFactualKnowledgeEvalScore(
+                model_output="Exact answer",
+                target_output="Exact answer",
+                expected_score=1,
+            ),
+        ],
+    )
+    def test_quasi_exact_match_score(self, test_case):
+        assert (
+            _quasi_exact_inclusion_score(model_output=test_case.model_output, target_output=test_case.target_output)
+            == test_case.expected_score
+        )
