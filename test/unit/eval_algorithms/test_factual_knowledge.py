@@ -15,8 +15,8 @@ from fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
 from fmeval.eval_algorithms.factual_knowledge import (
     FactualKnowledge,
     FactualKnowledgeConfig,
-    FACTUAL_KNOWLEDGE,
-    FACTUAL_KNOWLEDGE_FUZZY,
+    EXACT_INCLUSION,
+    QUASI_EXACT_INCLUSION,
     _exact_inclusion_score,
     _quasi_exact_inclusion_score,
 )
@@ -54,8 +54,8 @@ class TestFactualKnowledge:
                 model_output="England",
                 target_output="England<OR>UK",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -63,8 +63,8 @@ class TestFactualKnowledge:
                 model_output="England or wait Scotland",
                 target_output="England<OR>UK",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -72,8 +72,8 @@ class TestFactualKnowledge:
                 model_output="England",
                 target_output="India or maybe Pakistan",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=0.0),
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -81,8 +81,8 @@ class TestFactualKnowledge:
                 model_output="Quentin Tarantino",
                 target_output="QUENTIN TARANTINO",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             # Adding tests for quasi-exact inclusion
@@ -91,8 +91,8 @@ class TestFactualKnowledge:
                 model_output="Chief Executive Officer of Amazon.com Inc.",
                 target_output="Chief Executive Officer of Amazon.com, Inc.",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -100,8 +100,8 @@ class TestFactualKnowledge:
                 model_output=" Quentin   Tarantino ",
                 target_output="QUENTIN TARANTINO",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -109,8 +109,8 @@ class TestFactualKnowledge:
                 model_output="Chief Executive Officer of Amazon.com, Inc.",
                 target_output="Chief Executive Officer of Amazon.com Inc.",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -118,8 +118,8 @@ class TestFactualKnowledge:
                 model_output="George Washington - an American Founding Father",
                 target_output="George Washington: an American Founding Father",
                 expected_response=[
-                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
-                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                 ],
             ),
         ],
@@ -188,29 +188,29 @@ class TestFactualKnowledge:
                         dataset_name="my_custom_dataset",
                         prompt_template=None,
                         dataset_scores=[
-                            EvalScore(name=FACTUAL_KNOWLEDGE, value=2 / 3),
-                            EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=5 / 6),
+                            EvalScore(name=EXACT_INCLUSION, value=2 / 3),
+                            EvalScore(name=QUASI_EXACT_INCLUSION, value=5 / 6),
                         ],
                         category_scores=[
                             CategoryScore(
                                 name="Capitals",
                                 scores=[
-                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
-                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=0.5),
+                                    EvalScore(name=EXACT_INCLUSION, value=0.5),
+                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.5),
                                 ],
                             ),
                             CategoryScore(
                                 name="Movies",
                                 scores=[
-                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
-                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                                 ],
                             ),
                             CategoryScore(
                                 name="History",
                                 scores=[
-                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
-                                    EvalScore(name=FACTUAL_KNOWLEDGE_FUZZY, value=1.0),
+                                    EvalScore(name=EXACT_INCLUSION, value=0.5),
+                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
                                 ],
                             ),
                         ],
@@ -344,7 +344,7 @@ class TestFactualKnowledge:
             ),
         ],
     )
-    def test_quasi_exact_match_score(self, test_case):
+    def test_quasi_exact_inclusion_score(self, test_case):
         assert (
             _quasi_exact_inclusion_score(model_output=test_case.model_output, target_output=test_case.target_output)
             == test_case.expected_score

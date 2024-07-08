@@ -16,8 +16,8 @@ from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.util import (
     validate_dataset,
     get_dataset_configs,
-    normalize_text_quac_protocol,
 )
+from fmeval.eval_algorithms.metrics import normalize_text_quac_protocol
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -154,7 +154,7 @@ def _quasi_exact_match_score(model_output: str, target_output: str) -> float:
     and articles) and return the lowercased tokens.
     SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
     QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before
-    evaluating it. Can learn more at fmeval/src/fmeval/eval_algorithms/util.py
+    evaluating it. Can learn more at fmeval/src/fmeval/eval_algorithms/metrics.py
 
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
