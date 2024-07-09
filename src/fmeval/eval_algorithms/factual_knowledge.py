@@ -25,8 +25,6 @@ from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
 from fmeval.util import get_eval_results_path
 
-FACTUAL_KNOWLEDGE = "factual_knowledge"
-
 EXACT_INCLUSION = "exact_inclusion"
 QUASI_EXACT_INCLUSION = "quasi_exact_inclusion"
 SCORE_NAMES = [EXACT_INCLUSION, QUASI_EXACT_INCLUSION]
