@@ -1,6 +1,14 @@
 from typing import Optional
 
-from fmeval.constants import MIME_TYPE_JSON, JUMPSTART_MODEL_ID, JUMPSTART_MODEL_VERSION, IS_EMBEDDING_MODEL
+from sagemaker.jumpstart.enums import JumpStartModelType
+
+from fmeval.constants import (
+    MIME_TYPE_JSON,
+    JUMPSTART_MODEL_ID,
+    JUMPSTART_MODEL_VERSION,
+    JUMPSTART_MODEL_TYPE,
+    IS_EMBEDDING_MODEL,
+)
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.extractors.json_extractor import JsonExtractor
 from fmeval.model_runners.extractors.jumpstart_extractor import JumpStartExtractor
@@ -25,6 +33,9 @@ def create_extractor(
         extractor = JumpStartExtractor(
             jumpstart_model_id=kwargs[JUMPSTART_MODEL_ID],
             jumpstart_model_version=kwargs[JUMPSTART_MODEL_VERSION] if JUMPSTART_MODEL_VERSION in kwargs else "*",
+            jumpstart_model_type=kwargs[JUMPSTART_MODEL_TYPE]
+            if JUMPSTART_MODEL_TYPE in kwargs
+            else JumpStartModelType.OPEN_WEIGHTS,
             is_embedding_model=kwargs[IS_EMBEDDING_MODEL] if IS_EMBEDDING_MODEL in kwargs else False,
         )
     else:  # pragma: no cover

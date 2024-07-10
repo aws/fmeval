@@ -54,7 +54,17 @@ class JumpStartModelRunner(ModelRunner):
         :param component_name: Name of the Amazon SageMaker inference component corresponding
                             the predictor
         """
+        sagemaker_session = get_sagemaker_session()
+        util.require(
+            is_endpoint_in_service(sagemaker_session, endpoint_name),
+            f"Endpoint {endpoint_name} is not in service",
+        )
+        # Default model type is always OPEN_WEIGHTS. See https://tinyurl.com/yc58s6wj
+        jumpstart_model_type = JumpStartModelType.OPEN_WEIGHTS
+        if is_proprietary_js_model(sagemaker_session.boto_region_name, model_id):
+            jumpstart_model_type = JumpStartModelType.PROPRIETARY
         is_text_embedding_model = is_text_embedding_js_model(model_id)
+
         super().__init__(
             content_template=content_template,
             output=output,
@@ -64,6 +74,7 @@ class JumpStartModelRunner(ModelRunner):
             accept_type=MIME_TYPE_JSON,
             jumpstart_model_id=model_id,
             jumpstart_model_version=model_version,
+            jumpstart_model_type=jumpstart_model_type,
             is_embedding_model=is_text_embedding_model,
         )
         self._endpoint_name = endpoint_name
@@ -76,17 +87,6 @@ class JumpStartModelRunner(ModelRunner):
         self._embedding = embedding
         self._component_name = component_name
         self._is_embedding_model = is_text_embedding_model
-
-        sagemaker_session = get_sagemaker_session()
-        util.require(
-            is_endpoint_in_service(sagemaker_session, self._endpoint_name),
-            f"Endpoint {self._endpoint_name} is not in service",
-        )
-
-        # Default model type is always OPEN_WEIGHTS. See https://tinyurl.com/yc58s6wj
-        jumpstart_model_type = JumpStartModelType.OPEN_WEIGHTS
-        if is_proprietary_js_model(sagemaker_session.boto_region_name, self._model_id):
-            jumpstart_model_type = JumpStartModelType.PROPRIETARY
 
         predictor = sagemaker.predictor.retrieve_default(
             endpoint_name=self._endpoint_name,
