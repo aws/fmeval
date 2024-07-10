@@ -37,6 +37,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _precision,
     _recall,
     _split,
+    _quasi_exact_match_score,
     SCORE_NAMES,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -589,3 +590,59 @@ class TestQAAccuracy:
         """
         ans = _split(text)
         assert ans == expected
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseQAAccuracyEvalScore(
+                model_output="I live in New York!",
+                target_output="i     live in new york.",
+                expected_score=1,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="THis Is A BAD mOvie",
+                target_output="This is a bad movie",
+                expected_score=1,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output=" stripped text ",
+                target_output="stripped text",
+                expected_score=1,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="testing a missing article",
+                target_output="testing missing article",
+                expected_score=1,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="inclusion but not exact",
+                target_output="inclusion",
+                expected_score=0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Testing words in the middle",
+                target_output="Testing in the middle",
+                expected_score=0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="random; punctuation",
+                target_output="random punctuation",
+                expected_score=1,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="completely different phrase",
+                target_output="the correct answer",
+                expected_score=0,
+            ),
+            TestCaseQAAccuracyEvalScore(
+                model_output="Exact answer",
+                target_output="Exact answer",
+                expected_score=1,
+            ),
+        ],
+    )
+    def test_quasi_exact_match_score(self, test_case):
+        assert (
+            _quasi_exact_match_score(model_output=test_case.model_output, target_output=test_case.target_output)
+            == test_case.expected_score
+        )
