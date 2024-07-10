@@ -26,7 +26,11 @@ from fmeval.exceptions import EvalAlgorithmClientError
 class TestFactualKnowledge:
     @fixture(scope="module")
     def config(self) -> FactualKnowledgeConfig:
-        return FactualKnowledgeConfig(target_output_delimiter="<OR>")
+        return FactualKnowledgeConfig(target_output_delimiter="<OR>", logical_operator="OR")
+
+    @fixture(scope="module")
+    def config_with_and(self) -> FactualKnowledgeConfig:
+        return FactualKnowledgeConfig(target_output_delimiter="<AND>", logical_operator="AND")
 
     def test_factual_knowledge_invalid_config(self):
         """
@@ -39,6 +43,20 @@ class TestFactualKnowledge:
         )
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             FactualKnowledgeConfig(target_output_delimiter="")
+
+    def test_factual_knowledge_invalid_config_with_and(self):
+        """
+        GIVEN invalid inputs
+        WHEN FactualKnowledgeConfig is initialized
+        THEN correct exception with proper message is raised
+        """
+        logical_operator_error_message = (
+            'Invalid logical_operator is provided. The only valid inputs are strings "OR" and "AND".'
+        )
+        invalid_inputs = ["", "NOT AND", "Random", "<OR>"]
+        for invalid_input in invalid_inputs:
+            with pytest.raises(EvalAlgorithmClientError, match=re.escape(logical_operator_error_message)):
+                FactualKnowledgeConfig(logical_operator=invalid_input)
 
     class TestCaseFactualKnowledgeEvaluateSample(NamedTuple):
         model_input: str
@@ -131,6 +149,119 @@ class TestFactualKnowledge:
         THEN correct EvalScore is returned
         """
         eval_algorithm = FactualKnowledge(config)
+        actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
+        assert test_case.expected_response == actual_response
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="Red, blue, and yellow",
+                target_output="Red<AND>Blue<AND>Yellow",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            # tests out of order
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="The three primary colors are blue, yellow, and red",
+                target_output="Red<AND>Blue<AND>Yellow",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            # tests that all facts are in the model output
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="Red and blue",
+                target_output="Red<AND>Blue<AND>Yellow",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How do I change the password on my computer?",
+                model_output="According to my documents, change your password by first hitting control alt delete. "
+                "Then click change my password. Then restart your compute",
+                target_output="Control alt delete<AND>Change my password<AND>restart",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How do I change the password on my computer?",
+                model_output="According to my documents, change your password by first hitting control + alt + delete. "
+                "Then click change my password. Then, restart your compute",
+                target_output="Control alt delete<AND>Change my password<AND>restart",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Pulp Fiction was directed by",
+                model_output="Quentin Tarantino",
+                target_output="QUENTIN TARANTINO",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            # Adding tests for quasi-exact inclusion
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How many days can employees work from home at company X?",
+                model_output="According to my documents, employees can work from home 10 to 20 days per month.",
+                target_output="10<AND>20 days per month",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How many days can employees work from home at company X?",
+                model_output="According to my documents, employees can work from home 15 to 20 days per month.",
+                target_output="10<AND>20 days per month",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                ],
+            ),
+            # incorrect response
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="Who was the first president of the United States?",
+                model_output="Abraham Lincoln ",
+                target_output="George Washington",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                ],
+            ),
+            # none of the target facts are contained in the model output
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="What are the branches of the Federal Government",
+                model_output="congress, president, and supreme court",
+                target_output="legislative<AND>executive<AND>judicial",
+                expected_response=[
+                    EvalScore(name=EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                ],
+            ),
+        ],
+    )
+    def test_factual_knowledge_evaluate_sample_for_and(self, test_case, config_with_and):
+        """
+        GIVEN valid inputs
+        WHEN FactualKnowledge.evaluate_sample is called using the configurations where
+        target_output_delimiter = "<AND>" and logical_operator = "AND"
+        THEN correct EvalScore is returned
+        """
+        eval_algorithm = FactualKnowledge(config_with_and)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
         assert test_case.expected_response == actual_response
 
