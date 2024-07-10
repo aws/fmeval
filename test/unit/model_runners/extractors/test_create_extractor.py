@@ -9,9 +9,16 @@ def test_create_extractor():
     assert isinstance(create_extractor(model_accept_type=MIME_TYPE_JSON, output_location="output"), JsonExtractor)
 
 
-def test_create_extractor_jumpstart():
+@pytest.mark.parametrize(
+    "jumpstart_model_id",
+    [
+        "huggingface-llm-falcon-7b-bf16",  # default payloads found top level of model spec
+        "huggingface-llm-mistral-7b",  # default payloads found in inference_component_configs
+    ],
+)
+def test_create_extractor_jumpstart(jumpstart_model_id):
     assert isinstance(
-        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="huggingface-llm-falcon-7b-bf16"),
+        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id=jumpstart_model_id),
         JumpStartExtractor,
     )
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Union, List, Dict, Optional
 from urllib import request
@@ -7,25 +8,29 @@ import jmespath
 from functional import seq
 from jmespath.exceptions import JMESPathError
 from sagemaker import Session
+from sagemaker.jumpstart.enums import JumpStartScriptScope
+from sagemaker.jumpstart.utils import verify_model_region_and_return_specs
 
 from fmeval import util
 from fmeval.constants import (
     MODEL_ID,
-    SPEC_KEY,
     GENERATED_TEXT_JMESPATH_EXPRESSION,
     SDK_MANIFEST_FILE,
     PROPRIETARY_SDK_MANIFEST_FILE,
-    DEFAULT_PAYLOADS,
     JUMPSTART_BUCKET_BASE_URL_FORMAT,
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
     INPUT_LOG_PROBS_JMESPATH_EXPRESSION,
     EMBEDDING_JMESPATH_EXPRESSION,
+    SPEC_KEY,
+    DEFAULT_PAYLOADS,
 )
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.model_runners.extractors.extractor import Extractor
 
 # The expected model response location for Jumpstart that do produce the log probabilities
 from fmeval.model_runners.util import get_sagemaker_session
+
+logger = logging.getLogger(__name__)
 
 
 class JumpStartExtractor(Extractor):
@@ -37,6 +42,7 @@ class JumpStartExtractor(Extractor):
         self,
         jumpstart_model_id: str,
         jumpstart_model_version: str,
+        jumpstart_model_type: str,
         is_embedding_model: Optional[bool] = False,
         sagemaker_session: Optional[Session] = None,
     ):
@@ -51,6 +57,7 @@ class JumpStartExtractor(Extractor):
         """
         self._model_id = jumpstart_model_id
         self._model_version = jumpstart_model_version
+        self._model_type = jumpstart_model_type
         self._sagemaker_session = sagemaker_session if sagemaker_session else get_sagemaker_session()
         self._is_embedding_model = is_embedding_model
 
@@ -62,22 +69,39 @@ class JumpStartExtractor(Extractor):
             lambda x: x.get(MODEL_ID, None) == jumpstart_model_id
         )
         util.require(model_manifest, f"Model {jumpstart_model_id} is not a valid JumpStart Model")
-        model_spec_key = self.get_jumpstart_sdk_spec(
+
+        model_spec = self.get_jumpstart_sdk_spec(
             model_manifest.get(SPEC_KEY, None),
             self._sagemaker_session.boto_region_name,
         )
-        util.require(
-            DEFAULT_PAYLOADS in model_spec_key, f"JumpStart Model: {jumpstart_model_id} is not supported at this time"
-        )
-
-        output_jmespath_expressions = None
-        input_log_probs_jmespath_expressions = None
-        try:
-            output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
-                model_spec_key[DEFAULT_PAYLOADS]
+        if DEFAULT_PAYLOADS not in model_spec:
+            # Model spec contains alt configs, which should
+            # be obtained through JumpStart util function.
+            logger.info(
+                "default_payloads not found as a top-level attribute of model spec"
+                "Searching for default_payloads in inference configs instead."
             )
+            model_spec = verify_model_region_and_return_specs(
+                region=self._sagemaker_session.boto_region_name,
+                model_id=self._model_id,
+                version=self._model_version,
+                model_type=self._model_type,
+                scope=JumpStartScriptScope.INFERENCE,
+                sagemaker_session=self._sagemaker_session,
+            )
+            configs = model_spec.inference_configs  # type: ignore[attr-defined]
+            util.require(configs, f"JumpStart Model: {jumpstart_model_id} is not supported at this time")
+            default_payloads = configs.get_top_config_from_ranking().resolved_metadata_config[DEFAULT_PAYLOADS]
+        else:
+            # Continue to extract default payloads by manually parsing the spec json object.
+            # TODO: update this code when the `default_payloads` attribute of JumpStartModelSpecs
+            #  returns the full data, including fields like generated_text.
+            default_payloads = model_spec[DEFAULT_PAYLOADS]
+
+        try:
+            output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(default_payloads)
             input_log_probs_jmespath_expressions = jmespath.compile(INPUT_LOG_PROBS_JMESPATH_EXPRESSION).search(
-                model_spec_key[DEFAULT_PAYLOADS]
+                default_payloads
             )
         except (TypeError, JMESPathError) as e:
             raise EvalAlgorithmInternalError(
