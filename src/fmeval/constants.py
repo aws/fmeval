@@ -123,6 +123,7 @@ ABS_TOL = 1e-3
 # Jumpstart
 JUMPSTART_MODEL_ID = "jumpstart_model_id"
 JUMPSTART_MODEL_VERSION = "jumpstart_model_version"
+JUMPSTART_MODEL_TYPE = "jumpstart_model_type"
 MODEL_ID = "model_id"
 SPEC_KEY = "spec_key"
 DEFAULT_PAYLOADS = "default_payloads"
