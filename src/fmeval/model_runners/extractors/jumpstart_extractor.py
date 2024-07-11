@@ -20,6 +20,8 @@ from fmeval.constants import (
     JUMPSTART_BUCKET_BASE_URL_FORMAT_ENV_VAR,
     INPUT_LOG_PROBS_JMESPATH_EXPRESSION,
     EMBEDDING_JMESPATH_EXPRESSION,
+    INFERENCE_CONFIG_COMPONENTS,
+    TGI,
 )
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.model_runners.extractors.extractor import Extractor
@@ -62,22 +64,26 @@ class JumpStartExtractor(Extractor):
             lambda x: x.get(MODEL_ID, None) == jumpstart_model_id
         )
         util.require(model_manifest, f"Model {jumpstart_model_id} is not a valid JumpStart Model")
-        model_spec_key = self.get_jumpstart_sdk_spec(
+        model_spec = self.get_jumpstart_sdk_spec(
             model_manifest.get(SPEC_KEY, None),
             self._sagemaker_session.boto_region_name,
         )
-        util.require(
-            DEFAULT_PAYLOADS in model_spec_key, f"JumpStart Model: {jumpstart_model_id} is not supported at this time"
-        )
 
-        output_jmespath_expressions = None
-        input_log_probs_jmespath_expressions = None
-        try:
-            output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(
-                model_spec_key[DEFAULT_PAYLOADS]
+        if DEFAULT_PAYLOADS not in model_spec:
+            # Model spec contains alt configs
+            util.require(
+                INFERENCE_CONFIG_COMPONENTS in model_spec,
+                f"JumpStart Model: {jumpstart_model_id} is not supported at this time",
             )
+            default_payloads = model_spec[INFERENCE_CONFIG_COMPONENTS][TGI][DEFAULT_PAYLOADS]
+        else:
+            # DEFAULT_PAYLOADS is a top level field in the model spec
+            default_payloads = model_spec[DEFAULT_PAYLOADS]
+
+        try:
+            output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(default_payloads)
             input_log_probs_jmespath_expressions = jmespath.compile(INPUT_LOG_PROBS_JMESPATH_EXPRESSION).search(
-                model_spec_key[DEFAULT_PAYLOADS]
+                default_payloads
             )
         except (TypeError, JMESPathError) as e:
             raise EvalAlgorithmInternalError(
