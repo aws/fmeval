@@ -87,6 +87,8 @@ class TestJumpStartModelRunner:
                     model_type=JumpStartModelType.PROPRIETARY,
                     sagemaker_session=sagemaker_session_class.return_value,
                     region=None,
+                    hub_arn=None,
+                    config_name=None,
                     tolerate_deprecated_model=False,
                     tolerate_vulnerable_model=False,
                 )
@@ -98,6 +100,8 @@ class TestJumpStartModelRunner:
                     model_type=JumpStartModelType.OPEN_WEIGHTS,
                     sagemaker_session=sagemaker_session_class.return_value,
                     region=None,
+                    hub_arn=None,
+                    config_name=None,
                     tolerate_deprecated_model=False,
                     tolerate_vulnerable_model=False,
                 )
