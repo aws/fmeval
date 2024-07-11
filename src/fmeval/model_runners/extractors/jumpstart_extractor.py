@@ -98,6 +98,8 @@ class JumpStartExtractor(Extractor):
             #  returns the full data, including fields like generated_text.
             default_payloads = model_spec[DEFAULT_PAYLOADS]
 
+        util.require(default_payloads, f"JumpStart Model: {jumpstart_model_id} is not supported at this time")
+
         try:
             output_jmespath_expressions = jmespath.compile(GENERATED_TEXT_JMESPATH_EXPRESSION).search(default_payloads)
             input_log_probs_jmespath_expressions = jmespath.compile(INPUT_LOG_PROBS_JMESPATH_EXPRESSION).search(

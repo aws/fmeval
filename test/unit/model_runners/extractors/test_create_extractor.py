@@ -23,6 +23,18 @@ def test_create_extractor_jumpstart(jumpstart_model_id):
     )
 
 
+def test_create_extractor_jumpstart_no_default_payloads():
+    """
+    GIVEN a model whose spec does not contain default payloads data anywhere.
+    WHEN a create_extractor is called with this model id.
+    THEN the correct exception is raised.
+    """
+    with pytest.raises(
+        EvalAlgorithmClientError, match="JumpStart Model: xgboost-regression-snowflake is not supported at this time"
+    ):
+        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="xgboost-regression-snowflake")
+
+
 def test_create_extractor_jumpstart_proprietary():
     assert isinstance(
         create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="cohere-gpt-medium"),

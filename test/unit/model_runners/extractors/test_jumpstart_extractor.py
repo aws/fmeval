@@ -206,3 +206,27 @@ class TestJumpStartExtractor:
                 jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
                 sagemaker_session=sagemaker_session,
             )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_when_default_payloads_is_empty(self, sagemaker_session):
+        """
+        GIVEN the default payloads data that is found is empty.
+        WHEN a JumpStartExtractor is being initialized.
+        THEN the correct exception is raised.
+        """
+        sagemaker_session.boto_region_name = "us-west-2"
+        model_spec_json = {"default_payloads": None}
+
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=model_spec_json,
+        ), pytest.raises(
+            EvalAlgorithmClientError,
+            match="JumpStart Model: huggingface-llm-falcon-7b-bf16 is not supported at this time",
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
+                sagemaker_session=sagemaker_session,
+            )
