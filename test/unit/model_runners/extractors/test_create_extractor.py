@@ -10,7 +10,7 @@ def test_create_extractor():
 
 
 @pytest.mark.parametrize(
-    "jumpstart_model_id", ["huggingface-llm-falcon-7b-bf16"]  # default payloads found top level of model spec],
+    "jumpstart_model_id", ["huggingface-llm-falcon-7b-bf16"]  # default payloads found top level of model spec
 )
 def test_create_extractor_jumpstart(jumpstart_model_id):
     """
