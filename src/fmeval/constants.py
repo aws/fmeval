@@ -68,7 +68,7 @@ class DatasetColumns(Enum):
     MODEL_LOG_PROBABILITY = Column(name="model_log_probability")
     TARGET_OUTPUT = Column(name="target_output", should_cast=True)
     CATEGORY = Column(name="category", should_cast=True)
-    TARGET_CONTEXT = Column(name="target_context", should_cast=True)
+    CONTEXT = Column(name="context", should_cast=True)
     SENT_MORE_INPUT = Column(name="sent_more_input", should_cast=True)
     SENT_LESS_INPUT = Column(name="sent_less_input", should_cast=True)
     SENT_MORE_PROMPT = Column(name="sent_more_prompt")
@@ -79,6 +79,7 @@ class DatasetColumns(Enum):
 
 
 DATASET_COLUMNS = OrderedDict((col.value.name, col) for col in DatasetColumns)
+COLUMNS_WITH_LISTS = [DatasetColumns.CONTEXT.value.name]
 
 # This suffix must be included at the end of all
 # DataConfig attribute names where the attribute
