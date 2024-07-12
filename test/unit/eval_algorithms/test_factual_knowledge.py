@@ -54,6 +54,28 @@ class TestFactualKnowledge:
             with pytest.raises(EvalAlgorithmClientError, match=re.escape(logical_operator_error_message)):
                 FactualKnowledgeConfig(logical_operator=invalid_input)
 
+    def test_factual_knowledge_warnings(self):
+        """
+        GIVEN inconsistent inputs for target_output_delimiter and logical_operator
+        WHEN FactualKnowledgeConfig is initialized
+        THEN correct warning with proper message is generated
+        """
+        warning_message = (
+            "The target output delimiter and logical operator are not consistent. The target_output_delimiter is {0} "
+            "while the logical_operator is {1}"
+        )
+        with pytest.warns(
+            UserWarning,
+            match=warning_message.format("<AND>", "OR"),
+        ):
+            FactualKnowledgeConfig(target_output_delimiter="<AND>", logical_operator="OR")
+
+        with pytest.warns(
+            UserWarning,
+            match=warning_message.format("<OR>", "AND"),
+        ):
+            FactualKnowledgeConfig(target_output_delimiter="<OR>", logical_operator="AND")
+
     class TestCaseFactualKnowledgeEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
@@ -114,7 +136,7 @@ class TestFactualKnowledge:
                 model_input="Who is Andrew R. Jassy?",
                 model_output="Chief Executive Officer of Amazon.com Inc.",
                 target_output="Chief Executive Officer of Amazon.com, Inc.",
-                delimiter="<OR",
+                delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
                     EvalScore(name=EXACT_INCLUSION, value=0.0),

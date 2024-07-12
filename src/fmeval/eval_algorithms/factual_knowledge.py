@@ -1,4 +1,5 @@
 import logging
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union, Callable
 
@@ -185,6 +186,16 @@ class FactualKnowledgeConfig(EvalAlgorithmConfig):
         if self.logical_operator not in ["OR", "AND"]:
             raise EvalAlgorithmClientError(
                 'Invalid logical_operator is provided. The only valid inputs are strings "OR" and "AND".'
+            )
+        if self.target_output_delimiter in ["<OR>", "<AND>"] and self.target_output_delimiter != "<{}>".format(
+            self.logical_operator
+        ):
+            warnings.warn(
+                "The target output delimiter and logical operator are not consistent. "
+                "The target_output_delimiter is "
+                + self.target_output_delimiter
+                + " while the logical_operator is "
+                + self.logical_operator
             )
 
 
