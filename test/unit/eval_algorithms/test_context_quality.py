@@ -18,7 +18,7 @@ from fmeval.eval_algorithms.context_quality import ContextQuality, ContextQualit
 class TestCaseContextQualityEvaluateSample(NamedTuple):
     model_input: str
     target_output: str
-    retrieved_context: str
+    context: str
     mocked_judge_model_responses: List[Tuple]
     expected_response: List[EvalScore]
 
@@ -35,17 +35,22 @@ CONTEXT_QUALITY_DATASET = ray.data.from_items(
         {
             DatasetColumns.MODEL_INPUT.value.name: "What is the tallest mountain in the world?",
             DatasetColumns.TARGET_OUTPUT.value.name: "Mount Everest.",
-            DatasetColumns.RETRIEVED_CONTEXT.value.name: "The Andes is the longest continental mountain range in the world.",
+            DatasetColumns.CONTEXT.value.name: ["The Andes is the longest continental mountain range in the world."],
         },
         {
             DatasetColumns.MODEL_INPUT.value.name: "Who won the most super bowls?",
             DatasetColumns.TARGET_OUTPUT.value.name: "Pittsburgh Steelers<OR>New England Patriots",
-            DatasetColumns.RETRIEVED_CONTEXT.value.name: "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+            DatasetColumns.CONTEXT.value.name: [
+                "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."
+            ],
         },
         {
             DatasetColumns.MODEL_INPUT.value.name: "What do the 3 dots mean in math?",
             DatasetColumns.TARGET_OUTPUT.value.name: "therefore sign",
-            DatasetColumns.RETRIEVED_CONTEXT.value.name: "The therefore sign is generally used before a logical consequence. <AND>The symbol consists of three dots placed in an upright triangle and is read therefore.",
+            DatasetColumns.CONTEXT.value.name: [
+                "The therefore sign is generally used before a logical consequence. ",
+                "The symbol consists of three dots placed in an upright triangle and is read therefore.",
+            ],
         },
     ]
 )
@@ -58,28 +63,38 @@ class TestContextQuality:
             TestCaseContextQualityEvaluateSample(
                 model_input="What is the tallest mountain in the world?",
                 target_output="Mount Everest.",
-                retrieved_context="The Andes is the longest continental mountain range in the world<AND> located in South America. <AND>It stretches across seven countries and features many of the highest peaks in the Western Hemisphere. <AND>The range is known for its diverse ecosystems, including the high-altitude Andean Plateau and the Amazon rainforest.",
+                context=[
+                    "The Andes is the longest continental mountain range in the world",
+                    "located in South America. ",
+                    "It stretches across seven countries and features many of the highest peaks in the Western Hemisphere. ",
+                    "The range is known for its diverse ecosystems, including the high-altitude Andean Plateau and the Amazon rainforest.",
+                ],
                 mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None), ("unknown", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.3333333333)],
             ),
             TestCaseContextQualityEvaluateSample(
                 model_input="What is the tallest mountain in the world?",
                 target_output="Mount Everest.",
-                retrieved_context="The Andes is the longest continental mountain range in the world",
+                context=["The Andes is the longest continental mountain range in the world"],
                 mocked_judge_model_responses=[("0", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0)],
             ),
             TestCaseContextQualityEvaluateSample(
                 model_input="Who won the most super bowls?",
                 target_output="Pittsburgh Steelers<OR>New England Patriots",
-                retrieved_context="The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                context=[
+                    "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."
+                ],
                 mocked_judge_model_responses=[("1", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.9999999999)],
             ),
             TestCaseContextQualityEvaluateSample(
                 model_input="Who won the most super bowls?",
                 target_output="Pittsburgh Steelers<OR>New England Patriots",
-                retrieved_context="The Patriots have the most Super Bowl appearances at 11. <AND>The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                context=[
+                    "The Patriots have the most Super Bowl appearances at 11. ",
+                    "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                ],
                 mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.5)],
             ),
@@ -87,7 +102,7 @@ class TestContextQuality:
     )
     def test_context_quality_evaluate_sample(self, test_case):
         """
-        GIVEN a dataset sample with model_input, target_output and retrieved_context
+        GIVEN a dataset sample with model_input, target_output and context
         WHEN evaluate_sample is called.
         THEN the correct score is returned.
         """
@@ -99,7 +114,7 @@ class TestContextQuality:
         actual_response = eval_algorithm.evaluate_sample(
             model_input=test_case.model_input,
             target_output=test_case.target_output,
-            retrieved_context=test_case.retrieved_context,
+            context=test_case.context,
             judge_model=mock_runner,
         )
         assert actual_response == test_case.expected_response
@@ -115,7 +130,7 @@ class TestContextQuality:
                     dataset_mime_type=MIME_TYPE_JSONLINES,
                     model_input_location="model_input",
                     target_output_location="target_output",
-                    retrieved_context_location="retrieved_context",
+                    context_location="context",
                 ),
                 mocked_judge_model_responses=[
                     ("0", None),
@@ -141,7 +156,7 @@ class TestContextQuality:
     @patch("fmeval.eval_algorithms.context_quality.get_dataset")
     def test_context_quality_evaluate(self, get_dataset, save_dataset, test_case):
         """
-        GIVEN an input dataset with model_input, target_output and retrieved_context
+        GIVEN an input dataset with model_input, target_output and context
         WHEN evaluate is called.
         THEN the correct eval output is returned.
         """

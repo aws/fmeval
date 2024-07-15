@@ -22,7 +22,9 @@ from fmeval.eval_algorithms.faithfulness import (
 
 SAMPLE_MODEL_INPUT = "Where and when was Einstein born?"
 SAMPLE_MODEL_OUTPUT = "Einstein was born in Germany on 20th March 1879."
-SAMPLE_TARGET_CONTEXT = "Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time"
+SAMPLE_TARGET_CONTEXT = [
+    "Albert Einstein (born 14 March 1879) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time"
+]
 SAMPLE_STATEMENTS_OUTPUT = "Here are the statements created from the given answer:\nStatement: Einstein was born in Germany.\nStatement: Einstein was born on 20th March 1879."
 SAMPLE_VERDICTS_OUTPUT = 'here are the verdicts for the statements:\n1. statement: einstein was born in germany.\nexplanation: the context states that einstein was "a german-born theoretical physicist". this supports that he was born in germany.\nverdict: yes\n2. statement: einstein was born on 20th march 1879.  \nexplanation: the context states that einstein was "born 14 march 1879". this contradicts the statement that he was born on 20th march 1879.\nverdict: no\nfinal verdicts in order:\nyes. no.'
 
@@ -34,12 +36,12 @@ DATASET_WITH_CONTEXT = ray.data.from_items(
         {
             DatasetColumns.MODEL_INPUT.value.name: SAMPLE_MODEL_INPUT,
             DatasetColumns.MODEL_OUTPUT.value.name: SAMPLE_MODEL_OUTPUT,
-            DatasetColumns.TARGET_CONTEXT.value.name: SAMPLE_TARGET_CONTEXT,
+            DatasetColumns.CONTEXT.value.name: SAMPLE_TARGET_CONTEXT,
         },
         {
             DatasetColumns.MODEL_INPUT.value.name: "random question",
             DatasetColumns.MODEL_OUTPUT.value.name: "random answer",
-            DatasetColumns.TARGET_CONTEXT.value.name: "random context",
+            DatasetColumns.CONTEXT.value.name: ["random context"],
         },
     ]
 )
@@ -53,7 +55,7 @@ class TestFaithfulness:
     class TestCaseFaithfulnessEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
-        target_context: str
+        context: str
         statements_output: List[str]
         verdicts_output: List[str]
         expected_score: List[EvalScore]
@@ -65,7 +67,7 @@ class TestFaithfulness:
             TestCaseFaithfulnessEvaluateSample(
                 model_input=SAMPLE_MODEL_INPUT,
                 model_output=SAMPLE_MODEL_OUTPUT,
-                target_context=SAMPLE_TARGET_CONTEXT,
+                context=SAMPLE_TARGET_CONTEXT,
                 statements_output=SAMPLE_STATEMENTS_OUTPUT,
                 verdicts_output=SAMPLE_VERDICTS_OUTPUT,
                 expected_score=[EvalScore(name=EvalAlgorithm.FAITHFULNESS.value, value=1 / 2)],
@@ -74,7 +76,7 @@ class TestFaithfulness:
             TestCaseFaithfulnessEvaluateSample(
                 model_input=SAMPLE_MODEL_INPUT,
                 model_output=SAMPLE_MODEL_OUTPUT,
-                target_context=SAMPLE_TARGET_CONTEXT,
+                context=SAMPLE_TARGET_CONTEXT,
                 statements_output=NO_STATEMENTS_OUTPUT,
                 verdicts_output=NO_VERDICTS_OUTPUT,
                 expected_score=[
@@ -104,7 +106,7 @@ class TestFaithfulness:
         actual_score = eval_algorithm.evaluate_sample(
             model_input=test_case.model_input,
             model_output=test_case.model_output,
-            target_context=test_case.target_context,
+            context=test_case.context,
             judge_model=mock_model_runner,
         )
         # THEN
@@ -138,7 +140,7 @@ class TestFaithfulness:
             return_value=[
                 DatasetColumns.MODEL_INPUT.value.name,
                 DatasetColumns.MODEL_OUTPUT.value.name,
-                DatasetColumns.TARGET_CONTEXT.value.name,
+                DatasetColumns.CONTEXT.value.name,
             ]
         )
         mock_get_dataset.return_value = mock_dataset
@@ -162,6 +164,7 @@ class TestFaithfulness:
             NLI_STATEMENTS_MESSAGE,
         )
         mock_evaluate_dataset.assert_called_once_with(
+            model=None,
             dataset=mock_dataset,
             pipeline=mock_build_pipeline.return_value,
             dataset_name=dataset_config.dataset_name,

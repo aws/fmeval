@@ -234,6 +234,7 @@ class AnswerRelevance(EvalAlgorithmInterface):
         self,
         judge_model: ModelRunner,
         embeddings_model: ModelRunner,
+        model: Optional[ModelRunner] = None,
         dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         num_records: int = 300,
         save: bool = False,
@@ -244,6 +245,9 @@ class AnswerRelevance(EvalAlgorithmInterface):
 
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
         :param embeddings_model: An instance of ModelRunner representing the embedding model to be used.
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
         :param dataset_config: Configures a single dataset or list of datasets used for the
             evaluation. If not provided, this method will run evaluations using all of its
             supported built-in datasets.
@@ -271,7 +275,6 @@ class AnswerRelevance(EvalAlgorithmInterface):
                 dataset,
                 [
                     DatasetColumns.MODEL_INPUT.value.name,
-                    DatasetColumns.MODEL_OUTPUT.value.name,
                 ],
             )
             eval_output = evaluate_dataset(
@@ -281,6 +284,7 @@ class AnswerRelevance(EvalAlgorithmInterface):
                 eval_name=self.eval_name,
                 metric_names=[ANSWER_RELEVANCE],
                 eval_results_path=get_eval_results_path(),
+                model=model,
                 agg_method=MEAN,
                 save=save,
                 save_strategy=save_strategy,

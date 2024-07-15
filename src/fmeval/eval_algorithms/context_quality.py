@@ -36,7 +36,7 @@ CONTEXT_PRECISION_SCORE = "context_precision_score"
 DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE = (
     "Given a question, answer, and context, verify if the context was useful in "
     "arriving at the given answer. Give verdict as 1 if useful and 0 if not. "
-    "question: $model_input, answer: $target_output, context: $retrieved_context."
+    "question: $model_input, answer: $target_output, context: $context."
     "The verdict should only contain an integer, either 1 or 0, do not give an explanation."
 )
 
@@ -48,13 +48,12 @@ class ContextQualityConfig(EvalAlgorithmConfig):
     """Configures the Context Quality evaluation algorithm.
 
     :param target_output_delimiter: There can be multiple target outputs for a given input.
-        This delimiter is used to combine all retrieved contexts into a single string.
-    :param retrieved_context_delimiter: There can be multiple retrieved contexts for a given input.
-        This delimiter is used to combine all retrieved contexts into a single string.
+        This delimiter is used to combine all possible target outputs into a single string.
+        For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>", then the
+        target output text will be "UK<OR>England".
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
-    retrieved_context_delimiter: Optional[str] = "<AND>"
 
 
 class ContextQuality(EvalAlgorithmInterface):
@@ -108,7 +107,7 @@ class ContextQuality(EvalAlgorithmInterface):
                 [
                     DatasetColumns.MODEL_INPUT.value.name,
                     DatasetColumns.TARGET_OUTPUT.value.name,
-                    DatasetColumns.RETRIEVED_CONTEXT.value.name,
+                    DatasetColumns.CONTEXT.value.name,
                 ],
             )
             with (timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger)):
@@ -141,14 +140,14 @@ class ContextQuality(EvalAlgorithmInterface):
         self,
         model_input: str,
         target_output: str,
-        retrieved_context: str,
+        context: List[str],
         judge_model: ModelRunner,
         context_precision_prompt_template: str = DEFAULT_CONTEXT_PRECISION_PROMPT_TEMPLATE,
     ) -> List[EvalScore]:
         """
         :param model_input: The input that is composed with a prompt template and passed to the model.
         :param target_output: The referenced "ground truth" answer.
-        :param retrieved_context: The context retrieved from the RAG system.
+        :param context: The context retrieved from the RAG system.
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
             If this argument is None, default judge model will be provided.
         :param context_precision_prompt_template: The string prompt template for context precision prompts.
@@ -157,7 +156,7 @@ class ContextQuality(EvalAlgorithmInterface):
         sample = {
             DatasetColumns.MODEL_INPUT.value.name: model_input,
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
-            DatasetColumns.RETRIEVED_CONTEXT.value.name: retrieved_context,
+            DatasetColumns.CONTEXT.value.name: context,
         }
         pipeline = ContextQuality._build_pipeline(
             judge_model=judge_model,
@@ -183,7 +182,6 @@ class ContextQuality(EvalAlgorithmInterface):
             judge_model=judge_model,
             context_precision_prompt_template=context_precision_prompt_template,
             target_output_delimiter=context_quality_config.target_output_delimiter,
-            retrieved_context_delimiter=context_quality_config.retrieved_context_delimiter,
         )
         pipeline = TransformPipeline([precision_score])
         return pipeline
@@ -196,10 +194,9 @@ class ContextPrecisionScore(Transform):
         context_precision_prompt_template: str,
         model_input_key: str = DatasetColumns.MODEL_INPUT.value.name,
         target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
-        retrieved_context_key: str = DatasetColumns.RETRIEVED_CONTEXT.value.name,
+        context_key: str = DatasetColumns.CONTEXT.value.name,
         context_precision_score_key: str = CONTEXT_PRECISION_SCORE,
         target_output_delimiter: Optional[str] = "<OR>",
-        retrieved_context_delimiter: Optional[str] = "<AND>",
     ):
         """Context Precision score initializer.
 
@@ -207,33 +204,30 @@ class ContextPrecisionScore(Transform):
         :param context_precision_prompt_template: The prompt template for context precision.
         :param model_input_key: The key corresponding to the model input.
         :param target_output_key: The key corresponding to the target output.
-        :param retrieved_context_key: The key corresponding to the retrieved context.
+        :param context_key: The key corresponding to the retrieved context.
         :param context_precision_score_key: The key corresponding to the context precision score.
         :param target_output_delimiter: The delimiter used to concatenate multiple target outputs.
-        :param retrieved_context_delimiter: The delimiter used to concatenate multiple retrieved contexts.
         """
         super().__init__(
             judge_model,
             context_precision_prompt_template,
             model_input_key,
             target_output_key,
-            retrieved_context_key,
+            context_key,
             context_precision_score_key,
             target_output_delimiter,
-            retrieved_context_delimiter,
         )
         self.register_input_output_keys(
-            input_keys=[model_input_key, target_output_key, retrieved_context_key],
+            input_keys=[model_input_key, target_output_key, context_key],
             output_keys=[context_precision_score_key],
         )
         self.model_input_key = model_input_key
         self.target_output_key = target_output_key
-        self.retrieved_context_key = retrieved_context_key
+        self.context_key = context_key
         self.judge_model = judge_model
         self.context_precision_prompt_template = context_precision_prompt_template
         self.context_precision_score_key = context_precision_score_key
         self.target_output_delimiter = target_output_delimiter
-        self.retrieved_context_delimiter = retrieved_context_delimiter
         self.context_precision_prompt_composer = PromptComposer(self.context_precision_prompt_template)
 
     @validate_call
@@ -245,11 +239,11 @@ class ContextPrecisionScore(Transform):
         """
         model_input = record[self.model_input_key]
         target_output = record[self.target_output_key]
-        retrieved_context = record[self.retrieved_context_key]
-        record[self.context_precision_score_key] = self._get_score(model_input, target_output, retrieved_context)
+        context = record[self.context_key]
+        record[self.context_precision_score_key] = self._get_score(model_input, target_output, context)
         return record
 
-    def _get_score(self, model_input: str, target_output: str, retrieved_context: str) -> float:
+    def _get_score(self, model_input: str, target_output: str, context: List[str]) -> float:
         """Computes the context precision score by composing a prompt on each (context chunk, model input,
         target output) triple and doing inference on the judge model to get a verdict of 0 or 1, then
         calculating the score using the judge model verdicts.
@@ -260,17 +254,16 @@ class ContextPrecisionScore(Transform):
 
         :param model_input: The input that is composed with a prompt template and passed to the model.
         :param target_output: The referenced "ground truth" answer.
-        :param retrieved_context: The context retrieved from the RAG system.
+        :param context: The context retrieved from the RAG system.
         :return: the context precision score.
         """
         target_outputs = target_output.split(self.target_output_delimiter)
-        context_chunks = retrieved_context.split(self.retrieved_context_delimiter)
         results = []
-        for context_chunk in context_chunks:
+        for context_chunk in context:
             model_verdict = 0
             for target_output in target_outputs:
                 prompt = self.context_precision_prompt_composer.compose(
-                    model_input, {"target_output": target_output, "retrieved_context": context_chunk}
+                    model_input, {"target_output": target_output, "context": context_chunk}
                 )
                 model_output = self.judge_model.predict(prompt)[0]
                 model_verdict = ContextPrecisionScore._parse_model_output(model_output)
