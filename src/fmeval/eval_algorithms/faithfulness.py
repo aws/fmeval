@@ -269,6 +269,7 @@ class Faithfulness(EvalAlgorithmInterface):
     def evaluate(
         self,
         judge_model: ModelRunner,
+        model: Optional[ModelRunner] = None,
         dataset_config: Optional[Union[DataConfig, List[DataConfig]]] = None,
         num_records: int = 100,
         save: bool = False,
@@ -279,6 +280,9 @@ class Faithfulness(EvalAlgorithmInterface):
         """Compute the faithfulness score on one or more datasets.
 
         :param judge_model: An instance of ModelRunner representing the judge model to be used.
+        :param model: An instance of ModelRunner representing the model under evaluation.
+            If this argument is None, the `dataset_config` argument must not be None,
+            and must correspond to a dataset that already contains a column with model outputs.
         :param dataset_config: Configures a single dataset or list of datasets used for the
             evaluation. If not provided, this method will run evaluations using all of its
             supported built-in datasets.
@@ -303,7 +307,6 @@ class Faithfulness(EvalAlgorithmInterface):
                 dataset,
                 [
                     DatasetColumns.MODEL_INPUT.value.name,
-                    DatasetColumns.MODEL_OUTPUT.value.name,
                     DatasetColumns.CONTEXT.value.name,
                 ],
             )
@@ -314,6 +317,7 @@ class Faithfulness(EvalAlgorithmInterface):
                 eval_name=self.eval_name,
                 metric_names=[FAITHFULNESS],
                 eval_results_path=get_eval_results_path(),
+                model=model,
                 agg_method=MEAN,
                 save=save,
                 save_strategy=save_strategy,

@@ -164,6 +164,7 @@ class TestFaithfulness:
             NLI_STATEMENTS_MESSAGE,
         )
         mock_evaluate_dataset.assert_called_once_with(
+            model=None,
             dataset=mock_dataset,
             pipeline=mock_build_pipeline.return_value,
             dataset_name=dataset_config.dataset_name,
