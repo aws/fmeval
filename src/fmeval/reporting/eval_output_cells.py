@@ -11,6 +11,7 @@ from fmeval.eval_algorithms import (
     get_default_prompt_template,
 )
 from fmeval.eval_algorithms.classification_accuracy import CLASSIFICATION_ACCURACY_SCORE
+from fmeval.eval_algorithms.factual_knowledge import EXACT_INCLUSION, QUASI_EXACT_INCLUSION
 from fmeval.eval_algorithms.general_semantic_robustness import WER_SCORE
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING
 from fmeval.constants import DatasetColumns, DATASET_COLUMNS
@@ -339,7 +340,7 @@ class ScoreCell(MarkdownCell):
             present_columns = [col for col in dataset.columns() if col in columns]
             dataset = dataset.select_columns(present_columns)
             is_binary_score = (
-                True if score_name in [EvalAlgorithm.FACTUAL_KNOWLEDGE.value, CLASSIFICATION_ACCURACY_SCORE] else False
+                True if score_name in [EXACT_INCLUSION, QUASI_EXACT_INCLUSION, CLASSIFICATION_ACCURACY_SCORE] else False
             )
             cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))
         super().__init__(*cells)

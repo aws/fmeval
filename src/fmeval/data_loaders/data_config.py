@@ -37,7 +37,7 @@ class DataConfig:
             input log probability (used by the Prompt Stereotyping evaluation algorithm)
     :param sent_less_log_prob_location: the location for the "sent less"
             input log probability (used by the Prompt Stereotyping evaluation algorithm).
-    :param target_context_location: the location of the target context.
+    :param context_location: the location of the context for RAG evaluations.
     """
 
     dataset_name: str
@@ -51,8 +51,7 @@ class DataConfig:
     sent_less_input_location: Optional[str] = None
     sent_more_log_prob_location: Optional[str] = None
     sent_less_log_prob_location: Optional[str] = None
-    target_context_location: Optional[str] = None
-    retrieved_context_location: Optional[str] = None
+    context_location: Optional[str] = None
 
     def __post_init__(self):
         require(

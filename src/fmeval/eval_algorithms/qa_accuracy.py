@@ -1,5 +1,4 @@
 import logging
-import string
 
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Set, Union
@@ -14,10 +13,7 @@ from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.common import evaluate_dataset
 from fmeval.eval_algorithms.save_strategy import SaveStrategy
-from fmeval.eval_algorithms.util import (
-    validate_dataset,
-    get_dataset_configs,
-)
+from fmeval.eval_algorithms.util import validate_dataset, get_dataset_configs, normalize_text_quac_protocol
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
@@ -30,9 +26,6 @@ from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
 from fmeval.util import get_eval_results_path, require
 
-ENGLISH_ARTICLES = ["a", "an", "the"]
-ENGLISH_PUNCTUATIONS = string.punctuation
-
 F1_SCORE = "f1_score"
 EXACT_MATCH_SCORE = "exact_match_score"
 QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
@@ -41,25 +34,6 @@ RECALL_OVER_WORDS = "recall_over_words"
 SCORE_NAMES = [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS]
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize_text_quac_protocol(text: str) -> str:
-    """
-    Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py
-    Given a text, normalize it using the SQUAD / QUAC protocol. That is remove punctuations, excess spaces and articles, and return the lowercased tokens.
-    SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
-    QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before evaluating it.
-    HELM (https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L116)
-    and HuggingFace evaluate (https://github.com/huggingface/evaluate/blob/775555d80af30d83dc6e9f42051840d29a34f31b/metrics/squad/compute_score.py#L11)
-    also use this to normalization procedure.
-
-    :param text: The text that needs to be normalized.
-    :returns: The normalized text.
-    """
-
-    text = text.lower()
-    text = "".join(character for character in text if character not in ENGLISH_PUNCTUATIONS)
-    return " ".join([word for word in text.split(" ") if (word != "" and word not in ENGLISH_ARTICLES)])
 
 
 def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_text: bool = False) -> str:
@@ -73,7 +47,7 @@ def _normalize_and_strip_text(text: str, *, normalize_text: bool = False, strip_
     if strip_text:
         text = text.strip()
     if normalize_text:  # pragma: no branch
-        text = _normalize_text_quac_protocol(text)
+        text = normalize_text_quac_protocol(text)
     return text
 
 
@@ -172,12 +146,18 @@ def _quasi_exact_match_score(model_output: str, target_output: str) -> float:
     Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L144
     Computes if the two strings exactly match after normalizing them.
 
+    Normalization: Given a text, normalize it using the SQUAD/QUAC protocol (remove punctuations, excess spaces,
+    and articles) and return the lowercased tokens.
+    SQUAD (https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/) and
+    QuAC benchmarks (https://s3.amazonaws.com/my89public/quac/scorer.py) use this protocol to normalize text before
+    evaluating it. Can learn more at fmeval/src/fmeval/eval_algorithms/util.py
+
     :param model_output: The output of a model that we want to evaluate.
     :param target_output: The reference or the "ground truth" output.
     :returns: 1 if the two strings match after normalization else 0.
     """
     return float(
-        _normalize_text_quac_protocol(model_output.strip()) == _normalize_text_quac_protocol(target_output.strip())
+        normalize_text_quac_protocol(model_output.strip()) == normalize_text_quac_protocol(target_output.strip())
     )
 
 

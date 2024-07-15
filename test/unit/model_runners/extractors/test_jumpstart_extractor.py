@@ -1,9 +1,10 @@
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 from _pytest.fixtures import fixture
 from _pytest.python_api import approx
+from sagemaker.jumpstart.enums import JumpStartModelType
 
 from fmeval.exceptions import EvalAlgorithmClientError, EvalAlgorithmInternalError
 from fmeval.model_runners.extractors.jumpstart_extractor import JumpStartExtractor
@@ -69,6 +70,7 @@ class TestJumpStartExtractor:
         return JumpStartExtractor(
             jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
             jumpstart_model_version="*",
+            jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
             sagemaker_session=sagemaker_session,
         )
 
@@ -77,6 +79,7 @@ class TestJumpStartExtractor:
         return JumpStartExtractor(
             jumpstart_model_id=EMBEDDING_MODEL_ID,
             jumpstart_model_version="*",
+            jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
             is_embedding_model=True,
         )
 
@@ -131,6 +134,7 @@ class TestJumpStartExtractor:
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
                 jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
                 sagemaker_session=sagemaker_session,
             )
 
@@ -152,6 +156,7 @@ class TestJumpStartExtractor:
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
                 jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
                 sagemaker_session=sagemaker_session,
             )
 
@@ -168,5 +173,87 @@ class TestJumpStartExtractor:
             JumpStartExtractor(
                 jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
                 jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
+                sagemaker_session=sagemaker_session,
+            )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_when_default_payloads_found_in_inference_configs(self, sagemaker_session):
+        sagemaker_session.boto_region_name = "us-west-2"
+        model_spec_json = {}
+        model_spec_js_object = Mock()
+        inference_configs = Mock()
+        top_config = Mock()
+
+        resolved_metadata_config = {"default_payloads": {"test": {"output_keys": {"generated_text": "Hi"}}}}
+        top_config.resolved_metadata_config = resolved_metadata_config
+        inference_configs.get_top_config_from_ranking.return_value = top_config
+        model_spec_js_object.inference_configs = inference_configs
+
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=model_spec_json,
+        ), patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.verify_model_region_and_return_specs",
+            return_value=model_spec_js_object,
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
+                sagemaker_session=sagemaker_session,
+            )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_when_model_spec_is_missing_inference_configs(self, sagemaker_session):
+        """
+        GIVEN a model whose spec does not contain default_payloads as a top-level attribute
+        WHEN the `inference_configs` field of the JumpStartModelSpecs object returned by
+            verify_model_region_and_return_specs is None
+        THEN the correct exception is raised.
+        """
+        sagemaker_session.boto_region_name = "us-west-2"
+        model_spec_json = {"not_default_payloads": {"test": {"output_keys": {"generated_text": "{"}}}}
+        model_spec_js_object = Mock()
+        model_spec_js_object.inference_configs = None
+
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=model_spec_json,
+        ), patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.verify_model_region_and_return_specs",
+            return_value=model_spec_js_object,
+        ), pytest.raises(
+            EvalAlgorithmClientError,
+            match="JumpStart Model: huggingface-llm-falcon-7b-bf16 is not supported at this time",
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
+                sagemaker_session=sagemaker_session,
+            )
+
+    @patch("sagemaker.session.Session")
+    def test_extractor_when_default_payloads_is_empty(self, sagemaker_session):
+        """
+        GIVEN the default payloads data that is found is empty.
+        WHEN a JumpStartExtractor is being initialized.
+        THEN the correct exception is raised.
+        """
+        sagemaker_session.boto_region_name = "us-west-2"
+        model_spec_json = {"default_payloads": None}
+
+        with patch(
+            "fmeval.model_runners.extractors.jumpstart_extractor.JumpStartExtractor.get_jumpstart_sdk_spec",
+            return_value=model_spec_json,
+        ), pytest.raises(
+            EvalAlgorithmClientError,
+            match="JumpStart Model: huggingface-llm-falcon-7b-bf16 is not supported at this time",
+        ):
+            JumpStartExtractor(
+                jumpstart_model_id="huggingface-llm-falcon-7b-bf16",
+                jumpstart_model_version="*",
+                jumpstart_model_type=JumpStartModelType.OPEN_WEIGHTS,
                 sagemaker_session=sagemaker_session,
             )
