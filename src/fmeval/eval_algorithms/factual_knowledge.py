@@ -1,5 +1,4 @@
 import logging
-import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union, Callable
 
@@ -190,12 +189,9 @@ class FactualKnowledgeConfig(EvalAlgorithmConfig):
         if self.target_output_delimiter in ["<OR>", "<AND>"] and self.target_output_delimiter != "<{}>".format(
             self.logical_operator
         ):
-            warnings.warn(
-                "The target output delimiter and logical operator are not consistent. "
-                "The target_output_delimiter is "
-                + self.target_output_delimiter
-                + " while the logical_operator is "
-                + self.logical_operator
+            logger.warning(
+                f"The target_output_delimiter `{self.target_output_delimiter}` and logical_operator"
+                f" `{self.logical_operator}` are not consistent."
             )
 
 
