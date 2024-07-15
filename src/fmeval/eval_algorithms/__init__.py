@@ -226,7 +226,6 @@ EVAL_DATASETS: Dict[str, List[str]] = {
     EvalAlgorithm.QA_TOXICITY.value: [BOOLQ, TRIVIA_QA, NATURAL_QUESTIONS],
     EvalAlgorithm.SUMMARIZATION_TOXICITY.value: [GIGAWORD, GOV_REPORT],
     EvalAlgorithm.FAITHFULNESS.value: [AMNESTY_QA],
-    EvalAlgorithm.CONTEXT_QUALITY.value: [AMNESTY_QA],
     EvalAlgorithm.ANSWER_RELEVANCE.value: [AMNESTY_QA],
 }
 
@@ -292,7 +291,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
         target_output_location="answer",
-        target_context_location="long_answer",
+        context_location="long_answer",
     ),
     CROWS_PAIRS: DataConfig(
         dataset_name=CROWS_PAIRS,
@@ -354,9 +353,7 @@ DATASET_CONFIGS: Dict[str, DataConfig] = {
         dataset_uri="s3://fmeval-rag-integration/datasets-with-context/amnesty_qa.jsonl",
         dataset_mime_type=MIME_TYPE_JSONLINES,
         model_input_location="question",
-        model_output_location="answer",
         target_output_location="ground_truths",
-        target_context_location="contexts",
-        retrieved_context_location="contexts",
+        context_location="contexts",
     ),
 }
