@@ -40,12 +40,17 @@ CONTEXT_QUALITY_DATASET = ray.data.from_items(
         {
             DatasetColumns.MODEL_INPUT.value.name: "Who won the most super bowls?",
             DatasetColumns.TARGET_OUTPUT.value.name: "Pittsburgh Steelers<OR>New England Patriots",
-            DatasetColumns.CONTEXT.value.name: ["The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."],
+            DatasetColumns.CONTEXT.value.name: [
+                "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."
+            ],
         },
         {
             DatasetColumns.MODEL_INPUT.value.name: "What do the 3 dots mean in math?",
             DatasetColumns.TARGET_OUTPUT.value.name: "therefore sign",
-            DatasetColumns.CONTEXT.value.name: ["The therefore sign is generally used before a logical consequence. ", "The symbol consists of three dots placed in an upright triangle and is read therefore."],
+            DatasetColumns.CONTEXT.value.name: [
+                "The therefore sign is generally used before a logical consequence. ",
+                "The symbol consists of three dots placed in an upright triangle and is read therefore.",
+            ],
         },
     ]
 )
@@ -58,7 +63,12 @@ class TestContextQuality:
             TestCaseContextQualityEvaluateSample(
                 model_input="What is the tallest mountain in the world?",
                 target_output="Mount Everest.",
-                context=["The Andes is the longest continental mountain range in the world", "located in South America. ", "It stretches across seven countries and features many of the highest peaks in the Western Hemisphere. ", "The range is known for its diverse ecosystems, including the high-altitude Andean Plateau and the Amazon rainforest."],
+                context=[
+                    "The Andes is the longest continental mountain range in the world",
+                    "located in South America. ",
+                    "It stretches across seven countries and features many of the highest peaks in the Western Hemisphere. ",
+                    "The range is known for its diverse ecosystems, including the high-altitude Andean Plateau and the Amazon rainforest.",
+                ],
                 mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None), ("unknown", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.3333333333)],
             ),
@@ -72,14 +82,19 @@ class TestContextQuality:
             TestCaseContextQualityEvaluateSample(
                 model_input="Who won the most super bowls?",
                 target_output="Pittsburgh Steelers<OR>New England Patriots",
-                context=["The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."],
+                context=[
+                    "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."
+                ],
                 mocked_judge_model_responses=[("1", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.9999999999)],
             ),
             TestCaseContextQualityEvaluateSample(
                 model_input="Who won the most super bowls?",
                 target_output="Pittsburgh Steelers<OR>New England Patriots",
-                context=["The Patriots have the most Super Bowl appearances at 11. ", "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each."],
+                context=[
+                    "The Patriots have the most Super Bowl appearances at 11. ",
+                    "The AFC's Pittsburgh Steelers and New England Patriots have the most Super Bowl titles at six each.",
+                ],
                 mocked_judge_model_responses=[("The score is 0", None), ("0", None), ("1", None)],
                 expected_response=[EvalScore(name=CONTEXT_PRECISION_SCORE, value=0.5)],
             ),
