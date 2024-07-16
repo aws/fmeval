@@ -19,7 +19,7 @@ from test.integration.models.model_runners import hf_model_runner
 ABS_TOL = 1e-4
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
-config = FactualKnowledgeConfig("<OR>")
+config = FactualKnowledgeConfig("<OR>", "OR")
 eval_algo = FactualKnowledge(config)
 
 logger = logging.getLogger(__name__)

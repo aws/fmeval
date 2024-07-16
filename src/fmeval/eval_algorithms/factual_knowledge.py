@@ -86,6 +86,7 @@ class FactualKnowledgeScores(Transform):
         model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
         output_keys: List[str] = SCORE_NAMES,
         target_output_delimiter: Optional[str] = "<OR>",
+        logical_operator: str = "OR",
     ):
         """FactualKnowledgeScores initializer.
 
@@ -93,9 +94,18 @@ class FactualKnowledgeScores(Transform):
         :param model_output_key: The record key corresponding to the model output.
         :param output_key: The key corresponding to the factual knowledge score that
             will be added to the input record.
-        :param target_output_delimiter: See the docstring in `FactualKnowledgeConfig`.
+        :param target_output_delimiter: This delimiter is used to combine all possible target outputs into
+            a single string. For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>",
+            then the target output text will be "UK<OR>England". This can be useful to account for multiple
+            valid target outputs or to ensure that multiple target outputs are contained in the model output
+            (which can be configured using the logical_operator).
+        :param logical_operator: The logical operator can be set to "OR" (default) or "AND". When the logical operator
+            is "OR" (the default behavior), at least one of the possible target outputs (separated by the
+            target_output_delimiter) must be contained in the model output for the answer to be correct. When the logical
+            operator is "AND", ALL possible target outputs (separated by the target_output_delimiter) must be contained in
+            the model output in order for the answer to be correct.
         """
-        super().__init__(target_output_key, model_output_key, output_keys, target_output_delimiter)
+        super().__init__(target_output_key, model_output_key, output_keys, target_output_delimiter, logical_operator)
         self.register_input_output_keys(
             input_keys=[target_output_key, model_output_key],
             output_keys=output_keys,
@@ -104,6 +114,7 @@ class FactualKnowledgeScores(Transform):
         self.model_output_key = model_output_key
         self.output_keys = output_keys
         self.target_output_delimiter = target_output_delimiter
+        self.logical_operator = logical_operator
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -139,25 +150,48 @@ class FactualKnowledgeScores(Transform):
         `FactualKnowledge` for more details on what these numerical values represent.
         """
         possible_targets = target_output.split(self.target_output_delimiter)
-        return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
+        if self.logical_operator == "OR":
+            return max([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
+        else:  # self.logical_operator is "AND"
+            # checks that every target is in model_output, otherwise returns 0.0
+            return min([score_fn(model_output, target, **fn_kwargs) for target in possible_targets])
 
 
 @dataclass(frozen=True)
 class FactualKnowledgeConfig(EvalAlgorithmConfig):
     """Configures the factual knowledge evaluation algorithm.
 
-    :param target_output_delimiter: There can be multiple valid target outputs for a given question.
-        This delimiter is used to combine all possible target outputs into a single string.
-        For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>", then the
-        target output text will be "UK<OR>England".
+    :param target_output_delimiter: This delimiter is used to combine all possible target outputs into
+        a single string. For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>",
+        then the target output text will be "UK<OR>England". This can be useful to account for multiple
+        valid target outputs or to ensure that multiple target outputs are contained in the model output
+        (which can be configured using the logical_operator).
+    :param logical_operator: The logical operator can be set to "OR" (default) or "AND". When the logical operator
+        is "OR" (the default behavior), at least one of the possible target outputs (separated by the
+        target_output_delimiter) must be contained in the model output for the answer to be correct. When the logical
+        operator is "AND", ALL possible target outputs (separated by the target_output_delimiter) must be contained in
+        the model output in order for the answer to be correct.
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
+    logical_operator: str = "OR"
 
     def __post_init__(self):
         if self.target_output_delimiter == "":
             raise EvalAlgorithmClientError(
-                "Empty target_output_delimiter is provided. Please either provide a non-empty string, or set it to None."
+                "Empty target_output_delimiter is provided. Please either provide a non-empty string, "
+                "or set it to None."
+            )
+        if self.logical_operator not in ["OR", "AND"]:
+            raise EvalAlgorithmClientError(
+                'Invalid logical_operator is provided. The only valid inputs are strings "OR" and "AND".'
+            )
+        if self.target_output_delimiter in ["<OR>", "<AND>"] and self.target_output_delimiter != "<{}>".format(
+            self.logical_operator
+        ):
+            logger.warning(
+                f"The target_output_delimiter `{self.target_output_delimiter}` and logical_operator"
+                f" `{self.logical_operator}` are not consistent."
             )
 
 
@@ -178,9 +212,16 @@ class FactualKnowledge(EvalAlgorithmInterface):
     in the model output after both strings are normalized.
     Inspired by HELM: https://github.com/stanford-crfm/helm/blob/62f817eb695a31e8389e3f7be30609d3f0871837/src/helm/benchmark/metrics/basic_metrics.py#L144
 
-    If there is more than one correct target answer, answers are seperated by the `target_output_delimiter` which can be
-    configured inside the `FactualKnowledgeConfig`. It defaults to `<OR>`, i.e, the target answer in this example could
-    be Germany<OR>Berlin (since Berlin is its own federal state).
+    If there is more than one correct target answer, the `logical_operator` can be set to "OR" (default) and
+    answers are seperated by the `target_output_delimiter`, both of which are configured inside the
+    `FactualKnowledgeConfig`. The `target_output_delimiter` defaults to `<OR>`, i.e, the target answer in this
+    example could be Germany<OR>Berlin (since Berlin is its own federal state).
+
+    If there are multiple correct target answers that must be included in the model output,
+    the `logical_operator` can be set to "AND". For example, consider the prompt 'What are the three primary colors?'.
+    The target answer would be Red<AND>Yellow<AND>Blue" (note that the target_output_delimiter could be anything,
+    but it is "<AND>" here for the sake of consistency with the logical_operator value).Red, yellow, and blue must
+    all be contained in the model generation for the answer to be correct under this configuration.
     """
 
     eval_name = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
@@ -192,7 +233,12 @@ class FactualKnowledge(EvalAlgorithmInterface):
         """
         super().__init__(eval_algorithm_config)
         self.pipeline = TransformPipeline(
-            [FactualKnowledgeScores(target_output_delimiter=eval_algorithm_config.target_output_delimiter)]
+            [
+                FactualKnowledgeScores(
+                    target_output_delimiter=eval_algorithm_config.target_output_delimiter,
+                    logical_operator=eval_algorithm_config.logical_operator,
+                )
+            ]
         )
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:  # type: ignore[override]
