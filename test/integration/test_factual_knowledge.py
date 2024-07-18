@@ -9,8 +9,8 @@ from fmeval.eval_algorithms import EvalScore, CategoryScore
 from fmeval.eval_algorithms.factual_knowledge import (
     FactualKnowledge,
     FactualKnowledgeConfig,
-    EXACT_INCLUSION,
-    QUASI_EXACT_INCLUSION,
+    FACTUAL_KNOWLEDGE,
+    FACTUAL_KNOWLEDGE_QUASI_EXACT,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.constants import MIME_TYPE_JSONLINES
@@ -33,9 +33,9 @@ class TestFactualKnowledge:
         )
         # the model produces deterministic output
         for eval_score in eval_scores:
-            if eval_score.name == EXACT_INCLUSION:
+            if eval_score.name == FACTUAL_KNOWLEDGE:
                 assert eval_score.value == 1.0
-            elif eval_score.name == QUASI_EXACT_INCLUSION:
+            elif eval_score.name == FACTUAL_KNOWLEDGE_QUASI_EXACT:
                 assert eval_score.value == 1.0
 
     class EvaluateTestCase(NamedTuple):
@@ -44,23 +44,23 @@ class TestFactualKnowledge:
         category_scores: Dict[str, Dict[str, float]]
 
     DATASET_SCORES = [
-        EvalScore(name=EXACT_INCLUSION, value=0.547),
-        EvalScore(name=QUASI_EXACT_INCLUSION, value=0.547),
+        EvalScore(name=FACTUAL_KNOWLEDGE, value=0.547),
+        EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.547),
     ]
 
     CATEGORY_SCORES = [
         CategoryScore(
             name="Capitals",
             scores=[
-                EvalScore(name=EXACT_INCLUSION, value=0.09),
-                EvalScore(name=QUASI_EXACT_INCLUSION, value=0.09),
+                EvalScore(name=FACTUAL_KNOWLEDGE, value=0.09),
+                EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.09),
             ],
         ),
         CategoryScore(
             name="Subsidiary",
             scores=[
-                EvalScore(name=EXACT_INCLUSION, value=0.0198),
-                EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0198),
+                EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0198),
+                EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0198),
             ],
         ),
     ]
@@ -70,10 +70,10 @@ class TestFactualKnowledge:
         [
             EvaluateTestCase(
                 dataset_name="trex_sample.jsonl",
-                dataset_score={EXACT_INCLUSION: 0.0547, QUASI_EXACT_INCLUSION: 0.0547},
+                dataset_score={FACTUAL_KNOWLEDGE: 0.0547, FACTUAL_KNOWLEDGE_QUASI_EXACT: 0.0547},
                 category_scores={
-                    "Capitals": {EXACT_INCLUSION: 0.09, QUASI_EXACT_INCLUSION: 0.09},
-                    "Subsidiary": {EXACT_INCLUSION: 0.0198, QUASI_EXACT_INCLUSION: 0.0198},
+                    "Capitals": {FACTUAL_KNOWLEDGE: 0.09, FACTUAL_KNOWLEDGE_QUASI_EXACT: 0.09},
+                    "Subsidiary": {FACTUAL_KNOWLEDGE: 0.0198, FACTUAL_KNOWLEDGE_QUASI_EXACT: 0.0198},
                 },
             ),
             # The purpose of testing evaluate() on this tiny dataset is to
@@ -83,8 +83,8 @@ class TestFactualKnowledge:
             # See https://github.com/ray-project/ray/pull/39960
             EvaluateTestCase(
                 dataset_name="trex_sample_small.jsonl",
-                dataset_score={EXACT_INCLUSION: 0.0, QUASI_EXACT_INCLUSION: 0.0},
-                category_scores={"Capitals": {EXACT_INCLUSION: 0.0, QUASI_EXACT_INCLUSION: 0.0}},
+                dataset_score={FACTUAL_KNOWLEDGE: 0.0, FACTUAL_KNOWLEDGE_QUASI_EXACT: 0.0},
+                category_scores={"Capitals": {FACTUAL_KNOWLEDGE: 0.0, FACTUAL_KNOWLEDGE_QUASI_EXACT: 0.0}},
             ),
         ],
     )
@@ -107,20 +107,20 @@ class TestFactualKnowledge:
 
         for eval_score in eval_output.dataset_scores:
             # pragma: no branch
-            if eval_score.name == EXACT_INCLUSION:
-                assert eval_score.value == approx(test_case.dataset_score[EXACT_INCLUSION], abs=ABS_TOL)
-            elif eval_score.name == QUASI_EXACT_INCLUSION:
-                assert eval_score.value == approx(test_case.dataset_score[QUASI_EXACT_INCLUSION], abs=ABS_TOL)
+            if eval_score.name == FACTUAL_KNOWLEDGE:
+                assert eval_score.value == approx(test_case.dataset_score[FACTUAL_KNOWLEDGE], abs=ABS_TOL)
+            elif eval_score.name == FACTUAL_KNOWLEDGE_QUASI_EXACT:
+                assert eval_score.value == approx(test_case.dataset_score[FACTUAL_KNOWLEDGE_QUASI_EXACT], abs=ABS_TOL)
 
         for category_score in eval_output.category_scores:  # pragma: no branch
             for eval_score in category_score.scores:
-                if eval_score.name == EXACT_INCLUSION:
+                if eval_score.name == FACTUAL_KNOWLEDGE:
                     assert eval_score.value == approx(
-                        test_case.category_scores[category_score.name][EXACT_INCLUSION], abs=ABS_TOL
+                        test_case.category_scores[category_score.name][FACTUAL_KNOWLEDGE], abs=ABS_TOL
                     )
-                elif eval_score.name == QUASI_EXACT_INCLUSION:
+                elif eval_score.name == FACTUAL_KNOWLEDGE_QUASI_EXACT:
                     assert eval_score.value == approx(
-                        test_case.category_scores[category_score.name][QUASI_EXACT_INCLUSION], abs=ABS_TOL
+                        test_case.category_scores[category_score.name][FACTUAL_KNOWLEDGE_QUASI_EXACT], abs=ABS_TOL
                     )
 
     def test_evaluate_multi_datasets(self, integration_tests_dir):
