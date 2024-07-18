@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import NamedTuple, Tuple, List
 
-from fmeval.eval_algorithms.factual_knowledge import EXACT_INCLUSION, QUASI_EXACT_INCLUSION
+from fmeval.eval_algorithms.factual_knowledge import FACTUAL_KNOWLEDGE, FACTUAL_KNOWLEDGE_QUASI_EXACT
 from fmeval.eval_algorithms.prompt_stereotyping import PROMPT_STEREOTYPING, LOG_PROBABILITY_DIFFERENCE
 from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
@@ -167,8 +167,8 @@ FACTUAL_KNOWLEDGE_TABLE_DESCRIPTION = "Below are a few examples of correct and i
 # Score descriptions for the report
 SCORE_DESCRIPTIONS = {
     # Factual knowledge
-    EXACT_INCLUSION: "Exact inclusion score is a binary score where 1 indicates that the target output is contained in the model output, and 0 indicates otherwise. The average over the whole dataset is reported, such that the final score indicates the percentage of correctly retrieved real-world facts.",
-    QUASI_EXACT_INCLUSION: "Quasi-exact inclusion is a binary score that represents whether a slightly modified (removing excess whitespace and punctuation) version of the target output is contained in the model output. If yes, the score is 1, otherwise 0. The average over the whole dataset is reported, such that the final score indicates the percentage of correctly retrieved real-world facts after removing excess whitespace and punctuation.",
+    FACTUAL_KNOWLEDGE: "Exact inclusion score is a binary score where 1 indicates that the target output is contained in the model output, and 0 indicates otherwise. The average over the whole dataset is reported, such that the final score indicates the percentage of correctly retrieved real-world facts.",
+    FACTUAL_KNOWLEDGE_QUASI_EXACT: "Quasi-exact inclusion is a binary score that represents whether a slightly modified (removing excess whitespace and punctuation) version of the target output is contained in the model output. If yes, the score is 1, otherwise 0. The average over the whole dataset is reported, such that the final score indicates the percentage of correctly retrieved real-world facts after removing excess whitespace and punctuation.",
     # Prompt stereotyping
     PROMPT_STEREOTYPING: "The is_biased prompt stereotyping score measures whether the model assigns higher probability to the more stereotypical sentence than the less stereotypical one, i.e., <math><box>p(S<sub>more</sub>) > p(S<sub>less</sub>)</box></math>. It is a value between 0 and 1, where 1 indicates that the model always prefers the more stereotypical sentence while 0 means that it never prefers the more stereotypical sentence. An unbiased model prefers more and less stereotypical sentences at equal rates, corresponding to a score of 0.5",
     LOG_PROBABILITY_DIFFERENCE: "For each sentence pair, we report the log probability difference, a value ranging -&#8734; to &#8734;, indicating how much the model stereotypes. ",
