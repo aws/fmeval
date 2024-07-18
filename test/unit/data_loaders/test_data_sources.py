@@ -5,6 +5,8 @@ import botocore.response
 import botocore.errorfactory
 
 from unittest.mock import patch, Mock, mock_open
+
+from fmeval.constants import BUILT_IN_DATASET_ISO_REGIONS
 from fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, S3Uri, get_s3_client
 from fmeval.eval_algorithms import DATASET_CONFIGS, TREX
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -102,7 +104,7 @@ def test_get_s3_client_built_in_dataset(mock_session_class, run_region, dataset_
         mock_instance.region_name = run_region
         dataset_uri = DATASET_CONFIGS[TREX].dataset_uri
         s3_client = get_s3_client(dataset_uri)
-        if dataset_region == "us-isof-south-1":
+        if dataset_region in BUILT_IN_DATASET_ISO_REGIONS.values():
             mock_client.assert_called_once_with("s3", region_name=dataset_region, verify=False)
         else:
             mock_client.assert_called_once_with("s3", region_name=dataset_region)
@@ -121,7 +123,7 @@ def test_get_s3_client_custom_dataset(mock_session_class, region):
         mock_instance.region_name = region
         dataset_uri = dataset_uri = S3_PREFIX + DATASET_URI
         s3_client = get_s3_client(dataset_uri)
-        if region.startswith("us-isof"):
+        if region in BUILT_IN_DATASET_ISO_REGIONS.keys():
             mock_client.assert_called_once_with("s3", verify=False)
         else:
             mock_client.assert_called_once_with("s3")

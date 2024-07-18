@@ -7,8 +7,7 @@ from abc import ABC, abstractmethod
 from fmeval.constants import (
     BUILT_IN_DATASET_PREFIX,
     BUILT_IN_DATASET_DEFAULT_REGION,
-    ISOF_REGIONS,
-    ISOF_BUILT_IN_DATASET_REGION,
+    BUILT_IN_DATASET_ISO_REGIONS,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -124,9 +123,9 @@ def get_s3_client(uri: str) -> boto3.client:
     """
     session = boto3.session.Session()
     region = session.region_name
-    if region in ISOF_REGIONS:
+    if region in BUILT_IN_DATASET_ISO_REGIONS.keys():
         s3_client = (
-            boto3.client("s3", region_name=ISOF_BUILT_IN_DATASET_REGION, verify=False)
+            boto3.client("s3", region_name=BUILT_IN_DATASET_ISO_REGIONS[region], verify=False)
             if uri.startswith(BUILT_IN_DATASET_PREFIX)
             else boto3.client("s3", verify=False)
         )
