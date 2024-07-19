@@ -25,9 +25,9 @@ from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
 from fmeval.util import get_eval_results_path
 
-EXACT_INCLUSION = "exact_inclusion"
-QUASI_EXACT_INCLUSION = "quasi_exact_inclusion"
-SCORE_NAMES = [EXACT_INCLUSION, QUASI_EXACT_INCLUSION]
+FACTUAL_KNOWLEDGE = EvalAlgorithm.FACTUAL_KNOWLEDGE.value
+FACTUAL_KNOWLEDGE_QUASI_EXACT = "factual_knowledge_quasi_exact"
+SCORE_NAMES = [FACTUAL_KNOWLEDGE, FACTUAL_KNOWLEDGE_QUASI_EXACT]
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +69,8 @@ def _quasi_exact_inclusion_score(model_output: str, target_output: str) -> float
 
 
 FACTUAL_KNOWLEDGE_SCORES_TO_FUNCS: Dict[str, Callable[..., float]] = {
-    EXACT_INCLUSION: _exact_inclusion_score,
-    QUASI_EXACT_INCLUSION: _quasi_exact_inclusion_score,
+    FACTUAL_KNOWLEDGE: _exact_inclusion_score,
+    FACTUAL_KNOWLEDGE_QUASI_EXACT: _quasi_exact_inclusion_score,
 }
 
 

@@ -4,7 +4,11 @@ import botocore.errorfactory
 import urllib.parse
 from typing import IO
 from abc import ABC, abstractmethod
-from fmeval.constants import BUILT_IN_DATASET_PREFIX, BUILT_IN_DATASET_DEFAULT_REGION
+from fmeval.constants import (
+    BUILT_IN_DATASET_PREFIX,
+    BUILT_IN_DATASET_DEFAULT_REGION,
+    BUILT_IN_DATASET_ISO_REGIONS,
+)
 from fmeval.exceptions import EvalAlgorithmClientError
 
 
@@ -110,14 +114,25 @@ class S3DataFile(DataFile):
 
 def get_s3_client(uri: str) -> boto3.client:
     """
-    Util method to return boto3 s3 client. For built-in datasets, the boto3 client region is default to us-west-2 as
-        the bucket is not accessible in opt-in regions.
+    Util method to return boto3 s3 client. For built-in datasets, the boto3 client region is default to us-west-2 for
+        commercial regions as the bucket is not accessible in opt-in regions.
+        For us-isof partition, built-in datasets are located in us-isof-south-1 region.
+
     :param uri: s3 dataset uri
     :return: boto3 s3 client
     """
-    s3_client = (
-        boto3.client("s3", region_name=BUILT_IN_DATASET_DEFAULT_REGION)
-        if uri.startswith(BUILT_IN_DATASET_PREFIX)
-        else boto3.client("s3")
-    )
+    session = boto3.session.Session()
+    region = session.region_name
+    if region in BUILT_IN_DATASET_ISO_REGIONS.keys():
+        s3_client = (
+            boto3.client("s3", region_name=BUILT_IN_DATASET_ISO_REGIONS[region], verify=False)
+            if uri.startswith(BUILT_IN_DATASET_PREFIX)
+            else boto3.client("s3", verify=False)
+        )
+    else:
+        s3_client = (
+            boto3.client("s3", region_name=BUILT_IN_DATASET_DEFAULT_REGION)
+            if uri.startswith(BUILT_IN_DATASET_PREFIX)
+            else boto3.client("s3")
+        )
     return s3_client

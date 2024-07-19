@@ -15,8 +15,8 @@ from fmeval.eval_algorithms import CategoryScore, EvalOutput, EvalScore
 from fmeval.eval_algorithms.factual_knowledge import (
     FactualKnowledge,
     FactualKnowledgeConfig,
-    EXACT_INCLUSION,
-    QUASI_EXACT_INCLUSION,
+    FACTUAL_KNOWLEDGE,
+    FACTUAL_KNOWLEDGE_QUASI_EXACT,
     _exact_inclusion_score,
     _quasi_exact_inclusion_score,
 )
@@ -113,8 +113,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -124,8 +124,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -135,8 +135,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -146,8 +146,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             # Adding tests for quasi-exact inclusion
@@ -158,8 +158,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -169,8 +169,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -180,8 +180,8 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -191,8 +191,101 @@ class TestFactualKnowledge:
                 target_delimiter="<OR>",
                 logic_operator="OR",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            # tests that all facts are in the model output
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="Red, blue, and yellow",
+                target_output="Red<AND>Blue<AND>Yellow",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            # tests out of order
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="The three primary colors are blue, yellow, and red",
+                target_output="Red<AND>Blue<AND>Yellow",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="The three primary colors are",
+                model_output="Red and blue",
+                target_output="Red<AND>Blue<AND>Yellow",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How do I change the password on my computer?",
+                model_output="According to my documents, change your password by first hitting control alt delete. "
+                "Then click change my password. Then restart your compute",
+                target_output="Control alt delete<AND>Change my password<AND>restart",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How do I change the password on my computer?",
+                model_output="According to my documents, change your password by first hitting control + alt + delete. "
+                "Then click change my password. Then, restart your compute",
+                target_output="Control alt delete<AND>Change my password<AND>restart",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How many days can employees work from home at company X?",
+                model_output="According to my documents, employees can work from home 10 to 20 days per month.",
+                target_output="10<AND>20 days per month",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
+                ],
+            ),
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="How many days can employees work from home at company X?",
+                model_output="According to my documents, employees can work from home 15 to 20 days per month.",
+                target_output="10<AND>20 days per month",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
+                ],
+            ),
+            # none of the target facts are contained in the model output
+            TestCaseFactualKnowledgeEvaluateSample(
+                model_input="What are the branches of the Federal Government",
+                model_output="congress, president, and supreme court",
+                target_output="legislative<AND>executive<AND>judicial",
+                target_delimiter="<AND>",
+                logic_operator="AND",
+                expected_response=[
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
                 ],
             ),
             # tests that all facts are in the model output
@@ -359,29 +452,29 @@ class TestFactualKnowledge:
                         dataset_name="my_custom_dataset",
                         prompt_template=None,
                         dataset_scores=[
-                            EvalScore(name=EXACT_INCLUSION, value=2 / 3),
-                            EvalScore(name=QUASI_EXACT_INCLUSION, value=5 / 6),
+                            EvalScore(name=FACTUAL_KNOWLEDGE, value=2 / 3),
+                            EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=5 / 6),
                         ],
                         category_scores=[
                             CategoryScore(
                                 name="Capitals",
                                 scores=[
-                                    EvalScore(name=EXACT_INCLUSION, value=0.5),
-                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.5),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.5),
                                 ],
                             ),
                             CategoryScore(
                                 name="Movies",
                                 scores=[
-                                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                                 ],
                             ),
                             CategoryScore(
                                 name="History",
                                 scores=[
-                                    EvalScore(name=EXACT_INCLUSION, value=0.5),
-                                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.5),
+                                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                                 ],
                             ),
                         ],

@@ -5,6 +5,8 @@ import botocore.response
 import botocore.errorfactory
 
 from unittest.mock import patch, Mock, mock_open
+
+from fmeval.constants import BUILT_IN_DATASET_ISO_REGIONS
 from fmeval.data_loaders.data_sources import LocalDataFile, S3DataFile, S3Uri, get_s3_client
 from fmeval.eval_algorithms import DATASET_CONFIGS, TREX
 from fmeval.exceptions import EvalAlgorithmClientError
@@ -81,25 +83,47 @@ class TestS3Uri:
         assert s3_uri.key == key
 
 
-def test_get_s3_client_built_in_dataset():
+@pytest.mark.parametrize(
+    "run_region, dataset_region",
+    [
+        ("us-west-2", "us-west-2"),
+        ("ap-east-1", "us-west-2"),
+        ("us-isof-south-1", "us-isof-south-1"),
+        ("us-isof-east-1", "us-isof-south-1"),
+    ],
+)
+@patch("boto3.session.Session")
+def test_get_s3_client_built_in_dataset(mock_session_class, run_region, dataset_region):
     """
     GIVEN a built-in dataset s3 path
     WHEN get_s3_client is called
-    THEN the boto3 s3 client is created with region name "us-west-2"
+    THEN the boto3 s3 client is created with corresponding built-in dataset region name
     """
     with patch("boto3.client") as mock_client:
+        mock_instance = mock_session_class.return_value
+        mock_instance.region_name = run_region
         dataset_uri = DATASET_CONFIGS[TREX].dataset_uri
         s3_client = get_s3_client(dataset_uri)
-        mock_client.assert_called_once_with("s3", region_name="us-west-2")
+        if dataset_region in BUILT_IN_DATASET_ISO_REGIONS.values():
+            mock_client.assert_called_once_with("s3", region_name=dataset_region, verify=False)
+        else:
+            mock_client.assert_called_once_with("s3", region_name=dataset_region)
 
 
-def test_get_s3_client_custom_dataset():
+@pytest.mark.parametrize("region", ["us-west-2", "ap-east-1", "us-isof-south-1", "us-isof-east-1"])
+@patch("boto3.session.Session")
+def test_get_s3_client_custom_dataset(mock_session_class, region):
     """
     GIVEN a custom dataset s3 path
     WHEN get_s3_client is called
     THEN the boto3 s3 client is created without region name
     """
     with patch("boto3.client") as mock_client:
-        dataset_uri = S3_PREFIX + DATASET_URI
+        mock_instance = mock_session_class.return_value
+        mock_instance.region_name = region
+        dataset_uri = dataset_uri = S3_PREFIX + DATASET_URI
         s3_client = get_s3_client(dataset_uri)
-        mock_client.assert_called_once_with("s3")
+        if region in BUILT_IN_DATASET_ISO_REGIONS.keys():
+            mock_client.assert_called_once_with("s3", verify=False)
+        else:
+            mock_client.assert_called_once_with("s3")

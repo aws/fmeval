@@ -20,6 +20,9 @@ SAGEMAKER_RUNTIME_ENDPOINT_URL = "SAGEMAKER_RUNTIME_ENDPOINT_URL"
 BUILT_IN_DATASET_PREFIX = "s3://fmeval/datasets"
 BUILT_IN_DATASET_DEFAULT_REGION = "us-west-2"
 
+# Mapping of iso region to built in dataset region in the same partition
+BUILT_IN_DATASET_ISO_REGIONS = {"us-isof-south-1": "us-isof-south-1", "us-isof-east-1": "us-isof-south-1"}
+
 # Environment variable for disabling telemetry
 DISABLE_FMEVAL_TELEMETRY = "DISABLE_FMEVAL_TELEMETRY"
 
