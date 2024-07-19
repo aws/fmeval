@@ -296,8 +296,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             # tests out of order
@@ -308,8 +308,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -319,8 +319,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -331,8 +331,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -343,8 +343,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -354,8 +354,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=1.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=1.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=1.0),
                 ],
             ),
             TestCaseFactualKnowledgeEvaluateSample(
@@ -365,8 +365,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
                 ],
             ),
             # none of the target facts are contained in the model output
@@ -377,8 +377,8 @@ class TestFactualKnowledge:
                 target_delimiter="<AND>",
                 logic_operator="AND",
                 expected_response=[
-                    EvalScore(name=EXACT_INCLUSION, value=0.0),
-                    EvalScore(name=QUASI_EXACT_INCLUSION, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE, value=0.0),
+                    EvalScore(name=FACTUAL_KNOWLEDGE_QUASI_EXACT, value=0.0),
                 ],
             ),
         ],

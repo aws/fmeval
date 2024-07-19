@@ -3,14 +3,18 @@ import logging
 from typing import List, Optional, Union
 from dataclasses import dataclass
 
+from ray.actor import ActorHandle
+
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
     PREFIX_FOR_DELTA_SCORES,
+    BERTSCORE_DEFAULT_MODEL,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.common import evaluate_dataset
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.semantic_robustness_utils import (
     SemanticRobustnessConfig,
@@ -33,27 +37,41 @@ from fmeval.eval_algorithms.qa_accuracy import (
     QUASI_EXACT_MATCH_SCORE,
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
+    BERT_SCORE,
     QAAccuracyScores,
-    SCORE_NAMES,
+    QA_ACCURACY_SCORE_NAMES,
+    QAAccuracy,
 )
+from fmeval.transforms.qa_accuracy_metrics import BertScoreWithDelimiter
+
+# Changed SCORE_NAMES to QA_ACCURACY_SCORE_NAMES
 from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import create_output_key
-from fmeval.util import require, get_eval_results_path
+from fmeval.util import require, get_eval_results_path, create_shared_resource, cleanup_shared_resource
 
 DELTA_F1_SCORE = PREFIX_FOR_DELTA_SCORES + F1_SCORE
 DELTA_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + EXACT_MATCH_SCORE
 DELTA_QUASI_EXACT_MATCH_SCORE = PREFIX_FOR_DELTA_SCORES + QUASI_EXACT_MATCH_SCORE
 DELTA_PRECISION_OVER_WORDS = PREFIX_FOR_DELTA_SCORES + PRECISION_OVER_WORDS
 DELTA_RECALL_OVER_WORDS = PREFIX_FOR_DELTA_SCORES + RECALL_OVER_WORDS
+DELTA_BERT_SCORE = PREFIX_FOR_DELTA_SCORES + BERT_SCORE
 DELTA_SCORES = [
     DELTA_F1_SCORE,
     DELTA_EXACT_MATCH_SCORE,
     DELTA_QUASI_EXACT_MATCH_SCORE,
     DELTA_PRECISION_OVER_WORDS,
     DELTA_RECALL_OVER_WORDS,
+    DELTA_BERT_SCORE,
 ]
-ORIGINAL_SCORES = [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS]
+ORIGINAL_SCORES = [
+    F1_SCORE,
+    EXACT_MATCH_SCORE,
+    QUASI_EXACT_MATCH_SCORE,
+    PRECISION_OVER_WORDS,
+    RECALL_OVER_WORDS,
+    BERT_SCORE,
+]
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +89,7 @@ class QAAccuracySemanticRobustnessConfig(SemanticRobustnessConfig):
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
+    model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
         super().__post_init__()
@@ -78,6 +97,12 @@ class QAAccuracySemanticRobustnessConfig(SemanticRobustnessConfig):
             self.target_output_delimiter != "",
             "Empty target_output_delimiter is provided. "
             "Please either provide a non-empty string, or set it to None.",
+        )
+        require(
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+            f"QAAccuracyConfig. Please choose from acceptable values: "
+            f"{BertscoreHelperModelTypes.model_list()}.",
         )
 
 
@@ -108,11 +133,14 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         self.config = eval_algorithm_config
         self.perturbation_transform = get_perturbation_transform(eval_algorithm_config)
         self.target_output_delimiter = eval_algorithm_config.target_output_delimiter
+        bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
+        self.bertscore_model = bertscore_model
 
     def _build_pipeline(
         self,
         model: ModelRunner,
         prompt_template: str,
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
     ) -> TransformPipeline:
         """Build the TransformPipeline to be used by `evaluate` and `evaluate_sample`.
 
@@ -134,33 +162,71 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         )
         get_perturbed_inputs, gen_perturbed_prompts, get_perturbed_outputs = transforms
 
+        # Scores for the original QAAccuracy metrics (exact match, f1, precision, recall, etc)
         original_scores = QAAccuracyScores(target_output_delimiter=self.target_output_delimiter)
+
+        # Perturbed scores for the original QAAccuracy metrics
         perturbed_scores = [
             QAAccuracyScores(
                 model_output_key=perturbed_output_key,
                 target_output_delimiter=self.target_output_delimiter,
-                output_keys=[create_output_key(score_name, perturbed_output_key) for score_name in SCORE_NAMES],
+                output_keys=[
+                    create_output_key(score_name, perturbed_output_key) for score_name in QA_ACCURACY_SCORE_NAMES
+                ],
             )
             for perturbed_output_key in get_perturbed_outputs.output_keys
         ]
 
+        # bert score (with the target output delimiter)
+        bert_score = BertScoreWithDelimiter(
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=True,
+            bertscore_model=bertscore_model,
+            target_output_delimiter=self.target_output_delimiter,
+        )
+
+        perturbed_bert_score = BertScoreWithDelimiter(
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name for _ in range(self.config.num_perturbations)],
+            model_output_keys=get_perturbed_outputs.output_keys,
+            output_keys=[
+                create_output_key(BertScoreWithDelimiter.__name__, "perturbed", i)
+                for i in range(self.config.num_perturbations)
+            ],
+            allow_duplicate_input_keys=True,
+            bertscore_model=bertscore_model,
+            target_output_delimiter=self.target_output_delimiter,
+        )
+
+        # key mapping for the QA accuracy scores
         key_mapping = {
             original_score_name: (
                 [perturbed_score_transform.output_keys[i] for perturbed_score_transform in perturbed_scores],
                 DELTA_SCORES[i],
             )
-            for i, original_score_name in enumerate(SCORE_NAMES)
+            for i, original_score_name in enumerate(QA_ACCURACY_SCORE_NAMES)
         }
 
         mean_delta_scores = MeanDeltaScores(key_mapping)
+
+        # key mapping + mean of bert scores
+        mean_delta_bert_scores = MeanDeltaScores(
+            {
+                bert_score.output_keys[0]: (perturbed_bert_score.output_keys, DELTA_BERT_SCORE),
+            }
+        )
 
         transforms = [
             get_perturbed_inputs,
             gen_perturbed_prompts,
             get_perturbed_outputs,
             original_scores,
+            bert_score,
             TransformPipeline(perturbed_scores),
+            perturbed_bert_score,
             mean_delta_scores,
+            mean_delta_bert_scores,
         ]
         pipeline = TransformPipeline(transforms)
         return pipeline
@@ -187,7 +253,8 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             DatasetColumns.TARGET_OUTPUT.value.name: target_output,
         }
         invoke_model = create_model_invocation_pipeline(model, prompt_template)
-        compute_metrics = self._build_pipeline(model, prompt_template)
+        compute_metrics = self._build_pipeline(model, prompt_template, self.bertscore_model)
+        # compute_metrics = self._build_pipeline(model, prompt_template)
         pipeline = TransformPipeline([invoke_model, compute_metrics])
         output_record = pipeline.execute_record(sample)
 
@@ -228,6 +295,9 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             If that environment variable is also not configured, it will be saved to the default path `/tmp/eval_results/`.
         :returns: A List of EvalOutput objects.
         """
+        # Create a shared resource to be used during the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
+
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -238,7 +308,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=self._build_pipeline(model, dataset_prompt_template),
+                pipeline=self._build_pipeline(model, dataset_prompt_template, bertscore_shared_resource),
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
@@ -250,5 +320,5 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
-
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs

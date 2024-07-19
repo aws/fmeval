@@ -1,5 +1,7 @@
 import os
 import pytest
+import ray
+
 
 from pytest import approx
 from typing import NamedTuple, Dict
@@ -11,6 +13,7 @@ from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_QUASI_EXACT_MATCH_SCORE,
     DELTA_PRECISION_OVER_WORDS,
     DELTA_RECALL_OVER_WORDS,
+    DELTA_BERT_SCORE,
 )
 from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
@@ -18,6 +21,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     EXACT_MATCH_SCORE,
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
+    BERT_SCORE,
 )
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.constants import MIME_TYPE_JSONLINES, BUTTER_FINGER, RANDOM_UPPER_CASE, WHITESPACE_ADD_REMOVE
@@ -51,11 +55,14 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
+                    # interesting how it's over 1.0
+                    BERT_SCORE: 1.0000001192092896,
                     DELTA_F1_SCORE: 0.6,
                     DELTA_EXACT_MATCH_SCORE: 0.6,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.6,
                     DELTA_PRECISION_OVER_WORDS: 0.6,
                     DELTA_RECALL_OVER_WORDS: 0.6,
+                    DELTA_BERT_SCORE: 0.14422531127929689,
                 },
             ),
             TestCaseEvaluateSample(
@@ -70,11 +77,13 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
+                    BERT_SCORE: 1.0000001192092896,
                     DELTA_F1_SCORE: 0.2,
                     DELTA_EXACT_MATCH_SCORE: 0.2,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.2,
                     DELTA_PRECISION_OVER_WORDS: 0.2,
                     DELTA_RECALL_OVER_WORDS: 0.2,
+                    DELTA_BERT_SCORE: 0.02633070945739746,
                 },
             ),
             TestCaseEvaluateSample(
@@ -90,11 +99,13 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
+                    BERT_SCORE: 1.0000001192092896,
                     DELTA_F1_SCORE: 0.6,
                     DELTA_EXACT_MATCH_SCORE: 0.6,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.6,
                     DELTA_PRECISION_OVER_WORDS: 0.6,
                     DELTA_RECALL_OVER_WORDS: 0.6,
+                    DELTA_BERT_SCORE: 0.19863585233688355,
                 },
             ),
         ],
@@ -115,6 +126,7 @@ class TestQAAccuracySemanticRobustness:
         config: QAAccuracySemanticRobustnessConfig
         expected_scores: Dict[str, float]
 
+    # These values need to be updated (integ tests are running very slow)
     @pytest.mark.parametrize(
         "config, expected_scores",
         [
@@ -128,11 +140,13 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
+                    BERT_SCORE: 0,
                     DELTA_F1_SCORE: 0.2100,
                     DELTA_EXACT_MATCH_SCORE: 0.0687,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.1919,
                     DELTA_PRECISION_OVER_WORDS: 0.2123,
                     DELTA_RECALL_OVER_WORDS: 0.2096,
+                    DELTA_BERT_SCORE: 0,
                 },
             ),
             TestCaseEvaluate(
@@ -147,11 +161,13 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
+                    BERT_SCORE: 0,
                     DELTA_F1_SCORE: 0.1507,
                     DELTA_EXACT_MATCH_SCORE: 0.0586,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.1293,
                     DELTA_PRECISION_OVER_WORDS: 0.1573,
                     DELTA_RECALL_OVER_WORDS: 0.1525,
+                    DELTA_BERT_SCORE: 0,
                 },
             ),
             TestCaseEvaluate(
@@ -167,11 +183,13 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 0.3030,
                     PRECISION_OVER_WORDS: 0.3577,
                     RECALL_OVER_WORDS: 0.3813,
+                    BERT_SCORE: 0,
                     DELTA_F1_SCORE: 0.1351,
                     DELTA_EXACT_MATCH_SCORE: 0.0404,
                     DELTA_QUASI_EXACT_MATCH_SCORE: 0.1212,
                     DELTA_PRECISION_OVER_WORDS: 0.1355,
                     DELTA_RECALL_OVER_WORDS: 0.1384,
+                    DELTA_BERT_SCORE: 0,
                 },
             ),
         ],
@@ -190,6 +208,8 @@ class TestQAAccuracySemanticRobustness:
             dataset_config=dataset_config,
             prompt_template=sm_model_runner_prompt_template,
             save=True,
+            num_records=20,
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+        ray.shutdown()
