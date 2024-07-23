@@ -1,8 +1,6 @@
 import os
-
 import pytest
 import ray
-
 
 from pytest import approx
 from typing import NamedTuple, Dict
@@ -56,7 +54,6 @@ class TestQAAccuracySemanticRobustness:
                     QUASI_EXACT_MATCH_SCORE: 1.0,
                     PRECISION_OVER_WORDS: 1.0,
                     RECALL_OVER_WORDS: 1.0,
-                    # interesting how it's over 1.0
                     BERT_SCORE: 1.0000001192092896,
                     DELTA_F1_SCORE: 0.6,
                     DELTA_EXACT_MATCH_SCORE: 0.6,
@@ -127,7 +124,6 @@ class TestQAAccuracySemanticRobustness:
         config: QAAccuracySemanticRobustnessConfig
         expected_scores: Dict[str, float]
 
-    # These values need to be updated (integ tests are running very slow)
     @pytest.mark.parametrize(
         "config, expected_scores",
         [
@@ -136,18 +132,18 @@ class TestQAAccuracySemanticRobustness:
                     perturbation_type=BUTTER_FINGER, num_perturbations=5, butter_finger_perturbation_prob=0.1
                 ),
                 expected_scores={
-                    F1_SCORE: 0.3667,
-                    EXACT_MATCH_SCORE: 0.05,
-                    QUASI_EXACT_MATCH_SCORE: 0.3,
-                    PRECISION_OVER_WORDS: 0.375,
-                    RECALL_OVER_WORDS: 0.375,
-                    BERT_SCORE: 0.7210949748754502,
-                    DELTA_F1_SCORE: 0.183333333333333,
-                    DELTA_EXACT_MATCH_SCORE: 0.04,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.15,
-                    DELTA_PRECISION_OVER_WORDS: 0.195,
-                    DELTA_RECALL_OVER_WORDS: 0.18,
-                    DELTA_BERT_SCORE: 0.08562706083059,
+                    F1_SCORE: 0.25,
+                    EXACT_MATCH_SCORE: 0.0,
+                    QUASI_EXACT_MATCH_SCORE: 0.25,
+                    PRECISION_OVER_WORDS: 0.25,
+                    RECALL_OVER_WORDS: 0.25,
+                    BERT_SCORE: 0.7721082419157028,
+                    DELTA_F1_SCORE: 0.0375,
+                    DELTA_EXACT_MATCH_SCORE: 0.0,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.05,
+                    DELTA_PRECISION_OVER_WORDS: 0.04166666666666667,
+                    DELTA_RECALL_OVER_WORDS: 0.025,
+                    DELTA_BERT_SCORE: 0.07489223182201385,
                 },
             ),
             TestCaseEvaluate(
@@ -157,18 +153,18 @@ class TestQAAccuracySemanticRobustness:
                     random_uppercase_corrupt_proportion=0.1,
                 ),
                 expected_scores={
-                    F1_SCORE: 0.3666,
-                    EXACT_MATCH_SCORE: 0.05,
-                    QUASI_EXACT_MATCH_SCORE: 0.3,
-                    PRECISION_OVER_WORDS: 0.375,
-                    RECALL_OVER_WORDS: 0.375,
-                    BERT_SCORE: 0.7210949748754502,
-                    DELTA_F1_SCORE: 0.15014285714285713,
-                    DELTA_EXACT_MATCH_SCORE: 0.02,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.12,
-                    DELTA_PRECISION_OVER_WORDS: 0.16625,
-                    DELTA_RECALL_OVER_WORDS: 0.14166666666666666,
-                    DELTA_BERT_SCORE: 0.05018191546201707,
+                    F1_SCORE: 0.25,
+                    EXACT_MATCH_SCORE: 0.0,
+                    QUASI_EXACT_MATCH_SCORE: 0.25,
+                    PRECISION_OVER_WORDS: 0.25,
+                    RECALL_OVER_WORDS: 0.25,
+                    BERT_SCORE: 0.7721082419157028,
+                    DELTA_F1_SCORE: 0.025,
+                    DELTA_EXACT_MATCH_SCORE: 0.0,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.025,
+                    DELTA_PRECISION_OVER_WORDS: 0.025,
+                    DELTA_RECALL_OVER_WORDS: 0.025,
+                    DELTA_BERT_SCORE: 0.04225502982735634,
                 },
             ),
             TestCaseEvaluate(
@@ -179,18 +175,18 @@ class TestQAAccuracySemanticRobustness:
                     whitespace_add_prob=0.05,
                 ),
                 expected_scores={
-                    F1_SCORE: 0.36666666666666664,
-                    EXACT_MATCH_SCORE: 0.05,
-                    QUASI_EXACT_MATCH_SCORE: 0.3,
-                    PRECISION_OVER_WORDS: 0.375,
-                    RECALL_OVER_WORDS: 0.375,
-                    BERT_SCORE: 0.7210949748754502,
-                    DELTA_F1_SCORE: 0.12666666666666665,
-                    DELTA_EXACT_MATCH_SCORE: 0.04,
-                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.12,
-                    DELTA_PRECISION_OVER_WORDS: 0.125,
-                    DELTA_RECALL_OVER_WORDS: 0.12999999999999998,
-                    DELTA_BERT_SCORE: 0.049670394659042355,
+                    F1_SCORE: 0.25,
+                    EXACT_MATCH_SCORE: 0.0,
+                    QUASI_EXACT_MATCH_SCORE: 0.25,
+                    PRECISION_OVER_WORDS: 0.25,
+                    RECALL_OVER_WORDS: 0.25,
+                    BERT_SCORE: 0.7721082419157028,
+                    DELTA_F1_SCORE: 0.05625,
+                    DELTA_EXACT_MATCH_SCORE: 0.0,
+                    DELTA_QUASI_EXACT_MATCH_SCORE: 0.05,
+                    DELTA_PRECISION_OVER_WORDS: 0.053571428571428575,
+                    DELTA_RECALL_OVER_WORDS: 0.07500000000000001,
+                    DELTA_BERT_SCORE: 0.07671228349208832,
                 },
             ),
         ],
@@ -198,8 +194,8 @@ class TestQAAccuracySemanticRobustness:
     def test_evaluate(self, integration_tests_dir, config, expected_scores):
         eval_algo = QAAccuracySemanticRobustness(config)
         dataset_config = DataConfig(
-            dataset_name="triviaQA_sample",
-            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample.jsonl"),
+            dataset_name="triviaQA_sample_small",
+            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample_small.jsonl"),
             dataset_mime_type=MIME_TYPE_JSONLINES,
             model_input_location="question",
             target_output_location="answer",
@@ -209,7 +205,7 @@ class TestQAAccuracySemanticRobustness:
             dataset_config=dataset_config,
             prompt_template=sm_model_runner_prompt_template,
             save=True,
-            num_records=20,
+            num_records=8,
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)

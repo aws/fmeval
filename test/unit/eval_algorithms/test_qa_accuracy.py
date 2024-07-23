@@ -7,7 +7,6 @@ import ray
 from _pytest.fixtures import fixture
 from ray.data import Dataset
 
-
 from fmeval.constants import (
     DatasetColumns,
     MIME_TYPE_JSON,
@@ -298,14 +297,16 @@ class TestQAAccuracy:
     @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracy._create_transforms")
+    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreWithDelimiter")
+    @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracyScores")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
         mock_get_dataset,
-        mock_create_transforms,
+        mock_qa_accuracy_scores,
+        mock_bert_scores_with_delimiter,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
         mock_evaluate_dataset,
@@ -319,12 +320,10 @@ class TestQAAccuracy:
         """
         # The transforms that are saved as instance attributes of the QAAccuracy instance
         qa_accuracy_score, bert_score = Mock(), Mock()
-        pipeline_qa_accuracy, pipeline_bertscore = Mock(), Mock()
+        pipeline_bertscore = Mock()
 
-        mock_create_transforms.side_effect = [
-            (qa_accuracy_score, bert_score),
-            (pipeline_qa_accuracy, pipeline_bertscore),
-        ]
+        mock_qa_accuracy_scores.side_effect = [qa_accuracy_score]
+        mock_bert_scores_with_delimiter.side_effect = [bert_score, pipeline_bertscore]
 
         instance_pipeline = Mock()  # The self.pipeline of the QAAccuracy instance
         executed_pipeline = Mock()  # The pipeline that gets created and executed in `evaluate`
@@ -353,9 +352,11 @@ class TestQAAccuracy:
         )
 
         mock_create_shared_resource.assert_called_once_with(qa_acc.bertscore_model)
-        assert mock_create_transforms.call_count == 2  # once during initialization, once during evaluate
+        assert mock_qa_accuracy_scores.call_count == 1  # once during initialization
+        assert mock_bert_scores_with_delimiter.call_count == 2  # once during initialization, once during evaluate
+
         mock_transform_pipeline_cls.assert_has_calls(
-            [call([qa_accuracy_score, bert_score]), call([pipeline_qa_accuracy, pipeline_bertscore])]
+            [call([qa_accuracy_score, bert_score]), call([qa_accuracy_score, pipeline_bertscore])]
         )
 
         mock_evaluate_dataset.assert_called_once_with(

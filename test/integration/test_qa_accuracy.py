@@ -10,35 +10,32 @@ from fmeval.eval_algorithms.qa_accuracy import (
     RECALL_OVER_WORDS,
     BERT_SCORE,
 )
-from fmeval.transforms.qa_accuracy_metrics import BERT_SCORE
 
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.constants import MIME_TYPE_JSONLINES
-from test.integration.models.model_runners import bedrock_model_runner
-from test.integration.test_summarization_accuracy import format_input
+from test.integration.models.model_runners import js_model_runner
 
-
-ABS_TOL = 5e-2  # Bedrock models are not deterministic, so we use a higher tolerance here
+ABS_TOL = 1e-6  # scores and model are deterministic, so approx() should be used purely to handle floating point error
 os.environ["PARALLELIZATION_FACTOR"] = "2"
 
 config = QAAccuracyConfig("<OR>")
 eval_algo = QAAccuracy(config)
 
-bedrock_model_runner_prompt_template = """
-    Answer the question at the end in as few words as possible.
-    Do not repeat the question. Do not answer in complete sentences.
-    Question: $model_input
+js_model_runner_prompt_template = """
+    <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
+    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
+    Question: $model_input [/INST]
     """
 
 
 class TestQAAccuracy:
     def test_evaluate_sample(self):
         model_input = """
-            Answer the question at the end in as few words as possible.
-            Do not repeat the question. Do not answer in complete sentences.
-            Question: London is the capital of
+            <s>[INST] <<SYS>>Answer the question at the end in as few words as possible.
+            Do not repeat the question. Do not answer in complete sentences.<</SYS>>
+            Question: London is the capital of [/INST]
             """
-        model_output = bedrock_model_runner.predict(format_input(model_input))[0]
+        model_output = js_model_runner.predict(model_input)[0]
         eval_scores = eval_algo.evaluate_sample(
             target_output="UK<OR>England<OR>United Kingdom", model_output=model_output
         )
@@ -57,24 +54,22 @@ class TestQAAccuracy:
             target_output_location="answer",
         )
         eval_output = eval_algo.evaluate(
-            model=bedrock_model_runner,
+            model=js_model_runner,
             dataset_config=dataset_config,
-            prompt_template=format_input(bedrock_model_runner_prompt_template),
+            prompt_template=js_model_runner_prompt_template,
             save=True,
-            num_records=20
-            # might take a longer time to run, so thinking about changing to 20 records
-            # just like in test_summarization_accuracy.py
+            num_records=20,
         )[0]
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
-                assert eval_score.value == approx(0.6167, abs=ABS_TOL)
+                assert eval_score.value == approx(0.366667, abs=ABS_TOL)
             elif eval_score.name == EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.5500, abs=ABS_TOL)
+                assert eval_score.value == approx(0.050000, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.5500, abs=ABS_TOL)
+                assert eval_score.value == approx(0.300000, abs=ABS_TOL)
             elif eval_score.name == PRECISION_OVER_WORDS:
-                assert eval_score.value == approx(0.6250, abs=ABS_TOL)
+                assert eval_score.value == approx(0.375000, abs=ABS_TOL)
             elif eval_score.name == RECALL_OVER_WORDS:
-                assert eval_score.value == approx(0.6250, abs=ABS_TOL)
+                assert eval_score.value == approx(0.375000, abs=ABS_TOL)
             elif eval_score.name == BERT_SCORE:
-                assert eval_score.value == approx(0.8385, abs=ABS_TOL)
+                assert eval_score.value == approx(0.721095, abs=ABS_TOL)

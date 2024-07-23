@@ -1,11 +1,9 @@
 import logging
 
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 from dataclasses import dataclass
 from nltk.metrics.scores import f_measure, precision, recall
-from ray.actor import ActorHandle
-
 from fmeval.constants import (
     BERTSCORE_DEFAULT_MODEL,
     DatasetColumns,
@@ -32,10 +30,8 @@ from fmeval.util import (
     require,
     create_shared_resource,
     cleanup_shared_resource,
+    assert_condition,
 )
-
-# moved BertScoreWithDelimiter to qa_accuracy_metrics (so I didn't modify summarization_accuracy_metrics)
-# I also ran into some issues with creating the class here, so I made another file for now
 from fmeval.transforms.qa_accuracy_metrics import BertScoreWithDelimiter, BERT_SCORE
 
 F1_SCORE = "f1_score"
@@ -43,6 +39,7 @@ EXACT_MATCH_SCORE = "exact_match_score"
 QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
 PRECISION_OVER_WORDS = "precision_over_words"
 RECALL_OVER_WORDS = "recall_over_words"
+BERT_SCORE = "bert_score"
 
 # for metrics that are included in the QAAccuracyScores Transform
 QA_ACCURACY_SCORE_NAMES = [
@@ -247,12 +244,6 @@ class QAAccuracyScores(Transform):
         return record
 
 
-# I was thinking of moving QAAccuracyScores and BertScoreWithDelimiter to
-# a transforms file (qa_accuracy_metrics) and maybe making a QAAccuracyMetric Transform (an abstract base class)
-# similar to summarization_accuracy_metrics.
-# It seems like they're both also used in qa_accuracy_semantic_robustness
-
-
 @dataclass(frozen=True)
 class QAAccuracyConfig(EvalAlgorithmConfig):
     """Configures the QA Accuracy evaluation algorithm.
@@ -313,10 +304,12 @@ class QAAccuracy(EvalAlgorithmInterface):
         super().__init__(eval_algorithm_config)
 
         self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
-        qa_accuracy_score, bert_score = QAAccuracy._create_transforms(
+        qa_accuracy_score = QAAccuracyScores(target_output_delimiter=eval_algorithm_config.target_output_delimiter)
+        bert_score = BertScoreWithDelimiter(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
-            bertscore_keys=[BERT_SCORE],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=True,
             bertscore_model=self.bertscore_model,
             target_output_delimiter=eval_algorithm_config.target_output_delimiter,
         )
@@ -324,38 +317,6 @@ class QAAccuracy(EvalAlgorithmInterface):
         self.qa_accuracy_score = qa_accuracy_score  # saving the QAAccuracyScores transform
         self.bert_score = bert_score  # saving the BertScore transform
         self.pipeline = TransformPipeline([qa_accuracy_score, bert_score])
-
-    @staticmethod
-    def _create_transforms(
-        target_output_keys: List[str],
-        model_output_keys: List[str],
-        bertscore_keys: List[str],
-        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
-        target_output_delimiter: Optional[str] = None,
-    ) -> Tuple[QAAccuracyScores, BertScoreWithDelimiter]:
-        """Create a TransformPipeline containing qa accuracy score transforms (QAAccuracyScore, BertScoreWithDelimiter).
-
-        :param target_output_keys: The keys corresponding to target outputs (strings potentially containing multiple
-            target output values)
-        :param model_output_keys: The keys corresponding to model outputs (what the model generates).
-        :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
-        :param bertscore_model: A BertscoreHelperModel or Ray actor handle corresponding to a BertscoreHelperModel
-            (i.e. a shared resource) used in the creation of the returned BertScore instance.
-        :param target_output_delimiter: This represents a configurable parameter for QAAccuracyScores which
-        is used to combine multiple target outputs into a single string.
-        :returns: A BertScore instance.
-        """
-        qa_accuracy_transform = QAAccuracyScores(target_output_delimiter=target_output_delimiter)
-        bert_transform = BertScoreWithDelimiter(
-            target_output_keys=target_output_keys,
-            model_output_keys=model_output_keys,
-            output_keys=bertscore_keys,
-            allow_duplicate_input_keys=True,
-            bertscore_model=bertscore_model,
-            target_output_delimiter=target_output_delimiter,
-        )
-
-        return qa_accuracy_transform, bert_transform
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
         """Compute QA accuracy metrics for a single sample.
@@ -401,16 +362,17 @@ class QAAccuracy(EvalAlgorithmInterface):
         """
         # Create a shared resource to be used during the evaluation.
         bertscore_shared_resource = create_shared_resource(self.bertscore_model)
-        # Create a new pipeline that uses the shared resource instead of self.bertscore_model.
-        qa_accuracy_score, bert_score = QAAccuracy._create_transforms(
+        bert_score = BertScoreWithDelimiter(
             target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=True,
             bertscore_model=bertscore_shared_resource,
-            bertscore_keys=[BERT_SCORE],
             target_output_delimiter=self.qa_accuracy_score.target_output_delimiter,
         )
 
-        pipeline = TransformPipeline([qa_accuracy_score, bert_score])
+        # Create a new pipeline that uses the shared resource instead of self.bertscore_model.
+        pipeline = TransformPipeline([self.qa_accuracy_score, bert_score])
 
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []

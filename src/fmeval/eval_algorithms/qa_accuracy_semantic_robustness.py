@@ -257,7 +257,6 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
         }
         invoke_model = create_model_invocation_pipeline(model, prompt_template)
         compute_metrics = self._build_pipeline(model, prompt_template, self.bertscore_model)
-        # compute_metrics = self._build_pipeline(model, prompt_template)
         pipeline = TransformPipeline([invoke_model, compute_metrics])
         output_record = pipeline.execute_record(sample)
 

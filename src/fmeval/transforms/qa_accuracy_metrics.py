@@ -12,9 +12,6 @@ from fmeval.util import assert_condition
 BERT_SCORE = "bertscore"
 
 
-# Created this (similar to summarization_accuracy_metric transform)
-# However, it seems like it is literally the same (so I can probably refactor
-# and reorganize to reduce the code redundancy later on)
 class QAAccuracyMetric(Transform):
     """The abstract base class for QA Accuracy metric transforms.
 
