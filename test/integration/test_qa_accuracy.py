@@ -24,9 +24,9 @@ os.environ["PARALLELIZATION_FACTOR"] = "2"
 config = QAAccuracyConfig("<OR>")
 eval_algo = QAAccuracy(config)
 
-js_model_runner_prompt_template = """
+bedrock_model_runner_prompt_template = """
     Answer the question at the end in as few words as possible.
-    Do not repeat the question. Do not answer in complete sentences. <</SYS>>
+    Do not repeat the question. Do not answer in complete sentences.
     Question: $model_input
     """
 
@@ -59,21 +59,22 @@ class TestQAAccuracy:
         eval_output = eval_algo.evaluate(
             model=bedrock_model_runner,
             dataset_config=dataset_config,
-            prompt_template=format_input(js_model_runner_prompt_template),
+            prompt_template=format_input(bedrock_model_runner_prompt_template),
             save=True,
+            num_records=20
             # might take a longer time to run, so thinking about changing to 20 records
             # just like in test_summarization_accuracy.py
         )[0]
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
-                assert eval_score.value == approx(0.6588103254769923, abs=ABS_TOL)
+                assert eval_score.value == approx(0.6167, abs=ABS_TOL)
             elif eval_score.name == EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.5858585858585859, abs=ABS_TOL)
+                assert eval_score.value == approx(0.5500, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.6060606060606061, abs=ABS_TOL)
+                assert eval_score.value == approx(0.5500, abs=ABS_TOL)
             elif eval_score.name == PRECISION_OVER_WORDS:
-                assert eval_score.value == approx(0.6666666666666666, abs=ABS_TOL)
+                assert eval_score.value == approx(0.6250, abs=ABS_TOL)
             elif eval_score.name == RECALL_OVER_WORDS:
-                assert eval_score.value == approx(0.6696969696969697, abs=ABS_TOL)
+                assert eval_score.value == approx(0.6250, abs=ABS_TOL)
             elif eval_score.name == BERT_SCORE:
-                assert eval_score.value == approx(0.8692791720833442, abs=ABS_TOL)
+                assert eval_score.value == approx(0.8385, abs=ABS_TOL)

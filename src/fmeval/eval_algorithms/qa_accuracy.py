@@ -335,13 +335,14 @@ class QAAccuracy(EvalAlgorithmInterface):
     ) -> Tuple[QAAccuracyScores, BertScoreWithDelimiter]:
         """Create a TransformPipeline containing qa accuracy score transforms (QAAccuracyScore, BertScoreWithDelimiter).
 
-        :param target_output_keys: See the corresponding parameter in QAAccuracyScores and BertScoreWithDelimiter.
-        :param model_output_keys: See the corresponding parameter in QAAccuracyScores and BertScoreWithDelimiter. (work on this)
+        :param target_output_keys: The keys corresponding to target outputs (strings potentially containing multiple
+            target output values)
+        :param model_output_keys: The keys corresponding to model outputs (what the model generates).
         :param bertscore_keys: The `output_keys` parameter for the returned BertScore instance.
         :param bertscore_model: A BertscoreHelperModel or Ray actor handle corresponding to a BertscoreHelperModel
             (i.e. a shared resource) used in the creation of the returned BertScore instance.
-        :param target_output_delimiter: This represents a configurable parameter for QAAccuracyScores which sets
-
+        :param target_output_delimiter: This represents a configurable parameter for QAAccuracyScores which
+        is used to combine multiple target outputs into a single string.
         :returns: A BertScore instance.
         """
         qa_accuracy_transform = QAAccuracyScores(target_output_delimiter=target_output_delimiter)

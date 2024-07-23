@@ -11,6 +11,7 @@ from fmeval.util import assert_condition
 
 BERT_SCORE = "bertscore"
 
+
 # Created this (similar to summarization_accuracy_metric transform)
 # However, it seems like it is literally the same (so I can probably refactor
 # and reorganize to reduce the code redundancy later on)
@@ -142,11 +143,12 @@ class BertScoreWithDelimiter(QAAccuracyMetric):
         if isinstance(self.bertscore_model, BertscoreHelperModel):
             return max([self.bertscore_model.get_helper_scores(target, model_output) for target in possible_targets])
         else:
-            return max(
-                [
-                    ray.get(  # type: ignore[return-value]
-                        self.bertscore_model.get_helper_scores.remote(target, model_output)  # type: ignore[union-attr]
-                    )
-                    for target in possible_targets
-                ]
+            possible_scores = list(
+                map(
+                    lambda x: self.bertscore_model.get_helper_scores.remote(x, model_output),  # type: ignore[return-value]
+                    possible_targets,
+                )
             )
+            all_scores = ray.get(possible_scores)
+
+            return max(all_scores)

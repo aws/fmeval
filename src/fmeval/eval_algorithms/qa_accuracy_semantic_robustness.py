@@ -86,6 +86,7 @@ class QAAccuracySemanticRobustnessConfig(SemanticRobustnessConfig):
     :param target_output_delimiter: Target Output can have multiple answers. We expect customer to combine all the
         possible answers into a single string and use the delimiter to separate them. For instance,
         if the answers are ["UK", "England"] and the delimiter="<OR>", then the target_output should be "UK<OR>England".
+    :param model_type_for_bertscore: BERT model type to use for computing BERT score.
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
@@ -153,6 +154,8 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         :param model: The ModelRunner representing the model under evaluation.
         :param prompt_template: A template that is used to construct the prompt fed to the model.
+        :param bertscore_model: Either a BertscoreHelperModel instance or a Ray actor handle corresponding
+            to a BertscoreHelperModel (i.e. a shared resource).
         :returns: A TransformPipeline that can be used by either `evaluate_sample` or `evaluate`.
         """
         transforms = get_model_outputs_from_perturbed_inputs(
