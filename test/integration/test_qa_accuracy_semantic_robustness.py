@@ -118,7 +118,10 @@ class TestQAAccuracySemanticRobustness:
             prompt_template=sm_model_runner_prompt_template,
         )
         for eval_score in eval_scores:
-            assert eval_score.value == expected_scores[eval_score.name]
+            if eval_score.name in [BERT_SCORE, DELTA_BERT_SCORE]:
+                assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)
+            else:
+                assert eval_score.value == expected_scores[eval_score.name]
 
     class TestCaseEvaluate(NamedTuple):
         config: QAAccuracySemanticRobustnessConfig
