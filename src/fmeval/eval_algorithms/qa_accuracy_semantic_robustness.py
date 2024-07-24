@@ -39,10 +39,12 @@ from fmeval.eval_algorithms.qa_accuracy import (
     RECALL_OVER_WORDS,
     BERT_SCORE,
     QAAccuracyScores,
+    BertScoreWithDelimiter,
     QA_ACCURACY_SCORE_NAMES,
     QAAccuracy,
 )
-from fmeval.transforms.qa_accuracy_metrics import BertScoreWithDelimiter
+
+# from fmeval.transforms.qa_accuracy_metrics import BertScoreWithDelimiter
 
 # Changed SCORE_NAMES to QA_ACCURACY_SCORE_NAMES
 from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores

@@ -5,6 +5,7 @@ from unittest.mock import patch, Mock, call
 import pytest
 import ray
 from _pytest.fixtures import fixture
+from ray.actor import ActorHandle
 from ray.data import Dataset
 
 from fmeval.constants import (
@@ -41,6 +42,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _split,
     _quasi_exact_match_score,
     SCORE_NAMES,
+    BertScoreWithDelimiter,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -182,6 +184,34 @@ class TestQAAccuracy:
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             QAAccuracyConfig(target_output_delimiter="")
 
+    def test_bert_score_with_delimiter_call_with_ray_actor_handle(self):
+        """
+        GIVEN a BertScoreWithDelimiter instance, where its `bertscore_model` is a Ray actor handle.
+        WHEN its __call__ method is invoked.
+        THEN the correct Ray APIs are called.
+
+        Note: we don't validate the structure of the __call__ output since
+        we already have @validate_call to handle that.
+        """
+        mock_bertscore_model = Mock(spec=ActorHandle)
+        mock_bertscore_model.get_helper_scores = Mock()
+        mock_bertscore_model.get_helper_scores.remote = Mock(return_value="remote invocation result")
+
+        with patch("fmeval.eval_algorithms.qa_accuracy.ray.get") as mock_ray_get:
+            mock_ray_get.return_value = [0.0]
+            bs = BertScoreWithDelimiter(
+                target_output_keys=["target_output"],
+                model_output_keys=["model_output"],
+                output_keys=["bertscore"],
+                allow_duplicate_input_keys=False,
+                bertscore_model=mock_bertscore_model,
+            )
+            sample = {"target_output": "Hello there!", "model_output": "Hi"}
+            bs(sample)
+            mock_bertscore_model.get_helper_scores.remote.assert_called_once_with("Hello there!", "Hi")
+            mock_ray_get.assert_called_once_with(["remote invocation result"])  # this must be a list because ray.get
+            # takes in possible_scores which is a list (corresponding to possible targets)
+
     class TestCaseQAAccuracyEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
@@ -278,7 +308,8 @@ class TestQAAccuracy:
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy.BertscoreHelperModel")
-    def test_qa_accuracy_evaluate_sample(self, bertscore_model_cls, test_case, config):
+    @patch("fmeval.eval_algorithms.qa_accuracy.isinstance")
+    def test_qa_accuracy_evaluate_sample(self, mock_isinstance, bertscore_model_cls, test_case, config):
         """
         GIVEN valid inputs
         WHEN QAAccuracy.evaluate_sample is called
@@ -287,6 +318,8 @@ class TestQAAccuracy:
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model_cls.return_value = bertscore_model_instance
+
+        mock_isinstance.return_value = True
 
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
