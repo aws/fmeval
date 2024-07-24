@@ -59,7 +59,6 @@ class TestQAAccuracy:
             prompt_template=js_model_runner_prompt_template,
             save=True,
         )[0]
-        breakpoint()
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
                 assert eval_score.value == approx(0.25, abs=ABS_TOL)
