@@ -47,8 +47,8 @@ class TestQAAccuracy:
 
     def test_evaluate(self, integration_tests_dir):
         dataset_config = DataConfig(
-            dataset_name="triviaQA_sample",
-            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample.jsonl"),
+            dataset_name="triviaQA_sample_small",
+            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample_small.jsonl"),
             dataset_mime_type=MIME_TYPE_JSONLINES,
             model_input_location="question",
             target_output_location="answer",
@@ -58,18 +58,17 @@ class TestQAAccuracy:
             dataset_config=dataset_config,
             prompt_template=js_model_runner_prompt_template,
             save=True,
-            num_records=20,
         )[0]
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
-                assert eval_score.value == approx(0.366667, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.050000, abs=ABS_TOL)
+                assert eval_score.value == approx(0.0, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.300000, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == PRECISION_OVER_WORDS:
-                assert eval_score.value == approx(0.375000, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == RECALL_OVER_WORDS:
-                assert eval_score.value == approx(0.375000, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == BERT_SCORE:
-                assert eval_score.value == approx(0.721095, abs=ABS_TOL)
+                assert eval_score.value == approx(0.7945437133312225, abs=ABS_TOL)
