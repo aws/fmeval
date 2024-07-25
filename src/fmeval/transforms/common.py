@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union
 
 from ray.actor import ActorHandle
 
