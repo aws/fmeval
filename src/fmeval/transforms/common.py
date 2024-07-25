@@ -1,8 +1,12 @@
 import numpy as np
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Callable
 
+from ray.actor import ActorHandle
+
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.summarization_accuracy_metrics import BertScore, BERT_SCORE
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 
@@ -190,4 +194,77 @@ class Mean(Transform):
         """
         avg = np.mean([record[input_key] for input_key in self.input_keys])
         record[self.output_key] = avg
+        return record
+
+
+class BertScoreMax(Transform):
+    """This Transform augments its input record with the maximum BERTScore metric computed over
+    possible targets separated by a target_output_delimiter.
+    """
+
+    def __init__(
+        self,
+        target_output_keys: List[str],
+        model_output_keys: List[str],
+        output_keys: List[str],
+        allow_duplicate_input_keys: bool,
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
+        target_output_delimiter: Optional[str] = "<OR>",
+    ):
+        """BertScoreMax initializer.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param output_keys: The output keys for this Transform, which correspond
+            to the BERT scores that get computed.
+        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
+        :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
+        :param split_function: This is essentially a function that allows us to convert our exists target output into
+            a list of possible targets.
+        """
+        super().__init__(
+            target_output_keys,
+            model_output_keys,
+            output_keys,
+            allow_duplicate_input_keys,
+            bertscore_model,
+            target_output_delimiter,
+        )
+        self.register_input_output_keys(
+            target_output_keys + model_output_keys,
+            output_keys,
+            allow_duplicates=allow_duplicate_input_keys,
+        )
+        self.target_output_keys = target_output_keys
+        self.model_output_keys = model_output_keys
+        self.bertscore_model = bertscore_model
+        self.target_output_delimiter = target_output_delimiter
+
+        # BertScore transform used to compute metrics
+        self.bert_score_transform = BertScore(
+            target_output_keys=self.target_output_keys,
+            model_output_keys=self.model_output_keys,
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=allow_duplicate_input_keys,
+            bertscore_model=self.bertscore_model,
+        )
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with BERT_SCORE metrics computed via BertScore.compute_metric.
+
+        :param record: The input record.
+        :returns: The input record with BERT_SCORE metric added in.
+        """
+
+        for target_output_key, model_output_key, output_key in zip(
+            self.target_output_keys, self.model_output_keys, self.output_keys
+        ):
+            # separating possible targets by target output delimiter to use for BertScore
+            possible_targets = record[target_output_key].split(self.target_output_delimiter)
+
+            scores = [
+                BertScore.compute_metric(self.bert_score_transform, target, record[model_output_key])
+                for target in possible_targets
+            ]
+            record[output_key] = max(scores)
         return record
