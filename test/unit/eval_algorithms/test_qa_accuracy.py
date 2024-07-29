@@ -279,8 +279,7 @@ class TestQAAccuracy:
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy.BertscoreHelperModel")
-    @patch("fmeval.eval_algorithms.qa_accuracy.isinstance")
-    def test_qa_accuracy_evaluate_sample(self, mock_isinstance, bertscore_model_cls, test_case, config):
+    def test_qa_accuracy_evaluate_sample(self, bertscore_model_cls, test_case, config):
         """
         GIVEN valid inputs
         WHEN QAAccuracy.evaluate_sample is called
@@ -289,8 +288,6 @@ class TestQAAccuracy:
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model_cls.return_value = bertscore_model_instance
-
-        mock_isinstance.return_value = True
 
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -448,7 +445,6 @@ class TestQAAccuracy:
         It uses a special toy dataset where we are able to compute the exact expected scores by hand.
         The purpose of this test is really to ensure that the correct scores are being generated.
         """
-
         mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate(

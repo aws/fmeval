@@ -3,7 +3,6 @@ import logging
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 from dataclasses import dataclass
-
 from nltk.metrics.scores import f_measure, precision, recall
 
 from fmeval.constants import (

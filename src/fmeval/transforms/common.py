@@ -198,8 +198,8 @@ class Mean(Transform):
 
 
 class BertScoreMax(Transform):
-    """This Transform augments its input record with the maximum BERTScore metric computed over
-    possible targets separated by a target_output_delimiter.
+    """This Transform computes the maximum BertScore value given various possible targets from a record and
+    augments said record.
     """
 
     def __init__(
@@ -218,8 +218,8 @@ class BertScoreMax(Transform):
             to the BERT scores that get computed.
         :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
         :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
-        :param split_function: This is essentially a function that allows us to convert our exists target output into
-            a list of possible targets.
+        :param target_output_delimiter: The delimiter used to separate the possible
+            target outputs within the `target_output` string.
         """
         super().__init__(
             target_output_keys,
@@ -250,7 +250,7 @@ class BertScoreMax(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with BERT_SCORE metrics computed via BertScore.compute_metric.
+        """Augment the input record with a maximum BERT_SCORE value computed via BertScore.compute_metric.
 
         :param record: The input record.
         :returns: The input record with BERT_SCORE metric added in.
@@ -261,7 +261,6 @@ class BertScoreMax(Transform):
         ):
             # separating possible targets by target output delimiter to use for BertScore
             possible_targets = record[target_output_key].split(self.target_output_delimiter)
-
             scores = [
                 BertScore.compute_metric(self.bert_score_transform, target, record[model_output_key])
                 for target in possible_targets
