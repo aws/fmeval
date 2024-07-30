@@ -298,7 +298,8 @@ class TestQAAccuracy:
     @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreMax")
+    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreNTimes")
+    @patch("fmeval.eval_algorithms.qa_accuracy.SplitWithDelimiter")
     @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracyScores")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset_configs")
@@ -307,7 +308,8 @@ class TestQAAccuracy:
         mock_get_dataset_configs,
         mock_get_dataset,
         mock_qa_accuracy_scores,
-        mock_bert_scores_with_delimiter,
+        mock_split_with_delimiter,
+        mock_bert_scores_n_times,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
         mock_evaluate_dataset,
@@ -320,11 +322,12 @@ class TestQAAccuracy:
         THEN `evaluate_dataset` is called with the correct arguments.
         """
         # The transforms that are saved as instance attributes of the QAAccuracy instance
-        qa_accuracy_score, bert_score = Mock(), Mock()
+        qa_accuracy_score, split_transform, bert_score = Mock(), Mock(), Mock()
         pipeline_bertscore = Mock()
 
         mock_qa_accuracy_scores.side_effect = [qa_accuracy_score]
-        mock_bert_scores_with_delimiter.side_effect = [bert_score, pipeline_bertscore]
+        mock_split_with_delimiter.side_effect = [split_transform]
+        mock_bert_scores_n_times.side_effect = [bert_score, pipeline_bertscore]
 
         instance_pipeline = Mock()  # The self.pipeline of the QAAccuracy instance
         executed_pipeline = Mock()  # The pipeline that gets created and executed in `evaluate`
@@ -354,10 +357,14 @@ class TestQAAccuracy:
 
         mock_create_shared_resource.assert_called_once_with(qa_acc.bertscore_model)
         assert mock_qa_accuracy_scores.call_count == 1  # once during initialization
-        assert mock_bert_scores_with_delimiter.call_count == 2  # once during initialization, once during evaluate
+        assert mock_split_with_delimiter.call_count == 1
+        assert mock_bert_scores_n_times.call_count == 2  # once during initialization, once during evaluate
 
         mock_transform_pipeline_cls.assert_has_calls(
-            [call([qa_accuracy_score, bert_score]), call([qa_accuracy_score, pipeline_bertscore])]
+            [
+                call([qa_accuracy_score, split_transform, bert_score]),
+                call([qa_accuracy_score, split_transform, pipeline_bertscore]),
+            ]
         )
 
         mock_evaluate_dataset.assert_called_once_with(

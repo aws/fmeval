@@ -3,7 +3,7 @@ import nltk
 import evaluate as hf_evaluate
 
 from abc import abstractmethod
-from typing import Any, Dict, Union, List
+from typing import Any, Dict, List, Union
 from ray.actor import ActorHandle
 from nltk import word_tokenize
 from nltk.translate import meteor_score
@@ -92,6 +92,7 @@ class SummarizationAccuracyMetric(Transform):
         :param record: The input record.
         :returns: The input record with metrics added in.
         """
+
         for target_output_key, model_output_key, output_key in zip(
             self.target_output_keys, self.model_output_keys, self.output_keys
         ):
