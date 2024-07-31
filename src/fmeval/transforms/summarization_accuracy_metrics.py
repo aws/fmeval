@@ -3,11 +3,12 @@ import nltk
 import evaluate as hf_evaluate
 
 from abc import abstractmethod
-from typing import Any, Dict, Union, List
+from typing import Any, Dict, Union, List, Optional
 from ray.actor import ActorHandle
 from nltk import word_tokenize
 from nltk.translate import meteor_score
 
+from fmeval.constants import BERTSCORE_DEFAULT_MODEL
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
@@ -36,10 +37,11 @@ class SummarizationAccuracyMetric(Transform):
 
     def __init__(
         self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
         output_keys: List[str],
+        model_output_keys: List[str],
         allow_duplicate_input_keys: bool,
+        target_output_keys: Optional[List[str]] = None,
+        target_output_keys_provider: str = "",
         *args,
         **kwargs,
     ):
@@ -49,16 +51,16 @@ class SummarizationAccuracyMetric(Transform):
         must match, i.e. the kth element of kth element of `model_output_keys` is used
         to compute the kth metric, which has an output key of `output_keys[k]`.
 
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
         :param output_keys: The output keys for this Transform, which correspond
             to the metrics/scores that get computed.
+        :param model_output_keys: The keys corresponding to model outputs.
         :param allow_duplicate_input_keys: Whether to allow duplicate keys in
             `target_output_keys` and `model_output_keys`. This parameter is usually
-            False, but will be True when a SummarizationAccuracyMetric is created
-            to compute metrics on perturbed model outputs. In this case,
-            `target_output_keys` will be a list of a single repeated key, while
-            `model_output_keys` will contain the keys for perturbed model outputs.
+            False.
+        :param target_output_keys: The keys corresponding to target outputs. If none are
+            provided, will fall back on the `target_output_keys_provider`.
+        :param target_output_keys_provider: The key corresponding to a list of target
+            outputs. Will only be used if `target_output_keys` is not provided.
         :param *args: Variable length argument list.
         :param **kwargs: Arbitrary keyword arguments.
         """
@@ -68,21 +70,29 @@ class SummarizationAccuracyMetric(Transform):
             f"len(model_output_keys) is "
             f"{len(model_output_keys)}, and len(output_keys) is {len(output_keys)}.",
         )
+        assert_condition(
+            target_output_keys is not None or target_output_keys_provider != "",
+            "Both target_output_keys_provider and target_output_keys are invalid (None)"
+            "At least one must be provided.",
+        )
         super().__init__(
-            target_output_keys,
-            model_output_keys,
             output_keys,
+            model_output_keys,
             allow_duplicate_input_keys,
+            target_output_keys,
+            target_output_keys_provider,
             *args,
             **kwargs,
         )
+        input_keys = [target_output_keys_provider] if target_output_keys is None else target_output_keys
         self.register_input_output_keys(
-            target_output_keys + model_output_keys,
+            input_keys + model_output_keys,
             output_keys,
             allow_duplicates=allow_duplicate_input_keys,
         )
         self.target_output_keys = target_output_keys
         self.model_output_keys = model_output_keys
+        self.target_output_keys_provider = target_output_keys_provider
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -93,11 +103,17 @@ class SummarizationAccuracyMetric(Transform):
         :param record: The input record.
         :returns: The input record with metrics added in.
         """
-        for model_output_key, output_key in zip(self.model_output_keys, self.output_keys):
-            scores = [
-                self.compute_metric(record[target], record[model_output_key]) for target in self.target_output_keys
-            ]
-            record[output_key] = max(scores)
+        if self.target_output_keys is not None:
+            for model_output_key, output_key in zip(self.model_output_keys, self.output_keys):
+                scores = [
+                    self.compute_metric(record[target], record[model_output_key]) for target in self.target_output_keys
+                ]
+                record[output_key] = max(scores)
+        else:
+            target_output_list = record[self.target_output_keys_provider]
+            for model_output_key, output_key in zip(self.model_output_keys, self.output_keys):
+                scores = [self.compute_metric(target, record[model_output_key]) for target in target_output_list]
+                record[output_key] = max(scores)
         return record
 
     @abstractmethod
@@ -127,26 +143,31 @@ class MeteorScore(SummarizationAccuracyMetric):
 
     def __init__(
         self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
         output_keys: List[str],
-        allow_duplicate_input_keys,
+        model_output_keys: List[str],
+        allow_duplicate_input_keys: bool,
+        target_output_keys: Optional[List[str]] = None,
+        target_output_keys_provider: str = "",
         load_modules: bool = True,
     ):
         """MeteorScore initializer.
 
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
         :param output_keys: The output keys for this Transform, which correspond
             to the Meteor scores that get computed.
-        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param allow_duplicate_input_keys: Whether to allow duplicate keys in
+            `target_output_keys` and `model_output_keys`.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param target_output_keys_provider: The key corresponding to a list of target
+            outputs. Will only be used if `target_output_keys` is not provided.
         :param load_modules: Whether to load the meteor helper modules.
         """
         super().__init__(
-            target_output_keys,
-            model_output_keys,
             output_keys,
+            model_output_keys,
             allow_duplicate_input_keys,
+            target_output_keys,
+            target_output_keys_provider,
             # The first instance of this class that gets created will
             # load the helper modules, so copies of this instance
             # need not load them again.
@@ -191,28 +212,33 @@ class RougeScore(SummarizationAccuracyMetric):
 
     def __init__(
         self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
         output_keys: List[str],
+        model_output_keys: List[str],
         allow_duplicate_input_keys: bool,
+        target_output_keys: Optional[List[str]] = None,
+        target_output_keys_provider: str = "",
         rouge_type: str = ROUGE_2,
         use_stemmer: bool = True,
     ):
         """RougeScore initializer.
 
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
         :param output_keys: The output keys for this Transform, which correspond
-            to the ROUGE scores that get computed.
-        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
+            to the Rouge scores that get computed.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param allow_duplicate_input_keys: Whether to allow duplicate keys in
+            `target_output_keys` and `model_output_keys`.
+        :param target_output_keys: The keys corresponding to target outputs.
+        :param target_output_keys_provider: The key corresponding to a list of target
+            outputs. Will only be used if `target_output_keys` is not provided.
         :param rouge_type: Which ROUGE type to use (1, 2, L).
         :param use_stemmer: Whether to use a stemmer for ROUGE.
         """
         super().__init__(
-            target_output_keys,
-            model_output_keys,
             output_keys,
+            model_output_keys,
             allow_duplicate_input_keys,
+            target_output_keys,
+            target_output_keys_provider,
             rouge_type=rouge_type,
             use_stemmer=use_stemmer,
         )
@@ -248,23 +274,31 @@ class BertScore(SummarizationAccuracyMetric):
 
     def __init__(
         self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
         output_keys: List[str],
+        model_output_keys: List[str],
         allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
+        target_output_keys: Optional[List[str]] = None,
+        target_output_keys_provider: str = "",
+        bertscore_model: Union[BertscoreHelperModel, ActorHandle] = BertscoreHelperModel(BERTSCORE_DEFAULT_MODEL),
     ):
         """BertScore initializer.
 
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
         :param output_keys: The output keys for this Transform, which correspond
             to the BERT scores that get computed.
-        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
+        :param model_output_keys: The keys corresponding to model outputs.
+        :param allow_duplicate_input_keys: Whether to allow duplicate keys in
+            `target_output_keys` and `model_output_keys`.
+        :param target_output_keys: The keys corresponding to target outputs.
         :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
+            If no model is provided, the parameter will be set to the default BertscoreHelperModel
         """
         super().__init__(
-            target_output_keys, model_output_keys, output_keys, allow_duplicate_input_keys, bertscore_model
+            output_keys,
+            model_output_keys,
+            allow_duplicate_input_keys,
+            target_output_keys,
+            target_output_keys_provider,
+            bertscore_model,
         )
         self.bertscore_model = bertscore_model
 
