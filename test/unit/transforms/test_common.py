@@ -3,7 +3,7 @@ from typing import List, Dict, NamedTuple
 import pytest
 from unittest.mock import patch
 
-from fmeval.transforms.common import GeneratePrompt, GetModelOutputs, GetLogProbabilities, Mean
+from fmeval.transforms.common import GeneratePrompt, GetModelOutputs, GetLogProbabilities, Mean, SplitWithDelimiter
 
 
 def test_generate_prompt_init():
@@ -213,3 +213,14 @@ def test_mean_call():
     m = Mean(input_keys=["a", "b", "c"], output_key="mean")
     sample = {"a": 1, "b": 6, "c": 2}
     assert m(sample)["mean"] == 3.0
+
+
+def test_split_with_delimiter_call():
+    """
+    GIVEN a SplitWithDelimiter instance.
+    WHEN its __call__ method is called.
+    THEN the correct output is returned.
+    """
+    s = SplitWithDelimiter(input_key="target_output", output_key="possible_targets", target_output_delimiter="<OR>")
+    sample = {"target_output": "England<OR>UK<OR>Germany"}
+    assert s(sample)["possible_targets"] == ["England", "UK", "Germany"]

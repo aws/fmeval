@@ -161,7 +161,7 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
         # Compute BERTScores with target_output = the original model output
         # and model_output = the output from invoking the model with the perturbed prompt.
         get_bert_scores = BertScore(
-            target_output_keys=[original_model_output_key for _ in range(self.num_perturbations)],
+            target_output_keys=[original_model_output_key],
             model_output_keys=get_perturbed_responses.output_keys,
             output_keys=[create_output_key(BertScore.__name__, i) for i in range(self.num_perturbations)],
             allow_duplicate_input_keys=True,
