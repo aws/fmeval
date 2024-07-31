@@ -5,7 +5,6 @@ from unittest.mock import patch, Mock, call
 import pytest
 import ray
 from _pytest.fixtures import fixture
-from ray.actor import ActorHandle
 from ray.data import Dataset
 
 from fmeval.constants import (
@@ -42,7 +41,8 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _split,
     _quasi_exact_match_score,
     SCORE_NAMES,
-    BertScoreWithDelimiter,
+    SplitWithDelimiter,
+    BertScore,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -184,34 +184,6 @@ class TestQAAccuracy:
         with pytest.raises(EvalAlgorithmClientError, match=re.escape(expected_error_message)):
             QAAccuracyConfig(target_output_delimiter="")
 
-    def test_bert_score_with_delimiter_call_with_ray_actor_handle(self):
-        """
-        GIVEN a BertScoreWithDelimiter instance, where its `bertscore_model` is a Ray actor handle.
-        WHEN its __call__ method is invoked.
-        THEN the correct Ray APIs are called.
-
-        Note: we don't validate the structure of the __call__ output since
-        we already have @validate_call to handle that.
-        """
-        mock_bertscore_model = Mock(spec=ActorHandle)
-        mock_bertscore_model.get_helper_scores = Mock()
-        mock_bertscore_model.get_helper_scores.remote = Mock(return_value="remote invocation result")
-
-        with patch("fmeval.eval_algorithms.qa_accuracy.ray.get") as mock_ray_get:
-            mock_ray_get.return_value = [0.0]
-            bs = BertScoreWithDelimiter(
-                target_output_keys=["target_output"],
-                model_output_keys=["model_output"],
-                output_keys=["bertscore"],
-                allow_duplicate_input_keys=False,
-                bertscore_model=mock_bertscore_model,
-            )
-            sample = {"target_output": "Hello there!", "model_output": "Hi"}
-            bs(sample)
-            mock_bertscore_model.get_helper_scores.remote.assert_called_once_with("Hello there!", "Hi")
-            mock_ray_get.assert_called_once_with(["remote invocation result"])  # this must be a list because ray.get
-            # takes in possible_scores which is a list (corresponding to possible targets)
-
     class TestCaseQAAccuracyEvaluateSample(NamedTuple):
         model_input: str
         model_output: str
@@ -308,8 +280,7 @@ class TestQAAccuracy:
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy.BertscoreHelperModel")
-    @patch("fmeval.eval_algorithms.qa_accuracy.isinstance")
-    def test_qa_accuracy_evaluate_sample(self, mock_isinstance, bertscore_model_cls, test_case, config):
+    def test_qa_accuracy_evaluate_sample(self, bertscore_model_cls, test_case, config):
         """
         GIVEN valid inputs
         WHEN QAAccuracy.evaluate_sample is called
@@ -318,8 +289,6 @@ class TestQAAccuracy:
         bertscore_model_instance = Mock(spec=BertscoreHelperModel)
         bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
         bertscore_model_cls.return_value = bertscore_model_instance
-
-        mock_isinstance.return_value = True
 
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
@@ -330,7 +299,8 @@ class TestQAAccuracy:
     @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreWithDelimiter")
+    @patch("fmeval.eval_algorithms.qa_accuracy.BertScore")
+    @patch("fmeval.eval_algorithms.qa_accuracy.SplitWithDelimiter")
     @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracyScores")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset_configs")
@@ -339,7 +309,8 @@ class TestQAAccuracy:
         mock_get_dataset_configs,
         mock_get_dataset,
         mock_qa_accuracy_scores,
-        mock_bert_scores_with_delimiter,
+        mock_split_with_delimiter,
+        mock_bert_scores,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
         mock_evaluate_dataset,
@@ -352,11 +323,12 @@ class TestQAAccuracy:
         THEN `evaluate_dataset` is called with the correct arguments.
         """
         # The transforms that are saved as instance attributes of the QAAccuracy instance
-        qa_accuracy_score, bert_score = Mock(), Mock()
+        qa_accuracy_score, split_transform, bert_score = Mock(), Mock(), Mock()
         pipeline_bertscore = Mock()
 
         mock_qa_accuracy_scores.side_effect = [qa_accuracy_score]
-        mock_bert_scores_with_delimiter.side_effect = [bert_score, pipeline_bertscore]
+        mock_split_with_delimiter.side_effect = [split_transform]
+        mock_bert_scores.side_effect = [bert_score, pipeline_bertscore]
 
         instance_pipeline = Mock()  # The self.pipeline of the QAAccuracy instance
         executed_pipeline = Mock()  # The pipeline that gets created and executed in `evaluate`
@@ -385,11 +357,15 @@ class TestQAAccuracy:
         )
 
         mock_create_shared_resource.assert_called_once_with(qa_acc.bertscore_model)
-        assert mock_qa_accuracy_scores.call_count == 1  # once during initialization
-        assert mock_bert_scores_with_delimiter.call_count == 2  # once during initialization, once during evaluate
+        assert mock_qa_accuracy_scores.call_count == 1
+        assert mock_split_with_delimiter.call_count == 1
+        assert mock_bert_scores.call_count == 2  # once during initialization, once during evaluate
 
         mock_transform_pipeline_cls.assert_has_calls(
-            [call([qa_accuracy_score, bert_score]), call([qa_accuracy_score, pipeline_bertscore])]
+            [
+                call([qa_accuracy_score, split_transform, bert_score]),
+                call([qa_accuracy_score, split_transform, pipeline_bertscore]),
+            ]
         )
 
         mock_evaluate_dataset.assert_called_once_with(
@@ -477,7 +453,6 @@ class TestQAAccuracy:
         It uses a special toy dataset where we are able to compute the exact expected scores by hand.
         The purpose of this test is really to ensure that the correct scores are being generated.
         """
-
         mock_get_dataset.return_value = test_case.input_dataset
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate(
