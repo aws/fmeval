@@ -1,6 +1,6 @@
 import re
 from typing import NamedTuple, List, Optional
-from unittest.mock import patch, Mock, call
+from unittest.mock import patch, Mock
 
 import pytest
 import ray
@@ -24,7 +24,6 @@ from fmeval.eval_algorithms import (
     NATURAL_QUESTIONS,
     DEFAULT_PROMPT_TEMPLATE,
 )
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.eval_algorithms.qa_accuracy import (
     QAAccuracy,
     QAAccuracyConfig,
@@ -33,7 +32,6 @@ from fmeval.eval_algorithms.qa_accuracy import (
     QUASI_EXACT_MATCH_SCORE,
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
-    BERT_SCORE,
     _f1_score,
     _exact_match_score,
     _precision,
@@ -41,13 +39,9 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _split,
     _quasi_exact_match_score,
     SCORE_NAMES,
-    BertScoreMax,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
-BERTSCORE_DUMMY_VALUE = (
-    0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
-)
 QA_DATASET = ray.data.from_items(
     [
         # Exact match so all scores should have perfect values.
@@ -116,7 +110,6 @@ CATEGORY_SCORES = [
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=2 / 3),
             EvalScore(name=PRECISION_OVER_WORDS, value=2 / 3),
             EvalScore(name=RECALL_OVER_WORDS, value=2 / 3),
-            EvalScore(name=BERT_SCORE, value=0.7737900217374166),
         ],
     ),
     CategoryScore(
@@ -127,7 +120,6 @@ CATEGORY_SCORES = [
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
             EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
             EvalScore(name=RECALL_OVER_WORDS, value=1 / 2),
-            EvalScore(name=BERT_SCORE, value=0.5999065041542053),
         ],
     ),
     CategoryScore(
@@ -138,7 +130,6 @@ CATEGORY_SCORES = [
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
             EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
             EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-            EvalScore(name=BERT_SCORE, value=0.9999996423721313),
         ],
     ),
     CategoryScore(
@@ -149,7 +140,6 @@ CATEGORY_SCORES = [
             EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
             EvalScore(name=PRECISION_OVER_WORDS, value=1 / 4),
             EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-            EvalScore(name=BERT_SCORE, value=0.4868725538253784),
         ],
     ),
 ]
@@ -160,7 +150,6 @@ DATASET_SCORES = [
     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=3 / 6),
     EvalScore(name=PRECISION_OVER_WORDS, value=17 / 24),
     EvalScore(name=RECALL_OVER_WORDS, value=3 / 4),
-    EvalScore(name=BERT_SCORE, value=0.7346914609273275),
 ]
 
 EVAL_RESULTS_PATH = DEFAULT_EVAL_RESULTS_PATH
@@ -203,7 +192,6 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
             # Partial match
@@ -217,7 +205,6 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1 / 2),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
             # Wrong answer. All scores should be zero.
@@ -231,7 +218,6 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=0.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=0.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
             # Correct answer but with punctuation added.
@@ -245,7 +231,6 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
             # Many correct answers.
@@ -259,7 +244,6 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
             # Answer is longer than the model output.
@@ -273,45 +257,31 @@ class TestQAAccuracy:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=0.25),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
                 ],
             ),
         ],
     )
-    @patch("fmeval.eval_algorithms.qa_accuracy.BertscoreHelperModel")
-    def test_qa_accuracy_evaluate_sample(self, bertscore_model_cls, test_case, config):
+    def test_qa_accuracy_evaluate_sample(self, test_case, config):
         """
         GIVEN valid inputs
         WHEN QAAccuracy.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
-        bertscore_model_instance = Mock(spec=BertscoreHelperModel)
-        bertscore_model_instance.get_helper_scores = Mock(return_value=BERTSCORE_DUMMY_VALUE)
-        bertscore_model_cls.return_value = bertscore_model_instance
-
         eval_algorithm = QAAccuracy(config)
         actual_response = eval_algorithm.evaluate_sample(test_case.target_output, test_case.model_output)
         assert test_case.expected_response == actual_response
 
     @patch("fmeval.eval_algorithms.qa_accuracy.get_eval_results_path")
-    @patch("fmeval.eval_algorithms.qa_accuracy.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
-    @patch("fmeval.eval_algorithms.qa_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreMax")
-    @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracyScores")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset_configs")
     def test_evaluate(
         self,
         mock_get_dataset_configs,
         mock_get_dataset,
-        mock_qa_accuracy_scores,
-        mock_bert_scores_with_delimiter,
         mock_transform_pipeline_cls,
-        mock_create_shared_resource,
         mock_evaluate_dataset,
-        mock_cleanup_shared_resource,
         mock_get_results_path,
     ):
         """
@@ -319,18 +289,6 @@ class TestQAAccuracy:
         WHEN its evaluate method is called with valid arguments.
         THEN `evaluate_dataset` is called with the correct arguments.
         """
-        # The transforms that are saved as instance attributes of the QAAccuracy instance
-        qa_accuracy_score, bert_score = Mock(), Mock()
-        pipeline_bertscore = Mock()
-
-        mock_qa_accuracy_scores.side_effect = [qa_accuracy_score]
-        mock_bert_scores_with_delimiter.side_effect = [bert_score, pipeline_bertscore]
-
-        instance_pipeline = Mock()  # The self.pipeline of the QAAccuracy instance
-        executed_pipeline = Mock()  # The pipeline that gets created and executed in `evaluate`
-
-        mock_transform_pipeline_cls.side_effect = [instance_pipeline, executed_pipeline]
-
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
@@ -352,17 +310,11 @@ class TestQAAccuracy:
             save=True,
         )
 
-        mock_create_shared_resource.assert_called_once_with(qa_acc.bertscore_model)
-        assert mock_qa_accuracy_scores.call_count == 1  # once during initialization
-        assert mock_bert_scores_with_delimiter.call_count == 2  # once during initialization, once during evaluate
-
-        mock_transform_pipeline_cls.assert_has_calls(
-            [call([qa_accuracy_score, bert_score]), call([qa_accuracy_score, pipeline_bertscore])]
-        )
+        mock_transform_pipeline_cls.assert_called_once_with([qa_acc.transform])
 
         mock_evaluate_dataset.assert_called_once_with(
             dataset=mock_dataset,
-            pipeline=executed_pipeline,
+            pipeline=mock_transform_pipeline_cls.return_value,
             dataset_name=dataset_config.dataset_name,
             eval_name=qa_acc.eval_name,
             metric_names=SCORE_NAMES,
@@ -374,9 +326,7 @@ class TestQAAccuracy:
             save_strategy=None,
         )
 
-        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
-        assert qa_acc.pipeline == instance_pipeline
 
     class TestCaseQAAccuracyEvaluate(NamedTuple):
         input_dataset: Dataset

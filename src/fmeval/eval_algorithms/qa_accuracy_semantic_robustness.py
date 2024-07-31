@@ -34,7 +34,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
     QAAccuracyScores,
-    QA_ACCURACY_SCORE_NAMES,
+    SCORE_NAMES,
 )
 from fmeval.transforms.semantic_robustness_metrics import MeanDeltaScores
 from fmeval.transforms.transform_pipeline import TransformPipeline
@@ -139,9 +139,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             QAAccuracyScores(
                 model_output_key=perturbed_output_key,
                 target_output_delimiter=self.target_output_delimiter,
-                output_keys=[
-                    create_output_key(score_name, perturbed_output_key) for score_name in QA_ACCURACY_SCORE_NAMES
-                ],
+                output_keys=[create_output_key(score_name, perturbed_output_key) for score_name in SCORE_NAMES],
             )
             for perturbed_output_key in get_perturbed_outputs.output_keys
         ]
@@ -151,7 +149,7 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
                 [perturbed_score_transform.output_keys[i] for perturbed_score_transform in perturbed_scores],
                 DELTA_SCORES[i],
             )
-            for i, original_score_name in enumerate(QA_ACCURACY_SCORE_NAMES)
+            for i, original_score_name in enumerate(SCORE_NAMES)
         }
 
         mean_delta_scores = MeanDeltaScores(key_mapping)
