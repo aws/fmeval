@@ -233,11 +233,11 @@ class SplitWithDelimiter(Transform):
         return record
 
 
-class BertScoreNTimes(Transform):
+class BertScoreConverter(Transform):
     def __init__(
         self,
         target_output_keys: str,
-        model_output_keys: str,
+        model_output_keys: List[str],
         output_key: str,
         allow_duplicate_input_keys: bool,
         bertscore_model: Union[BertscoreHelperModel, ActorHandle],
@@ -250,7 +250,7 @@ class BertScoreNTimes(Transform):
             bertscore_model,
         )
         self.register_input_output_keys(
-            [target_output_keys],
+            [target_output_keys] + model_output_keys,
             [output_key],
             allow_duplicates=allow_duplicate_input_keys,
         )
@@ -262,197 +262,59 @@ class BertScoreNTimes(Transform):
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed mean.
+        """Augment the input record with the computed bertscore scores.
         :param record: The input record.
-        :returns: The input record with the mean added in.
+        :returns: The input record with the bertscore added in.
         """
+
+        self.bert_score_transform = BertScore(
+            target_output_keys=record[self.target_output_keys],
+            model_output_keys=self.model_output_keys,
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=self.allow_duplicate_input_keys,
+            bertscore_model=self.bertscore_model,
+        )
+        record = self.bert_score_transform(record)
+        return record
+
+        # We use this BertScoreConverter transform because the target_output_keys are determined
+        # at runtime and need to be fed to BertScore (I don't know if there's a way to initialize a
+        # BertScore directly in qa_accuracy since we wouldn't be able to get the target_output_keys then).
         # target_output_keys = [f'{self.target_output_keys[0]}{i}' for i in range(record[self.target_output_keys[1]])]
         # keysss = []
         # for i, target in enumerate(record[self.target_output_keys]):
         #     record[f'{self.output_key}_{i}'] = target
         #     keysss.append(f'{self.output_key}_{i}')
 
-        self.bert_score_transform = BertScore(
-            target_output_keys=record[self.target_output_keys],
-            model_output_keys=[self.model_output_keys for _ in range(len(record[self.target_output_keys]))],
-            output_keys=[f"{BERT_SCORE}{i}" for i in range(len(record[self.target_output_keys]))],
-            allow_duplicate_input_keys=self.allow_duplicate_input_keys,
-            bertscore_model=self.bertscore_model,
-        )
         # max_score = max([record[input_key] for input_key in self.input_keys])
         # record[self.output_key] = max_score
-        self.max_transform = Max(
-            input_keys=[f"{BERT_SCORE}{i}" for i in range(len(record[self.target_output_keys]))],
-            output_key=self.output_key,
-        )
-        for transform in [self.bert_score_transform, self.max_transform]:
-            record = transform(record)
-        return record
+        # self.max_transform = Max(
+        #     input_keys=[f"{BERT_SCORE}{i}" for i in range(len(record[self.target_output_keys]))],
+        #     output_key=self.output_key,
+        # )
+        # for transform in [self.bert_score_transform, self.max_transform]:
+        #     record = transform(record)
 
 
-class Max(Transform):
-    """This transform computes the max of specified values in a record and augments said record."""
-
-    def __init__(self, input_keys: List[str], output_key: str):
-        """Max initializer.
-        :param input_keys: The keys corresponding to the values to take the max of.
-        :param output_key: The key corresponding to the mean value, which gets
-            added to the record.
-        """
-        super().__init__(input_keys, output_key)
-        self.register_input_output_keys(input_keys, [output_key])
-        self.output_key = output_key
-
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed mean.
-        :param record: The input record.
-        :returns: The input record with the mean added in.
-        """
-        max_score = max([record[input_key] for input_key in self.input_keys])
-        record[self.output_key] = max_score
-        return record
-
-
-class BertScoreMax(Transform):
-    """This Transform computes the maximum BertScore value given various possible targets from a record and
-    augments said record.
-    """
-
-    def __init__(
-        self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
-        output_keys: List[str],
-        allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
-        target_output_delimiter: Optional[str] = "<OR>",
-    ):
-        """BertScoreMax initializer.
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
-        :param output_keys: The output keys for this Transform, which correspond
-            to the BERT scores that get computed.
-        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
-        :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
-        :param target_output_delimiter: The delimiter used to separate the possible
-            target outputs within the `target_output` string.
-        """
-        super().__init__(
-            target_output_keys,
-            model_output_keys,
-            output_keys,
-            allow_duplicate_input_keys,
-            bertscore_model,
-            target_output_delimiter,
-        )
-        self.register_input_output_keys(
-            target_output_keys + model_output_keys,
-            output_keys,
-            allow_duplicates=allow_duplicate_input_keys,
-        )
-        self.target_output_keys = target_output_keys
-        self.model_output_keys = model_output_keys
-        self.bertscore_model = bertscore_model
-        self.target_output_delimiter = target_output_delimiter
-
-        # BertScore transform used to compute metrics
-        self.bert_score_transform = BertScore(
-            target_output_keys=self.target_output_keys,
-            model_output_keys=self.model_output_keys,
-            output_keys=[BERT_SCORE],
-            allow_duplicate_input_keys=allow_duplicate_input_keys,
-            bertscore_model=self.bertscore_model,
-        )
-
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with a maximum BERT_SCORE value computed via BertScore.compute_metric.
-
-        :param record: The input record.
-        :returns: The input record with BERT_SCORE metric added in.
-        """
-
-        for target_output_key, model_output_key, output_key in zip(
-            self.target_output_keys, self.model_output_keys, self.output_keys
-        ):
-            # separating possible targets by target output delimiter to use for BertScore
-            possible_targets = record[target_output_key].split(self.target_output_delimiter)
-            scores = [
-                self.bert_score_transform.compute_metric(target, record[model_output_key])
-                for target in possible_targets
-            ]
-            record[output_key] = max(scores)
-        return record
-
-
-class GeneralMax(Transform):
-    """This Transform computes the maximum BertScore value given various possible targets from a record and
-    augments said record.
-    """
-
-    def __init__(
-        self,
-        target_output_keys: List[str],
-        model_output_keys: List[str],
-        output_keys: List[str],
-        allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
-        target_output_delimiter: Optional[str] = "<OR>",
-    ):
-        """BertScoreMax initializer.
-        :param target_output_keys: The keys corresponding to target outputs.
-        :param model_output_keys: The keys corresponding to model outputs.
-        :param output_keys: The output keys for this Transform, which correspond
-            to the BERT scores that get computed.
-        :param allow_duplicate_input_keys: See docstring for SummarizationAccuracyMetric.
-        :param bertscore_model: A BertscoreHelperModel instance or a Ray actor handle for a BertscoreHelperModel.
-        :param target_output_delimiter: The delimiter used to separate the possible
-            target outputs within the `target_output` string.
-        """
-        super().__init__(
-            target_output_keys,
-            model_output_keys,
-            output_keys,
-            allow_duplicate_input_keys,
-            bertscore_model,
-            target_output_delimiter,
-        )
-        self.register_input_output_keys(
-            target_output_keys + model_output_keys,
-            output_keys,
-            allow_duplicates=allow_duplicate_input_keys,
-        )
-        self.target_output_keys = target_output_keys
-        self.model_output_keys = model_output_keys
-        self.bertscore_model = bertscore_model
-        self.target_output_delimiter = target_output_delimiter
-
-        # BertScore transform used to compute metrics
-        self.bert_score_transform = BertScore(
-            target_output_keys=self.target_output_keys,
-            model_output_keys=self.model_output_keys,
-            output_keys=[BERT_SCORE],
-            allow_duplicate_input_keys=allow_duplicate_input_keys,
-            bertscore_model=self.bertscore_model,
-        )
-
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with a maximum BERT_SCORE value computed via BertScore.compute_metric.
-
-        :param record: The input record.
-        :returns: The input record with BERT_SCORE metric added in.
-        """
-
-        for target_output_key, model_output_key, output_key in zip(
-            self.target_output_keys, self.model_output_keys, self.output_keys
-        ):
-            # separating possible targets by target output delimiter to use for BertScore
-            possible_targets = record[target_output_key].split(self.target_output_delimiter)
-            scores = [
-                self.bert_score_transform.compute_metric(target, record[model_output_key])
-                for target in possible_targets
-            ]
-            record[output_key] = max(scores)
-        return record
+# class Max(Transform):
+#     """This transform computes the max of specified values in a record and augments said record."""
+#
+#     def __init__(self, input_keys: List[str], output_key: str):
+#         """Max initializer.
+#         :param input_keys: The keys corresponding to the values to take the max of.
+#         :param output_key: The key corresponding to the mean value, which gets
+#             added to the record.
+#         """
+#         super().__init__(input_keys, output_key)
+#         self.register_input_output_keys(input_keys, [output_key])
+#         self.output_key = output_key
+#
+#     @validate_call
+#     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+#         """Augment the input record with the computed mean.
+#         :param record: The input record.
+#         :returns: The input record with the mean added in.
+#         """
+#         max_score = max([record[input_key] for input_key in self.input_keys])
+#         record[self.output_key] = max_score
+#         return record

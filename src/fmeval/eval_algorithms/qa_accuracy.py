@@ -22,7 +22,7 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
 )
-from fmeval.transforms.common import BertScoreMax, BERT_SCORE, SplitWithDelimiter, BertScoreNTimes
+from fmeval.transforms.common import BERT_SCORE, BertScoreConverter, SplitWithDelimiter
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
@@ -53,7 +53,7 @@ QA_ACCURACY_SCORE_NAMES = [
 # for all metrics in qa_accuracy (metrics from both the QAAccuracyScores Transform and the BertScore Transform)
 SCORE_NAMES = QA_ACCURACY_SCORE_NAMES + [BERT_SCORE]
 
-NUM_TARGETS = "num_targets"  # record key for number of possible split via the target output delimiter
+POSSIBLE_TARGETS = "possible_targets"  # record key that maps to a list of possible targets
 logger = logging.getLogger(__name__)
 
 
@@ -311,28 +311,19 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         self.split_transform = SplitWithDelimiter(
             input_key=DatasetColumns.TARGET_OUTPUT.value.name,
-            output_key=NUM_TARGETS,
+            output_key=POSSIBLE_TARGETS,
             target_output_delimiter=eval_algorithm_config.target_output_delimiter,
         )
-        self.bert_scores = BertScoreNTimes(
-            target_output_keys=NUM_TARGETS,
-            model_output_keys=DatasetColumns.MODEL_OUTPUT.value.name,
+        self.bert_scores = BertScoreConverter(
+            target_output_keys=POSSIBLE_TARGETS,
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             output_key=BERT_SCORE,
             allow_duplicate_input_keys=True,
             bertscore_model=self.bertscore_model,
         )
 
-        self.bert_score = BertScoreMax(
-            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
-            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
-            output_keys=[BERT_SCORE],
-            allow_duplicate_input_keys=True,
-            bertscore_model=self.bertscore_model,
-            target_output_delimiter=eval_algorithm_config.target_output_delimiter,
-        )
-
         self._eval_algorithm_config = eval_algorithm_config
-        # self.bert_score = bert_score  # saving the BertScore transform
+
         self.pipeline = TransformPipeline([self.transform, self.split_transform, self.bert_scores])
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
@@ -379,24 +370,10 @@ class QAAccuracy(EvalAlgorithmInterface):
         """
         # Create a shared resource to be used during the evaluation.
         bertscore_shared_resource = create_shared_resource(self.bertscore_model)
-        # bert_score = BertScoreMax(
-        #     target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
-        #     model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
-        #     output_keys=[BERT_SCORE],
-        #     allow_duplicate_input_keys=True,
-        #     bertscore_model=bertscore_shared_resource,
-        #     target_output_delimiter=self.transform.target_output_delimiter,
-        # )
-        # bert_scores = BertScoreNTimes(
-        #     target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name, NUM_TARGETS],
-        #     model_output_keys=DatasetColumns.MODEL_OUTPUT.value.name,
-        #     output_key=BERT_SCORE,
-        #     allow_duplicate_input_keys=True,
-        #     bertscore_model=bertscore_shared_resource
-        # )
-        bert_scores = BertScoreNTimes(
-            target_output_keys=NUM_TARGETS,
-            model_output_keys=DatasetColumns.MODEL_OUTPUT.value.name,
+
+        bert_scores = BertScoreConverter(
+            target_output_keys=POSSIBLE_TARGETS,
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             output_key=BERT_SCORE,
             allow_duplicate_input_keys=True,
             bertscore_model=bertscore_shared_resource,
