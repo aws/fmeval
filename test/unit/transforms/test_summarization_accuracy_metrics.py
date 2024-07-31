@@ -127,12 +127,12 @@ def test_bert_score_call_with_bertscore_model_object():
     bs(sample)
     mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
 
+
 def test_bert_score_call_with_target_output_keys_provider():
     """
-    GIVEN a BertScore instance, where its `bertscore_model` is a BertscoreHelperModel object.
+    GIVEN a BertScore instance with a valid `target_output_keys provider`.
     WHEN its __call__ method is invoked.
     THEN self.bertscore_model is invoked with the correct arguments.
-
     Note: we don't validate the structure of the __call__ output since
     we already have @validate_call to handle that.
     """

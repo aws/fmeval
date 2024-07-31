@@ -54,7 +54,7 @@ QA_ACCURACY_SCORE_NAMES = [
 # for all metrics in qa_accuracy (metrics from both the QAAccuracyScores Transform and the BertScore Transform)
 SCORE_NAMES = QA_ACCURACY_SCORE_NAMES + [BERT_SCORE]
 
-POSSIBLE_TARGETS = "possible_targets"  # record key that maps to a list of possible targets
+POSSIBLE_TARGETS = "possible_targets"
 logger = logging.getLogger(__name__)
 
 
