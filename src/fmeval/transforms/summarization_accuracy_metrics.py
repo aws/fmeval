@@ -58,9 +58,11 @@ class SummarizationAccuracyMetric(Transform):
             `target_output_keys` and `model_output_keys`. This parameter is usually
             False.
         :param target_output_keys: The keys corresponding to target outputs. If none are
-            provided, will fall back on the `target_output_keys_provider`.
+            provided, this will default to 'None' and will fall back on the
+            `target_output_keys_provider`.
         :param target_output_keys_provider: The key corresponding to a list of target
-            outputs. Will only be used if `target_output_keys` is not provided.
+            outputs. Will only be used if `target_output_keys` is not provided. This key
+            must not be "" otherwise it will be considered invalid.
         :param *args: Variable length argument list.
         :param **kwargs: Arbitrary keyword arguments.
         """
@@ -72,8 +74,9 @@ class SummarizationAccuracyMetric(Transform):
         )
         assert_condition(
             target_output_keys is not None or target_output_keys_provider != "",
-            "Both target_output_keys_provider and target_output_keys are invalid (None)"
-            "At least one must be provided.",
+            f"target_output_keys is {target_output_keys}, and target_output_keys_provider"
+            f" is {target_output_keys_provider}."
+            "At least one must be valid.",
         )
         super().__init__(
             output_keys,
