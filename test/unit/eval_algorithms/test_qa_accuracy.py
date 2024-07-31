@@ -42,7 +42,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _quasi_exact_match_score,
     SCORE_NAMES,
     SplitWithDelimiter,
-    BertScoreConverter,
+    BertScore,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 
@@ -299,7 +299,7 @@ class TestQAAccuracy:
     @patch("fmeval.eval_algorithms.qa_accuracy.evaluate_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy.TransformPipeline")
-    @patch("fmeval.eval_algorithms.qa_accuracy.BertScoreConverter")
+    @patch("fmeval.eval_algorithms.qa_accuracy.BertScore")
     @patch("fmeval.eval_algorithms.qa_accuracy.SplitWithDelimiter")
     @patch("fmeval.eval_algorithms.qa_accuracy.QAAccuracyScores")
     @patch("fmeval.eval_algorithms.qa_accuracy.get_dataset")
@@ -310,7 +310,7 @@ class TestQAAccuracy:
         mock_get_dataset,
         mock_qa_accuracy_scores,
         mock_split_with_delimiter,
-        mock_bert_scores_converter,
+        mock_bert_scores,
         mock_transform_pipeline_cls,
         mock_create_shared_resource,
         mock_evaluate_dataset,
@@ -328,7 +328,7 @@ class TestQAAccuracy:
 
         mock_qa_accuracy_scores.side_effect = [qa_accuracy_score]
         mock_split_with_delimiter.side_effect = [split_transform]
-        mock_bert_scores_converter.side_effect = [bert_score, pipeline_bertscore]
+        mock_bert_scores.side_effect = [bert_score, pipeline_bertscore]
 
         instance_pipeline = Mock()  # The self.pipeline of the QAAccuracy instance
         executed_pipeline = Mock()  # The pipeline that gets created and executed in `evaluate`
@@ -359,7 +359,7 @@ class TestQAAccuracy:
         mock_create_shared_resource.assert_called_once_with(qa_acc.bertscore_model)
         assert mock_qa_accuracy_scores.call_count == 1
         assert mock_split_with_delimiter.call_count == 1
-        assert mock_bert_scores_converter.call_count == 2  # once during initialization, once during evaluate
+        assert mock_bert_scores.call_count == 2  # once during initialization, once during evaluate
 
         mock_transform_pipeline_cls.assert_has_calls(
             [

@@ -1,12 +1,9 @@
 import numpy as np
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from ray.actor import ActorHandle
 
-from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
-from fmeval.transforms.summarization_accuracy_metrics import BertScore, BERT_SCORE
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.util import validate_call
 
@@ -221,79 +218,79 @@ class SplitWithDelimiter(Transform):
         :param record: The input record.
         :returns: The input record with the mean added in.
         """
-        possible_targets = record[self.input_key].split(self.target_output_delimiter)
+        # possible_targets = record[self.input_key].split(self.target_output_delimiter)
         # record[self.output_key] = len(possible_targets)
-        possible_target_keys = []
-        for i, target_output in enumerate(possible_targets):
-            target_key = f"target_{i}"
-            record[target_key] = target_output
-            possible_target_keys.append(target_key)
+        # possible_target_keys = []
+        # for i, target_output in enumerate(possible_targets):
+        #     target_key = f"target_{i}"
+        #     record[target_key] = target_output
+        #     possible_target_keys.append(target_key)
 
-        record[self.output_key] = possible_target_keys
+        record[self.output_key] = record[self.input_key].split(self.target_output_delimiter)
         return record
 
 
-class BertScoreConverter(Transform):
-    def __init__(
-        self,
-        target_output_keys: str,
-        model_output_keys: List[str],
-        output_key: str,
-        allow_duplicate_input_keys: bool,
-        bertscore_model: Union[BertscoreHelperModel, ActorHandle],
-    ):
-        super().__init__(
-            target_output_keys,
-            model_output_keys,
-            output_key,
-            allow_duplicate_input_keys,
-            bertscore_model,
-        )
-        self.register_input_output_keys(
-            [target_output_keys] + model_output_keys,
-            [output_key],
-            allow_duplicates=allow_duplicate_input_keys,
-        )
-        self.target_output_keys = target_output_keys
-        self.model_output_keys = model_output_keys
-        self.output_key = output_key
-        self.allow_duplicate_input_keys = allow_duplicate_input_keys
-        self.bertscore_model = bertscore_model
+# class BertScoreConverter(Transform):
+#     def __init__(
+#         self,
+#         target_output_keys: str,
+#         model_output_keys: List[str],
+#         output_key: str,
+#         allow_duplicate_input_keys: bool,
+#         bertscore_model: Union[BertscoreHelperModel, ActorHandle],
+#     ):
+#         super().__init__(
+#             target_output_keys,
+#             model_output_keys,
+#             output_key,
+#             allow_duplicate_input_keys,
+#             bertscore_model,
+#         )
+#         self.register_input_output_keys(
+#             [target_output_keys] + model_output_keys,
+#             [output_key],
+#             allow_duplicates=allow_duplicate_input_keys,
+#         )
+#         self.target_output_keys = target_output_keys
+#         self.model_output_keys = model_output_keys
+#         self.output_key = output_key
+#         self.allow_duplicate_input_keys = allow_duplicate_input_keys
+#         self.bertscore_model = bertscore_model
+#
+#     @validate_call
+#     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+#         """Augment the input record with the computed bertscore scores.
+#         :param record: The input record.
+#         :returns: The input record with the bertscore added in.
+#         """
+#
+#         self.bert_score_transform = BertScore(
+#             target_output_keys=record[self.target_output_keys],
+#             model_output_keys=self.model_output_keys,
+#             output_keys=[BERT_SCORE],
+#             allow_duplicate_input_keys=self.allow_duplicate_input_keys,
+#             bertscore_model=self.bertscore_model,
+#         )
+#         record = self.bert_score_transform(record)
+#         return record
 
-    @validate_call
-    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Augment the input record with the computed bertscore scores.
-        :param record: The input record.
-        :returns: The input record with the bertscore added in.
-        """
+# We use this BertScoreConverter transform because the target_output_keys are determined
+# at runtime and need to be fed to BertScore (I don't know if there's a way to initialize a
+# BertScore directly in qa_accuracy since we wouldn't be able to get the target_output_keys then).
+# target_output_keys = [f'{self.target_output_keys[0]}{i}' for i in range(record[self.target_output_keys[1]])]
+# keysss = []
+# for i, target in enumerate(record[self.target_output_keys]):
+#     record[f'{self.output_key}_{i}'] = target
+#     keysss.append(f'{self.output_key}_{i}')
 
-        self.bert_score_transform = BertScore(
-            target_output_keys=record[self.target_output_keys],
-            model_output_keys=self.model_output_keys,
-            output_keys=[BERT_SCORE],
-            allow_duplicate_input_keys=self.allow_duplicate_input_keys,
-            bertscore_model=self.bertscore_model,
-        )
-        record = self.bert_score_transform(record)
-        return record
-
-        # We use this BertScoreConverter transform because the target_output_keys are determined
-        # at runtime and need to be fed to BertScore (I don't know if there's a way to initialize a
-        # BertScore directly in qa_accuracy since we wouldn't be able to get the target_output_keys then).
-        # target_output_keys = [f'{self.target_output_keys[0]}{i}' for i in range(record[self.target_output_keys[1]])]
-        # keysss = []
-        # for i, target in enumerate(record[self.target_output_keys]):
-        #     record[f'{self.output_key}_{i}'] = target
-        #     keysss.append(f'{self.output_key}_{i}')
-
-        # max_score = max([record[input_key] for input_key in self.input_keys])
-        # record[self.output_key] = max_score
-        # self.max_transform = Max(
-        #     input_keys=[f"{BERT_SCORE}{i}" for i in range(len(record[self.target_output_keys]))],
-        #     output_key=self.output_key,
-        # )
-        # for transform in [self.bert_score_transform, self.max_transform]:
-        #     record = transform(record)
+# max_score = max([record[input_key] for input_key in self.input_keys])
+# record[self.output_key] = max_score
+# self.max_transform = Max(
+#     input_keys=[f"{BERT_SCORE}{i}" for i in range(len(record[self.target_output_keys]))],
+#     output_key=self.output_key,
+# )
+# for transform in [self.bert_score_transform, self.max_transform]:
+#     record = transform(record)
 
 
 # class Max(Transform):

@@ -22,8 +22,9 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
 )
-from fmeval.transforms.common import BERT_SCORE, BertScoreConverter, SplitWithDelimiter
+from fmeval.transforms.common import SplitWithDelimiter
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.summarization_accuracy_metrics import BertScore, BERT_SCORE
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
@@ -314,10 +315,10 @@ class QAAccuracy(EvalAlgorithmInterface):
             output_key=POSSIBLE_TARGETS,
             target_output_delimiter=eval_algorithm_config.target_output_delimiter,
         )
-        self.bert_scores = BertScoreConverter(
-            target_output_keys=POSSIBLE_TARGETS,
+        self.bert_scores = BertScore(
+            target_output_keys_provider=POSSIBLE_TARGETS,
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
-            output_key=BERT_SCORE,
+            output_keys=[BERT_SCORE],
             allow_duplicate_input_keys=True,
             bertscore_model=self.bertscore_model,
         )
@@ -371,10 +372,10 @@ class QAAccuracy(EvalAlgorithmInterface):
         # Create a shared resource to be used during the evaluation.
         bertscore_shared_resource = create_shared_resource(self.bertscore_model)
 
-        bert_scores = BertScoreConverter(
-            target_output_keys=POSSIBLE_TARGETS,
+        bert_scores = BertScore(
+            target_output_keys_provider=POSSIBLE_TARGETS,
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
-            output_key=BERT_SCORE,
+            output_keys=[BERT_SCORE],
             allow_duplicate_input_keys=True,
             bertscore_model=bertscore_shared_resource,
         )

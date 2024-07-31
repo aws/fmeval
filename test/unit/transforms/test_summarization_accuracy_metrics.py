@@ -127,6 +127,29 @@ def test_bert_score_call_with_bertscore_model_object():
     bs(sample)
     mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
 
+def test_bert_score_call_with_target_output_keys_provider():
+    """
+    GIVEN a BertScore instance, where its `bertscore_model` is a BertscoreHelperModel object.
+    WHEN its __call__ method is invoked.
+    THEN self.bertscore_model is invoked with the correct arguments.
+
+    Note: we don't validate the structure of the __call__ output since
+    we already have @validate_call to handle that.
+    """
+    mock_bertscore_model = Mock(spec=BertscoreHelperModel)
+    mock_bertscore_model.get_helper_scores = Mock()
+
+    bs = BertScore(
+        target_output_keys_provider="target_output",
+        model_output_keys=["model_output"],
+        output_keys=["bertscore"],
+        allow_duplicate_input_keys=False,
+        bertscore_model=mock_bertscore_model,
+    )
+    sample = {"target_output": ["Hello there!"], "model_output": "Hi"}
+    bs(sample)
+    mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
+
 
 def test_bert_score_call_with_ray_actor_handle():
     """
