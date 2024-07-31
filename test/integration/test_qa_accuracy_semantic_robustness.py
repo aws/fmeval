@@ -208,7 +208,6 @@ class TestQAAccuracySemanticRobustness:
             dataset_config=dataset_config,
             prompt_template=sm_model_runner_prompt_template,
             save=True,
-            num_records=8,
         )[0]
         for eval_score in eval_output.dataset_scores:
             assert eval_score.value == approx(expected_scores[eval_score.name], abs=ABS_TOL)

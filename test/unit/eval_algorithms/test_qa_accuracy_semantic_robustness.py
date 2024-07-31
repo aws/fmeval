@@ -23,6 +23,7 @@ from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_RECALL_OVER_WORDS,
     ORIGINAL_SCORES,
     DELTA_SCORES,
+    DELTA_BERT_SCORE,
 )
 from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
@@ -33,6 +34,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.summarization_accuracy_metrics import BERT_SCORE
 
 
 class ConstantModel(ModelRunner):
@@ -105,11 +107,13 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.48504769802093506),
                     EvalScore(name=DELTA_F1_SCORE, value=1.0),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.06968441605567932),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(target_output_delimiter="<OR>", num_perturbations=2),
             ),
@@ -125,11 +129,13 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1),
                     EvalScore(name=RECALL_OVER_WORDS, value=1),
+                    EvalScore(name=BERT_SCORE, value=0.48504769802093506),
                     EvalScore(name=DELTA_F1_SCORE, value=0.5),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.5),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=0.5),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=0.5),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.07339230179786682),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=BUTTER_FINGER
@@ -147,11 +153,13 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1 / 3),
                     EvalScore(name=RECALL_OVER_WORDS, value=1),
+                    EvalScore(name=BERT_SCORE, value=0.630944550037384),
                     EvalScore(name=DELTA_F1_SCORE, value=0.5),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1 / 3),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.21864348649978638),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
@@ -169,11 +177,13 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=1.0),
                     EvalScore(name=DELTA_F1_SCORE, value=1.0),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.5907611548900604),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
@@ -223,16 +233,22 @@ class TestQAAccuracySemanticRobustness:
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracySemanticRobustness._build_pipeline")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.BertscoreHelperModel")
     def test_evaluate(
         self,
+        mock_bertscore_model_cls,
         mock_get_dataset_configs,
         mock_get_dataset,
         mock_build_pipeline,
+        mock_create_shared_resource,
         mock_evaluate_dataset,
+        mock_cleanup_shared_resource,
         mock_get_results_path,
         test_case,
     ):
@@ -241,6 +257,8 @@ class TestQAAccuracySemanticRobustness:
         WHEN its evaluate method is called with valid arguments.
         THEN `evaluate_dataset` is called with the correct arguments.
         """
+        mock_bertscore_model_cls.return_value = Mock()
+
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
@@ -278,5 +296,10 @@ class TestQAAccuracySemanticRobustness:
             save=True,
             save_strategy=None,
         )
-        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template)
+        mock_build_pipeline.assert_called_with(
+            model_runner,
+            test_case.dataset_prompt_template,
+            mock_create_shared_resource.return_value,
+        )
+        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
