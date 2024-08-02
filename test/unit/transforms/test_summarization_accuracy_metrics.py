@@ -141,10 +141,11 @@ def test_bert_score_call_with_target_output_keys_provider():
     mock_bertscore_model.get_helper_scores = Mock()
 
     bs = BertScore(
-        target_output_keys_provider="target_output",
+        target_output_keys=None,
         model_output_keys=["model_output"],
         output_keys=["bertscore"],
         allow_duplicate_input_keys=False,
+        target_output_keys_provider="target_output",
         bertscore_model=mock_bertscore_model,
     )
     sample = {"target_output": ["Hello there!"], "model_output": "Hi"}
