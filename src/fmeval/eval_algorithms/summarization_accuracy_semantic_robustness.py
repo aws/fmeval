@@ -157,7 +157,7 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         )
 
         perturbed_meteor, perturbed_rouge, perturbed_bert_score = SummarizationAccuracy._create_transforms(
-            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name],
+            target_output_keys=[DatasetColumns.TARGET_OUTPUT.value.name for _ in range(self.config.num_perturbations)],
             model_output_keys=get_perturbed_responses.output_keys,
             meteor_keys=[
                 create_output_key(MeteorScore.__name__, "perturbed", i) for i in range(self.config.num_perturbations)

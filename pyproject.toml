@@ -19,7 +19,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "^3.10"
-urllib3 = ">=2.2.2" # CVE-2024-37891
+urllib3 = ">=2.2.2"
 ray = "2.23.0"
 semantic-version = "2.10.0"
 pyarrow = "*"
