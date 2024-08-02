@@ -316,10 +316,11 @@ class QAAccuracy(EvalAlgorithmInterface):
             target_output_delimiter=eval_algorithm_config.target_output_delimiter,
         )
         self.bert_scores = BertScore(
-            target_output_keys_provider=POSSIBLE_TARGETS,
+            target_output_keys=None,
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             output_keys=[BERT_SCORE],
             allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
             bertscore_model=self.bertscore_model,
         )
 
@@ -373,10 +374,11 @@ class QAAccuracy(EvalAlgorithmInterface):
         bertscore_shared_resource = create_shared_resource(self.bertscore_model)
 
         bert_scores = BertScore(
-            target_output_keys_provider=POSSIBLE_TARGETS,
+            target_output_keys=None,
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             output_keys=[BERT_SCORE],
             allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
             bertscore_model=bertscore_shared_resource,
         )
 
