@@ -279,7 +279,6 @@ class BertScore(SummarizationAccuracyMetric):
         self,
         output_keys: List[str],
         model_output_keys: List[str],
-        allow_duplicate_input_keys: bool,
         target_output_keys: Optional[List[str]] = None,
         target_output_keys_provider: str = "",
         bertscore_model: Union[BertscoreHelperModel, ActorHandle] = BertscoreHelperModel(BERTSCORE_DEFAULT_MODEL),
