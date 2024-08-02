@@ -153,6 +153,24 @@ def test_bert_score_call_with_target_output_keys_provider():
     mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
 
 
+def test_bertscore_multiple_targets_max_score():
+    """
+    GIVEN a BertScore instance with multiple possible target answers.
+    WHEN its __call__ method is invoked.
+    THEN the maximum score is returned.
+    """
+    bs = BertScore(
+        target_output_keys=None,
+        model_output_keys=["model_output"],
+        output_keys=["bertscore"],
+        allow_duplicate_input_keys=False,
+        target_output_keys_provider="target_output",
+    )
+    sample = {"target_output": ["random output", "hello", "something"], "model_output": "hello"}
+    output = bs(sample)
+    assert output["bertscore"] == pytest.approx(1, rel=1e-5)
+
+
 def test_bert_score_call_with_ray_actor_handle():
     """
     GIVEN a BertScore instance, where its `bertscore_model` is a Ray actor handle.

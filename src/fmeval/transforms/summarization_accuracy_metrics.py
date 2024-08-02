@@ -86,7 +86,7 @@ class SummarizationAccuracyMetric(Transform):
             *args,
             **kwargs,
         )
-        input_keys = target_output_keys if target_output_keys else [str(target_output_keys_provider)]
+        input_keys = target_output_keys if target_output_keys else [target_output_keys_provider]  # type: ignore
         self.register_input_output_keys(
             input_keys + model_output_keys,
             output_keys,
@@ -94,7 +94,7 @@ class SummarizationAccuracyMetric(Transform):
         )
         self.target_output_keys = target_output_keys
         self.model_output_keys = model_output_keys
-        self.target_output_keys_provider = str(target_output_keys_provider)
+        self.target_output_keys_provider = target_output_keys_provider
 
     @validate_call
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -108,7 +108,7 @@ class SummarizationAccuracyMetric(Transform):
         target_output_list = (
             [record[target_output_key] for target_output_key in self.target_output_keys]
             if self.target_output_keys
-            else record[self.target_output_keys_provider]
+            else record[self.target_output_keys_provider]  # type: ignore[index]
         )
         for model_output_key, output_key in zip(self.model_output_keys, self.output_keys):
             scores = [self.compute_metric(target, record[model_output_key]) for target in target_output_list]
