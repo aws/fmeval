@@ -159,16 +159,27 @@ def test_bertscore_multiple_targets_max_score():
     WHEN its __call__ method is invoked.
     THEN the maximum score is returned.
     """
+    mock_bertscore_model = Mock(spec=BertscoreHelperModel)
+    mock_bertscore_model.get_helper_scores = Mock()
+
+    output_scores = [0.2, 0.1, 0.3]
+    mock_bertscore_model.get_helper_scores.side_effect = output_scores
+
     bs = BertScore(
         target_output_keys=None,
         model_output_keys=["model_output"],
         output_keys=["bertscore"],
         allow_duplicate_input_keys=False,
         target_output_keys_provider="target_output",
+        bertscore_model=mock_bertscore_model,
     )
     sample = {"target_output": ["random output", "hello", "something"], "model_output": "hello"}
     output = bs(sample)
-    assert output["bertscore"] == pytest.approx(1, rel=1e-5)
+
+    mock_bertscore_model.get_helper_scores.assert_has_calls(
+        [call("random output", "hello"), call("hello", "hello"), call("something", "hello")]
+    )
+    assert output["bertscore"] == pytest.approx(max(output_scores), rel=1e-5)
 
 
 def test_bert_score_call_with_ray_actor_handle():
