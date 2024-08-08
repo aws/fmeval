@@ -130,15 +130,12 @@ def test_bert_score_call_with_bertscore_model_object():
 
 def test_bert_score_call_with_target_output_keys_provider():
     """
-        GIVEN a BertScore instance with a valid `target_output_keys provider`.
-        WHEN its __call__ method is invoked.
-        THEN self.bertscore_model is invoked with the correct arguments.
-    <<<<<<< HEAD
-    =======
+    GIVEN a BertScore instance with a valid `target_output_keys provider`.
+    WHEN its __call__ method is invoked.
+    THEN self.bertscore_model is invoked with the correct arguments.
 
-    >>>>>>> bc5a15fa15b01bd65bb7d72dae11ba8f21bccf0a
-        Note: we don't validate the structure of the __call__ output since
-        we already have @validate_call to handle that.
+    Note: we don't validate the structure of the __call__ output since
+    we already have @validate_call to handle that.
     """
     mock_bertscore_model = Mock(spec=BertscoreHelperModel)
     mock_bertscore_model.get_helper_scores = Mock()
