@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from nltk.metrics.scores import f_measure, precision, recall
 
 from fmeval.constants import (
+    BERTSCORE_DEFAULT_MODEL,
     DatasetColumns,
     MEAN,
 )
 from fmeval.data_loaders.util import get_dataset
 from fmeval.data_loaders.data_config import DataConfig
 from fmeval.eval_algorithms.common import evaluate_dataset
+from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModelTypes, BertscoreHelperModel
 from fmeval.eval_algorithms.save_strategy import SaveStrategy
 from fmeval.eval_algorithms.util import validate_dataset, get_dataset_configs, normalize_text_quac_protocol
 from fmeval.eval_algorithms.eval_algorithm import EvalAlgorithmConfig, EvalAlgorithmInterface
@@ -20,19 +22,39 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     EvalScore,
 )
+from fmeval.transforms.common import SplitWithDelimiter
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.summarization_accuracy_metrics import BertScore, BERT_SCORE
 from fmeval.transforms.transform import Transform
 from fmeval.transforms.transform_pipeline import TransformPipeline
 from fmeval.transforms.util import validate_call
-from fmeval.util import get_eval_results_path, require
+from fmeval.util import (
+    get_eval_results_path,
+    require,
+    create_shared_resource,
+    cleanup_shared_resource,
+    assert_condition,
+)
 
 F1_SCORE = "f1_score"
 EXACT_MATCH_SCORE = "exact_match_score"
 QUASI_EXACT_MATCH_SCORE = "quasi_exact_match_score"
 PRECISION_OVER_WORDS = "precision_over_words"
 RECALL_OVER_WORDS = "recall_over_words"
-SCORE_NAMES = [F1_SCORE, EXACT_MATCH_SCORE, QUASI_EXACT_MATCH_SCORE, PRECISION_OVER_WORDS, RECALL_OVER_WORDS]
 
+# for metrics that are included in the QAAccuracyScores Transform
+QA_ACCURACY_SCORE_NAMES = [
+    F1_SCORE,
+    EXACT_MATCH_SCORE,
+    QUASI_EXACT_MATCH_SCORE,
+    PRECISION_OVER_WORDS,
+    RECALL_OVER_WORDS,
+]
+
+# for all metrics in qa_accuracy (metrics from both the QAAccuracyScores Transform and the BertScore Transform)
+SCORE_NAMES = QA_ACCURACY_SCORE_NAMES + [BERT_SCORE]
+
+POSSIBLE_TARGETS = "possible_targets"
 logger = logging.getLogger(__name__)
 
 
@@ -175,7 +197,7 @@ class QAAccuracyScores(Transform):
         self,
         target_output_key: str = DatasetColumns.TARGET_OUTPUT.value.name,
         model_output_key: str = DatasetColumns.MODEL_OUTPUT.value.name,
-        output_keys: List[str] = SCORE_NAMES,
+        output_keys: List[str] = QA_ACCURACY_SCORE_NAMES,
         target_output_delimiter: Optional[str] = "<OR>",
     ):
         super().__init__(target_output_key, model_output_key, output_keys, target_output_delimiter)
@@ -215,7 +237,7 @@ class QAAccuracyScores(Transform):
     def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
         target_output = record[self.target_output_key]
         model_output = record[self.model_output_key]
-        for output_key, score_name in zip(self.output_keys, SCORE_NAMES):
+        for output_key, score_name in zip(self.output_keys, QA_ACCURACY_SCORE_NAMES):
             record[output_key] = self._get_score(
                 target_output=target_output,
                 model_output=model_output,
@@ -232,15 +254,23 @@ class QAAccuracyConfig(EvalAlgorithmConfig):
         This delimiter is used to combine all possible target outputs into a single string.
         For example, if valid answers are ["UK", "England"] and the delimiter is "<OR>", then the
         target output text will be "UK<OR>England".
+    :param model_type_for_bertscore: BERT model type to use for computing BERT score.
     """
 
     target_output_delimiter: Optional[str] = "<OR>"
+    model_type_for_bertscore: str = BERTSCORE_DEFAULT_MODEL
 
     def __post_init__(self):
         require(
             self.target_output_delimiter != "",
             "Empty target_output_delimiter is provided. "
             "Please either provide a non-empty string, or set it to None.",
+        )
+        require(
+            BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
+            f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
+            f"QAAccuracyConfig. Please choose from acceptable values: "
+            f"{BertscoreHelperModelTypes.model_list()}.",
         )
 
 
@@ -255,6 +285,8 @@ class QAAccuracy(EvalAlgorithmInterface):
     3. Precision over Words: The fraction of words in the prediction that are also found in the target answer. The text is normalized as before.
     4. Recall over Words: The fraction of words in the target answer that are also found in the prediction.
     5. F1 over Words: The harmonic mean of precision and recall, over words (normalized).
+    6. [BERTScore](https://arxiv.org/pdf/1904.09675.pdf) uses a second ML model (from the BERT family) to compute sentence embeddings and compare their cosine similarity. This score may account for additional linguistic flexibility over ROUGE and METEOR since semantically similar sentences should be embedded closer to each other.
+
 
     Precision, Recall and F1 over Words are more flexible as they assign non-zero scores to
     model answers containing parts of the ground truth. Specifically, recall measures whether the ground truth answer is _contained_ in the
@@ -272,8 +304,29 @@ class QAAccuracy(EvalAlgorithmInterface):
         :param eval_algorithm_config: QA Accuracy evaluation algorithm config.
         """
         super().__init__(eval_algorithm_config)
-        self._eval_algorithm_config = eval_algorithm_config
+
+        self.bertscore_model = BertscoreHelperModel(eval_algorithm_config.model_type_for_bertscore)
+
+        # Saving QAAccuracyScores in the original self.transform
         self.transform = QAAccuracyScores(target_output_delimiter=eval_algorithm_config.target_output_delimiter)
+
+        self.split_transform = SplitWithDelimiter(
+            input_key=DatasetColumns.TARGET_OUTPUT.value.name,
+            output_key=POSSIBLE_TARGETS,
+            target_output_delimiter=eval_algorithm_config.target_output_delimiter,
+        )
+        self.bert_scores = BertScore(
+            target_output_keys=None,
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
+            bertscore_model=self.bertscore_model,
+        )
+
+        self._eval_algorithm_config = eval_algorithm_config
+
+        self.pipeline = TransformPipeline([self.transform, self.split_transform, self.bert_scores])
 
     def evaluate_sample(self, target_output: str, model_output: str) -> List[EvalScore]:
         """Compute QA accuracy metrics for a single sample.
@@ -282,11 +335,11 @@ class QAAccuracy(EvalAlgorithmInterface):
         :param model_output: The actual model output.
         :returns: A list of EvalScore objects, one for each of the QA accuracy metrics.
         """
-        target_output_key = self.transform.target_output_key
-        model_output_key = self.transform.model_output_key
-        sample = {target_output_key: target_output, model_output_key: model_output}
-        pipeline = TransformPipeline([self.transform])
-        result = pipeline.execute_record(sample)
+        sample = {
+            DatasetColumns.TARGET_OUTPUT.value.name: target_output,
+            DatasetColumns.MODEL_OUTPUT.value.name: model_output,
+        }
+        result = self.pipeline.execute_record(sample)
         return [EvalScore(name=score_name, value=result[score_name]) for score_name in SCORE_NAMES]
 
     def evaluate(
@@ -317,6 +370,21 @@ class QAAccuracy(EvalAlgorithmInterface):
 
         :return: A list of EvalOutput objects.
         """
+        # Create a shared resource to be used during the evaluation.
+        bertscore_shared_resource = create_shared_resource(self.bertscore_model)
+
+        bert_scores = BertScore(
+            target_output_keys=None,
+            model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
+            output_keys=[BERT_SCORE],
+            allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
+            bertscore_model=bertscore_shared_resource,
+        )
+
+        # Create a new pipeline that uses the shared resource instead of self.bertscore_model.
+        pipeline = TransformPipeline([self.transform, self.split_transform, bert_scores])
+
         dataset_configs = get_dataset_configs(dataset_config, self.eval_name)
         eval_outputs = []
         for dataset_config in dataset_configs:
@@ -324,7 +392,7 @@ class QAAccuracy(EvalAlgorithmInterface):
             validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
-                pipeline=TransformPipeline([self.transform]),
+                pipeline=pipeline,
                 dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=SCORE_NAMES,
@@ -336,4 +404,5 @@ class QAAccuracy(EvalAlgorithmInterface):
                 save_strategy=save_strategy,
             )
             eval_outputs.append(eval_output)
+        cleanup_shared_resource(bertscore_shared_resource)
         return eval_outputs
