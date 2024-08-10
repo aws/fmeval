@@ -178,20 +178,22 @@ class QAAccuracySemanticRobustness(EvalAlgorithmInterface):
             target_output_delimiter=self.target_output_delimiter,
         )
         bert_score = BertScore(
-            target_output_keys_provider=POSSIBLE_TARGETS,
+            target_output_keys=None,
             model_output_keys=[DatasetColumns.MODEL_OUTPUT.value.name],
             output_keys=[BERT_SCORE],
             allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
             bertscore_model=bertscore_model,
         )
 
         perturbed_bert_score = BertScore(
-            target_output_keys_provider=POSSIBLE_TARGETS,
+            target_output_keys=None,
             model_output_keys=get_perturbed_outputs.output_keys,
             output_keys=[
                 create_output_key(BertScore.__name__, "perturbed", i) for i in range(self.config.num_perturbations)
             ],
             allow_duplicate_input_keys=True,
+            target_output_keys_provider=POSSIBLE_TARGETS,
             bertscore_model=bertscore_model,
         )
 
