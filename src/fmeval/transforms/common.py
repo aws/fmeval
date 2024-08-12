@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Any, Dict, List, Optional
 
+
 from fmeval.model_runners.composers.composers import PromptComposer
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.transform import Transform
@@ -190,4 +191,31 @@ class Mean(Transform):
         """
         avg = np.mean([record[input_key] for input_key in self.input_keys])
         record[self.output_key] = avg
+        return record
+
+
+class SplitWithDelimiter(Transform):
+    """This transform splits the target output a list of possible targets based on a target_output_delimiter
+    and augments the input record.
+    For example, if we had "England<OR>Uk" as a target output, record[output_key] = ["England", "Uk"]"""
+
+    def __init__(self, input_key: str, output_key: str, target_output_delimiter: str = "<OR>"):
+        """SplitWithDelimiter initializer.
+        :param input_keys: The key that corresponds to the target output string.
+        :param output_key: The key corresponding to the list of target outputs, which gets
+            added to the record.
+        """
+        super().__init__(input_key, output_key, target_output_delimiter)
+        self.register_input_output_keys([input_key], [output_key])
+        self.input_key = input_key
+        self.output_key = output_key
+        self.target_output_delimiter = target_output_delimiter
+
+    @validate_call
+    def __call__(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Augment the input record with the new list of possible targets.
+        :param record: The input record.
+        :returns: The input record with the list of possible targets added in.
+        """
+        record[self.output_key] = record[self.input_key].split(self.target_output_delimiter)
         return record
