@@ -36,10 +36,6 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
 from fmeval.transforms.summarization_accuracy_metrics import BERT_SCORE
 
-BERTSCORE_DUMMY_VALUE = (
-    0.5  # we don't evaluate the real BERTScore inside unit tests because of runtime, so we hardcode a dummy value
-)
-
 
 class ConstantModel(ModelRunner):
     def __init__(self):
@@ -165,7 +161,7 @@ class TestQAAccuracySemanticRobustness:
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1 / 3),
                     EvalScore(name=RECALL_OVER_WORDS, value=1),
-                    EvalScore(name=BERT_SCORE, value=BERTSCORE_DUMMY_VALUE),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_F1_SCORE, value=0.5),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
