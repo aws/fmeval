@@ -258,7 +258,6 @@ class TestQAAccuracySemanticRobustness:
         THEN `evaluate_dataset` is called with the correct arguments.
         """
         mock_bertscore_model_cls.return_value = Mock()
-
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]

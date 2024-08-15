@@ -4,7 +4,6 @@ from typing import List, Optional, Union
 from dataclasses import dataclass
 
 from ray.actor import ActorHandle
-
 from fmeval.constants import (
     DatasetColumns,
     MEAN,
@@ -100,7 +99,7 @@ class QAAccuracySemanticRobustnessConfig(SemanticRobustnessConfig):
         require(
             BertscoreHelperModelTypes.model_is_allowed(self.model_type_for_bertscore),
             f"Invalid model_type_for_bertscore: {self.model_type_for_bertscore} requested in "
-            f"QAAccuracyConfig. Please choose from acceptable values: "
+            f"QAAccuracySemanticRobustnessConfig. Please choose from acceptable values: "
             f"{BertscoreHelperModelTypes.model_list()}.",
         )
 
