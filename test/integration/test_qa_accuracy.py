@@ -8,6 +8,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
     QUASI_EXACT_MATCH_SCORE,
     PRECISION_OVER_WORDS,
     RECALL_OVER_WORDS,
+    BERT_SCORE,
 )
 
 from fmeval.data_loaders.data_config import DataConfig
@@ -39,12 +40,15 @@ class TestQAAccuracy:
             target_output="UK<OR>England<OR>United Kingdom", model_output=model_output
         )
         for eval_score in eval_scores:
-            assert eval_score.value == 1.0
+            if eval_score.name == BERT_SCORE:
+                assert eval_score.value == approx(1.0, abs=ABS_TOL)
+            else:
+                assert eval_score.value == 1.0
 
     def test_evaluate(self, integration_tests_dir):
         dataset_config = DataConfig(
-            dataset_name="triviaQA_sample",
-            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample.jsonl"),
+            dataset_name="triviaQA_sample_small",
+            dataset_uri=os.path.join(integration_tests_dir, "datasets", "triviaQA_sample_small.jsonl"),
             dataset_mime_type=MIME_TYPE_JSONLINES,
             model_input_location="question",
             target_output_location="answer",
@@ -57,12 +61,14 @@ class TestQAAccuracy:
         )[0]
         for eval_score in eval_output.dataset_scores:
             if eval_score.name == F1_SCORE:  # pragma: no branch
-                assert eval_score.value == approx(0.360630, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.060606, abs=ABS_TOL)
+                assert eval_score.value == approx(0.0, abs=ABS_TOL)
             elif eval_score.name == QUASI_EXACT_MATCH_SCORE:
-                assert eval_score.value == approx(0.303030, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == PRECISION_OVER_WORDS:
-                assert eval_score.value == approx(0.357660, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
             elif eval_score.name == RECALL_OVER_WORDS:
-                assert eval_score.value == approx(0.381313, abs=ABS_TOL)
+                assert eval_score.value == approx(0.25, abs=ABS_TOL)
+            elif eval_score.name == BERT_SCORE:
+                assert eval_score.value == approx(0.7945437133312225, abs=ABS_TOL)

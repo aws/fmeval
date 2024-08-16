@@ -128,6 +128,60 @@ def test_bert_score_call_with_bertscore_model_object():
     mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
 
 
+def test_bert_score_call_with_target_output_keys_provider():
+    """
+    GIVEN a BertScore instance with a valid `target_output_keys provider`.
+    WHEN its __call__ method is invoked.
+    THEN self.bertscore_model is invoked with the correct arguments.
+
+    Note: we don't validate the structure of the __call__ output since
+    we already have @validate_call to handle that.
+    """
+    mock_bertscore_model = Mock(spec=BertscoreHelperModel)
+    mock_bertscore_model.get_helper_scores = Mock()
+
+    bs = BertScore(
+        target_output_keys=None,
+        model_output_keys=["model_output"],
+        output_keys=["bertscore"],
+        allow_duplicate_input_keys=False,
+        target_output_keys_provider="target_output",
+        bertscore_model=mock_bertscore_model,
+    )
+    sample = {"target_output": ["Hello there!"], "model_output": "Hi"}
+    bs(sample)
+    mock_bertscore_model.get_helper_scores.assert_called_once_with("Hello there!", "Hi")
+
+
+def test_bertscore_multiple_targets_max_score():
+    """
+    GIVEN a BertScore instance with multiple possible target answers.
+    WHEN its __call__ method is invoked.
+    THEN the maximum score is returned.
+    """
+    mock_bertscore_model = Mock(spec=BertscoreHelperModel)
+    mock_bertscore_model.get_helper_scores = Mock()
+
+    output_scores = [0.2, 0.1, 0.3]
+    mock_bertscore_model.get_helper_scores.side_effect = output_scores
+
+    bs = BertScore(
+        target_output_keys=None,
+        model_output_keys=["model_output"],
+        output_keys=["bertscore"],
+        allow_duplicate_input_keys=False,
+        target_output_keys_provider="target_output",
+        bertscore_model=mock_bertscore_model,
+    )
+    sample = {"target_output": ["random output", "hello", "something"], "model_output": "hello"}
+    output = bs(sample)
+
+    mock_bertscore_model.get_helper_scores.assert_has_calls(
+        [call("random output", "hello"), call("hello", "hello"), call("something", "hello")]
+    )
+    assert output["bertscore"] == pytest.approx(max(output_scores), rel=1e-5)
+
+
 def test_bert_score_call_with_ray_actor_handle():
     """
     GIVEN a BertScore instance, where its `bertscore_model` is a Ray actor handle.
