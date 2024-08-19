@@ -23,6 +23,7 @@ from fmeval.eval_algorithms.qa_accuracy_semantic_robustness import (
     DELTA_RECALL_OVER_WORDS,
     ORIGINAL_SCORES,
     DELTA_SCORES,
+    DELTA_BERT_SCORE,
 )
 from fmeval.eval_algorithms.qa_accuracy import (
     F1_SCORE,
@@ -33,6 +34,7 @@ from fmeval.eval_algorithms.qa_accuracy import (
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.model_runner import ModelRunner
+from fmeval.transforms.summarization_accuracy_metrics import BERT_SCORE
 
 
 class ConstantModel(ModelRunner):
@@ -87,6 +89,8 @@ class TestQAAccuracySemanticRobustness:
         perturbed_model_output_1: str
         perturbed_model_output_2: str
         target_output: str
+        original_bert_score: float
+        perturbed_bert_scores: List[float]
         expected_response: List[EvalScore]
         config: QAAccuracySemanticRobustnessConfig
 
@@ -99,17 +103,21 @@ class TestQAAccuracySemanticRobustness:
                 perturbed_model_output_1="Some model output.",
                 perturbed_model_output_2="Some model output.",
                 target_output="London",
+                original_bert_score=0.5,
+                perturbed_bert_scores=[1.0, 0.5],
                 expected_response=[
                     EvalScore(name=F1_SCORE, value=1.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_F1_SCORE, value=1.0),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.25),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(target_output_delimiter="<OR>", num_perturbations=2),
             ),
@@ -119,17 +127,21 @@ class TestQAAccuracySemanticRobustness:
                 perturbed_model_output_1="london",
                 perturbed_model_output_2="paris",
                 target_output="London",
+                original_bert_score=0.5,
+                perturbed_bert_scores=[1.0, 1.0],
                 expected_response=[
                     EvalScore(name=F1_SCORE, value=1.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1),
                     EvalScore(name=RECALL_OVER_WORDS, value=1),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_F1_SCORE, value=0.5),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.5),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=0.5),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=0.5),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.5),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=BUTTER_FINGER
@@ -141,17 +153,21 @@ class TestQAAccuracySemanticRobustness:
                 perturbed_model_output_1="Another model output.",
                 perturbed_model_output_2="Some model output.",
                 target_output="London",
+                original_bert_score=0.5,
+                perturbed_bert_scores=[0.5, 0.5],
                 expected_response=[
                     EvalScore(name=F1_SCORE, value=0.5),
                     EvalScore(name=EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1 / 3),
                     EvalScore(name=RECALL_OVER_WORDS, value=1),
+                    EvalScore(name=BERT_SCORE, value=0.5),
                     EvalScore(name=DELTA_F1_SCORE, value=0.5),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=0.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1 / 3),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=RANDOM_UPPER_CASE
@@ -163,17 +179,21 @@ class TestQAAccuracySemanticRobustness:
                 perturbed_model_output_1="Another model output.",
                 perturbed_model_output_2="Another model output.",
                 target_output="London",
+                original_bert_score=0.75,
+                perturbed_bert_scores=[1.0, 0.75],
                 expected_response=[
                     EvalScore(name=F1_SCORE, value=1.0),
                     EvalScore(name=EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=BERT_SCORE, value=0.75),
                     EvalScore(name=DELTA_F1_SCORE, value=1.0),
                     EvalScore(name=DELTA_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_QUASI_EXACT_MATCH_SCORE, value=1.0),
                     EvalScore(name=DELTA_PRECISION_OVER_WORDS, value=1.0),
                     EvalScore(name=DELTA_RECALL_OVER_WORDS, value=1.0),
+                    EvalScore(name=DELTA_BERT_SCORE, value=0.125),
                 ],
                 config=QAAccuracySemanticRobustnessConfig(
                     target_output_delimiter="<OR>", num_perturbations=2, perturbation_type=WHITESPACE_ADD_REMOVE
@@ -181,12 +201,19 @@ class TestQAAccuracySemanticRobustness:
             ),
         ],
     )
-    def test_qa_accuracy_semantic_robustness_evaluate_sample(self, test_case):
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.BertScore.compute_metric")
+    def test_qa_accuracy_semantic_robustness_evaluate_sample(
+        self,
+        mock_bert_metric,
+        test_case,
+    ):
         """
         GIVEN valid inputs
         WHEN QAAccuracySemanticRobustness.evaluate_sample is called
         THEN correct List of EvalScores is returned
         """
+        mock_bert_metric.side_effect = [test_case.original_bert_score] + test_case.perturbed_bert_scores
+
         model = MagicMock()
         model.predict.side_effect = [
             (test_case.original_model_output, None),
@@ -223,16 +250,22 @@ class TestQAAccuracySemanticRobustness:
         ],
     )
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_eval_results_path")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.cleanup_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.evaluate_dataset")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.create_shared_resource")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.QAAccuracySemanticRobustness._build_pipeline")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset")
     @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.get_dataset_configs")
+    @patch("fmeval.eval_algorithms.qa_accuracy_semantic_robustness.BertscoreHelperModel")
     def test_evaluate(
         self,
+        mock_bertscore_model_cls,
         mock_get_dataset_configs,
         mock_get_dataset,
         mock_build_pipeline,
+        mock_create_shared_resource,
         mock_evaluate_dataset,
+        mock_cleanup_shared_resource,
         mock_get_results_path,
         test_case,
     ):
@@ -241,6 +274,7 @@ class TestQAAccuracySemanticRobustness:
         WHEN its evaluate method is called with valid arguments.
         THEN `evaluate_dataset` is called with the correct arguments.
         """
+        mock_bertscore_model_cls.return_value = Mock()
         dataset_config = Mock()
         dataset_config.dataset_name = "my_custom_dataset"
         mock_get_dataset_configs.return_value = [dataset_config]
@@ -278,5 +312,10 @@ class TestQAAccuracySemanticRobustness:
             save=True,
             save_strategy=None,
         )
-        mock_build_pipeline.assert_called_with(model_runner, test_case.dataset_prompt_template)
+        mock_build_pipeline.assert_called_with(
+            model_runner,
+            test_case.dataset_prompt_template,
+            mock_create_shared_resource.return_value,
+        )
+        mock_cleanup_shared_resource.assert_called_once_with(mock_create_shared_resource.return_value)
         assert output == [mock_evaluate_dataset.return_value]
