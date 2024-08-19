@@ -285,7 +285,7 @@ class QAAccuracy(EvalAlgorithmInterface):
     3. Precision over Words: The fraction of words in the prediction that are also found in the target answer. The text is normalized as before.
     4. Recall over Words: The fraction of words in the target answer that are also found in the prediction.
     5. F1 over Words: The harmonic mean of precision and recall, over words (normalized).
-    6. [BERTScore](https://arxiv.org/pdf/1904.09675.pdf) uses a second ML model (from the BERT family) to compute sentence embeddings and compare their cosine similarity. This score may account for additional linguistic flexibility over ROUGE and METEOR since semantically similar sentences should be embedded closer to each other.
+    6. [BERTScore](https://arxiv.org/pdf/1904.09675.pdf) uses a second ML model (from the BERT family) to compute sentence embeddings and compare their cosine similarity. This score may account for additional linguistic flexibility over the other QAAccuracy metrics since semantically similar sentences should be embedded closer to each other.
 
 
     Precision, Recall and F1 over Words are more flexible as they assign non-zero scores to
