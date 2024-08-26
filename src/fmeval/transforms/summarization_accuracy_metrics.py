@@ -186,6 +186,7 @@ class MeteorScore(SummarizationAccuracyMetric):
         """
         nltk.download("wordnet")
         nltk.download("punkt")
+        nltk.download("punkt_tab")
         nltk.download("omw-1.4")
 
     def compute_metric(self, target_output: str, model_output: str) -> float:
