@@ -81,9 +81,9 @@ rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 ```
 
-3. If you run into the error `ERROR: Cannot install fmeval==0.2.0, fmeval==0.2.1, fmeval==0.3.0, fmeval==0.4.0, fmeval==1.0.0, fmeval==1.0.1, fmeval==1.0.2, fmeval==1.0.3 and fmeval==1.1.0 because these package versions have conflicting dependencies` while installing `fmeval`, please try deactivating and recreating your virtual environment using the steps below. Make sure to replace `<your_virtual_env>` with the name of your actual virtual environment: 
-  
-```sh  
+3. If you run into the error `ERROR: Cannot install fmeval==0.2.0, fmeval==0.2.1, fmeval==0.3.0, fmeval==0.4.0, fmeval==1.0.0, fmeval==1.0.1, fmeval==1.0.2, fmeval==1.0.3 and fmeval==1.1.0 because these package versions have conflicting dependencies` while installing `fmeval`, please try deactivating and recreating your virtual environment using the steps below. Make sure to replace `<your_virtual_env>` with the name of your actual virtual environment:
+
+```sh
 virtualenv --clear <your_virtual_env>
 mkvirtualenv <your_virtual_env> -p python3.10
 ```
