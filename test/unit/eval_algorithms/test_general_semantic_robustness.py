@@ -67,7 +67,9 @@ DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[DatasetColumns.MODEL_OUTP
 
 DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[DatasetColumns.CATEGORY.value.name])
 
-DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[DatasetColumns.CATEGORY.value.name])
+DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(
+    cols=[DatasetColumns.CATEGORY.value.name]
+)
 
 
 class ConstantModel(ModelRunner):
