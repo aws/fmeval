@@ -60,7 +60,6 @@ DATASET_WITHOUT_MODEL_OUTPUT = DATASET.drop_columns(cols=[DatasetColumns.MODEL_O
 
 DATASET_WITHOUT_MODEL_INPUT = DATASET.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name])
 
-
 CATEGORY_SCORES = [
     CategoryScore(
         name="brownie",
