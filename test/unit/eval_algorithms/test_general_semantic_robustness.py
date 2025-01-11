@@ -59,15 +59,17 @@ DATASET_WITH_SCORES = ray.data.from_items(
     ]
 )
 
-DATASET_WITH_ONLY_BERT_SCORE = DATASET_WITH_SCORES.drop_columns(cols=WER_SCORE)
+DATASET_WITH_ONLY_BERT_SCORE = DATASET_WITH_SCORES.drop_columns(cols=[WER_SCORE])
 
-DATASET_WITH_MODEL_OUTPUT = DATASET_WITH_ONLY_BERT_SCORE.drop_columns(cols=BERT_SCORE_DISSIMILARITY)
+DATASET_WITH_MODEL_OUTPUT = DATASET_WITH_ONLY_BERT_SCORE.drop_columns(cols=[BERT_SCORE_DISSIMILARITY])
 
-DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.MODEL_OUTPUT.value.name)
+DATASET = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=[DatasetColumns.MODEL_OUTPUT.value.name])
 
-DATASET_NO_CATEGORY = DATASET.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
+DATASET_NO_CATEGORY = DATASET.drop_columns(cols=[DatasetColumns.CATEGORY.value.name])
 
-DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(cols=DatasetColumns.CATEGORY.value.name)
+DATASET_WITH_MODEL_OUTPUT_NO_CATEGORY = DATASET_WITH_MODEL_OUTPUT.drop_columns(
+    cols=[DatasetColumns.CATEGORY.value.name]
+)
 
 
 class ConstantModel(ModelRunner):

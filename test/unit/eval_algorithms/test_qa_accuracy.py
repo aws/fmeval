@@ -96,16 +96,16 @@ QA_DATASET = ray.data.from_items(
     ]
 )
 
-QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(DatasetColumns.MODEL_OUTPUT.value.name)
+QA_DATASET_WITHOUT_MODEL_OUTPUT = QA_DATASET.drop_columns(cols=[DatasetColumns.MODEL_OUTPUT.value.name])
 
-QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(DatasetColumns.MODEL_INPUT.value.name)
+QA_DATASET_WITHOUT_MODEL_INPUT = QA_DATASET.drop_columns(cols=[DatasetColumns.MODEL_INPUT.value.name])
 
-QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(DatasetColumns.TARGET_OUTPUT.value.name)
+QA_DATASET_WITHOUT_TARGET_OUTPUT = QA_DATASET.drop_columns(cols=[DatasetColumns.TARGET_OUTPUT.value.name])
 
-QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(DatasetColumns.CATEGORY.value.name)
+QA_DATASET_WITHOUT_CATEGORY = QA_DATASET.drop_columns(cols=[DatasetColumns.CATEGORY.value.name])
 
 QA_DATASET_WITHOUT_CATEGORY_WITHOUT_MODEL_OUTPUT = QA_DATASET_WITHOUT_CATEGORY.drop_columns(
-    DatasetColumns.MODEL_OUTPUT.value.name
+    cols=[DatasetColumns.MODEL_OUTPUT.value.name]
 )
 
 CATEGORY_SCORES = [
