@@ -9,40 +9,6 @@ env:
   AWS_DEFAULT_REGION: us-west-2
 
 jobs:
-  test_coverage_python_310:
-    runs-on: ubuntu-latest
-    env:
-      PYTHONWARNINGS: ignore
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Setup Environment
-        run: |
-          ./devtool env_setup
-
-      - name: Create virtual env
-        run: |
-          python -m venv .fmeval_venv
-          source .fmeval_venv/bin/activate
-
-      - name: Install dependencies with poetry
-        run: |
-          ./devtool install_deps
-
-      - name: Test with code coverage
-        run: |
-          ./devtool unit_test_with_coverage
-          echo "All build and unit tests passed."
-
-      - name: Build Package binary wheel
-        run: |
-          ./devtool build_package
-          echo "Package build Succeeded. 😊"
-
   test_coverage_python_311:
     runs-on: ubuntu-latest
     env:
