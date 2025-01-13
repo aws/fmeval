@@ -344,7 +344,7 @@ class ScoreCell(MarkdownCell):
                 if score_name in [FACTUAL_KNOWLEDGE, FACTUAL_KNOWLEDGE_QUASI_EXACT, CLASSIFICATION_ACCURACY_SCORE]
                 else False
             )
-            cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))
+            cells.append(ScoreTableCell(dataset, score_column_name, binary=is_binary_score))  # type: ignore
         super().__init__(*cells)
 
 
