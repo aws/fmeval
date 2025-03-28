@@ -45,6 +45,7 @@ ipykernel = "^6.29.5"
 mypy-boto3-bedrock = "^1.35.75"
 grpcio = "^1.68.1"
 aiohttp = "^3.11.11"
+tornado = "^6.4.2"
 
 [tool.poetry.group.dev.dependencies]
 fire = "*"
