@@ -26,7 +26,7 @@ def test_create_extractor_jumpstart(jumpstart_model_id):
 
 def test_create_extractor_jumpstart_proprietary():
     assert isinstance(
-        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="cohere-gpt-medium"),
+        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="cohere-command-r-a100"),
         JumpStartExtractor,
     )
 

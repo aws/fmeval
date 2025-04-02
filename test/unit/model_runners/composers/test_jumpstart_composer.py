@@ -9,7 +9,7 @@ from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.composers.jumpstart_composer import JumpStartComposer
 
 OSS_MODEL_ID = "huggingface-eqa-roberta-large"
-PROPRIETARY_MODEL_ID = "cohere-gpt-medium"
+PROPRIETARY_MODEL_ID = "cohere-command-r-a100"
 EMBEDDING_MODEL_ID = "tcembedding-model-id"
 PROMPT = "Hello, how are you?"
 
