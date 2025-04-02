@@ -74,6 +74,8 @@ class JumpStartExtractor(Extractor):
             model_manifest.get(SPEC_KEY, None),
             self._sagemaker_session.boto_region_name,
         )
+
+        default_payloads = None
         if DEFAULT_PAYLOADS not in model_spec:
             # Model spec contains alt configs, which should
             # be obtained through JumpStart util function.
@@ -90,8 +92,8 @@ class JumpStartExtractor(Extractor):
                 sagemaker_session=self._sagemaker_session,
             )
             configs = model_spec.inference_configs  # type: ignore[attr-defined]
-            util.require(configs, f"JumpStart Model: {jumpstart_model_id} is not supported at this time")
-            default_payloads = configs.get_top_config_from_ranking().resolved_metadata_config[DEFAULT_PAYLOADS]
+            if configs is not None:
+                default_payloads = configs.get_top_config_from_ranking().resolved_metadata_config[DEFAULT_PAYLOADS]
         else:
             # Continue to extract default payloads by manually parsing the spec json object.
             # TODO: update this code when the `default_payloads` attribute of JumpStartModelSpecs
