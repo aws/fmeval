@@ -79,7 +79,7 @@ def test_is_proprietary_js_model_false():
 
 
 def test_is_proprietary_js_model_true():
-    assert is_proprietary_js_model("us-west-2", "cohere-gpt-medium") == True
+    assert is_proprietary_js_model("us-west-2", "ai21-summarization") == True
 
 
 @patch("fmeval.model_runners.util.list_jumpstart_models", return_value=["tcembedding-model-id"])
