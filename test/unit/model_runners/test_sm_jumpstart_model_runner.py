@@ -13,7 +13,7 @@ ENDPOINT_NAME = "valid_endpoint_name"
 CUSTOM_ATTRIBUTES = "CustomAttributes"
 INFERENCE_COMPONENT_NAME = "valid_inference_component_name"
 MODEL_ID = "AwesomeModel"
-PROPRIETARY_MODEL_ID = "cohere-gpt-medium"
+PROPRIETARY_MODEL_ID = "ai21-summarization"
 MODEL_VERSION = "v1.2.3"
 
 CONTENT_TEMPLATE = '{"data":$prompt}'

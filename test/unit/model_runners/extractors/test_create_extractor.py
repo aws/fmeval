@@ -3,6 +3,7 @@ import pytest
 from fmeval.constants import MIME_TYPE_JSON
 from fmeval.exceptions import EvalAlgorithmClientError
 from fmeval.model_runners.extractors import create_extractor, JsonExtractor, JumpStartExtractor
+from sagemaker.jumpstart.enums import JumpStartModelType
 
 
 def test_create_extractor():
@@ -26,7 +27,11 @@ def test_create_extractor_jumpstart(jumpstart_model_id):
 
 def test_create_extractor_jumpstart_proprietary():
     assert isinstance(
-        create_extractor(model_accept_type=MIME_TYPE_JSON, jumpstart_model_id="cohere-gpt-medium"),
+        create_extractor(
+            model_accept_type=MIME_TYPE_JSON,
+            jumpstart_model_id="ai21-summarization",
+            jumpstart_model_type=JumpStartModelType.PROPRIETARY,
+        ),
         JumpStartExtractor,
     )
 
