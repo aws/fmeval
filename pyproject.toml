@@ -22,7 +22,7 @@ classifiers=[
 [tool.poetry.dependencies]
 python = "^3.10"
 urllib3 = ">=2.3.0"
-ray = "2.40.0"
+ray = "2.44.0"
 semantic-version = "2.10.0"
 pyarrow = "*"
 pyfunctional = "1.5.0"
