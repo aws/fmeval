@@ -33,6 +33,7 @@ class TestCell:
     # Hard-coded base64 strings corresponding to different test cases
     FIGURE_CELL_NO_ARGS_STYLE = 'style="display: block;margin-left:auto; margin-right: auto;"'
     FIGURE_CELL_WITH_ARGS_STYLE = 'style="display: block;width:200; height:100;"'
+
     class TestCaseMarkdownInit(NamedTuple):
         args: List[Union[str, MarkdownCell]]
         expected: Optional[str] = None
