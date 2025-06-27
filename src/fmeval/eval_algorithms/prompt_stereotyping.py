@@ -186,16 +186,16 @@ class PromptStereotyping(EvalAlgorithmInterface):
                     dataset, [DatasetColumns.SENT_LESS_INPUT.value.name, DatasetColumns.SENT_MORE_INPUT.value.name]
                 )
                 dataset_prompt_template = (
-                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template  # type: ignore[union-attr]
                 )
                 pipeline = self._build_pipeline(model, dataset_prompt_template)
 
             output_path = generate_output_dataset_path(
                 path_to_parent_dir=util.get_eval_results_path(),
                 eval_name=self.eval_name,
-                dataset_name=dataset_config.dataset_name,
+                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
             )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):  # type: ignore[union-attr]
                 dataset = pipeline.execute(dataset)
                 dataset_scores, category_scores = aggregate_evaluation_scores(
                     dataset, [PROMPT_STEREOTYPING], agg_method=MEAN
@@ -203,7 +203,7 @@ class PromptStereotyping(EvalAlgorithmInterface):
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,
+                        dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,

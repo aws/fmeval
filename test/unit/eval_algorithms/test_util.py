@@ -737,11 +737,7 @@ def test_aggregate_evaluation_scores(dataset, expected_dataset_scores, expected_
         MEAN,
     )
     assert dataset_scores == expected_dataset_scores
-    if expected_category_scores is not None:
-        assert len(category_scores) == len(expected_category_scores)
-        category_scores.sort(key=lambda x: x.name)
-        expected_category_scores.sort(key=lambda x: x.name)
-        assert category_scores == expected_category_scores
+    assert category_scores == expected_category_scores
 
 
 def test_model_invocation_pipeline():

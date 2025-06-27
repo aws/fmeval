@@ -226,7 +226,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
 
         for dataset_config in dataset_configs:
             dataset_prompt_template = (
-                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template  # type: ignore[union-attr]
             )
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [DatasetColumns.TARGET_OUTPUT.value.name, DatasetColumns.MODEL_INPUT.value.name])
@@ -246,7 +246,7 @@ class ClassificationAccuracySemanticRobustness(EvalAlgorithmInterface):
             eval_output = evaluate_dataset(
                 dataset=dataset,
                 pipeline=self._build_pipeline(model, dataset_prompt_template, valid_labels),
-                dataset_name=dataset_config.dataset_name,
+                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
                 eval_name=self.eval_name,
                 metric_names=[CLASSIFICATION_ACCURACY_SCORE, DELTA_CLASSIFICATION_ACCURACY_SCORE],
                 eval_results_path=get_eval_results_path(),
