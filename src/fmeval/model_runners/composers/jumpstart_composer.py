@@ -47,4 +47,4 @@ class JumpStartComposer(Composer):
             tolerate_vulnerable_model=True,
         )
         util.require(payload, f"Unable to fetch default model payload for JumpStart model: {self._model_id}")
-        return payload
+        return payload  # type: ignore[return-value]

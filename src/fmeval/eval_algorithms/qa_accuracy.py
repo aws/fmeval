@@ -393,7 +393,7 @@ class QAAccuracy(EvalAlgorithmInterface):
             eval_output = evaluate_dataset(
                 dataset=dataset,
                 pipeline=pipeline,
-                dataset_name=dataset_config.dataset_name,
+                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
                 eval_name=self.eval_name,
                 metric_names=SCORE_NAMES,
                 eval_results_path=get_eval_results_path(),
