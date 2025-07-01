@@ -229,7 +229,7 @@ class SummarizationAccuracy(EvalAlgorithmInterface):
             eval_output = evaluate_dataset(
                 dataset=dataset,
                 pipeline=pipeline,
-                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=METRIC_NAMES,
                 eval_results_path=get_eval_results_path(),

@@ -270,14 +270,14 @@ class SummarizationAccuracySemanticRobustness(EvalAlgorithmInterface):
         eval_outputs = []
         for dataset_config in dataset_configs:
             dataset_prompt_template = (
-                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template  # type: ignore[union-attr]
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name, DatasetColumns.TARGET_OUTPUT.value.name])
             eval_output = evaluate_dataset(
                 dataset=dataset,
                 pipeline=self._build_pipeline(model, dataset_prompt_template, bertscore_shared_resource),
-                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=ORIGINAL_SCORES + DELTA_SCORES,
                 eval_results_path=get_eval_results_path(),

@@ -55,7 +55,7 @@ class JsonExtractor(Extractor):
             self.log_probability_jmespath_expression,
             "Extractor cannot extract log_probability as log_probability_jmespath_expression is not provided",
         )
-        log_probs = self.log_probability_jmespath.search(data)  # type: ignore[union-attr]
+        log_probs = self.log_probability_jmespath.search(data)
         util.require(
             log_probs is not None, f"JMESpath {self.log_probability_jmespath_expression} could not find any data"
         )
@@ -81,7 +81,7 @@ class JsonExtractor(Extractor):
             self.output_jmespath_expression,
             "Extractor cannot extract output as output_jmespath_expression is not provided",
         )
-        outputs = self.output_jmespath.search(data)  # type: ignore[union-attr]
+        outputs = self.output_jmespath.search(data)
         util.require(outputs is not None, f"JMESpath {self.output_jmespath_expression} could not find any data")
         util.require(isinstance(outputs, str), f"Extractor found: {outputs} which does not match expected type {str}")
         return outputs
@@ -100,7 +100,7 @@ class JsonExtractor(Extractor):
             self.embedding_jmespath_expression,
             "Extractor cannot extract embedding as embedding_jmespath_expression is not provided",
         )
-        embedding = self.embedding_jmespath.search(data)  # type: ignore[union-attr]
+        embedding = self.embedding_jmespath.search(data)
         util.require(embedding is not None, f"JMESpath {self.embedding_jmespath_expression} could not find any data")
         util.require(
             isinstance(embedding, List), f"Extractor found: {embedding} which does not match expected type {List}"

@@ -269,7 +269,7 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
                 util.require(model, "No ModelRunner provided. ModelRunner is required for inference on model_inputs")
                 validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
                 dataset_prompt_template = (
-                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template  # type: ignore[union-attr]
+                    get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
                 )
                 model_invocation_pipeline = create_model_invocation_pipeline(model, dataset_prompt_template)
                 pipeline = TransformPipeline([model_invocation_pipeline, pipeline])
@@ -277,15 +277,15 @@ class ClassificationAccuracy(EvalAlgorithmInterface):
             output_path = generate_output_dataset_path(
                 path_to_parent_dir=util.get_eval_results_path(),
                 eval_name=self.eval_name,
-                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
+                dataset_name=dataset_config.dataset_name,
             )
-            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):  # type: ignore[union-attr]
+            with timed_block(f"Computing score and aggregation on dataset {dataset_config.dataset_name}", logger):
                 dataset = pipeline.execute(dataset)
                 dataset_scores, category_scores = self._generate_dataset_and_category_level_scores(dataset)
                 eval_outputs.append(
                     EvalOutput(
                         eval_name=self.eval_name,
-                        dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
+                        dataset_name=dataset_config.dataset_name,
                         prompt_template=dataset_prompt_template,
                         dataset_scores=dataset_scores,
                         category_scores=category_scores,

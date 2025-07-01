@@ -325,13 +325,13 @@ class GeneralSemanticRobustness(EvalAlgorithmInterface):
             dataset = get_dataset(dataset_config, num_records)
             validate_dataset(dataset, [DatasetColumns.MODEL_INPUT.value.name])
             dataset_prompt_template = (
-                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template  # type: ignore[union-attr]
+                get_default_prompt_template(dataset_config.dataset_name) if not prompt_template else prompt_template
             )
             is_deterministic = verify_model_determinism(model, dataset, dataset_prompt_template)
             eval_output = evaluate_dataset(
                 dataset=dataset,
                 pipeline=self._build_pipeline(model, dataset_prompt_template, is_deterministic=is_deterministic),
-                dataset_name=dataset_config.dataset_name,  # type: ignore[union-attr]
+                dataset_name=dataset_config.dataset_name,
                 eval_name=self.eval_name,
                 metric_names=[BERT_SCORE_DISSIMILARITY, WER_SCORE],
                 eval_results_path=get_eval_results_path(),
