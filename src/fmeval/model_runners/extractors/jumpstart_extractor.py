@@ -87,10 +87,10 @@ class JumpStartExtractor(Extractor):
                 region=self._sagemaker_session.boto_region_name,
                 model_id=self._model_id,
                 version=self._model_version,
-                model_type=self._model_type,
+                model_type=self._model_type,  # type: ignore[arg-type]
                 scope=JumpStartScriptScope.INFERENCE,
                 sagemaker_session=self._sagemaker_session,
-            )
+            )  # type: ignore[assignment]
             configs = model_spec.inference_configs  # type: ignore[attr-defined]
             if configs is not None:
                 default_payloads = configs.get_top_config_from_ranking().resolved_metadata_config[DEFAULT_PAYLOADS]

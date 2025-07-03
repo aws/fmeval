@@ -324,5 +324,5 @@ class BertScore(SummarizationAccuracyMetric):
             return self.bertscore_model.get_helper_scores(target_output, model_output)
         else:
             return ray.get(  # type: ignore[return-value]
-                self.bertscore_model.get_helper_scores.remote(target_output, model_output)  # type: ignore[union-attr]
+                self.bertscore_model.get_helper_scores.remote(target_output, model_output)
             )
