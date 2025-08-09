@@ -95,7 +95,7 @@ def create_output_key(transform_name: str, *args, **kwargs) -> str:
     :param **kwargs: Arbitrary keyword arguments.
     """
 
-    def args_to_str(positional_args: Tuple[str]) -> str:
+    def args_to_str(positional_args: Tuple[str, ...]) -> str:
         return ", ".join(str(arg) for arg in positional_args)
 
     def kwargs_to_str(keyword_args: Dict[str, Any]) -> str:

@@ -133,7 +133,7 @@ def test_validate_call_failure(input_keys, output_keys, err_msg):
 
 
 class TestCaseCreateOutputKey(NamedTuple):
-    args: Tuple[Any]
+    args: Tuple[Any, ...]
     kwargs: Dict[str, Any]
     expected_output: str
 
