@@ -81,7 +81,14 @@ rm -rf $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 mv $HOME/.rustup/toolchains/1.72.1-aarch64-apple-darwin $HOME/.rustup/toolchains/stable-aarch64-apple-darwin
 ```
 
-3. If you run into out of memory (OOM) errors, especially while running evaluations that use LLMs as evaluators like toxicity and
+3. If you run into the error `ERROR: Cannot install fmeval==0.2.0, fmeval==0.2.1, fmeval==0.3.0, fmeval==0.4.0, fmeval==1.0.0, fmeval==1.0.1, fmeval==1.0.2, fmeval==1.0.3 and fmeval==1.1.0 because these package versions have conflicting dependencies` while installing `fmeval`, please try deactivating and recreating your virtual environment using the steps below. Make sure to replace `<your_virtual_env>` with the name of your actual virtual environment:
+
+```sh
+virtualenv --clear <your_virtual_env>
+mkvirtualenv <your_virtual_env> -p python3.10
+```
+
+4. If you run into out of memory (OOM) errors, especially while running evaluations that use LLMs as evaluators like toxicity and
 summarization accuracy, it is likely that your machine does not have enough memory to load the evaluator
 models. By default, `fmeval` loads multiple copies of the model into memory to maximize parallelization, where the exact number depends on the number of cores on the machine. To reduce the number of models that get loaded in parallel, you can
 set the environment variable `PARALLELIZATION_FACTOR` to a value that suits your machine.
