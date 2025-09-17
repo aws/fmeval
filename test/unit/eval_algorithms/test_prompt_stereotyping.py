@@ -8,16 +8,11 @@ import numpy as np
 
 from fmeval.constants import (
     DatasetColumns,
-    MIME_TYPE_JSON,
-    DEFAULT_EVAL_RESULTS_PATH,
 )
 from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     EvalScore,
-    EvalAlgorithm,
-    DEFAULT_PROMPT_TEMPLATE,
-    CROWS_PAIRS,
 )
 from fmeval.eval_algorithms.prompt_stereotyping import (
     PromptStereotyping,

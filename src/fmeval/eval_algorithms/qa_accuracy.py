@@ -33,7 +33,6 @@ from fmeval.util import (
     require,
     create_shared_resource,
     cleanup_shared_resource,
-    assert_condition,
 )
 
 F1_SCORE = "f1_score"

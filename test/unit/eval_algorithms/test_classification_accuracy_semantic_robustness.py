@@ -8,7 +8,6 @@ from _pytest.fixtures import fixture
 
 from fmeval.constants import (
     DatasetColumns,
-    MIME_TYPE_JSON,
     BUTTER_FINGER,
     RANDOM_UPPER_CASE,
     WHITESPACE_ADD_REMOVE,
@@ -16,11 +15,7 @@ from fmeval.constants import (
 )
 from fmeval.eval_algorithms import (
     EvalScore,
-    EvalOutput,
     CategoryScore,
-    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    DEFAULT_PROMPT_TEMPLATE,
-    WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
 )
 from fmeval.eval_algorithms.classification_accuracy_semantic_robustness import (
     ClassificationAccuracySemanticRobustnessConfig,

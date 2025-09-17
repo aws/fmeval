@@ -7,17 +7,9 @@ from _pytest.fixtures import fixture
 
 from fmeval.constants import (
     DatasetColumns,
-    MIME_TYPE_JSON,
 )
 from fmeval.eval_algorithms import (
     EvalScore,
-    EvalOutput,
-    CategoryScore,
-    NATURAL_QUESTIONS,
-    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    TRIVIA_QA,
-    BOOLQ,
-    DEFAULT_PROMPT_TEMPLATE,
 )
 from fmeval.eval_algorithms.helper_models.helper_model import (
     TOXIGEN_SCORE_NAME,

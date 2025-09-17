@@ -10,7 +10,6 @@ from ray.data import Dataset
 
 from fmeval.constants import (
     DatasetColumns,
-    MIME_TYPE_JSON,
     MEAN,
 )
 from fmeval.data_loaders.data_config import DataConfig

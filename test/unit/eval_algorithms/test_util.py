@@ -22,7 +22,6 @@ from fmeval.constants import (
 from fmeval.eval_algorithms import (
     EvalAlgorithm,
     DATASET_CONFIGS,
-    EVAL_DATASETS,
     BOOLQ,
     TRIVIA_QA,
     NATURAL_QUESTIONS,
@@ -35,7 +34,6 @@ from fmeval.eval_algorithms import (
     WOMENS_CLOTHING_ECOMMERCE_REVIEWS,
     REAL_TOXICITY_PROMPTS,
     REAL_TOXICITY_PROMPTS_CHALLENGING,
-    EvalOutput,
     CategoryScore,
 )
 from fmeval.eval_algorithms.eval_algorithm import EvalScore

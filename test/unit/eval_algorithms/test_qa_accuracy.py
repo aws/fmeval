@@ -18,11 +18,6 @@ from fmeval.eval_algorithms import (
     EvalOutput,
     CategoryScore,
     EvalScore,
-    BUILT_IN_DATASET_DEFAULT_PROMPT_TEMPLATES,
-    TRIVIA_QA,
-    BOOLQ,
-    NATURAL_QUESTIONS,
-    DEFAULT_PROMPT_TEMPLATE,
 )
 from fmeval.eval_algorithms.helper_models.helper_model import BertscoreHelperModel
 from fmeval.eval_algorithms.qa_accuracy import (
@@ -41,8 +36,6 @@ from fmeval.eval_algorithms.qa_accuracy import (
     _split,
     _quasi_exact_match_score,
     SCORE_NAMES,
-    SplitWithDelimiter,
-    BertScore,
 )
 from fmeval.exceptions import EvalAlgorithmClientError
 

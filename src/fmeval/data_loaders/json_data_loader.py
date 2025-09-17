@@ -10,7 +10,6 @@ from fmeval.data_loaders.data_sources import DataFile
 
 from ray.data.datasource.file_based_datasource import (
     FileBasedDatasource,
-    _resolve_kwargs,
 )
 
 from fmeval.exceptions import EvalAlgorithmInternalError

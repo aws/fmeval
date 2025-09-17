@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v4.4.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
@@ -8,8 +8,8 @@ repos:
     -   id: detect-aws-credentials
         args: [--allow-missing-credentials]
 
-- repo: https://github.com/humitos/mirrors-autoflake.git
-  rev: v1.3
+- repo: https://github.com/PyCQA/autoflake
+  rev: v2.2.1
   hooks:
     - id: autoflake
       args: ['--in-place', '--expand-star-imports', '--ignore-init-module-imports', '--remove-all-unused-imports']

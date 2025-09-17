@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 from fmeval.constants import (
     DatasetColumns,
-    EVAL_OUTPUT_RECORDS_BATCH_SIZE,
     MEAN,
     NUM_ROWS_DETERMINISTIC,
     DATASET_COLUMNS,
@@ -23,8 +22,6 @@ from fmeval.eval_algorithms import (
     CategoryScore,
     DATASET_CONFIGS,
     EVAL_DATASETS,
-    EvalOutput,
-    get_default_prompt_template,
 )
 from fmeval.exceptions import EvalAlgorithmInternalError
 from fmeval.model_runners.composers.composers import PromptComposer

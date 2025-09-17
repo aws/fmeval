@@ -8,7 +8,6 @@ from fmeval.data_loaders.json_parser import JsonParser
 from fmeval.data_loaders.json_data_loader import (
     JsonDataLoader,
     JsonDataLoaderConfig,
-    CustomJSONDatasource,
 )
 from fmeval.data_loaders.util import DataConfig
 from typing import Any, Dict, List, NamedTuple, Optional, Union
